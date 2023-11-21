@@ -1,0 +1,27 @@
+@import "../functions";
+@import "../mixins";
+@import "../variables";
+
+@mixin modal() {
+  background: var(--Color-Background--light--90);
+  width: 80%;
+  height: 80%;
+  margin: auto;
+  position: absolute;
+}
+
+@mixin modal-close-btn($position: relative) {
+  position: $position;
+
+  @if($position == fixed) {
+    right: rem(20);
+    top: rem(20);
+  }
+  @if($position == absolute) {
+    right: rem(20);
+    top: rem(20);
+  }
+
+  fill: var(--Color-Icon--light);
+  cursor: pointer;
+}

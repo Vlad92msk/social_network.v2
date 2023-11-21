@@ -1,0 +1,49 @@
+{
+  "extends": "./tsconfig.paths.json",
+  "compilerOptions": {
+    /*
+    Версия стандарта ECMAScript, в которую будет скомпилирован код.
+    Здесь большой выбор: ES3, ES5, ES6 (он же ES2015), ES2016, ES2017, ES2018, ES2019, ES2020, ESNext.
+    Для backend приложений/пакетов подойдёт ES6, если рассчитываете только на современные версии Node.js и ES5,
+    если хотите поддержать более старые версии.
+    На данный момент стандарт ES6, с небольшими оговорками, поддерживается 97.29% браузеров.
+    Так что для frontend приложений ситуация аналогичная.*/
+    "target": "ES6",
+    "plugins": [
+      {
+        "transform": "typescript-react-loadable-plugin",
+        "moduleKind": "userRequest"
+      },
+      {
+        "name": "next"
+      }
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "strict": false,
+    "strictNullChecks": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

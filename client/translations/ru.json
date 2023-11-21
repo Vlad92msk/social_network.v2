@@ -1,0 +1,14 @@
+{
+  "Metadata": {
+    "title": "Социальная сеть",
+    "lang": "ru"
+  },
+  "NawBar": {
+    "home":  "Домой",
+    "photo": "Фото",
+    "video":  "Видео",
+    "message-square": "Чаты",
+    "clock-not-filled":  "Календарь",
+    "settings": "Настройки"
+  }
+}

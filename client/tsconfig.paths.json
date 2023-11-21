@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"],
+      "@public/*": ["public/*"],
+      "@app_components/*": ["app/_components/*"],
+      "@app_modules/*": ["app/_modules/*"],
+      "@ui/*": ["app/_ui/*"],
+      "@services/*": ["app/_services/*"],
+      "@my-apollo/*": ["src/apollo/*"]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+@import "../functions";
+@import "../variables";
+
+@mixin button-base {
+  position: relative;
+  display: flex;
+  padding-right: rem(24);
+  padding-left: rem(24);
+  cursor: pointer;
+  border-radius: rem(8);
+  background: none;
+  white-space: nowrap;
+  text-decoration: none;
+}

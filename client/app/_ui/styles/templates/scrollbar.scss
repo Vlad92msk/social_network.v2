@@ -1,0 +1,30 @@
+@import "../functions";
+@import "../variables";
+
+@mixin scrollbar($scrollbar-color, $thumb-color) {
+  &::-webkit-scrollbar {
+    width: rem(12);
+    height: rem(12);
+    border-radius: rem(20);
+    background: $scrollbar-color;
+    border: rem(4) solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    width: rem(4);
+    height: rem(4);
+    background: $thumb-color;
+    border-radius: rem(20);
+    border: rem(4) solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+@mixin hideScrollbar() {
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+}

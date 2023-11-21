@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  client:
+    container_name: client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        API_PORT: ${CLIENT_PORT}
+        API_HOST: ${API_HOST}
+    environment:
+      API_PORT: ${CLIENT_PORT}
+      API_HOST: ${CLIENT_HOST}
+    volumes:
+      - ./client:/app
+    ports:
+     - ${CLIENT_PORT}:${CLIENT_PORT}
+    restart: unless-stopped
+    depends_on:
+      - server
+
+  server:
+    container_name: server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        API_PORT: ${API_PORT}
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      API_PORT: ${API_PORT}
+      API_HOST: ${API_HOST}
+      TYPEORM_CONNECTION: ${TYPEORM_CONNECTION}
+      TYPEORM_USERNAME: ${TYPEORM_USERNAME}
+      TYPEORM_PASSWORD: ${TYPEORM_PASSWORD}
+      TYPEORM_DATABASE: ${TYPEORM_DATABASE}
+      TYPEORM_PORT: ${TYPEORM_PORT}
+      TYPEORM_HOST: postgress
+    ports:
+      - ${API_PORT}:${API_PORT}
+    depends_on:
+      - postgress
+      - pgadmin
+    restart: unless-stopped
+
+
+  postgress:
+    container_name: postgress
+    image: postgres:14.0-alpine
+    restart: always
+    environment:
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_USER: ${TYPEORM_USERNAME}
+      POSTGRES_PASSWORD: ${TYPEORM_PASSWORD}
+      POSTGRES_DB: ${TYPEORM_DATABASE}
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d/
+      - ./database:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin/
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PG_ADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PG_ADMIN_PASSWORD}
+    depends_on:
+      - postgress
+    ports:
+      - ${PGADMIN_PORT}:80

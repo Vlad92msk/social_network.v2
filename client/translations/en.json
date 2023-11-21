@@ -1,0 +1,14 @@
+{
+  "Metadata": {
+    "title": "Social_network",
+    "lang": "en"
+  },
+  "NawBar": {
+    "home":  "Home",
+    "photo": "Photo",
+    "video":  "Video",
+    "message-square": "Chat rooms",
+    "clock-not-filled":  "Calendar",
+    "settings": "Setting"
+  }
+}

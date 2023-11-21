@@ -1,0 +1,39 @@
+@use 'sass:map';
+@import "../functions";
+@import "../mixins";
+@import "../variables";
+
+$icon-sizes: (
+  'xl': rem(65),
+  'lg': rem(55),
+  'lm': rem(45),
+  'md': rem(45),
+  'sm': rem(35),
+  'xs': rem(25),
+  'es': rem(15),
+);
+
+
+$icon-fills: (
+        'light': var(--Color-Icon--light),
+        'grey': var(--Color-Icon--grey),
+        'red': var(--Color-Icon--red),
+);
+@mixin icon-size($size: 'xs', $shape: 'cube') {
+  @if($shape == 'cube') {
+    width: map.get($icon-sizes, $size);
+    height: map.get($icon-sizes, $size);
+  } @else if($shape == 'width') {
+    width: map.get($icon-sizes, $size);
+  } @else if($shape == 'height') {
+    height: map.get($icon-sizes, $size);
+  } @else if($shape == 'auto') {
+    height: auto;
+    width: auto;
+  }
+}
+
+@mixin icon-fill($color: 'light', $prop: 'fill') {
+  //fill: map.get($icon-fills, $color);
+  #{$prop}: map.get($icon-fills, $color);
+}

@@ -1,0 +1,58 @@
+@import "../functions";
+@import "../mixins";
+@import "scrollbar";
+@import "../variables";
+
+$color-disabled: var(--Color-Background--disabled);
+$color-placeholder: var(--Color-Text--placeholder);
+$color-text: var(--Color-Text--primary);
+$color-text-focus: var(--Color-Text--primary);
+
+
+@mixin area-input($mw: 100%, $mh: fit-content) {
+  @include scrollbar(transparent, var(--Color-Background--light--90));
+  @include placeholderColor($color-placeholder);
+  max-width: $mw;
+  max-height: $mh;
+  min-height: rem(40);
+  border: none;
+  resize: none;
+  overflow: auto;
+  padding: 0;
+  background: transparent;
+  color: $color-text;
+
+
+  &:focus {
+    outline: none;
+    color: $color-text-focus;
+  }
+
+  &:disabled {
+    border-color: var(--Color-Border--light-30--opacity-05);
+    background: $color-disabled;
+  }
+}
+
+@mixin text-input() {
+  @include placeholderColor($color-placeholder);
+  width: 100%;
+  border: none;
+  resize: none;
+  overflow: auto;
+  padding: 0;
+  background: transparent;
+  color: $color-text;
+  outline: none;
+  height: fit-content;
+
+  &:focus {
+    outline: none;
+    color: $color-text-focus;
+  }
+
+  &:disabled {
+    border-color: var(--Color-Border--light-30--opacity-05);
+    background: $color-disabled;
+  }
+}

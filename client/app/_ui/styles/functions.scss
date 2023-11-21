@@ -1,0 +1,31 @@
+@use 'sass:math';
+
+@function rem($size) {
+  @if unitless($size) {
+    $remSize: math.div($size, 16);
+
+    @return #{$remSize}rem;
+  }
+
+  @else {
+    @error 'Size must be a unitless number.';
+  }
+}
+
+@mixin not-last() {
+  &:not(:last-child) {
+    @content;
+  }
+}
+
+@mixin not-first() {
+  &:not(:first-child) {
+    @content;
+  }
+}
+
+@function calc_minus($number) {
+  $n: rem($number);
+
+  @return calc(100% - #{$n});
+}
