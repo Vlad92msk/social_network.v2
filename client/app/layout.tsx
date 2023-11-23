@@ -5,6 +5,7 @@ import { ThemeService } from '@services/theme'
 import { Translation } from '@services/translation/Translation'
 import { getLocale } from './_utils/getLocale'
 import { getTranslate } from './_utils/getTranslate'
+// import { getSession } from 'next-auth/react';
 
 export async function generateMetadata() {
   const t = await getTranslate()

@@ -41,8 +41,8 @@ html {
   box-sizing: border-box;
   height: 100%;
   overflow: hidden;
-  color: var(--Color-Text--body);
-  fill: var(--Color-Black--100);
+  color: var(--Color-Text--root);
+  fill: var(--Color-Bckground--root);
 
   font-family: var(--FontFamily);
   font-weight: var(--FontWeight-Medium);
@@ -55,6 +55,8 @@ html {
 }
 
 body {
+  background: var(--Color-Bckground--root);
+  color: var(--Color-Text--root);
   overflow-y: auto;
   max-height: 100%;
 }
