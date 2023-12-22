@@ -1,84 +1,9 @@
 @use "sass:map";
 @import "functions";
 
-/* Миксин для работы с полифиллом селектора :focus-visible */
-@mixin focusVisible() {
 
-  &[data-focus-visible-added] {
-    @content;
+@mixin color-theme($theme-name) {
+  [data-theme='#{$theme-name}'] & {
+    @content
   }
-}
-
-
-
-@mixin placeholderColor($color) {
-
-  &::-webkit-input-placeholder {
-    color: $color;
-  }
-
-  &::-moz-placeholder {
-    color: $color;
-  }
-
-  &:-ms-input-placeholder {
-    color: $color;
-  }
-}
-
-@mixin flex($wrap: false, $direction: false, $justify: false, $align-items: false, $align-content: false) {
-  display: flex;
-  @if $wrap {
-    flex-wrap: $wrap;
-  };
-  @if $justify {
-    justify-content: $justify;
-  };
-  @if $align-items {
-    align-items: $align-items;
-  };
-  @if $align-content {
-    align-content: $align-content;
-  };
-  @if $direction {
-    flex-direction: $direction;
-  };
-}
-
-
-@mixin wh($w: false, $h: false) {
-  @if $w {
-    width: $w
-  }
-  @if $h {
-    height: $h
-  }
-}
-
-@mixin placeholderColor($color) {
-  &::placeholder {
-    color: $color;
-  }
-
-  &::-webkit-input-placeholder {
-    color: $color;
-  }
-
-  &::-moz-placeholder {
-    color: $color;
-  }
-
-  &:-ms-input-placeholder {
-    color: $color;
-  }
-}
-
-
-@mixin create-fontsize($min-rem, $current, $line-height) {
-  $size: rem($current);
-  $min: #{$min-rem}px;
-  $lh: rem($line-height);
-
-  font-size: max(#{$min}, #{$size});
-  line-height: max(#{$min}, #{$lh});
 }

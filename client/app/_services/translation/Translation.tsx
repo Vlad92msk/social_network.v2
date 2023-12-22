@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl'
-import { getLocale } from '../../_utils/getLocale'
+import { getLocale } from '../../_utils/server/getLocale'
 
 export const Translation = async ({ children }) => {
   const locale = getLocale()

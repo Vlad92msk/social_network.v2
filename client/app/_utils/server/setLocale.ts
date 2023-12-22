@@ -2,7 +2,7 @@
 
 import { addMonths } from 'date-fns'
 import { cookies } from 'next/headers'
-import { Locales } from '../../middlwares/location'
+import { Locales } from '../../../middlwares/location'
 
 export const setLocale = (newLocale: Locales) => {
   cookies().set({

@@ -5,10 +5,8 @@ import { isSystemPath } from './utils'
 
 // Определяем поддерживаемые локали
 export type Locales = 'en' | 'ru' | 'fr';
-export const locales: Locales[] = ['en', 'ru', 'fr']
+export const LOCALES: Locales[] = ['en', 'ru', 'fr']
 export const DEFAULT_LOCALE: Locales = 'ru'
-
-// Регулярное выражение для публичных файлов
 
 // Функция определения необходимости обработки локали
 export function shouldHandleLocale(pathname: string, locales: Locales[]): boolean {
@@ -34,12 +32,12 @@ export function locationMiddleware(req: NextRequest) {
   const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locales
 
   // Редирект и установка куки, если локаль в URL отличается от куки
-  if (shouldHandleLocale(pathname, locales) && localeInUrl !== cookieLocale) {
+  if (shouldHandleLocale(pathname, LOCALES) && localeInUrl !== cookieLocale) {
     return redirectToLocale(localeInUrl, pathname, search, req)
   }
 
   // Редирект на локаль по умолчанию, если текущая локаль невалидна, и установка куки
-  if (!locales.includes(localeInUrl)) {
+  if (!LOCALES.includes(localeInUrl)) {
     return redirectToLocale(DEFAULT_LOCALE, pathname, search, req)
   }
 

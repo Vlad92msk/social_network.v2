@@ -1,11 +1,13 @@
 import { Metadata } from 'next'
-import './_ui/styles/_index.scss'
+import { ChakraUI } from '@services/chakraUI/ChakraUI'
 import { Session } from '@services/session/Session'
 import { ThemeService } from '@services/theme'
-import { Translation } from '@services/translation/Translation'
-import { getLocale } from './_utils/getLocale'
-import { getTranslate } from './_utils/getTranslate'
-// import { getSession } from 'next-auth/react';
+import { Translation } from '@services/translation'
+import { Body } from '@ui/components/Body'
+import { Html } from '@ui/components/Html'
+import './_ui/styles/_index.scss'
+import { getTranslate } from './_utils/server/getTranslate'
+import { SettingsMenu } from './SettingsMenu'
 
 export async function generateMetadata() {
   const t = await getTranslate()
@@ -17,16 +19,20 @@ export async function generateMetadata() {
 }
 
 export default async function RootLayout({ children }) {
-  const locale = getLocale()
   return (
-    <html lang={locale}>
+    <Html>
       <ThemeService>
         <Translation>
           <Session>
-            <body>{children}</body>
+            <Body>
+              <ChakraUI>
+                <SettingsMenu />
+                {children}
+              </ChakraUI>
+            </Body>
           </Session>
         </Translation>
       </ThemeService>
-    </html>
+    </Html>
   )
 }

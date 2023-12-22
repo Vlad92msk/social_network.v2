@@ -1,0 +1,28 @@
+@import "@ui/styles/for_components";
+
+
+.Body {
+  display: grid;
+  grid-template:
+          'root-menu-settings' $root-menu-settings-height
+          'root-page' calc(100% - $root-menu-settings-height);
+
+  &--theme {
+    &_default {
+      color: var(--Color-Text--root--theme-default);
+      background: var(--Color-Bcg--root--theme-default);
+    }
+
+    &_light {
+      color: var(--Color-Text--root--theme-light);
+      background: var(--Color-Bcg--root--theme-light);
+    }
+  }
+
+  :nth-child(1){
+    grid-area: root-menu-settings;
+  }
+  :nth-child(2){
+    grid-area: root-page;
+  }
+}

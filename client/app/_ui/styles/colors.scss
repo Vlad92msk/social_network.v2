@@ -1,32 +1,90 @@
-[data-theme='default']{
-  --Color-Text--root: #bca9a9;
-  --Color-Bckground--root: #1f2440;
+:root{
 
-  --Color-Text--primary: #d3d3e2;
-  --Color-Text--secondary: #616789;
-  --Color-Text--placeholder: #484e70;
-  --Color-Text--red: #b64a50;
-  --Color-Text--dark: #1f2440;
+//Root. Палитра
+  --Palette--LightLavender--100-opacity-1: #d3d3e2;
+  --Palette--LightLavender--90-opacity-1: #bca9a9;
 
-  --Color-Bckground--app: #1f2440;
-  --Color-Bckground--Message: #959afffa;
-  --Color-Bckground--dark: #1a1e38;
-  --Color-Background--light--90: #313458;
-  --Color-Background--light--60: #5d5e6a;
-  --Color-Background--red: #eb595a;
-  --Color-Background--disabled: #ac9d9dad;
+  --Palette--DarkSlate--100--opacity-1: #616789;
+  --Palette--DarkSlate--90--opacity-1: #484e70;
+  --Palette--DarkSlate--80--opacity-1: #313458;
+  --Palette--DarkSlate--70--opacity-1: #2c3156;
+  --Palette--DarkSlate--60--opacity-1: #1f2440;
+  --Palette--DarkSlate--50--opacity-1: #1a1e38;
 
-  --Color-Border--grey: #2c3156;
-  --Color-Border--light-30: #b5b5b7;
-  --Color-Border--light-30--opacity-05: rgba(181, 181, 183, 0.47);
+  --Palette--LightGrey--100--opacity-1: #b5b5b7;
+  --Palette--LightGrey--90--opacity-1: #ac9d9dad;
+  --Palette--LightGrey--90--opacity-47: rgba(172, 157, 157, 47%);
+  --Palette--LightGrey--70--opacity-1: #5d5e6a;
+  --Palette--LightGrey--70--opacity-56: rgba(93, 94, 106, 56%);
 
-  --Color-Status--Offline: #eb595a;
-  --Color-Status--Online: #1ae243;
-  --Color-Status--Incognito: rgba(97, 97, 97, 0.56);
+  --Palette--TomatoRed--100--opacity-1: #eb595a;
+  --Palette--TomatoRed--90--opacity-1: #b64a50;
 
-  --Color-Icon--light: #d3d3e2;
-  --Color-Icon--grey: #616789;
-  --Color-Icon--red: #b64a50;
+  --Palette--LightViolet--100--opacity-1: #959afffa;
 
-  --Color-Error: #b64a50;
+  --Palette--BrightGreen--100--opacity-1: #1ae243;
+
+
+  //1. Основной текст и фон
+  --Color-Text--root--theme-default: var(--Palette--LightLavender--100-opacity-1);
+  --Color-Text--root--theme-light: var(--Palette--DarkSlate--50--opacity-1);
+
+  --Color-Bcg--root--theme-default: var(--Palette--DarkSlate--60--opacity-1);
+  --Color-Bcg--root--theme-light: var(--Palette--LightLavender--100-opacity-1);
+
+
+  //2. Текст
+  //Для темы по умолчанию
+  --Color-Text--variant-1--theme-default: var(--Palette--LightLavender--100-opacity-1);
+  --Color-Text--variant-2--theme-default: var(--Palette--DarkSlate--100--opacity-1);
+  --Color-Text--variant-3--theme-default: var(--Palette--DarkSlate--90--opacity-1);
+  --Color-Text--variant-4--theme-default: var(--Palette--TomatoRed--90--opacity-1);
+  --Color-Text--variant-5--theme-default: var(--Palette--DarkSlate--60--opacity-1);
+  //Для темы светлой
+  //--Color-Text--variant-1--theme-light: var(--Palette--LightLavender--100-opacity-1);
+  //--Color-Text--variant-2--theme-light: var(--Palette--DarkSlate--100--opacity-1);
+  //--Color-Text--variant-3--theme-light: var(--Palette--DarkSlate--90--opacity-1);
+  //--Color-Text--variant-4--theme-light: var(--Palette--TomatoRed--90--opacity-1);
+  //--Color-Text--variant-5--theme-light: var(--Palette--DarkSlate--60--opacity-1);
+
+
+
+  //3. Фон приложения и сообщений
+  //Для темы по умолчанию
+  --Color-Bcg--variant-1--theme-default: var(--Palette--DarkSlate--60--opacity-1);
+  --Color-Bcg--variant-2--theme-default: var(--Palette--LightViolet--100--opacity-1);
+  --Color-Bcg--variant-3--theme-default: var(--Palette--DarkSlate--50--opacity-1);
+  --Color-Bcg--variant-4--theme-default: var(--Palette--DarkSlate--80--opacity-1);
+  --Color-Bcg--variant-5--theme-default: var(--Palette--LightGrey--70--opacity-1);
+  --Color-Bcg--variant-6--theme-default: var(--Palette--TomatoRed--100--opacity-1);
+  --Color-Bcg--variant-7--theme-default: var(--Palette--LightGrey--90--opacity-1);
+  //Для темы светлой
+  //--Color-Bcg--variant-1--theme-light: var(--Palette--DarkSlate--60--opacity-1);
+  //--Color-Bcg--variant-2--theme-light: var(--Palette--LightViolet--100--opacity-1);
+  //--Color-Bcg--variant-3--theme-light: var(--Palette--DarkSlate--50--opacity-1);
+  //--Color-Bcg--variant-4--theme-light: var(--Palette--DarkSlate--80--opacity-1);
+  //--Color-Bcg--variant-5--theme-light: var(--Palette--LightGrey--70--opacity-1);
+  //--Color-Bcg--variant-6--theme-light: var(--Palette--TomatoRed--100--opacity-1);
+  //--Color-Bcg--variant-7--theme-light: var(--Palette--LightGrey--90--opacity-1);
+
+
+  //4. Границы
+  //Для темы по умолчанию
+  --Color-Border--variant-1--theme-default: var(--Palette--DarkSlate--70--opacity-1);
+  --Color-Border--variant-2--theme-default: var(--Palette--LightGrey--100--opacity-1);
+  --Color-Border--variant-3--theme-default: var(--Palette--LightGrey--90--opacity-47);
+
+
+  //5. Статусы
+  //Для темы по умолчанию
+  --Color-Status--variant-1--theme-default: var(--Palette--TomatoRed--100--opacity-1);
+  --Color-Status--variant-2--theme-default: var(--Palette--BrightGreen--100--opacity-1);
+  --Color-Status--variant-3--theme-default: var(--Palette--LightGrey--70--opacity-56);
+
+  //6. Иконки
+  //Для темы по умолчанию
+  --Color-Icon--variant-1--theme-default: var(--Palette--LightLavender--100-opacity-1);
+  --Color-Icon--variant-2--theme-default: var(--Palette--DarkSlate--100--opacity-1);
+  --Color-Icon--variant-3--theme-default: var(--Palette--TomatoRed--90--opacity-1);
+
 }

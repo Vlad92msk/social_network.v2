@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { Locales } from '../../middlwares/location'
+import { Locales } from '../../../middlwares/location'
 
 export const getLocale = () => {
   const cookieStore = cookies()

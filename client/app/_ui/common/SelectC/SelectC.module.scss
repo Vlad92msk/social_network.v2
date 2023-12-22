@@ -1,0 +1,11 @@
+@import "@ui/styles/for_components";
+
+.SelectC {
+  @include color-theme('default') {
+    //background: orange;
+  }
+
+  @include color-theme('red') {
+    //background: pink;
+  }
+}

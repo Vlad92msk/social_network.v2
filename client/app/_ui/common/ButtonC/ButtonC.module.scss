@@ -1,0 +1,11 @@
+@import "@ui/styles/for_components";
+
+.ButtonC {
+  @include color-theme('default') {
+    background: orange;
+  }
+
+  @include color-theme('light') {
+    background: pink;
+  }
+}

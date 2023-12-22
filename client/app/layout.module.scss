@@ -1,0 +1,18 @@
+@import "@ui/styles/for_components";
+
+.RootLayout {
+  &-SettingsMenu {
+    display: flex;
+    gap: rem(10);
+    align-items: center;
+    justify-content: end;
+    margin-inline: rem(10);
+  }
+
+  &-SelectTheme {
+    width: fit-content;
+  }
+  &-SelectLocation {
+    width: fit-content;
+  }
+}

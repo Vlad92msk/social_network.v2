@@ -1,0 +1,8 @@
+@import "@ui/styles/for_components";
+
+.Section {
+  background: red;
+  &-Dd{
+    background: greenyellow;
+  }
+}
