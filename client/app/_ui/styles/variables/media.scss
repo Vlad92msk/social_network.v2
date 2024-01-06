@@ -1,60 +1,43 @@
 @use 'sass:map' as map;
 
-$media: (
-  'm1600': 1600,
-  'm1440': 1440,
-  'm1200': 1200,
-  'm992': 992,
-  'm768': 768,
-  'm576': 576,
-  'm320': 320,
+$media-breakpoints: (
+  'xl': 1600,
+  'lg': 1440,
+  'lm': 1200,
+  'md': 992,
+  'sm': 768,
+  'xs': 576,
+  'es': 320,
 );
 
-  // для всех экранов < 1600px
-@mixin media-1600 {
-  @media (max-width: #{map.get($media, 'm1600')}px) {
-    @content
+
+@mixin media($bp) {
+  @if map.has-key($media-breakpoints, $bp) {
+    // для всех экранов < $bp
+    @media (screen and max-width: map.get($media-breakpoints, $bp) + px) {
+      @content;
+    }
+  } @else {
+    @warn "No breakpoint defined for #{$bp}.";
   }
 }
 
-// для всех экранов < 1440px
-@mixin media-1440 {
-  @media (max-width: #{map.get($media, 'm1440')}px) {
-    @content
+
+@mixin media-content($prop-name) {
+  // Базовый случай без медиа-запроса
+  &--#{$prop-name}--default {
+    @content('default', null);
+  }
+
+  // Медиа-запросы для каждого брейкпоинта
+  @each $bp-name, $bp-size in $media-breakpoints {
+    @if $bp-name != 'default' {
+      &--#{$prop-name}--#{$bp-name} {
+        @include media($bp-name) {
+          @content($bp-name, $bp-size);
+        }
+      }
+    }
   }
 }
 
-// для всех экранов < 1200px
-@mixin media-1200 {
-  @media (max-width: #{map.get($media, 'm1200')}px) {
-    @content
-  }
-}
-
-// для всех экранов < 992px
-@mixin media-992 {
-  @media (max-width: #{map.get($media, 'm992')}px) {
-    @content
-  }
-}
-
-// для всех экранов < 768px
-@mixin media-768 {
-  @media (max-width: #{map.get($media, 'm768')}px) {
-    @content
-  }
-}
-
-// для всех экранов < 576px
-@mixin media-576 {
-  @media (max-width: #{map.get($media, 'm576')}px) {
-    @content
-  }
-}
-
-// для всех экранов < 320px
-@mixin media-320 {
-  @media (max-width: #{map.get($media, 'm320')}px) {
-    @content
-  }
-}

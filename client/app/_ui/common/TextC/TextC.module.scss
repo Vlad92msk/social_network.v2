@@ -1,0 +1,25 @@
+@use 'sass:list' as list;
+@import "@ui/styles/for_components";
+
+
+.TextC {
+  @include media-content('font-size') using ($bp-name, $bp-size) {
+    @each $name, $sizes in $text-sizes {
+      $size: list.nth($sizes, 1);
+      $lh: list.nth($sizes, 2);
+
+      &_#{$name} {
+        font-size: rem($size);
+        line-height: rem($lh);
+      }
+    }
+  }
+
+  @include media-content('font-weight') using ($bp-name, $bp-size) {
+    @each $name, $weight in $text-weights {
+      &_#{$name}{
+        font-weight: $weight;
+      }
+    }
+  }
+}

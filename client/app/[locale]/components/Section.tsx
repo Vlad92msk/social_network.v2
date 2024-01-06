@@ -1,11 +1,10 @@
 'use client'
 
+import { signOut, useSession } from 'next-auth/react'
 import { useThemeServiceUpdate } from '@services/theme'
-import { Theme } from '@services/theme/context/initialState'
 import { makeCn } from '@shared/utils/makeCn'
 import { Button } from '@ui/base/Button/Button'
 import { Icon } from '@ui/base/Icon'
-import { signOut, useSession } from 'next-auth/react'
 
 import style from './Section.module.scss'
 
@@ -15,7 +14,6 @@ export function Section() {
   const session = useSession()
   const themeUpdate = useThemeServiceUpdate()
   // console.log('session', session)
-
 
   return (
     <div className={cn('Dd')}>

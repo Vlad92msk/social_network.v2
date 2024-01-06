@@ -18,6 +18,7 @@ export interface ButtonProps extends Pick<
   | 'onClick'
   | 'disabled'
   | 'size'
+  | 'as'
 > {
 
 }

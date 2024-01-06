@@ -30,10 +30,6 @@
   --FontFamily-Codeink: 'CODEINK', var(--FontFamily);
   --FontFamily-Chakra: 'Chakra', var(--FontFamily);
   --FontFamily-Inter: 'Inter', var(--FontFamily);
-
-  --FontWeight-Bold: 700;
-  --FontWeight-Medium: 500;
-  --FontWeight-Light: 400;
 }
 
 
@@ -43,7 +39,7 @@ html {
   overflow: hidden;
 
   font-family: var(--FontFamily);
-  font-weight: var(--FontWeight-Medium);
+  font-weight: $text-weight--medium;
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -167,9 +163,6 @@ input, textarea, select {
 }
 legend {
   color: #000;
-}
-article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section, main {
-  display: block;
 }
 
 video, img, picture {

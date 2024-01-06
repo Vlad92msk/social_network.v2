@@ -25,7 +25,7 @@ export function SettingsMenu() {
     router.push(newUrl)
   }
   return (
-    <div className={cn('SettingsMenu')}>
+    <header className={cn('SettingsMenu')}>
       <SelectC
         className={cn('SelectTheme')}
         width="auto"
@@ -51,6 +51,6 @@ export function SettingsMenu() {
           <option key={locale} value={locale}>{locale}</option>
         ))}
       </SelectC>
-    </div>
+    </header>
   )
 }

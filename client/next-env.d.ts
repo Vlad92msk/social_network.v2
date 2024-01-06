@@ -1,5 +1,12 @@
 /// <reference types="next" />
-/// <reference types="next/image-types/global" />
+/// <reference types="next/types/global" />
 
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/basic-features/typescript for more information.
+interface NetworkInformation {
+  effectiveType: 'slow-2g' | '2g' | '3g' | '4g'
+}
+
+interface Navigator {
+    connection?: NetworkInformation
+    mozConnection?: NetworkInformation
+    webkitConnection?: NetworkInformation
+}

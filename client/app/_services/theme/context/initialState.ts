@@ -8,7 +8,6 @@ export interface ThemeServiceContext {
   theme: Theme;
 }
 
-
 export const initialState: ThemeServiceContext = {
   theme: DEFAULT_THEME,
 }

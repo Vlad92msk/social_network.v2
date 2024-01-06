@@ -1,41 +1,56 @@
-
 /*
 * Размеры
-* [min, size, line-height]
+* [size, line-height]
 */
-$text-adaptive--80: (30, 80, 66);
-$text-adaptive--54: (20, 54, 56);
-$text-adaptive--44: (20, 44, 35);
-$text-adaptive--38: (20, 38, 38);
-$text-adaptive--34: (20, 34, 42);
-$text-adaptive--30: (20, 30, 35);
-$text-adaptive--28: (17, 28, 31);
-$text-adaptive--25: (17, 25, 30);
-$text-adaptive--22: (17, 22, 30);
-$text-adaptive--20: (15, 20, 25);
-$text-adaptive--18: (14, 18, 30);
-$text-adaptive--16: (14, 16, 20);
-$text-adaptive--14: (10, 14, 20);
-$text-adaptive--12: (10, 12, 20);
-$text-adaptive--10: (10, 10, 15);
-$text-adaptive--8: (10, 8, 15);
+$text--80: (80, 66);
+$text--54: (54, 56);
+$text--44: (44, 35);
+$text--38: (38, 38);
+$text--34: (34, 42);
+$text--30: (30, 35);
+$text--28: (28, 31);
+$text--25: (25, 30);
+$text--22: (22, 30);
+$text--20: (20, 25);
+$text--18: (18, 30);
+$text--16: (16, 20);
+$text--14: (14, 20);
+$text--12: (12, 20);
+$text--10: (10, 15);
+$text--8: (8, 15);
 
 // [name, variables]
-$text-sizes-adaptive: (
-                (80, $text-adaptive--80),
-                (54, $text-adaptive--54),
-                (44, $text-adaptive--44),
-                (38, $text-adaptive--38),
-                (34, $text-adaptive--34),
-                (30, $text-adaptive--30),
-                (28, $text-adaptive--28),
-                (25, $text-adaptive--25),
-                (22, $text-adaptive--22),
-                (20, $text-adaptive--20),
-                (18, $text-adaptive--18),
-                (16, $text-adaptive--16),
-                (14, $text-adaptive--14),
-                (12, $text-adaptive--12),
-                (10, $text-adaptive--10),
-                (8, $text-adaptive--8),
+$text-sizes: (
+  (80, $text--80),
+  (54, $text--54),
+  (44, $text--44),
+  (38, $text--38),
+  (34, $text--34),
+  (30, $text--30),
+  (28, $text--28),
+  (25, $text--25),
+  (22, $text--22),
+  (20, $text--20),
+  (18, $text--18),
+  (16, $text--16),
+  (14, $text--14),
+  (12, $text--12),
+  (10, $text--10),
+  (8, $text--8),
+);
+
+
+
+/*
+* Жирность
+*/
+$text-weight--bold: 700;
+$text-weight--medium: 500;
+$text-weight--light: 400;
+
+// [name, value]
+$text-weights: (
+  (bold, $text-weight--bold),
+  (medium, $text-weight--medium),
+  (light, $text-weight--light),
 );

@@ -3,4 +3,12 @@
 .Signin {
   width: 100%;
   height: 100%;
+  display: flex;
+
+  &-Salutation {
+    width: 50%;
+  }
+  &-Enter {
+    width: 50%;
+  }
 }
