@@ -10,9 +10,43 @@ import style from './page.module.scss'
 
 const cn = makeCn('Signin', style)
 
-export default function SignInPage() {
+const wait = (ms: number): Promise<void> => new Promise((resolve) => {
+  console.log('запускаем таймер')
+  setTimeout(() => {
+    console.log('Таймер завершен')
+    resolve()
+  }, ms * 1000)
+})
+
+const chucknorris = () => fetch('https://api.chucknorris.io/jokes/random')
+  .then((response) => response.json())
+  .catch((error) => console.error(error))
+
+const pokemon = (id: number) => fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
+  .then((response) => response.json())
+  .catch((error) => console.error(error))
+
+const pokemon1 = async (id: number) => {
+  const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
+
+  return res.json()
+}
+
+export default async function SignInPage() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
+
+  const dddd = await Promise.all([
+    chucknorris(),
+    chucknorris(),
+    chucknorris(),
+    wait(2),
+    pokemon1(1),
+    pokemon1(2),
+    pokemon1(3),
+  ])
+const dw =  await pokemon1(1)
+  console.log('dddd', dw)
 
   return (
     <main className={cn()}>
