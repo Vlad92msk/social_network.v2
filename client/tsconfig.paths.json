@@ -4,10 +4,13 @@
     "paths": {
       "@shared/*": ["shared/*"],
       "@public/*": ["public/*"],
+      "@middlewares/*": ["middlwares/*"],
       "@app_components/*": ["app/_components/*"],
       "@app_modules/*": ["app/_modules/*"],
       "@ui/*": ["app/_ui/*"],
-      "@services/*": ["app/_services/*"],
+      "@providers/*": ["app/_providers/*"],
+      "@utils/*": ["app/_utils/*"],
+      "@hooks/*": ["app/_hooks/*"],
       "@my-apollo/*": ["src/apollo/*"]
     }
   }

@@ -1,5 +1,5 @@
-import { classNames, makeCn } from '@shared/utils'
-import { BaseButton, BaseButtonProps } from 'app/_ui/base/BaseButton'
+import { classNames, makeCn } from '@utils/others'
+import { BaseButton, BaseButtonProps } from '@ui/base/BaseButton'
 import style from './CommonButton.module.scss'
 
 const cn = makeCn('CommonButton', style)

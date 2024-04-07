@@ -1,5 +1,5 @@
+import { classNames, makeCn } from '@utils/others'
 import { CSSProperties, PropsWithChildren } from 'react'
-import { classNames, makeCn } from '@shared/utils'
 import { AdaptiveVariables, createBreakPoint } from '@ui/styles/variables/media'
 
 import styles from './CommonText.module.scss'

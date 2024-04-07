@@ -1,6 +1,8 @@
+export * from './getTranslate'
+export * from './getMessages'
+
 export * from './rem'
 export * from './makeCn'
-export * from './createStoreContext'
 export * from './logColors'
 export * from './isArray'
 export * from './isObject'

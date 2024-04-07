@@ -1,5 +1,5 @@
 import { Button as ChakraButton, ButtonProps as ChakraButtonProps } from '@chakra-ui/react'
-import { classNames, makeCn } from '@shared/utils/makeCn'
+import { classNames, makeCn } from '@utils/others'
 
 import style from './BaseButton.module.scss'
 

@@ -1,5 +1,5 @@
 import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
-import { debounce, throttle } from '@shared/utils'
+import { debounce, throttle } from '../_utils/others'
 
 export interface UseRectProps {
   ref: MutableRefObject<HTMLElement | null | undefined>,

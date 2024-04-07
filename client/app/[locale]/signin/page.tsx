@@ -1,6 +1,5 @@
-import { makeCn } from '@shared/utils'
+import { makeCn } from '../../_utils/others'
 import { CommonText } from '@ui/common/CommonText/CommonText'
-import { CommonImage } from 'app/_ui/common/CommonImage'
 import { GoogleSignIn } from './components'
 import style from './page.module.scss'
 
@@ -10,18 +9,6 @@ export default function SignInPage() {
   return (
     <main className={cn()}>
       <section className={cn('Salutation')}>
-        <CommonImage
-          src="base/me"
-          sizes={{
-            xl: '1000px', lg: '700px', lm: '400px', md: '200px', sm: '100px', xs: '50px', es: '10px',
-          }}
-          srcSet={{
-            xl: 'base/me', lg: 'base/me1', lm: 'base/me', md: 'base/me1', sm: 'base/me', xs: 'base/me1', es: 'base/me',
-          }}
-          alt="s"
-          width="1"
-          height="1"
-        />
         <CommonText fs={{
           xl: '44',
           xs: '38',

@@ -1,9 +1,8 @@
 'use client'
 
+import { useThemeServiceSelect } from '@providers/theme'
+import { makeCn } from '@utils/others'
 import { PropsWithChildren } from 'react'
-import { useThemeServiceSelect } from '@services/theme'
-import { makeCn } from '@shared/utils/makeCn'
-
 import style from './Body.module.scss'
 
 const cn = makeCn('Body', style)

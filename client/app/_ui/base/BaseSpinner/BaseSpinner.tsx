@@ -1,5 +1,5 @@
 import { Spinner as SpinnerChakra, SpinnerProps as SpinnerChakraProps } from '@chakra-ui/react'
-import { classNames, makeCn } from '@shared/utils'
+import { classNames, makeCn } from '@utils/others'
 
 import style from './Spinner.module.scss'
 

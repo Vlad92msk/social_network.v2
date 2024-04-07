@@ -1,29 +1,24 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import React, { ChangeEventHandler } from 'react'
-import { useThemeServiceSelect, useThemeServiceUpdate } from '@services/theme'
-import { DEFAULT_THEME, Theme, THEMES } from '@services/theme/context/initialState'
+import { useLocale } from '@hooks/useLocale'
+import { LOCALES, Locales } from '@middlewares/location'
+import { useThemeServiceUpdate } from '@providers/theme'
+import { DEFAULT_THEME, Theme, THEMES } from '@providers/theme/context/initialState'
+import { useTranslateUpdate } from '@providers/translation'
+import { ChangeEventHandler } from 'react'
 import { CommonSelect } from 'app/_ui/common/CommonSelect'
 import { cn } from './cn'
-import { LOCALES, Locales } from '../middlwares/location'
 
 export function SettingsMenu() {
-  const router = useRouter()
-  const pathname = usePathname()
   const currentLocale = useLocale()
   const updateTheme = useThemeServiceUpdate()
-  const currentTheme = useThemeServiceSelect((s) => s.theme)
+  const updateLocation = useTranslateUpdate()
 
   const handleChangeTheme: ChangeEventHandler<HTMLSelectElement> = (v) => {
     updateTheme((ctx) => ({ ...ctx, theme: v.target.value as Theme }))
   }
-
   const handleChangeLocation: ChangeEventHandler<HTMLSelectElement> = (e) => {
-    const locale = e.target.value as Locales
-    const newUrl = pathname.replace(/\/[a-z]{2}\//, `/${locale}/`)
-    router.push(newUrl)
+    updateLocation((ctx) => ({ ...ctx, locale: e.target.value as Locales }))
   }
   return (
     <header className={cn('SettingsMenu')}>
@@ -33,7 +28,6 @@ export function SettingsMenu() {
         size="xs"
         placeholder="Выбрать тему"
         defaultValue={DEFAULT_THEME}
-        value={currentTheme}
         onChange={handleChangeTheme}
 
       >

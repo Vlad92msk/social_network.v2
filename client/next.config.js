@@ -1,5 +1,4 @@
 const { PHASE_DEVELOPMENT_SERVER: dev, PHASE_PRODUCTION_BUILD: prod } = require('next/constants')
-const withNextIntl = require('next-intl/plugin')('./i18n.ts')
 
 /**
  * БАЗОВЫЙ КОНФИГ ДЛЯ ВСЕХ СБОРОК
@@ -27,8 +26,6 @@ const baseConfig= {
 }
 
 
-// Обертка базового конфига с помощью withNextIntl
-const intlConfig = withNextIntl({ ...baseConfig });
 
 /**
  * @returns {import('next').NextConfig}
@@ -38,12 +35,12 @@ module.exports = (phase, { defaultConfig }) => {
     switch (phase) {
         case dev:
             return ({
-                ...intlConfig,
+                ...baseConfig,
             });
         case prod:
             return ({
-                ...intlConfig,
+                ...baseConfig,
             });
-        default: return intlConfig
+        default: return baseConfig
     }
 }

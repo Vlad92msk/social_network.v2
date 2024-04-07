@@ -1,4 +1,4 @@
-import { isObject, isString } from '@shared/utils'
+import { isObject, isString } from '../../../_utils/others'
 
 export enum MediaBreakScreen {
   XL = 1600,

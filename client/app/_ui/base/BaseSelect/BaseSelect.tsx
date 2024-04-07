@@ -1,5 +1,5 @@
 import { Select as ChakraSelect, SelectProps as ChakraSelectProps } from '@chakra-ui/react'
-import { classNames, makeCn } from '@shared/utils'
+import { classNames, makeCn } from '@utils/others'
 
 import style from './BaseSelect.module.scss'
 
@@ -19,7 +19,6 @@ export interface BaseSelectProps extends Pick<
   | 'isRequired'
   | 'isReadOnly'
   | 'width'
-  | 'value'
 > {
 
 }

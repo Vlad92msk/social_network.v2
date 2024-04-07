@@ -10,5 +10,8 @@
     "message-square": "Чаты",
     "clock-not-filled":  "Календарь",
     "settings": "Настройки"
+  },
+  "Auth": {
+    "google": "Гугл"
   }
 }

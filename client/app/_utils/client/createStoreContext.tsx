@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, PropsWithChildren, useCallback, useContext, useRef, useSyncExternalStore } from 'react'
-import { DeepPartial } from '@shared/types/DeepPartial'
+import { DeepPartial } from '../tsUtils'
 
 // function isReact18OrNewer() {
 //   return !!React.useSyncExternalStore

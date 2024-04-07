@@ -10,5 +10,8 @@
     "message-square": "Chat rooms",
     "clock-not-filled":  "Calendar",
     "settings": "Setting"
+  },
+  "Auth": {
+    "google": "Google"
   }
 }
