@@ -1,17 +1,11 @@
-import React, {
-  createContext,
-  PropsWithChildren,
-  useCallback,
-  useContext, useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react'
+'use client'
+
+import React, { createContext, PropsWithChildren, useCallback, useContext, useRef, useSyncExternalStore } from 'react'
 import { DeepPartial } from '@shared/types/DeepPartial'
 
-function isReact18OrNewer() {
-  return !!React.useSyncExternalStore
-}
+// function isReact18OrNewer() {
+//   return !!React.useSyncExternalStore
+// }
 
 export interface Options<Store> {
   initialState: Store;
@@ -66,20 +60,21 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
   }
 
   // Для React 17 и старше
-  function useStoreSelectorReact17<SelectorOutput>(selector: (store: Store) => SelectorOutput): SelectorOutput {
-    const store = useContext(StoreContext)
-    if (!store) throw new Error('Store not found')
+  // function useStoreSelectorReact17<SelectorOutput>(selector: (store: Store) => SelectorOutput): SelectorOutput {
+  //   const store = useContext(StoreContext)
+  //   if (!store) throw new Error('Store not found')
+  //
+  //   const [state, setState] = useState(() => selector(store.get()))
+  //   useEffect(() => {
+  //     const unsubscribe = store.subscribe(() => setState(selector(store.get())))
+  //     return unsubscribe
+  //   }, [selector, store])
+  //
+  //   return state
+  // }
 
-    const [state, setState] = useState(() => selector(store.get()))
-    useEffect(() => {
-      const unsubscribe = store.subscribe(() => setState(selector(store.get())))
-      return unsubscribe
-    }, [selector, store])
-
-    return state
-  }
-
-  const useStoreSelector = isReact18OrNewer() ? useStoreSelectorReact18 : useStoreSelectorReact17
+  // const useStoreSelector = isReact18OrNewer() ? useStoreSelectorReact18 : useStoreSelectorReact17
+  const useStoreSelector = useStoreSelectorReact18
 
   function useStoreDispatch() {
     const store = useContext(StoreContext)

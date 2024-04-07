@@ -5,7 +5,7 @@ import { MediaBreakKeys, mediaBreakpoints } from '@ui/styles/variables/media'
 
 export type Test = Partial<Record<MediaBreakKeys, string>> | string | undefined
 
-export interface ImageCProps extends Omit<ImageProps, 'src' | 'loading' | 'sizes'> {
+export interface CommonImageProps extends Omit<ImageProps, 'src' | 'loading' | 'sizes'> {
   src: string
   pictureClassName?: string
   srcSet?: Partial<Record<MediaBreakKeys, string>>;
@@ -30,7 +30,7 @@ function createSizeString(bp: typeof mediaBreakpoints, sss: Test) {
   return sizeString || '100vw' // Значение по умолчанию, если не определено
 }
 
-export function ImageC(props: ImageCProps) {
+export function CommonImage(props: CommonImageProps) {
   const {
     src, pictureClassName, blurDataURL = '/images/base/blur_img.webp', placeholder = 'blur', sizes, srcSet, ...rest
   } = props

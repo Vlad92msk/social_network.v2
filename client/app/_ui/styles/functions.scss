@@ -23,9 +23,3 @@
     @content;
   }
 }
-
-@function calc_minus($number) {
-  $n: rem($number);
-
-  @return calc(100% - #{$n});
-}

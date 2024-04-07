@@ -1,38 +1,46 @@
 // auth.ts
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { Locales } from './location'
+import { MyMiddleware } from './utils'
 
-export function authMiddleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
+export const authMiddleware: MyMiddleware = async (props) => {
+  const { req, currentUrl } = props
   const token = req.cookies.get('next-auth.session-token')?.value
-  const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locales
+  const urlSegments = currentUrl.split('/')
+  const locale = urlSegments[1] // Предполагаем, что это локаль
 
+  // Если пользователь не авторизован и не находится на странице входа, делаем редирект на страницу входа
+  if (!token && !currentUrl.endsWith('/signin')) {
+    const redirectUrl = `/${locale}/signin/` // Используем локаль из текущего URL
 
-  /**
-   * Если пользователь НЕ авторизован
-   * Если не находится на странице авторизации (иначе будет бесконечный редирект)
-   * Редиректим его на страницу авторизации
-   */
-  if (!token && !pathname.includes('signin')) {
-    const newPathname = `/${cookieLocale}/signin`
-
-    const response = NextResponse.redirect(new URL(newPathname, req.url))
-    response.cookies.set('NEXT_BACKURL_FROM_UNAUTH', pathname, {
-      maxAge: 60 * 60 * 24 * 30, // 30 дней
-      path: '/',
-      httpOnly: true,
-    })
-
-    return response
+    return {
+      url: redirectUrl, // Предполагаем, что локаль уже учтена в currentUrl
+      cookies: [
+        // Сохранение текущего URL для возможного редиректа после аутентификации
+        {
+          name: 'NEXT_BACKURL_FROM_UNAUTH',
+          value: currentUrl,
+          maxAge: 60 * 60 * 24 * 30, // 30 дней
+          path: '/',
+          httpOnly: true,
+        },
+      ],
+    }
   }
 
+  // Если пользователь авторизован, очищаем cookie с сохранённым URL
   if (token) {
-    const response = NextResponse.next()
-    response.cookies.delete('NEXT_BACKURL_FROM_UNAUTH')
-
-    return response
+    return {
+      url: currentUrl,
+      cookies: [
+        {
+          name: 'NEXT_BACKURL_FROM_UNAUTH',
+          value: '',
+          maxAge: -1, // Удаление cookie
+          path: '/',
+          httpOnly: true,
+        },
+      ],
+    }
   }
 
-  return null
+  return { url: currentUrl, cookies: [] }
 }

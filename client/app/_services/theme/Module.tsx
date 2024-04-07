@@ -1,7 +1,7 @@
 'use client'
 
 import { PropsWithChildren } from 'react'
-import { createStoreContext } from '@shared/utils/createStoreContext'
+import { createStoreContext } from '@shared/utils'
 import { initialState, ThemeServiceContext } from './context/initialState'
 
 export const {

@@ -2,7 +2,7 @@ import { CSSProperties, PropsWithChildren } from 'react'
 import { classNames, makeCn } from '@shared/utils'
 import { AdaptiveVariables, createBreakPoint } from '@ui/styles/variables/media'
 
-import styles from './TextC.module.scss'
+import styles from './CommonText.module.scss'
 
 export type TextSizes =
   | '80'
@@ -22,14 +22,14 @@ export type TextSizes =
   | '10'
   | '8'
 
-export type TextPropsFS = AdaptiveVariables<TextSizes>
+export type TextPropsFontSize = AdaptiveVariables<TextSizes>
 export type TextPropsFontWeight = AdaptiveVariables<'bold' | 'medium' | 'light'>
 
-export interface TextProps {
+export interface CommonTextProps {
   as?: React.ElementType;
   className?: string
   style?: CSSProperties
-  fs?: TextPropsFS
+  fs?: TextPropsFontSize
   letterSpacing?: number | string
   weight?: TextPropsFontWeight
   uppercase?: boolean
@@ -37,9 +37,9 @@ export interface TextProps {
   textAlign?: CSSProperties['textAlign']
 }
 
-const cn = makeCn('TextC', styles)
+const cn = makeCn('CommonText', styles)
 
-export function TextC(props: PropsWithChildren<TextProps>) {
+export function CommonText(props: PropsWithChildren<CommonTextProps>) {
   const {
     className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, as: As = 'span', children,
   } = props

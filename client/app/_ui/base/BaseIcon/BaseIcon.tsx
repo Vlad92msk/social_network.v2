@@ -3,12 +3,11 @@ import InlineSVG from 'react-inlinesvg'
 import { Props } from 'react-inlinesvg/src'
 import { IconName } from './icon.model'
 
-
-interface IconPros extends Omit<Props, 'src' |'name'>{
+interface BaseIconPros extends Omit<Props, 'src' |'name'>{
   name: IconName
 }
 
-export function Icon({ name, ...props }: IconPros) {
+export function BaseIcon({ name, ...props }: BaseIconPros) {
   const svgURL = `/icons/${name}.svg`
 
   return <InlineSVG src={svgURL} {...props} />

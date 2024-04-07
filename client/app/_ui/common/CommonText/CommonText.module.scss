@@ -2,7 +2,7 @@
 @import "@ui/styles/for_components";
 
 
-.TextC {
+.CommonText {
   @include media-content('font-size') using ($bp-name, $bp-size) {
     @each $name, $sizes in $text-sizes {
       $size: list.nth($sizes, 1);

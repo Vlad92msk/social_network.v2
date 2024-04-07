@@ -1,6 +1,5 @@
-import type { AuthOptions, Account, Profile } from 'next-auth'
+import type { Account, AuthOptions, Profile } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
-
 
 interface ExtendedProfile extends Profile {
   email_verified?: boolean
@@ -21,7 +20,6 @@ interface ExtendedToken {
   exp?: number
 }
 
-
 interface UserInfo {
   message: string
   token: string
@@ -30,6 +28,7 @@ interface UserInfo {
 
 class AuthManager {
   private _isAuthenticated: boolean = false
+
   private _userData: UserInfo | null = null
 
   async saveOrUpdateUser(userData: { email?: string, name?: string, provider?: string, providerAccountId?: string }) {
@@ -37,17 +36,16 @@ class AuthManager {
       const response = await fetch('http://localhost:3000/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
+        body: JSON.stringify(userData),
+      })
 
       if (response.ok) {
         this._isAuthenticated = true
         this._userData = await response.json()
         return true
-      } else {
-        this._isAuthenticated = false
-        return false
       }
+      this._isAuthenticated = false
+      return false
     } catch (error) {
       console.error('Ошибка запроса:', error)
       this._isAuthenticated = false
@@ -78,11 +76,11 @@ export const authConfig: AuthOptions = {
       if (!account || !profile) return false
 
       switch (account.provider) {
-        case "google":
+        case 'google':
           if (!(profile as ExtendedProfile).email_verified) return false
           break
 
-        case "facebook":
+        case 'facebook':
           // Здесь может быть специфическая проверка для Facebook
           break
           // Логика по умолчанию или для неизвестных провайдеров
@@ -95,21 +93,21 @@ export const authConfig: AuthOptions = {
           name: profile.name,
           provider: account.provider,
           providerAccountId: account.providerAccountId,
-        };
+        }
 
-        return authManager.saveOrUpdateUser(userData);
+        return authManager.saveOrUpdateUser(userData)
       }
 
-      return false;
+      return false
     },
     async jwt({ token, account }) {
       if (account && authManager.isAuthenticated()) {
-        const userData = authManager.getUserData();
+        const userData = authManager.getUserData()
         if (userData) {
-          (token as ExtendedToken).myUserInfo = userData;
+          (token as ExtendedToken).myUserInfo = userData
         }
       }
-      return token;
+      return token
     },
   },
   providers: [

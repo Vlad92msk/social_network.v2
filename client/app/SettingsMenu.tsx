@@ -3,9 +3,9 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import React, { ChangeEventHandler } from 'react'
-import { useThemeServiceUpdate } from '@services/theme'
+import { useThemeServiceSelect, useThemeServiceUpdate } from '@services/theme'
 import { DEFAULT_THEME, Theme, THEMES } from '@services/theme/context/initialState'
-import { SelectC } from '@ui/common/SelectC'
+import { CommonSelect } from 'app/_ui/common/CommonSelect'
 import { cn } from './cn'
 import { LOCALES, Locales } from '../middlwares/location'
 
@@ -14,6 +14,7 @@ export function SettingsMenu() {
   const pathname = usePathname()
   const currentLocale = useLocale()
   const updateTheme = useThemeServiceUpdate()
+  const currentTheme = useThemeServiceSelect((s) => s.theme)
 
   const handleChangeTheme: ChangeEventHandler<HTMLSelectElement> = (v) => {
     updateTheme((ctx) => ({ ...ctx, theme: v.target.value as Theme }))
@@ -26,20 +27,21 @@ export function SettingsMenu() {
   }
   return (
     <header className={cn('SettingsMenu')}>
-      <SelectC
+      <CommonSelect
         className={cn('SelectTheme')}
         width="auto"
         size="xs"
         placeholder="Выбрать тему"
         defaultValue={DEFAULT_THEME}
+        value={currentTheme}
         onChange={handleChangeTheme}
 
       >
         {THEMES.map((theme) => (
           <option key={theme} value={theme}>{theme}</option>
         ))}
-      </SelectC>
-      <SelectC
+      </CommonSelect>
+      <CommonSelect
         className={cn('SelectLocation')}
         width="auto"
         size="xs"
@@ -50,7 +52,7 @@ export function SettingsMenu() {
         {LOCALES.map((locale) => (
           <option key={locale} value={locale}>{locale}</option>
         ))}
-      </SelectC>
+      </CommonSelect>
     </header>
   )
 }
