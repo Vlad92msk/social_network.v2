@@ -7,7 +7,10 @@ import { useTranslate } from '../../../_hooks'
 export function GoogleSignIn() {
   const { translate, isLoading } = useTranslate()
   return (
-    <CommonButton onClick={async () => await signIn('google')} isLoading={isLoading}>
+    <CommonButton
+      onClick={async () => await signIn('google')}
+      isLoading={isLoading}
+    >
       {translate?.('Auth.google')}
     </CommonButton>
   )

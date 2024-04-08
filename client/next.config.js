@@ -19,7 +19,14 @@ const baseConfig= {
     },
     images: {
         // Указываем домены с которых можно получать картинок с внешних сервисов
-        domains: ['lh3.googleusercontent.com'],
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'lh3.googleusercontent.com',
+                port: '',
+                // pathname: '/account123/**',
+            },
+        ]
     },
     output: 'standalone',
     trailingSlash: true,

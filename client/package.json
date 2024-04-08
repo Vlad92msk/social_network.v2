@@ -15,11 +15,11 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "clsx": "2.0.0",
-    "date-fns": "2.30.0",
-    "framer-motion": "^10.16.5",
+    "date-fns": "3.6.0",
+    "framer-motion": "11.0.25",
     "lodash": "4.17.21",
-    "next": "14.0.1",
-    "next-auth": "^4.24.5",
+    "next": "14.1.4",
+    "next-auth": "4.24.7",
     "normalize.css": "8.0.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "20.9.0",
-    "@types/react": "18.2.37",
+    "@types/react": "18.2.74",
     "@typescript-eslint/eslint-plugin": "6.11.0",
     "@typescript-eslint/parser": "6.11.0",
     "eslint": "8.53.0",
@@ -35,8 +35,8 @@
     "eslint-config-airbnb-typescript": "17.1.0",
     "eslint-config-next": "14.0.2",
     "eslint-plugin-simple-import-sort": "10.0.0",
-    "sass": "1.69.5",
+    "sass": "1.74.1",
     "sass-loader": "13.3.2",
-    "typescript": "5.2.2"
+    "typescript": "5.4.4"
   }
 }

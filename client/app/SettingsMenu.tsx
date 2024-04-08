@@ -1,13 +1,19 @@
 'use client'
 
+import Image from 'next/image'
+import { signOut, useSession } from 'next-auth/react'
+import { ChangeEventHandler } from 'react'
 import { useLocale } from '@hooks/useLocale'
 import { LOCALES, Locales } from '@middlewares/location'
 import { useThemeServiceUpdate } from '@providers/theme'
 import { DEFAULT_THEME, Theme, THEMES } from '@providers/theme/context/initialState'
 import { useTranslateUpdate } from '@providers/translation'
-import { ChangeEventHandler } from 'react'
+import { CommonButton } from '@ui/common/CommonButton'
+import { CommonText } from '@ui/common/CommonText/CommonText'
+import { rem } from '@utils/others'
 import { CommonSelect } from 'app/_ui/common/CommonSelect'
 import { cn } from './cn'
+import Loading from './loading'
 
 export function SettingsMenu() {
   const currentLocale = useLocale()
@@ -20,8 +26,25 @@ export function SettingsMenu() {
   const handleChangeLocation: ChangeEventHandler<HTMLSelectElement> = (e) => {
     updateLocation((ctx) => ({ ...ctx, locale: e.target.value as Locales }))
   }
+
+  const { data, status } = useSession()
+
   return (
     <header className={cn('SettingsMenu')}>
+      <div style={{ marginRight: 'auto', display: 'flex', height: '100%', width: rem(35), padding: '5px 0', gap: '5px' }}>
+        {
+          status === 'loading' ? <Loading /> : status === 'authenticated' ? (
+            <>
+              {data?.user?.image && (<Image src={data.user.image} alt="me" width={50} height={50} />)}
+              {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+              {/* @ts-expect-error */}
+              <CommonText style={{ width: '100px', 'text-wrap': 'nowrap' }} fs="12">
+                {data?.user?.name}
+              </CommonText>
+            </>
+          ) : undefined
+        }
+      </div>
       <CommonSelect
         className={cn('SelectTheme')}
         width="auto"
@@ -47,6 +70,11 @@ export function SettingsMenu() {
           <option key={locale} value={locale}>{locale}</option>
         ))}
       </CommonSelect>
+      {status === 'authenticated' && (
+        <CommonButton onClick={() => signOut()} size="xs">
+          Выйти
+        </CommonButton>
+      )}
     </header>
   )
 }

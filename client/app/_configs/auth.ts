@@ -1,5 +1,7 @@
 import type { Account, AuthOptions, Profile } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import { cookies } from 'next/headers'
+import { CookieType } from '../types/cookie'
 
 interface ExtendedProfile extends Profile {
   email_verified?: boolean
@@ -40,8 +42,11 @@ class AuthManager {
       })
 
       if (response.ok) {
+        const tokenData = await response.json()
+
         this._isAuthenticated = true
-        this._userData = await response.json()
+        this._userData = tokenData
+        cookies().set(CookieType.USER_ID, tokenData.id, { path: '/' })
         return true
       }
       this._isAuthenticated = false

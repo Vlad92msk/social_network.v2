@@ -23,6 +23,7 @@ export default async function RootLayout({ children }) {
   const locale = getServerLocale()
   const messages = await getMessages(locale)
 
+
   return (
     <Translation contextProps={{ locale, messages }}>
       <ThemeService contextProps={{ theme: 'default' }}>

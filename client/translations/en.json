@@ -12,6 +12,8 @@
     "settings": "Setting"
   },
   "Auth": {
-    "google": "Google"
+    "google": "Google",
+    "description": "Welcome! This social network is my educational project. I work on it in my free time, so the functionality is developing slowly.",
+    "enterBy": "Enter by"
   }
 }
