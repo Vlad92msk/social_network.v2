@@ -2,16 +2,16 @@
 import { MyMiddleware } from './utils'
 import { CookieType } from '../app/types/cookie'
 
-export const authMiddleware: MyMiddleware = async (props) => {
-  const { req, currentUrl } = props
+export const authMiddleware: MyMiddleware = (props) => {
+  const { req, changedUrl } = props
   const token = req.cookies.get(CookieType.NEXT_SESSION_TOKEN)?.value
   const userIdInCookie = req.cookies.get(CookieType.USER_ID)?.value
 
-  const urlSegments = currentUrl.split('/')
+  const urlSegments = changedUrl.split('/')
   const [, localeInUrl, userIdInURL] = urlSegments
 
   // Если пользователь не авторизован и не находится на странице входа, делаем редирект на страницу входа
-  if (!token && !currentUrl.endsWith('/signin')) {
+  if (!token && !changedUrl.endsWith('/signin')) {
     const redirectUrl = `/${localeInUrl}/signin/` // Используем локаль из текущего URL
 
     return {
@@ -20,14 +20,14 @@ export const authMiddleware: MyMiddleware = async (props) => {
         // Сохранение текущего URL для возможного редиректа после аутентификации
         {
           name: CookieType.NEXT_BACKURL_FROM_UNAUTH,
-          value: currentUrl,
+          value: changedUrl,
           maxAge: 60 * 60 * 24 * 30, // 30 дней
           path: '/',
           httpOnly: true,
         },
         {
           name: CookieType.USER_ID,
-          value: currentUrl,
+          value: changedUrl,
           maxAge: -1,
           path: '/',
           httpOnly: true,
@@ -56,7 +56,7 @@ export const authMiddleware: MyMiddleware = async (props) => {
   // Если пользователь авторизован, очищаем cookie с сохранённым URL
   if (token) {
     return {
-      url: currentUrl,
+      url: changedUrl,
       cookies: [
         {
           name: CookieType.NEXT_BACKURL_FROM_UNAUTH,
@@ -69,5 +69,5 @@ export const authMiddleware: MyMiddleware = async (props) => {
     }
   }
 
-  return { url: currentUrl, cookies: [] }
+  return { url: changedUrl, cookies: [] }
 }

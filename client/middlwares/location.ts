@@ -1,17 +1,18 @@
 // location.ts
 import { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 import { MyMiddleware } from './utils'
+import { CookieType } from '../app/types/cookie'
 
 // Определяем поддерживаемые локали
 export type Locales = 'en' | 'ru' | 'fr';
 export const LOCALES: Locales[] = ['en', 'ru', 'fr']
 export const DEFAULT_LOCALE: Locales = 'ru'
 
-export const locationMiddleware: MyMiddleware = async (props) => {
-  const { req, currentUrl } = props
-  const urlSegments = currentUrl.split('/')
+export const locationMiddleware: MyMiddleware = (props) => {
+  const { req, changedUrl } = props
+  const urlSegments = changedUrl.split('/')
 
-  const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value as Locales
+  const cookieLocale = req.cookies.get(CookieType.NEXT_LOCALE)?.value as Locales
   const localeInUrl = urlSegments[1] as Locales
 
   const isCookieLocaleCorrect = LOCALES.includes(cookieLocale)
@@ -28,7 +29,7 @@ export const locationMiddleware: MyMiddleware = async (props) => {
   }
 
   const newCookieLocale: Partial<ResponseCookie> = {
-    name: 'NEXT_LOCALE',
+    name: CookieType.NEXT_LOCALE,
     value: effectiveLocale,
     maxAge: 60 * 60 * 24 * 30,
     path: '/',
@@ -36,19 +37,20 @@ export const locationMiddleware: MyMiddleware = async (props) => {
 
   // Если в URL уже есть корректная локаль, проверяем необходимость обновления куки
   if (isLocaleInUrlCorrect) {
+
     return {
-      url: currentUrl,
+      url: changedUrl,
       cookies: cookieLocale !== effectiveLocale ? [newCookieLocale] : [],
     }
   }
 
   // Замена сегмента локали в URL, если в URL нет корректной локали
-  let newPath = currentUrl
+  let newPath = changedUrl
   if (!isLocaleInUrlCorrect) {
     // Если URL начинается непосредственно с неверной локали или без локали
     if (localeInUrl && !isCookieLocaleCorrect) {
       // Нужно заменить или добавить локаль в начало URL
-      newPath = `/${effectiveLocale}${currentUrl.startsWith('/') ? '' : '/'}${currentUrl}`
+      newPath = `/${effectiveLocale}${changedUrl.startsWith('/') ? '' : '/'}${changedUrl}`
     } else {
       // Добавление локали, если в URL вообще не было локали
       urlSegments[1] = effectiveLocale

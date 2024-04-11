@@ -10,30 +10,30 @@ export interface MyMiddlewareResponse {
 
 export interface MyMiddlewareProps {
   req: NextRequest
-  currentUrl: string
-  options: any
+  changedUrl: string
+  options: unknown
 }
 
-export type MyMiddleware = (props: MyMiddlewareProps) => Promise<MyMiddlewareResponse>
+export type MyMiddleware = (props: MyMiddlewareProps) => MyMiddlewareResponse
 
 export async function runMiddlewares(
   req: NextRequest,
   middlewares: Array<MyMiddleware>,
-  options?: any,
+  options?: unknown,
 ) {
   let currentUrl = req.nextUrl.pathname
   const responseCookies: MyMiddlewareResponse['cookies'] = []
+  let newURL: string | undefined
 
-  // eslint-disable-next-line no-restricted-syntax
-  for (const middleware of middlewares) {
-    // eslint-disable-next-line no-await-in-loop
-    const result: MyMiddlewareResponse = await middleware({ req, currentUrl, options })
+  middlewares.forEach((middleware) => {
+    const result: MyMiddlewareResponse = middleware({ req, changedUrl: newURL || req.nextUrl.pathname, options })
+    newURL = result.url
     currentUrl = result.url
 
     if (result.cookies) {
       responseCookies.push(...result.cookies)
     }
-  }
+  })
 
   const response = currentUrl !== req.nextUrl.pathname ? NextResponse.redirect(new URL(currentUrl, req.url)) : NextResponse.next()
 

@@ -18,10 +18,15 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    flex-direction: column;
   }
+
+  &-EnterText {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+  }
+
   &-EnterButtons {
-    width: 100%;
     display: flex;
     justify-content: center;
     padding: rem(10);

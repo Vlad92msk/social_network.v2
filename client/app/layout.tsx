@@ -1,14 +1,13 @@
-import { Metadata } from 'next'
 import { ChakraUI } from '@providers/chakraUI/ChakraUI'
 import { Session } from '@providers/session/Session'
 import { ThemeService } from '@providers/theme'
 import { Translation } from '@providers/translation'
 import { Body } from '@ui/components/Body'
-import { HeaderMenu } from '@ui/components/HeaderMenu'
 import { Html } from '@ui/components/Html'
 import './_ui/styles/_index.scss'
 import { getMessages } from '@utils/others'
 import { getServerLocale, getServerTranslate } from '@utils/server'
+import { Metadata } from 'next'
 
 export async function generateMetadata() {
   const t = await getServerTranslate()
@@ -20,7 +19,7 @@ export async function generateMetadata() {
 }
 
 export default async function RootLayout({ children }) {
-  const locale = getServerLocale()
+  const locale = await getServerLocale()
   const messages = await getMessages(locale)
 
   return (
@@ -30,7 +29,6 @@ export default async function RootLayout({ children }) {
           <Session>
             <Body>
               <ChakraUI>
-                <HeaderMenu />
                 {children}
               </ChakraUI>
             </Body>

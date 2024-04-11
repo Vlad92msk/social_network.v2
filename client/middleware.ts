@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
 import { authMiddleware } from './middlwares/auth'
 import { locationMiddleware } from './middlwares/location'
 import { runMiddlewares } from './middlwares/utils'

@@ -1,7 +1,7 @@
 'use client'
 
-import { useLocale } from '@hooks/useLocale'
 import { PropsWithChildren } from 'react'
+import { useLocale } from '@hooks/useLocale'
 
 export function Html(props: PropsWithChildren) {
   const { children } = props
