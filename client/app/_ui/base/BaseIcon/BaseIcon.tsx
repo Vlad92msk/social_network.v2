@@ -1,4 +1,3 @@
-import React from 'react'
 import InlineSVG from 'react-inlinesvg'
 import { Props } from 'react-inlinesvg/src'
 import { IconName } from './icon.model'

@@ -17,7 +17,6 @@ export interface BaseButtonProps extends Pick<
   | 'rightIcon'
   | 'onClick'
   | 'disabled'
-  | 'size'
   | 'as'
 > {
 

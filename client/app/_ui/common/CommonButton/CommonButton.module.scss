@@ -1,11 +1,5 @@
 @import "@ui/styles/for_components";
 
 .CommonButton {
-  @include color-theme('default') {
-    background: orange;
-  }
-
-  @include color-theme('light') {
-    background: pink;
-  }
+  font-weight: $text-weight--light;
 }

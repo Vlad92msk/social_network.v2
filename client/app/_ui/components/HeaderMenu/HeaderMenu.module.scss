@@ -1,6 +1,7 @@
 @import "@ui/styles/for_components";
 
 .HeaderMenu {
+  grid-area: root-menu-settings;
   display: flex;
   gap: rem(10);
   align-items: center;
@@ -14,21 +15,4 @@
     width: fit-content;
   }
 
-  &-UserInfo {
-    margin-right: auto;
-    display: flex;
-    height: 100%;
-    gap: rem(5);
-    align-items: center;
-  }
-
-  &-UserAvatarContainer {
-    height: 100%;
-    display: block;
-    border-radius: rem(3);
-    overflow: hidden;
-  }
-  &-UserName {
-    text-wrap: none;
-  }
 }

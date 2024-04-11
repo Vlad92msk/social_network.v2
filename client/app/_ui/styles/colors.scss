@@ -73,7 +73,10 @@
   --Color-Border--variant-1--theme-default: var(--Palette--DarkSlate--70--opacity-1);
   --Color-Border--variant-2--theme-default: var(--Palette--LightGrey--100--opacity-1);
   --Color-Border--variant-3--theme-default: var(--Palette--LightGrey--90--opacity-47);
-
+  //Для темы по умолчанию
+  --Color-Border--variant-1--theme-light: var(--Palette--DarkSlate--70--opacity-1);
+  --Color-Border--variant-2--theme-light: var(--Palette--LightGrey--100--opacity-1);
+  --Color-Border--variant-3--theme-light: var(--Palette--LightGrey--90--opacity-47);
 
   //5. Статусы
   //Для темы по умолчанию

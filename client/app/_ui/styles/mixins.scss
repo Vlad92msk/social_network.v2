@@ -3,7 +3,7 @@
 
 
 @mixin color-theme($theme-name) {
-  [data-theme='#{$theme-name}'] & {
+  [data-project-theme='#{$theme-name}'] & {
     @content
   }
 }

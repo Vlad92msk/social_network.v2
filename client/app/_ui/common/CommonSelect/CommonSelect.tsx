@@ -1,5 +1,5 @@
-import { classNames, makeCn } from '@utils/others'
 import { BaseSelect, BaseSelectProps } from '@ui/base/BaseSelect'
+import { classNames, makeCn } from '@utils/others'
 import style from './CommonSelect.module.scss'
 
 const cn = makeCn('CommonSelect', style)

@@ -16,13 +16,22 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.svg (favicon file)
+    /**
+     * Исключаем API маршруты
+      * '/((?!api).*)'
+      *
+      *  Исключаем статические файлы Next.js
+      * '/((?!_next/static).*)'
+      *
+      * Исключаем оптимизированные изображения Next.js
+      * '/((?!_next/image).*)'
+      *
+      * Исключаем обращения к папке images
+      * '/((?!images).*)'
+      *
+      * Исключаем обращения к папке icons
+      * '/((?!icons).*)'
      */
-    '/((?!api|_next/static|_next/image|favicon|images).*)',
+    '/((?!api|_next/static|_next/image|images|icons|favicon/*).*)',
   ],
 }
