@@ -1,5 +1,41 @@
 @import "@ui/styles/for_components";
 
 .SecondMenu {
+  width: 100%;
+  padding: $paddings--small;
+  gap: rem(5);
+  display: flex;
 
+  &--variant {
+    &_1 {
+      flex-direction: column;
+    }
+
+    &_2 {
+      flex-direction: column-reverse;
+    }
+  }
+
+  &-MainRow {
+    display: flex;
+    gap: rem(10);
+  }
+
+  &-SecondRow {
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+  }
+
+  &-ButtonChange {
+    width: fit-content;
+    height: rem(20);
+    border-radius: $border-radius--super-small;
+    padding: $paddings--super-small;
+  }
+
+  &-Icon {
+    width: rem(20);
+    height: rem(20);
+  }
 }

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { GroupMemo } from '@ui/base/GroupMemo'
+import { useMemo, useState } from 'react'
 import { CommonButton } from '@ui/common/CommonButton'
 import { cn } from './cn'
 import {
@@ -15,20 +14,22 @@ export function MainMenu() {
 
   return (
     <div className={cn({ status })}>
-      <GroupMemo deps={[]}>
-        <UserInfo />
-        <div className={cn('NavigationButtonsGroup')}>
-          <GoToProfile />
-          <ButtonGoToPublishes />
-          <GoToMusic />
-          <GoToVideos />
-        </div>
-        <div className={cn('SettingsButtonsGroup')}>
-          <SelectTheme />
-          <SelectLocale />
-          <ButtonLogOut />
-        </div>
-      </GroupMemo>
+      {useMemo(() => (
+        <>
+          <UserInfo />
+          <div className={cn('NavigationButtonsGroup')}>
+            <GoToProfile />
+            <ButtonGoToPublishes />
+            <GoToMusic />
+            <GoToVideos />
+          </div>
+          <div className={cn('SettingsButtonsGroup')}>
+            <SelectTheme />
+            <SelectLocale />
+            <ButtonLogOut />
+          </div>
+        </>
+      ), [])}
       <CommonButton
         className={cn('ToggleMenu')}
         onClick={() => setStatus((prev) => (prev === 'open' ? 'close' : 'open'))}
