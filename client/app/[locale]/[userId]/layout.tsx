@@ -23,10 +23,12 @@ interface UserPageProps {
     userId: string
   }
   searchParams: {}
+  messenger: React.ReactNode
+  children: React.ReactNode
 }
 
 export default async function UserPage(props: UserPageProps) {
-  const { params: { userId } } = props
+  const { params: { userId }, messenger, children } = props
   const { layoutVariant } = await getSettings(userId)
 
   return (
@@ -35,7 +37,12 @@ export default async function UserPage(props: UserPageProps) {
       areas={{
         mainMenu: <MainMenu />,
         secondMenu: <SecondMenu layoutVariant={layoutVariant} />,
-        contentArea: <ContentArea />,
+        content: (
+          <ContentArea>
+            {children}
+            {messenger}
+          </ContentArea>
+        ),
       }}
     />
   )

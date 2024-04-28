@@ -3,11 +3,12 @@ import style from './ContentArea.module.scss'
 
 const cn = makeCn('ContentArea', style)
 
+export interface ContentAreaProps {
+  children: React.ReactNode
+}
 
-export interface ContentAreaProps {}
+export function ContentArea(props: ContentAreaProps) {
+  const { children } = props
 
-export const ContentArea = (props: ContentAreaProps) => {
-
-
-  return (<div className={cn()}>ContentArea</div>)
+  return (<div className={cn()}>{children}</div>)
 }

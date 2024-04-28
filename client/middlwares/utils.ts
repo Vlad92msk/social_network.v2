@@ -35,6 +35,11 @@ export async function runMiddlewares(
     }
   })
 
+  const [, locale, userId, contentType] = currentUrl.split('/')
+  if (!contentType) {
+    currentUrl += 'profile'
+  }
+
   const response = currentUrl !== req.nextUrl.pathname ? NextResponse.redirect(new URL(currentUrl, req.url)) : NextResponse.next()
 
   responseCookies.forEach((newCookie) => {
