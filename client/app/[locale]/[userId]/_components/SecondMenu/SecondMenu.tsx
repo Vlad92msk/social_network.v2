@@ -1,7 +1,7 @@
-import { BaseIcon } from '@ui/base/BaseIcon'
-import { CommonButton } from '@ui/common/CommonButton'
-import { CommonText, TextPropsFontSize } from '@ui/common/CommonText/CommonText'
 import { makeCn } from '@utils/others'
+import { IconBase } from 'app/_ui/base/IconBase'
+import { ButtonCommon } from 'app/_ui/common/ButtonCommon'
+import { TextCommon, TextPropsFontSize } from 'app/_ui/common/TextCommon'
 import style from './SecondMenu.module.scss'
 
 const cn = makeCn('SecondMenu', style)
@@ -17,22 +17,22 @@ export function SecondMenu(props: SecondMenuProps) {
   return (
     <div className={cn({ variant: layoutVariant })}>
       <div className={cn('MainRow')}>
-        <CommonButton className={cn('ButtonChange')}>
-          <CommonText fs={buttonFontSize}>
+        <ButtonCommon className={cn('ButtonChange')}>
+          <TextCommon fs={buttonFontSize}>
             Моя музыка
-          </CommonText>
-        </CommonButton>
-        <CommonButton className={cn('ButtonChange')}>
-          <CommonText fs={buttonFontSize}>
+          </TextCommon>
+        </ButtonCommon>
+        <ButtonCommon className={cn('ButtonChange')}>
+          <TextCommon fs={buttonFontSize}>
             Мои видео
-          </CommonText>
-        </CommonButton>
+          </TextCommon>
+        </ButtonCommon>
       </div>
       <div className={cn('SecondRow')}>
-        <BaseIcon className={cn('Icon')} name="git" />
-        <BaseIcon className={cn('Icon')} name="git" />
-        <BaseIcon className={cn('Icon')} name="git" />
-        <CommonText fs="8">Проигрываемая дорожка</CommonText>
+        <IconBase className={cn('Icon')} name="git" />
+        <IconBase className={cn('Icon')} name="git" />
+        <IconBase className={cn('Icon')} name="git" />
+        <TextCommon fs="8">Проигрываемая дорожка</TextCommon>
       </div>
     </div>
   )

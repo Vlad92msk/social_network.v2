@@ -1,2 +1,2 @@
 export * from './icon.model'
-export * from './BaseIcon'
+export * from './IconBase'

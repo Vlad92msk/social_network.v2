@@ -1,17 +1,17 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { CommonButton } from '@ui/common/CommonButton'
+import { ButtonCommon } from 'app/_ui/common/ButtonCommon'
 import { useTranslate } from '../../../_hooks'
 
 export function GoogleSignIn() {
   const { translate, isLoading } = useTranslate()
   return (
-    <CommonButton
+    <ButtonCommon
       onClick={async () => await signIn('google')}
       isLoading={isLoading}
     >
       {translate?.('Auth.google')}
-    </CommonButton>
+    </ButtonCommon>
   )
 }

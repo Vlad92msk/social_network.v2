@@ -1,11 +1,11 @@
 import { Button as ChakraButton, ButtonProps as ChakraButtonProps } from '@chakra-ui/react'
 import { classNames, makeCn } from '@utils/others'
 
-import style from './BaseButton.module.scss'
+import style from './ButtonBase.module.scss'
 
-const cn = makeCn('BaseButton', style)
+const cn = makeCn('ButtonBase', style)
 
-export interface BaseButtonProps extends Pick<
+export interface ButtonBaseProps extends Pick<
   ChakraButtonProps,
   'className'
   | 'children'
@@ -22,7 +22,7 @@ export interface BaseButtonProps extends Pick<
 
 }
 
-export function BaseButton(props: BaseButtonProps) {
+export function ButtonBase(props: ButtonBaseProps) {
   const { className, ...rest } = props
   return <ChakraButton className={classNames(cn(), className)} {...rest} />
 }

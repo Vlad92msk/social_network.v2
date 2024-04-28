@@ -1,10 +1,10 @@
-import { BaseIcon } from '@ui/base/BaseIcon'
+import { IconBase } from 'app/_ui/base/IconBase'
 import { usePathname, useRouter } from 'next/navigation'
 import { ChangeEventHandler } from 'react'
 import { useLocale } from '@hooks/useLocale'
 import { Locales, LOCALES } from '@middlewares/location'
 import { useTranslateUpdate } from '@providers/translation'
-import { CommonSelect } from '@ui/common/CommonSelect'
+import { SelectCommon } from 'app/_ui/common/SelectCommon'
 import { cn } from '../cn'
 
 export function SelectLocale() {
@@ -20,18 +20,18 @@ export function SelectLocale() {
   }
 
   return (
-    <CommonSelect
+    <SelectCommon
       className={cn('SelectLocation')}
       width="auto"
       size="xs"
       placeholder="Выбрать язык"
       defaultValue={currentLocale}
       onChange={handleChangeLocation}
-      icon={<BaseIcon name="git" />}
+      icon={<IconBase name="git" />}
     >
       {LOCALES.map((locale) => (
         <option key={locale} value={locale}>{locale}</option>
       ))}
-    </CommonSelect>
+    </SelectCommon>
   )
 }

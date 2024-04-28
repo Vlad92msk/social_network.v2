@@ -1,11 +1,11 @@
 import { Select as ChakraSelect, SelectProps as ChakraSelectProps } from '@chakra-ui/react'
 import { classNames, makeCn } from '@utils/others'
 
-import style from './BaseSelect.module.scss'
+import style from './SelectBase.module.scss'
 
 const cn = makeCn('Select', style)
 
-export interface BaseSelectProps extends Pick<
+export interface SelectBaseProps extends Pick<
   ChakraSelectProps,
   'className'
   | 'children'
@@ -23,7 +23,7 @@ export interface BaseSelectProps extends Pick<
 
 }
 
-export function BaseSelect(props: BaseSelectProps) {
+export function SelectBase(props: SelectBaseProps) {
   const { className, ...rest } = props
   return <ChakraSelect className={classNames(cn(), className)} {...rest} />
 }

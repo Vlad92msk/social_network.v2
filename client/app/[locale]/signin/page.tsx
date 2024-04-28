@@ -1,4 +1,4 @@
-import { CommonText } from '@ui/common/CommonText/CommonText'
+import { TextCommon } from '@ui/common/TextCommon/TextCommon'
 import { HeaderMenu } from '@ui/components/HeaderMenu'
 import { makeCn } from '@utils/others'
 import { getServerTranslate } from '@utils/server'
@@ -15,7 +15,7 @@ export default async function SignInPage() {
       <HeaderMenu />
       <main className={cn()}>
         <section className={cn('Salutation')}>
-          <CommonText
+          <TextCommon
             fs={{
               xl: '44',
               xs: '38',
@@ -30,12 +30,12 @@ export default async function SignInPage() {
                 {index < array.length - 1 && <br />}
               </>
             ))}
-          </CommonText>
+          </TextCommon>
         </section>
         <section className={cn('Enter')}>
-          <CommonText className={cn('EnterText')} fs="14">
+          <TextCommon className={cn('EnterText')} fs="14">
             {t('Auth.enterBy')}
-          </CommonText>
+          </TextCommon>
           <div className={cn('EnterButtons')}>
             <GoogleSignIn />
           </div>
