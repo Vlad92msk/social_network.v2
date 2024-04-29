@@ -1,0 +1,50 @@
+@use 'sass:list' as list;
+@import "@ui/styles/for_components";
+
+
+.Input {
+  &-Text {
+    border: $border-size--super-small solid var(--Color-Border--variant-3--theme-default);
+    background: transparent;
+    outline: none;
+    max-width: 100%;
+    padding: rem(3) rem(5);
+    transition: font-size .5s;
+
+    &::placeholder {
+      padding: rem(3) rem(5);
+    }
+
+
+    &:disabled {
+      //background: green;
+    }
+
+    &:focus {
+      outline: none;
+      font-size: rem(list.nth($text--12, 1));
+      width: 100%;
+      transition: font-size .5s;
+      //background: yellow;
+    }
+  }
+
+  &-Group {
+    display: grid;
+    align-items: center;
+    max-width: 100%;
+    width: 100%;
+    grid-template:
+        'left center right' auto / auto 1fr auto;
+
+    &LeftElement {
+      grid-area: left;
+    }
+    &RightElement {
+      grid-area: right;
+    }
+    &Center {
+      grid-area: center;
+    }
+  }
+}

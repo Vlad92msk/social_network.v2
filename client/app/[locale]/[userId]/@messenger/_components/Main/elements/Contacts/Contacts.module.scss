@@ -1,0 +1,61 @@
+@import "@ui/styles/for_components";
+@import "../../../variables";
+
+
+.Contacts {
+  $this: &;
+
+  gap: rem(10);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  @include hideScrollbar();
+  border-bottom-left-radius: calc(#{$messenger--open--border-radius} / 1.5);
+
+  &-Contact {
+    display: flex;
+    gap: rem(5);
+
+    &ImgContainer {
+      overflow: hidden;
+      border-radius: $border-radius--small;
+      width: $messenger--contacts-contact--photo-size;
+      height: $messenger--contacts-contact--photo-size;
+      min-width: $messenger--contacts-contact--photo-size;
+      min-height: $messenger--contacts-contact--photo-size;
+      aspect-ratio: 1;
+    }
+    &ContentWrapper {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-width: 100%;
+
+      :is(#{$this}--status_close) & {
+        display: none;
+      }
+
+    }
+    &Name {
+      width: 100%;
+    }
+    &LastContactName {
+      width: 100%;
+    }
+    &LastMessage {
+      width: 100%;
+      position: relative;
+
+      &:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: rem(1);
+        background: var(--Color-Border--variant-3--theme-default);
+      }
+    }
+  }
+}

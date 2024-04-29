@@ -1,4 +1,5 @@
 import { Locales } from '@middlewares/location'
+import { MessengerMain as MessengerComponent } from './_components'
 
 interface MessengerProps {
   params: {
@@ -8,7 +9,7 @@ interface MessengerProps {
   searchParams: {}
 }
 
-export default function Messenger (props: MessengerProps){
+export default function Messenger(props: MessengerProps){
 
-  return <div>DefaultMEssenger</div>
+  return <MessengerComponent />
 }

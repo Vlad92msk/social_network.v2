@@ -1,0 +1,13 @@
+@import "@ui/styles/for_components";
+
+
+
+.SwitcherGroups {
+  display: flex;
+  gap: rem(5);
+
+  &-Button {
+    flex: 1;
+    max-height: rem(30);
+  }
+}

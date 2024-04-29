@@ -1,0 +1,15 @@
+@import "@ui/styles/for_components";
+
+
+
+.Search {
+  max-width: 100%;
+  display: flex;
+  gap: rem(10);
+
+  &-Input {
+    width: 100%;
+    border: 0;
+    border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default);
+  }
+}

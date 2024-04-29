@@ -3,6 +3,14 @@
 
 
 .TextCommon {
+
+  &--textElipsis {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
   @include media-content('font-size') using ($bp-name, $bp-size) {
     @each $name, $sizes in $text-sizes {
       $size: list.nth($sizes, 1);

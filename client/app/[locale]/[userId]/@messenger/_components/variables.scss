@@ -1,0 +1,14 @@
+@import "@ui/styles/for_components";
+
+$messenger--border-radius: $border-radius--extra-large;
+
+$messenger--open--border-radius: $border-radius--extra-large;
+$messenger--close--border-radius: $border-radius--medium;
+
+$messenger--open--paddings--main: $paddings--medium;
+$messenger--close--paddings--main: $border-radius--small;
+
+$messenger--contacts-contact--photo-size: rem(50);
+
+$messenger--max-width: rem(250);
+$messenger--min-width: calc($messenger--contacts-contact--photo-size + $messenger--close--border-radius);

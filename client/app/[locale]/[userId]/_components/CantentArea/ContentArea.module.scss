@@ -1,5 +1,7 @@
 @import "@ui/styles/for_components";
 
 .ContentArea {
-  padding: $paddings--small;
+  flex: 1 1;
+  display: grid;
+  grid-template: 'content messenger' 100% / 1fr auto;
 }

@@ -34,6 +34,7 @@ export interface TextCommonProps {
   weight?: TextPropsFontWeight
   uppercase?: boolean
   nowrap?: boolean
+  textElipsis?: boolean
   textAlign?: CSSProperties['textAlign']
 }
 
@@ -41,7 +42,7 @@ const cn = makeCn('TextCommon', styles)
 
 export function TextCommon(props: PropsWithChildren<TextCommonProps>) {
   const {
-    className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, as: As = 'span', children,
+    className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, textElipsis, as: As = 'span', children, ...rest
   } = props
 
   return (
@@ -55,11 +56,13 @@ export function TextCommon(props: PropsWithChildren<TextCommonProps>) {
       }}
       className={classNames(
         cn({
+          textElipsis,
           ...createBreakPoint('font-size', fs),
           ...createBreakPoint('font-weight', weight),
         }),
         className,
       )}
+      {...rest}
     >
       {children}
     </As>

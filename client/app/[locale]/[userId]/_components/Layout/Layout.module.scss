@@ -3,6 +3,7 @@
 .Layout {
   position: relative;
   height: 100dvh;
+  max-height: 100dvh;
   display: grid;
 
   &--variant {
@@ -31,5 +32,6 @@
   &-ContentArea {
     grid-area: content-area;
     display: flex;
+    overflow: hidden;
   }
 }
