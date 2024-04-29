@@ -36,11 +36,11 @@ export async function runMiddlewares(
   })
 
   const [, locale, userId, contentType] = currentUrl.split('/')
-  if (!Boolean(contentType)) {
+  if (!Boolean(contentType) && Boolean(userId) && Boolean(locale)) {
     currentUrl += 'profile'
   }
 
-  console.log('currentUrl', contentType)
+  // console.log('currentUrl', contentType)
 
   const response = currentUrl !== req.nextUrl.pathname ? NextResponse.redirect(new URL(currentUrl, req.url)) : NextResponse.next()
 

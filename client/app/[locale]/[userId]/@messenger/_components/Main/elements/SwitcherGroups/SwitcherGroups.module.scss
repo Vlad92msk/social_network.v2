@@ -9,5 +9,9 @@
   &-Button {
     flex: 1;
     max-height: rem(30);
+
+    &--active {
+      background: lightseagreen;
+    }
   }
 }
