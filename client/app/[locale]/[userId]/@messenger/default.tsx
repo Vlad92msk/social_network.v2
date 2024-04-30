@@ -1,9 +1,7 @@
 import { Locales } from '@middlewares/location'
 import { MessengerMain as MessengerComponent } from './_components'
 import { getContactsQuery, getGroupsQuery } from './_query/communicateList'
-import { CommunicateListProvider } from './providers/communicateList.provider'
-
-
+import { CommunicateListProvider } from './providers/communicateList'
 
 interface MessengerProps {
   params: {

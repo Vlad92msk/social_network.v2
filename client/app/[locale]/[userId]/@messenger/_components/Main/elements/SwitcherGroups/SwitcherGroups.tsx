@@ -1,21 +1,20 @@
 import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { TextCommon } from '@ui/common/TextCommon'
 import { classNames, makeCn } from '@utils/others'
-import { useCommunicateListStore } from '../../../../providers/communicateList.provider'
-import { SelectCommunicateType } from '../../../../store/communicateList.store'
 import style from './SwitcherGroups.module.scss'
+import { SelectCommunicateType, useCommunicateListStore } from '../../../../providers/communicateList'
 
 export const cn = makeCn('SwitcherGroups', style)
 
 interface SwitcherGroupsProps {
   className?: string
-  status: 'open' | 'close'
 }
 
 export function SwitcherGroups(props: SwitcherGroupsProps) {
-  const { className, status } = props
+  const { className } = props
   const selectType = useCommunicateListStore((state) => state.selectType)
   const set = useCommunicateListStore((state) => state.setSelectType)
+  const status = useCommunicateListStore((state) => state.drawerStatus)
 
   return (
     <div className={classNames(cn(), className)}>

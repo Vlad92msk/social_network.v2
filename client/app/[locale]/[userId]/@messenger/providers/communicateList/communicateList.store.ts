@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { GetResultFromPromise } from '@utils/tsUtils'
-import { getContactsQuery, getGroupsQuery } from '../_query/communicateList'
+import { getContactsQuery, getGroupsQuery } from '../../_query/communicateList'
 
 /**
  * Отображаемый способ коммуникации - контакты/группы
@@ -20,7 +20,8 @@ interface CommunicateState {
   contacts: CommunicateContacts
   groups: CommunicateGroups
   selectType: SelectCommunicateType
-  filter: string;
+  filter: string
+  drawerStatus: 'open' | 'close'
 }
 export type CommunicateInitial = Partial<CommunicateState>
 
@@ -30,7 +31,7 @@ export type CommunicateInitial = Partial<CommunicateState>
 interface CommunicateSetters {
   setSelectType: (select: SelectCommunicateType) => void
   setFilter: (s: string) => void;
-  filteredContacts: () => CommunicateContacts | CommunicateGroups
+  setDrawerStatus: (newStatus: 'open' | 'close') => void;
 }
 
 /**
@@ -45,10 +46,11 @@ interface CommunicateGetters {
  */
 export type MessengerCommunicateSlice = CommunicateState & CommunicateSetters & CommunicateGetters
 
-const defaultInitState = {
+const defaultInitState: CommunicateState = {
   contacts: [],
   groups: [],
   filter: '',
+  drawerStatus: 'open',
   selectType: SelectCommunicateType.CONTACTS,
 }
 export const createContactsStore = (
@@ -58,6 +60,7 @@ export const createContactsStore = (
   ...initState,
   setSelectType: (select: SelectCommunicateType) => set({ selectType: select }),
   setFilter: (newFilter) => set({ filter: newFilter }),
+  setDrawerStatus: (newStatus) => set({ drawerStatus: newStatus }),
   filteredContacts: () => {
     const { filter, contacts, groups, selectType } = get()
 

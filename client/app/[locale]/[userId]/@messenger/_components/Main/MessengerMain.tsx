@@ -1,27 +1,28 @@
 'use client'
 
-import { useState } from 'react'
 import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { cn } from './cn'
 import { Contacts, Search, SwitcherGroups } from './elements'
+import { useCommunicateListStore } from '../../providers/communicateList'
 
 interface MessengerProps {}
 
 export function MessengerMain(props: MessengerProps) {
   const { } = props
 
-  const [status, setStatus] = useState<'open' | 'close'>('open')
+  const status = useCommunicateListStore((state) => state.drawerStatus)
+  const setStatus = useCommunicateListStore((state) => state.setDrawerStatus)
 
   return (
     <div className={cn({ status })}>
 
-      <SwitcherGroups className={cn('SwitcherGroups')} status={status} />
+      <SwitcherGroups className={cn('SwitcherGroups')} />
       <Search className={cn('Search')} />
-      <Contacts className={cn('Contacts')} status={status} />
+      <Contacts className={cn('Contacts')} />
 
       <ButtonCommon
         className={cn('ToggleMenu')}
-        onClick={() => setStatus((prev) => (prev === 'open' ? 'close' : 'open'))}
+        onClick={() => setStatus(status === 'open' ? 'close' : 'open')}
         size="es"
       />
     </div>

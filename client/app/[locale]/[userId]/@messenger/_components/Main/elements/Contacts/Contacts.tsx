@@ -2,16 +2,16 @@ import { ImageCommon } from '@ui/common/ImageCommon'
 import { TextCommon } from '@ui/common/TextCommon'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
-import { useCommunicateListStore } from '../../../../providers/communicateList.provider'
+import { useCommunicateListStore } from '../../../../providers/communicateList'
 
 interface ContactsProps{
   className?: string;
-  status: 'open' | 'close'
 }
 
 export function Contacts(props: ContactsProps) {
-  const { className, status } = props
+  const { className } = props
   const filteredContacts = useCommunicateListStore((state) => state.filteredContacts())
+  const status = useCommunicateListStore((state) => state.drawerStatus)
 
   return (
     <div className={classNames(cn({ status }), className)}>

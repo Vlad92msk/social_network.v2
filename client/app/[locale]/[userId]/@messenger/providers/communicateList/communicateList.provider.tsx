@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useRef } from 'react'
 import { type StoreApi, useStore } from 'zustand'
-import { createContactsStore, MessengerCommunicateSlice } from '../store/communicateList.store'
+import { createContactsStore, MessengerCommunicateSlice } from './communicateList.store'
 
 const MessengerContactsContext = createContext<StoreApi<MessengerCommunicateSlice> | null>(null)
 
