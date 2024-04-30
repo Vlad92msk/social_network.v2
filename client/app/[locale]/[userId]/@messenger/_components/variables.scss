@@ -1,21 +1,50 @@
 @import "@ui/styles/for_components";
 
-$messenger--border-radius: $border-radius--extra-large;
 
-$messenger--open--border-radius: $border-radius--extra-large;
-$messenger--close--border-radius: $border-radius--medium;
-
-$messenger--open--paddings--main: $paddings--medium;
-$messenger--close--paddings--main: $border-radius--small;
-
-$messenger--contacts-contact--photo-size: rem(50);
-
-$messenger--max-width: rem(250);
-$messenger--min-width: calc($messenger--contacts-contact--photo-size + $messenger--close--border-radius);
-
-
+/**
+  * Общие отступы
+ */
 $messenger--padding--super-small: $paddings--super-small;
 $messenger--padding--small: $paddings--small;
 $messenger--padding--medium: $paddings--medium;
 $messenger--padding--large: $paddings--large;
 $messenger--padding--extra-large: $paddings--extra-large;
+
+
+/**
+  * Общие border-radius
+ */
+$messenger--border-radius--extra-large: $border-radius--extra-large;
+$messenger--border-radius--large: $border-radius--large;
+$messenger--border-radius--medium: $border-radius--medium;
+$messenger--border-radius--small: $border-radius--small;
+$messenger--border-radius--super-small: $border-radius--super-small;
+
+// ===== Компонент Communicate =====
+/**
+  * border-radius у компонента друзей/групп
+ */
+$messenger--open--border-radius: $border-radius--extra-large;
+$messenger--close--border-radius: $border-radius--medium;
+
+/**
+  * Отступы у компонента друзей/групп
+ */
+$messenger--open--paddings--main: $paddings--medium;
+$messenger--close--paddings--main: $border-radius--small;
+
+/**
+  * Размер иконки друзей/групп
+ */
+$messenger--contacts-contact--photo-size: rem(50);
+
+/**
+  * Ширина Списка друзей/групп
+ */
+$messenger--max-width: rem(250);
+$messenger--min-width: calc($messenger--contacts-contact--photo-size + $messenger--close--border-radius);
+
+
+// ===== Компонент Chats =====
+$messenger-chats--max-width: clamp(rem(400), 50vw,rem(800));
+$messenger-chats--min-width: rem(250);

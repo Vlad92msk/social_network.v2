@@ -1,4 +1,9 @@
 import { ReactNode } from 'react'
+import { classNames, makeCn } from '@utils/others'
+import style from './Messenger.module.scss'
+import { MessengerRootProvider } from '../_providers/root'
+
+export const cn = makeCn('Messenger', style)
 
 interface MessengerProps {
   className?: string;
@@ -10,9 +15,11 @@ export function Messenger(props: MessengerProps) {
   const { className, communicate, chat } = props
 
   return (
-    <div className={className}>
-      {communicate}
-      {chat}
-    </div>
+    <MessengerRootProvider>
+      <div className={classNames(cn(), className)}>
+        {communicate}
+        {chat}
+      </div>
+    </MessengerRootProvider>
   )
 }

@@ -21,7 +21,6 @@ interface CommunicateState {
   groups: CommunicateGroups
   selectType: SelectCommunicateType
   filter: string
-  drawerStatus: 'open' | 'close'
 }
 export type CommunicateInitial = Partial<CommunicateState>
 
@@ -31,7 +30,6 @@ export type CommunicateInitial = Partial<CommunicateState>
 interface CommunicateSetters {
   setSelectType: (select: SelectCommunicateType) => void
   setFilter: (s: string) => void;
-  setDrawerStatus: (newStatus: 'open' | 'close') => void;
 }
 
 /**
@@ -50,7 +48,6 @@ const defaultInitState: CommunicateState = {
   contacts: [],
   groups: [],
   filter: '',
-  drawerStatus: 'open',
   selectType: SelectCommunicateType.CONTACTS,
 }
 export const createContactsStore = (
@@ -60,7 +57,6 @@ export const createContactsStore = (
   ...initState,
   setSelectType: (select: SelectCommunicateType) => set({ selectType: select }),
   setFilter: (newFilter) => set({ filter: newFilter }),
-  setDrawerStatus: (newStatus) => set({ drawerStatus: newStatus }),
   filteredContacts: () => {
     const { filter, contacts, groups, selectType } = get()
 

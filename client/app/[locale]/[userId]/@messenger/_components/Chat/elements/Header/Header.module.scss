@@ -1,0 +1,43 @@
+@import "@ui/styles/for_components";
+@import "../../../variables";
+
+
+
+.Header {
+  &-ButtonCloseChat {
+    $size: rem(20);
+    max-width: $size;
+    width: $size;
+    height: $size;
+    min-width: $size;
+    padding: 0;
+  }
+
+  &-ContactInfo {
+    display: flex;
+    gap: rem(10);
+    align-items: center;
+  }
+
+  &-ImgContainer {
+    position: relative;
+    overflow: hidden;
+    border-radius: $messenger--border-radius--medium;
+  }
+  &-Info {
+    display: flex;
+    flex-direction: column;
+    gap: rem(5);
+  }
+  &-InfoName {
+    width: 100%;
+  }
+  &-OnlineStatus {
+    width: 100%;
+  }
+
+  &-CallButtons {
+    display: flex;
+    gap: rem(10);
+  }
+}

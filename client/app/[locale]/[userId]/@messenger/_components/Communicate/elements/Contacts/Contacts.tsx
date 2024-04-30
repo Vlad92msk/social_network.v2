@@ -4,6 +4,7 @@ import { TextCommon } from '@ui/common/TextCommon'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 import { useCommunicateListStore } from '../../../../_providers/communicateList'
+import { useRootStore } from '../../../../_providers/root'
 
 interface ContactsProps{
   className?: string;
@@ -12,7 +13,8 @@ interface ContactsProps{
 export function Contacts(props: ContactsProps) {
   const { className } = props
   const filteredContacts = useCommunicateListStore((state) => state.filteredContacts())
-  const status = useCommunicateListStore((state) => state.drawerStatus)
+  const status = useRootStore((state) => state.drawerStatus)
+  const setChatingPanelStatus = useRootStore((state) => state.setChatingPanelStatus)
 
   return (
     <div className={classNames(cn({ status }), className)}>
@@ -33,7 +35,11 @@ export function Contacts(props: ContactsProps) {
             <TextCommon className={cn('ContactLastMessage')} fs="12" textElipsis>{lastMessage}</TextCommon>
           </div>
           <div className={cn('ContactHoverActions')}>
-            <ButtonCommon>
+            <ButtonCommon onClick={() => {
+              console.log(`Открыл чат с пользователем:${id}`)
+              setChatingPanelStatus('open')
+            }}
+            >
               <TextCommon fs="12">Чат</TextCommon>
             </ButtonCommon>
             <ButtonCommon>

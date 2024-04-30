@@ -3,18 +3,19 @@
 import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { cn } from './cn'
 import { Contacts, Search, SwitcherGroups } from './elements'
-import { useCommunicateListStore } from '../../_providers/communicateList'
+import { useRootStore } from '../../_providers/root'
 
 interface MessengerProps {}
 
 export function Communicate(props: MessengerProps) {
   // const { } = props
 
-  const status = useCommunicateListStore((state) => state.drawerStatus)
-  const setStatus = useCommunicateListStore((state) => state.setDrawerStatus)
+  const status = useRootStore((state) => state.drawerStatus)
+  const setStatus = useRootStore((state) => state.setDrawerStatus)
+  const chatingPanelStatus = useRootStore((state) => state.chatingPanelStatus)
 
   return (
-    <div className={cn({ status })}>
+    <div className={cn({ status, hide: chatingPanelStatus === 'open' })}>
 
       <SwitcherGroups className={cn('SwitcherGroups')} />
       <Search className={cn('Search')} />
