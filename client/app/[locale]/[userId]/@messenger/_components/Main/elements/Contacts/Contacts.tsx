@@ -2,7 +2,7 @@ import { ImageCommon } from '@ui/common/ImageCommon'
 import { TextCommon } from '@ui/common/TextCommon'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
-import { useMessengerContacts } from '../../../../store/contacts'
+import { useCommunicateListStore } from '../../../../providers/communicateList.provider'
 
 interface ContactsProps{
   className?: string;
@@ -11,12 +11,12 @@ interface ContactsProps{
 
 export function Contacts(props: ContactsProps) {
   const { className, status } = props
-  const filteredContacts = useMessengerContacts((state) => state.filteredContacts())
+  const filteredContacts = useCommunicateListStore((state) => state.filteredContacts())
 
   return (
     <div className={classNames(cn({ status }), className)}>
       {filteredContacts.map(({
-        contactImg,
+        img,
         lastContactMessage,
         lastMessage,
         name,
@@ -24,7 +24,7 @@ export function Contacts(props: ContactsProps) {
       }) => (
         <div key={id} className={cn('Contact')}>
           <div className={cn('ContactImgContainer')}>
-            <ImageCommon src={contactImg} alt={id} width="50" height="50" />
+            <ImageCommon src={img} alt={id} width="50" height="50" />
           </div>
           <div className={cn('ContactContentWrapper')}>
             <TextCommon className={cn('ContactName')} fs="12" textElipsis>{name}</TextCommon>
