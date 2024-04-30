@@ -1,7 +1,9 @@
 import { Locales } from '@middlewares/location'
-import { MessengerMain as MessengerComponent } from './_components'
+import { Chat, Communicate } from './_components'
+import { Messenger as MessengerModule } from './_components/Messenger'
+import { ChatProvider } from './_providers/chat'
+import { CommunicateListProvider } from './_providers/communicateList'
 import { getContactsQuery, getGroupsQuery } from './_query/communicateList'
-import { CommunicateListProvider } from './providers/communicateList'
 
 interface MessengerProps {
   params: {
@@ -17,8 +19,17 @@ export default async function Messenger(props: MessengerProps) {
   const groups = await getGroupsQuery(params.userId)
 
   return (
-    <CommunicateListProvider contacts={contacts} groups={groups}>
-      <MessengerComponent />
-    </CommunicateListProvider>
+    <MessengerModule
+      communicate={(
+        <CommunicateListProvider contacts={contacts} groups={groups}>
+          <Communicate />
+        </CommunicateListProvider>
+    )}
+      chat={(
+        <ChatProvider>
+          <Chat />
+        </ChatProvider>
+      )}
+    />
   )
 }

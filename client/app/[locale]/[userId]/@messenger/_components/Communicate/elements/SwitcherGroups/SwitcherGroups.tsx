@@ -2,7 +2,7 @@ import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { TextCommon } from '@ui/common/TextCommon'
 import { classNames, makeCn } from '@utils/others'
 import style from './SwitcherGroups.module.scss'
-import { SelectCommunicateType, useCommunicateListStore } from '../../../../providers/communicateList'
+import { SelectCommunicateType, useCommunicateListStore } from '../../../../_providers/communicateList'
 
 export const cn = makeCn('SwitcherGroups', style)
 

@@ -1,8 +1,9 @@
+import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { ImageCommon } from '@ui/common/ImageCommon'
 import { TextCommon } from '@ui/common/TextCommon'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
-import { useCommunicateListStore } from '../../../../providers/communicateList'
+import { useCommunicateListStore } from '../../../../_providers/communicateList'
 
 interface ContactsProps{
   className?: string;
@@ -30,6 +31,14 @@ export function Contacts(props: ContactsProps) {
             <TextCommon className={cn('ContactName')} fs="12" textElipsis>{name}</TextCommon>
             <TextCommon className={cn('ContactLastContactName')} fs="12" textElipsis>{lastContactMessage}</TextCommon>
             <TextCommon className={cn('ContactLastMessage')} fs="12" textElipsis>{lastMessage}</TextCommon>
+          </div>
+          <div className={cn('ContactHoverActions')}>
+            <ButtonCommon>
+              <TextCommon fs="12">Чат</TextCommon>
+            </ButtonCommon>
+            <ButtonCommon>
+              <TextCommon fs="12">К контакту</TextCommon>
+            </ButtonCommon>
           </div>
         </div>
       ))}

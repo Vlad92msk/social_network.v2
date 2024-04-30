@@ -13,11 +13,11 @@ interface CommunicateListProviderProps {
 }
 
 export function CommunicateListProvider(props: CommunicateListProviderProps) {
-  const { contacts, groups, children } = props
+  const { children, ...rest } = props
 
   const storeRef = useRef<StoreApi<MessengerCommunicateSlice>>()
   if (!storeRef.current) {
-    storeRef.current = createContactsStore({ contacts, groups })
+    storeRef.current = createContactsStore(rest)
   }
 
   return (

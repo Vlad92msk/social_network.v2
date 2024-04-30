@@ -3,12 +3,12 @@
 import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { cn } from './cn'
 import { Contacts, Search, SwitcherGroups } from './elements'
-import { useCommunicateListStore } from '../../providers/communicateList'
+import { useCommunicateListStore } from '../../_providers/communicateList'
 
 interface MessengerProps {}
 
-export function MessengerMain(props: MessengerProps) {
-  const { } = props
+export function Communicate(props: MessengerProps) {
+  // const { } = props
 
   const status = useCommunicateListStore((state) => state.drawerStatus)
   const setStatus = useCommunicateListStore((state) => state.setDrawerStatus)

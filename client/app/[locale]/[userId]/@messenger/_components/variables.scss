@@ -12,3 +12,10 @@ $messenger--contacts-contact--photo-size: rem(50);
 
 $messenger--max-width: rem(250);
 $messenger--min-width: calc($messenger--contacts-contact--photo-size + $messenger--close--border-radius);
+
+
+$messenger--padding--super-small: $paddings--super-small;
+$messenger--padding--small: $paddings--small;
+$messenger--padding--medium: $paddings--medium;
+$messenger--padding--large: $paddings--large;
+$messenger--padding--extra-large: $paddings--extra-large;

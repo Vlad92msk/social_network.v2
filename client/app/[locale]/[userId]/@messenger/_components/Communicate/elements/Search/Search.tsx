@@ -2,7 +2,7 @@ import { IconBase } from '@ui/base/IconBase'
 import { InputCommon, InputGroupCommon } from '@ui/common/InputCommon'
 import { classNames, makeCn } from '@utils/others'
 import style from './Search.module.scss'
-import { useCommunicateListStore } from '../../../../providers/communicateList'
+import { useCommunicateListStore } from '../../../../_providers/communicateList'
 
 export const cn = makeCn('Search', style)
 
