@@ -2,8 +2,8 @@
 
 import { get } from 'lodash'
 import { useEffect, useState } from 'react'
-import { useBooleanState } from '@hooks/useBooleanState'
 import { getMessages } from '@utils/others'
+import { useBooleanState } from './useBooleanState'
 import { useLocale } from './useLocale'
 
 export const useTranslate = () => {

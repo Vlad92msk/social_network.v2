@@ -4,5 +4,67 @@
 
 
 .Body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: rem(20);
 
+  &-Message {
+    max-width: 80%;
+    overflow: hidden;
+    position: relative;
+    padding: $messenger--padding--small;
+    border: rem(1) solid var(--Color-Border--variant-3--theme-default);
+
+    &--from {
+      &_me {
+        place-self: end;
+      }
+      &_other {
+        place-self: start;
+      }
+    }
+
+    &MainContent {
+      display: flex;
+      flex-direction: column;
+    }
+    &Content {
+      display: flex;
+      flex-direction: column;
+    }
+    &Media {
+      display: flex;
+      flex-direction: column;
+      max-height: rem(200);
+    }
+    &Text {
+
+    }
+    &Footer {
+      display: flex;
+      justify-content: space-between;
+      gap: rem(5);
+    }
+    &Emojies {
+      display: flex;
+      gap: rem(5);
+      //width: 100%;
+      flex-grow: 1;
+    }
+    &MetaInfo {
+      display: flex;
+      gap: rem(5);
+      flex-shrink: 0;
+    }
+    &MetaInfoDate {
+      display: flex;
+      justify-content: center;
+    }
+    &MetaInfoDeliver {
+      display: flex;
+      justify-content: center;
+    }
+  }
 }

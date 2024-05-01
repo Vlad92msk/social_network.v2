@@ -5,3 +5,7 @@ export * from './useScreenWidth'
 export * from './useDeviceType'
 export * from './useBooleanState'
 export * from './useMatchMedia'
+
+export * from './useMaterialsAttach'
+export * from './useScrollToElement'
+export * from './useWebWorker'

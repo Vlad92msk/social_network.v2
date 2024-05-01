@@ -1,2 +1,2 @@
 export type IconName =
-  | 'git';
+  | 'git' | string;

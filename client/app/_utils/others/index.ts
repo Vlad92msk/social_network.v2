@@ -14,3 +14,5 @@ export * from './isNil'
 export * from './isString'
 export * from './throttle'
 export * from './debounce'
+
+export * from './invertColor'

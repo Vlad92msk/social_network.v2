@@ -11,7 +11,7 @@
       "@ui/*": ["app/_ui/*"],
       "@providers/*": ["app/_providers/*"],
       "@utils/*": ["app/_utils/*"],
-      "@hooks/*": ["app/_hooks/*"],
+      "@hooks": ["app/_hooks/index.ts"],
       "@my-apollo/*": ["src/apollo/*"]
     }
   }

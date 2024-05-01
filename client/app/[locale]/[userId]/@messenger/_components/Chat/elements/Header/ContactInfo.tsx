@@ -1,4 +1,5 @@
 import { ImageCommon } from '@ui/common/ImageCommon'
+import { TextCommon } from '@ui/common/TextCommon'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 
@@ -17,8 +18,8 @@ export function ContactInfo(props: ContactInfoProps) {
         <ImageCommon src="base/me" alt="contact" width={50} height={50} />
       </div>
       <div className={cn('Info')}>
-        <div className={cn('InfoName')}>name</div>
-        <div className={cn('OnlineStatus')}>Online</div>
+        <TextCommon className={cn('InfoName')} fs="14">name</TextCommon>
+        <TextCommon className={cn('OnlineStatus')} fs="10">Online</TextCommon>
       </div>
     </div>
   )

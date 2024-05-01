@@ -1,0 +1,61 @@
+@import "@ui/styles/for_components";
+
+.FileUpLoad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  padding: rem(10);
+
+  &-AddFile {
+    &--disabled {
+      pointer-events: none;
+    }
+  }
+
+  &-FileInput {
+    display: none;
+  }
+
+  &-Modal {
+    width: 60vw;
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    background: rgba(128, 128, 128, 0.24);
+  }
+
+  &-ApplyAttachments {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(rem(100), auto);
+    gap: clamp(5px, 5vh, rem(10));
+    overflow-y: auto;
+    padding: rem(10);
+  }
+
+  &-ApplyImg {
+    display: flex;
+    padding: rem(5);
+    background: dodgerblue;
+  }
+
+  &-ImgWrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  &-Img {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    object-fit: contain;
+  }
+
+  &-CloseApply {
+    fill: red;
+  }
+}

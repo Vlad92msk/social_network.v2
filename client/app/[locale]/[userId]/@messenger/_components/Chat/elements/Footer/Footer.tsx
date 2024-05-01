@@ -14,8 +14,8 @@ export function Footer(props: FooterProps) {
       <UploadFile />
       <InputMessage />
       <div className={cn('ButtonsBox')}>
-        <VoiceMessage />
         <ButtonAddSmiles />
+        <VoiceMessage />
       </div>
     </>
   )

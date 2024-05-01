@@ -1,8 +1,23 @@
-import { ButtonCommon } from '@ui/common/ButtonCommon'
-import { cn } from './cn'
+import { FileUpLoad } from '@ui/common/FileUpLoadCommon'
+import { FILE_FORMAT_IMAGE } from '../../../../../../../types/fileFormats'
+import { useChatStore } from '../../../../_providers/chat'
 
-export const UploadFile = () => {
+export function UploadFile() {
+  const onCreateMessage = useChatStore((store) => store.onCreateMessage)
 
-
-  return <ButtonCommon className={cn('UploadFile')}>File</ButtonCommon>
+  return (
+    <FileUpLoad
+      isConfirm
+      availableTypes={{
+        maxFileSize: '1mb',
+        // просто как пример
+        availableTypes: [
+          FILE_FORMAT_IMAGE.JPG,
+          FILE_FORMAT_IMAGE.PNG,
+          FILE_FORMAT_IMAGE.WEBP,
+        ],
+      }}
+      onApply={(files) => onCreateMessage('media', files)}
+    />
+  )
 }

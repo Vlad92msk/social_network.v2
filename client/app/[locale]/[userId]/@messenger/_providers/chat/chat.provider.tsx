@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useRef } from 'react'
 import { type StoreApi, useStore } from 'zustand'
-import { createContactsStore, MessengerCommunicateSlice } from './chat.store'
+import { createChatStore, MessengerChatSlice } from './chat.store'
 
-const MessengerContactsContext = createContext<StoreApi<MessengerCommunicateSlice> | null>(null)
+const MessengerContactsContext = createContext<StoreApi<MessengerChatSlice> | null>(null)
 
 interface CommunicateListProviderProps {
   children: React.ReactNode
@@ -13,9 +13,9 @@ interface CommunicateListProviderProps {
 export function ChatProvider(props: CommunicateListProviderProps) {
   const { children, ...rest } = props
 
-  const storeRef = useRef<StoreApi<MessengerCommunicateSlice>>()
+  const storeRef = useRef<StoreApi<MessengerChatSlice>>()
   if (!storeRef.current) {
-    storeRef.current = createContactsStore(rest)
+    storeRef.current = createChatStore(rest)
   }
 
   return (
@@ -25,10 +25,10 @@ export function ChatProvider(props: CommunicateListProviderProps) {
   )
 }
 
-export const useChatStore = <T, >(selector: (store: MessengerCommunicateSlice) => T): T => {
+export const useChatStore = <T, >(selector: (store: MessengerChatSlice) => T): T => {
   const context = useContext(MessengerContactsContext)
   if (!context) {
-    throw new Error('Что-то пошло не так в MessengerContactsProvider')
+    throw new Error('Что-то пошло не так в ChatProvider')
   }
   return useStore(context, selector)
 }

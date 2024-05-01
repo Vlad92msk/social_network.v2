@@ -4,6 +4,7 @@ import { IconName } from './icon.model'
 
 interface IconBasePros extends Omit<Props, 'src' |'name'>{
   name: IconName
+  id?: string
 }
 
 export function IconBase({ name, ...props }: IconBasePros) {
