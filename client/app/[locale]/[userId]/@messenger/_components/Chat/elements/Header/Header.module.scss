@@ -39,5 +39,6 @@
   &-CallButtons {
     display: flex;
     gap: rem(10);
+    color: var(--Color-Text--root--theme-default);
   }
 }

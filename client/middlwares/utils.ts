@@ -36,7 +36,7 @@ export async function runMiddlewares(
   })
 
   const [, locale, userId, contentType] = currentUrl.split('/')
-  if (!Boolean(contentType) && Boolean(userId) && Boolean(locale)) {
+  if (!Boolean(contentType) && (Boolean(userId) && userId !== 'signin') && Boolean(locale)) {
     currentUrl += 'profile'
   }
 

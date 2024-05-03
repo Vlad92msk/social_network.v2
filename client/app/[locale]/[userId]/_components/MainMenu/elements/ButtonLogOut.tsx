@@ -11,7 +11,7 @@ export function ButtonLogOut() {
       size="sm"
       onClick={() => signOut()}
     >
-      <IconBase name="git" />
+      <IconBase name="sign-out" />
       <TextCommon
         className={cn('NavigationButtonText')}
         fs={{ es: '14', md: '16' }}

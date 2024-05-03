@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useRect } from '@hooks/useRect'
+import { useRect } from '@hooks'
 import { classNames, rem } from '@utils/others'
 import { cn } from './cn'
 

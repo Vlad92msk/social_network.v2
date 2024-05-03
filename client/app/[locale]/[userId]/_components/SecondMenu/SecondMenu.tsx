@@ -29,9 +29,9 @@ export function SecondMenu(props: SecondMenuProps) {
         </ButtonCommon>
       </div>
       <div className={cn('SecondRow')}>
-        <IconBase className={cn('Icon')} name="git" />
-        <IconBase className={cn('Icon')} name="git" />
-        <IconBase className={cn('Icon')} name="git" />
+        <IconBase className={cn('Icon')} name="menu-list" />
+        <IconBase className={cn('Icon')} name="play" />
+        <IconBase className={cn('Icon')} name="sound" />
         <TextCommon fs="8">Проигрываемая дорожка</TextCommon>
       </div>
     </div>

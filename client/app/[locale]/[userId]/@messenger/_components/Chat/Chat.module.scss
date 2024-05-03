@@ -39,17 +39,18 @@
     flex: 1 1; // растягивается, сжимается
     overflow-y: auto;
     padding: $messenger--padding--small;
+    margin-bottom: $messenger--padding--small;
   }
 
   &-Footer {
     display: flex;
     gap: rem(5);
-    align-items: end;
     height: auto;
     max-height: 50%;
     min-height: rem(50);
     overflow-y: auto;
     padding: $messenger--padding--small;
     border-top: rem(1) solid var(--Color-Border--variant-3--theme-default);
+    align-items: center;
   }
 }

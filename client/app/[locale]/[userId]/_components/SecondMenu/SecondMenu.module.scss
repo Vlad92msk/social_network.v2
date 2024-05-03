@@ -24,7 +24,7 @@
 
   &-SecondRow {
     display: flex;
-    gap: rem(5);
+    gap: rem(10);
     align-items: center;
   }
 
@@ -36,7 +36,7 @@
   }
 
   &-Icon {
-    width: rem(20);
-    height: rem(20);
+    width: rem(15);
+    height: rem(15);
   }
 }

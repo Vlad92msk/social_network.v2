@@ -1,4 +1,4 @@
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { IconBase } from '@ui/base/IconBase'
 import { cn } from './cn'
 import { useChatStore } from '../../../../_providers/chat'
 
@@ -8,14 +8,15 @@ export function VoiceMessage() {
 
   if (onSubmitMessageText.length) {
     return (
-      <ButtonCommon
-        onClick={onSubmitMessage}
-        size="es"
-      >
-        ок
-      </ButtonCommon>
+      <button onClick={onSubmitMessage}>
+        <IconBase name="send" />
+      </button>
     )
   }
 
-  return <ButtonCommon className={cn('VoiceMessage')}>Voice</ButtonCommon>
+  return (
+    <button className={cn('VoiceMessage')}>
+      <IconBase name="microphone" />
+    </button>
+  )
 }

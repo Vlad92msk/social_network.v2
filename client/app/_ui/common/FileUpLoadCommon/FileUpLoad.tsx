@@ -74,7 +74,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
       <div className={classNames(cn(), className)}>
         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
         <label className={cn('AddFile', { disabled })} htmlFor={inputId}>
-          <IconBase name="git" />
+          <IconBase name="attachment" fill="grey" />
           <input
             className={cn('FileInput')}
             id={inputId}

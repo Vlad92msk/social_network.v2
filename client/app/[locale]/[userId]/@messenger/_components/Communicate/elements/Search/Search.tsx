@@ -16,7 +16,7 @@ export function Search(props: SearchProps) {
 
   return (
     <div className={classNames(cn(), className)}>
-      <InputGroupCommon leftElement={<IconBase name="git" />}>
+      <InputGroupCommon leftElement={<IconBase name="search" />}>
         <InputCommon
           className={cn('Input')}
           type="text"

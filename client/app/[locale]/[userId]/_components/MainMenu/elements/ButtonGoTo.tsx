@@ -21,7 +21,7 @@ export function ButtonGoTo(props: ButtonGoToProps) {
         switchContent(to)
       }}
     >
-      <IconBase name="git" />
+      <IconBase name={to} />
       <TextCommon className={cn('NavigationButtonText')} fs={{ es: '14', md: '16' }}>{title}</TextCommon>
     </ButtonCommon>
   )

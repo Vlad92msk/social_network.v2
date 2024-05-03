@@ -4,12 +4,14 @@
 
 
 .Footer {
+  color: var(--Color-Text--root--theme-default);
   &-UploadFile {
     width: rem(30);
     height: rem(30);
     max-height: rem(30);
     max-width: rem(30);
-
+    place-self: end;
+    color: var(--Color-Text--root--theme-default);
   }
 
   &-InputMessage {
@@ -21,19 +23,20 @@
   &-ButtonsBox {
     display: flex;
     gap: rem(5);
+    place-self: end;
   }
   &-VoiceMessage {
     width: rem(30);
     height: rem(30);
     max-height: rem(30);
     max-width: rem(30);
-
+    color: var(--Color-Text--root--theme-default);
   }
   &-ButtonAddSmiles {
     width: rem(30);
     height: rem(30);
     max-height: rem(30);
     max-width: rem(30);
-
+    color: var(--Color-Text--root--theme-default);
   }
 }

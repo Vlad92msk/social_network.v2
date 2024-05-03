@@ -2,4 +2,9 @@
 
 .ButtonCommon {
   font-weight: $text-weight--light;
+  background: transparent;
+
+  &:hover {
+    background: #484e70;
+  }
 }

@@ -90,10 +90,10 @@
     justify-content: start;
 
     @include color-theme('default') {
-      background: var(--Color-Border--variant-3--theme-default);
+      color: var(--Color-Text--root--theme-default);
     }
     @include color-theme('light') {
-      background: var(--Color-Border--variant-1--theme-light);
+      color: var(--Color-Text--root--theme-light);
     }
 
     &Text {

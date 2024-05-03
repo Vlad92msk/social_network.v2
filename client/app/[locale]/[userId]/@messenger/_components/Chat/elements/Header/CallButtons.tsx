@@ -1,4 +1,4 @@
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { IconBase } from '@ui/base/IconBase'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 
@@ -13,8 +13,12 @@ export function CallButtons(props: CallButtonsProps) {
     <div
       className={classNames(cn('CallButtons'), className)}
     >
-      <ButtonCommon size="sm">Видео звонок</ButtonCommon>
-      <ButtonCommon size="sm">Аудио звонок</ButtonCommon>
+      <button onClick={() => console.log('video call')}>
+        <IconBase name="video-camera" />
+      </button>
+      <button onClick={() => console.log('audio call')}>
+        <IconBase name="phone" />
+      </button>
     </div>
   )
 }

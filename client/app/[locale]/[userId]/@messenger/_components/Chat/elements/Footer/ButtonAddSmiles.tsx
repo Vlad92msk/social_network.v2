@@ -1,6 +1,10 @@
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { IconBase } from '@ui/base/IconBase'
 import { cn } from './cn'
 
 export function ButtonAddSmiles() {
-  return <ButtonCommon className={cn('ButtonAddSmiles')}>Smile</ButtonCommon>
+  return (
+    <button className={cn('ButtonAddSmiles')}>
+      <IconBase name="face-smiling" />
+    </button>
+  )
 }

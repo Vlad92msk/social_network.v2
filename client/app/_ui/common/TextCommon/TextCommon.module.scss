@@ -10,6 +10,14 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+  // Временно
+  @include color-theme('default') {
+    color: var(--Color-Text--root--theme-default);
+  }
+  @include color-theme('light') {
+    color: var(--Color-Text--root--theme-light);
+  }
+
 
   @include media-content('font-size') using ($bp-name, $bp-size) {
     @each $name, $sizes in $text-sizes {
