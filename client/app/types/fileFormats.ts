@@ -617,7 +617,7 @@ export enum FILE_FORMAT_APP {
   BZ = 'application/x-bzip', // .bz - Bzip Archive
   BZ2 = 'application/x-bzip2', // .bz2 - Bzip2 Archive
   VCD = 'application/x-cdlink', // .vcd - Video CD
-  CHAT = 'application/x-chat', // .chat - pIRCh
+  CHAT = 'application/x-chat', // .dialogs - pIRCh
   PGN = 'application/x-chess-pgn', // .pgn - Portable Game Notation (Chess Games)
   CPIO = 'application/x-cpio', // .cpio - CPIO Archive
   CSH = 'application/x-csh', // .csh - C Shell Script

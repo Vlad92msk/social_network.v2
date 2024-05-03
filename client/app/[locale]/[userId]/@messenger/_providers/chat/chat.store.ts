@@ -1,5 +1,8 @@
 import { create } from 'zustand'
+import { Dialog } from '@api/messenger/communicateList/types'
 import { AddedFile } from '@hooks'
+import { getDialogsQuery } from '../../_query/communicateList/getDialogs.query'
+import { RootInitial } from '../root'
 
 export interface MessagePropsResponse {
   id: string
@@ -15,10 +18,23 @@ export interface MessagePropsResponse {
   }
 }
 
+interface ApiStatusState<T = any> {
+  apiData: T | undefined
+  apiStatus: boolean | undefined
+  apiError: Error | undefined
+}
+
+const initialApiState: ApiStatusState = {
+  apiData: undefined,
+  apiStatus: undefined,
+  apiError: undefined,
+}
+
 /**
  * Стейт
  */
 interface CommunicateState {
+  dialogs: ApiStatusState<Dialog[]>
   chatMessages: MessagePropsResponse[]
   createMessage: {
     id?: string
@@ -36,12 +52,14 @@ export type ChatInitial = Partial<CommunicateState>
 interface CommunicateSetters {
   onSubmitMessage: VoidFunction
   onCreateMessage: (key: keyof CommunicateState['createMessage'], value: CommunicateState['createMessage'][keyof CommunicateState['createMessage']]) => void
+  fetchDialogs: (userId: string, dialogId: string) => Promise<void>
 }
 
 /**
  * Геттеры
  */
 interface CommunicateGetters {
+  getDialogs: () => ApiStatusState<Dialog[]>
 }
 
 /**
@@ -50,6 +68,7 @@ interface CommunicateGetters {
 export type MessengerChatSlice = CommunicateState & CommunicateSetters & CommunicateGetters
 
 const defaultInitState: CommunicateState = {
+  dialogs: initialApiState,
   chatMessages: [
     {
       id: '1',
@@ -103,4 +122,31 @@ export const createChatStore = (
     })
   },
   onCreateMessage: (key, value) => set({ createMessage: { ...get().createMessage, [key]: value } }),
+  fetchDialogs: async (userId: string, dialogId: string) => {
+    const prev = get().dialogs
+    set({ dialogs: { ...prev, apiStatus: true, apiError: undefined } })
+
+    try {
+      const dialogs = await getDialogsQuery(userId, dialogId)
+      set({
+        dialogs: {
+          ...prev,
+          apiStatus: false,
+          apiData: dialogs,
+        },
+      })
+    } catch (error) {
+      set({
+        dialogs: {
+          ...prev,
+          apiStatus: false,
+          apiError: error,
+        },
+      })
+    }
+  },
+  getDialogs: () => {
+    const prev = get().dialogs
+    return prev
+  },
 }))
