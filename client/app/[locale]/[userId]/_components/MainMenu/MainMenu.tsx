@@ -6,17 +6,18 @@ import { cn } from './cn'
 import { ButtonGoTo, ButtonLogOut, SelectLocale, SelectTheme, UserInfo } from './elements'
 import { NavigationContentType } from './types'
 
-export interface MainMenuProps {}
+// interface MainMenuProps {}
+
+const gotoButtons: Record<NavigationContentType, string> = {
+  [NavigationContentType.PROFILE]: 'Профиль',
+  [NavigationContentType.MUSIC]: 'Музыка',
+  [NavigationContentType.VIDEO]: 'Видео',
+  [NavigationContentType.PUBLISH]: 'Публикации',
+}
 
 
 export function MainMenu() {
   const [status, setStatus] = useState<'open' | 'close'>('open')
-  const gotoButtons: Record<NavigationContentType, string> = {
-    [NavigationContentType.PROFILE]: 'Профиль',
-    [NavigationContentType.MUSIC]: 'Музыка',
-    [NavigationContentType.VIDEO]: 'Видео',
-    [NavigationContentType.PUBLISH]: 'Публикации',
-  }
 
   return (
     <div className={cn({ status })}>

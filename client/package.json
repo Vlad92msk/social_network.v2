@@ -18,17 +18,18 @@
     "date-fns": "3.6.0",
     "framer-motion": "11.0.25",
     "lodash": "4.17.21",
-    "next": "14.1.4",
+    "next": "14.2.3",
     "next-auth": "4.24.7",
     "normalize.css": "8.0.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "^19.0.0-canary-e3ebcd54b-20240405",
+    "react-dom": "^19.0.0-canary-e3ebcd54b-20240405",
     "react-inlinesvg": "^4.1.0",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/node": "20.9.0",
-    "@types/react": "18.2.74",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "yarn:types-react-dom@beta",
     "@typescript-eslint/eslint-plugin": "6.11.0",
     "@typescript-eslint/parser": "6.11.0",
     "eslint": "8.53.0",
@@ -39,5 +40,9 @@
     "sass": "1.74.1",
     "sass-loader": "13.3.2",
     "typescript": "5.4.4"
+  },
+  "overrides": {
+    "@types/react": "yarn:types-react@beta",
+    "@types/react-dom": "yarn:types-react-dom@beta"
   }
 }

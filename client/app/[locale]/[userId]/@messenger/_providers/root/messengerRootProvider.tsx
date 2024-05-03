@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useRef } from 'react'
+import React, { createContext, use, useRef } from 'react'
 import { type StoreApi, useStore } from 'zustand'
 import { createContactsStore, MessengerRootSlice } from './root.store'
 
@@ -26,7 +26,7 @@ export function MessengerRootProvider(props: RootProviderProps) {
 }
 
 export const useRootStore = <T, >(selector: (store: MessengerRootSlice) => T): T => {
-  const context = useContext(MessengerRootContext)
+  const context = use(MessengerRootContext)
   if (!context) {
     throw new Error('Что-то пошло не так в RootProvider')
   }

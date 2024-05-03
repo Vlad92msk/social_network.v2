@@ -6,7 +6,7 @@ import { useRootStore } from '../../_providers/root'
 
 interface ChatProps {}
 
-export function Chat(props: ChatProps) {
+export const Chat = (props: ChatProps) => {
   const chatingPanelStatus = useRootStore((state) => state.chatingPanelStatus)
 
   return (

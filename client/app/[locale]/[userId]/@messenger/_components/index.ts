@@ -1,2 +1,2 @@
-export * from './Communicate'
-export * from './Chat'
+export { Communicate } from './Communicate'
+export { Chat } from './Chat'

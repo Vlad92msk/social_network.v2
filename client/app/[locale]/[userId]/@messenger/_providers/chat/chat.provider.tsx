@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useRef } from 'react'
+import React, { createContext, use, useRef } from 'react'
 import { type StoreApi, useStore } from 'zustand'
 import { createChatStore, MessengerChatSlice } from './chat.store'
 
@@ -26,7 +26,7 @@ export function ChatProvider(props: CommunicateListProviderProps) {
 }
 
 export const useChatStore = <T, >(selector: (store: MessengerChatSlice) => T): T => {
-  const context = useContext(MessengerContactsContext)
+  const context = use(MessengerContactsContext)
   if (!context) {
     throw new Error('Что-то пошло не так в ChatProvider')
   }

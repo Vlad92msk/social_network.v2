@@ -1,4 +1,5 @@
 import { FileUpLoad } from '@ui/common/FileUpLoadCommon'
+import { cn } from './cn'
 import { FILE_FORMAT_IMAGE } from '../../../../../../../types/fileFormats'
 import { useChatStore } from '../../../../_providers/chat'
 
@@ -7,6 +8,7 @@ export function UploadFile() {
 
   return (
     <FileUpLoad
+      className={cn('UploadFile')}
       isConfirm
       availableTypes={{
         maxFileSize: '1mb',

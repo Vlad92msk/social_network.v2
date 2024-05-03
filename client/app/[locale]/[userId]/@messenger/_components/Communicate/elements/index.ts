@@ -1,3 +1,3 @@
-export * from './SwitcherGroups'
-export * from './Search'
-export * from './Contacts'
+export { SwitcherGroups } from './SwitcherGroups'
+export { Search } from './Search'
+export { Contacts } from './Contacts'

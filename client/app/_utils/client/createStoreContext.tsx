@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, PropsWithChildren, useCallback, useContext, useRef, useSyncExternalStore } from 'react'
+import React, { createContext, PropsWithChildren, use, useCallback, useRef, useSyncExternalStore } from 'react'
 import { DeepPartial } from '../tsUtils'
 
 // function isReact18OrNewer() {
@@ -49,7 +49,7 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
 
   // Для React 18 и новее
   function useStoreSelectorReact18<SelectorOutput>(selector: (store: Store) => SelectorOutput): SelectorOutput {
-    const store = useContext(StoreContext)
+    const store = use(StoreContext)
     if (!store) throw new Error('Store not found')
 
     return useSyncExternalStore(
@@ -77,7 +77,7 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
   const useStoreSelector = useStoreSelectorReact18
 
   function useStoreDispatch() {
-    const store = useContext(StoreContext)
+    const store = use(StoreContext)
     if (!store) throw new Error('Store not found')
 
     return store.set

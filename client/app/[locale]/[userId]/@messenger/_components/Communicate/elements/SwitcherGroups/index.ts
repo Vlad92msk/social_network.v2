@@ -1,1 +1,1 @@
-export * from './SwitcherGroups'
+export { SwitcherGroups } from './SwitcherGroups'
