@@ -1,9 +1,9 @@
 import { Locales } from '@middlewares/location'
-import { Chat, Communicate } from './_components'
+import { DialogsDrawerBar, DialogSelected } from './_components'
 import { Messenger as MessengerModule } from './_components/Messenger'
-import { ChatProvider } from './_providers/chat'
-import { CommunicateListProvider } from './_providers/communicateList'
-import { getContactsQuery, getGroupsQuery } from './_query/communicateList'
+import { DialogSelectedProvider } from './_providers/dialogSelected'
+import { DialogListProvider } from './_providers/dialogList'
+import { getDialogsShortQuery } from './_query/dialogs'
 
 interface MessengerProps {
   params: {
@@ -15,20 +15,19 @@ interface MessengerProps {
 
 export default async function Messenger(props: MessengerProps) {
   const { params } = props
-  const contacts = await getContactsQuery(params.userId)
-  const groups = await getGroupsQuery(params.userId)
+  const dialogs = await getDialogsShortQuery(['1', '2'])
 
   return (
     <MessengerModule
       communicate={(
-        <CommunicateListProvider contacts={contacts} groups={groups}>
-          <Communicate />
-        </CommunicateListProvider>
+        <DialogListProvider dialogsShort={dialogs}>
+          <DialogsDrawerBar />
+        </DialogListProvider>
     )}
       chat={(
-        <ChatProvider>
-          <Chat />
-        </ChatProvider>
+        <DialogSelectedProvider>
+          <DialogSelected />
+        </DialogSelectedProvider>
       )}
     />
   )

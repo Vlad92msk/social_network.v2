@@ -1,0 +1,17 @@
+@import "@ui/styles/for_components";
+
+
+
+.SwitcherDialogType {
+  display: flex;
+  gap: rem(5);
+
+  &-Button {
+    flex: 1;
+    max-height: rem(30);
+
+    &--active {
+      background: lightseagreen;
+    }
+  }
+}

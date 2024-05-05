@@ -1,1 +1,0 @@
-export { SwitcherGroups } from './SwitcherGroups'

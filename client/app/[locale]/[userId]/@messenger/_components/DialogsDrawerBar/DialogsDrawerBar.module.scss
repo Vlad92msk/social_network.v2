@@ -1,0 +1,69 @@
+@import "@ui/styles/for_components";
+@import "../variables";
+
+
+.DialogsDrawerBar {
+  $this: &;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: rem(15);
+  height: 100%;
+  background: rgba(128, 128, 128, 0.13);
+
+  &--hide {
+    transform: translateX(100%);
+  }
+
+  &--status {
+    &_open {
+      width: $messenger--max-width;
+      padding: $messenger--open--paddings--main;
+      border-top-left-radius: $messenger--open--border-radius;
+      border-bottom-left-radius: $messenger--open--border-radius;
+      transition: .5s;
+    }
+    &_close {
+      width: $messenger--min-width;
+      padding: $messenger--close--paddings--main;
+      border-top-left-radius: $messenger--close--border-radius;
+      border-bottom-left-radius: $messenger--close--border-radius;
+      transition: .5s;
+    }
+  }
+
+
+  &-SwitcherGroups {
+    :is(#{$this}--status_close) & {
+      flex-direction: column;
+    }
+
+    :is(#{$this}--status_open) & {
+      flex-direction: row;
+    }
+  }
+  &-Search {
+    :is(#{$this}--status_close) & {
+      display: none;
+    }
+  }
+  &-Contacts {
+    flex: 1 1;
+  }
+
+  &-ToggleMenu {
+    width: rem(7);
+    height: rem(50);
+    position: absolute;
+    background: var(--Color-Bcg--variant-2--theme-default);
+    left: 0;
+    top: 50%;
+    transform: translateX(-50%);
+    transition: .5s;
+
+    &:hover {
+      transform: translateX(-50%) scale(1.2);
+      transition: .5s;
+    }
+  }
+}

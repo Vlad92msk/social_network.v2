@@ -1,0 +1,107 @@
+@use 'sass:list' as list;
+@import "@ui/styles/for_components";
+@import "../../../variables";
+
+
+.DialogList {
+  $this: &;
+  height: 100%;
+  gap: rem(10);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  @include hideScrollbar();
+  border-bottom-left-radius: calc(#{$messenger--open--border-radius} / 1.5);
+
+  &-Contact {
+    $contact: &;
+    display: flex;
+    gap: rem(5);
+    position: relative;
+
+    &ImgContainer {
+      overflow: hidden;
+      border-radius: $border-radius--small;
+      width: $messenger--contacts-contact--photo-size;
+      height: $messenger--contacts-contact--photo-size;
+      min-width: $messenger--contacts-contact--photo-size;
+      min-height: $messenger--contacts-contact--photo-size;
+      aspect-ratio: 1;
+    }
+    &ContentWrapper {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-width: 100%;
+
+      :is(#{$this}--status_close) & {
+        display: none;
+      }
+
+    }
+    &Name {
+      width: 100%;
+    }
+    &LastContactName {
+      width: 100%;
+    }
+    &LastMessage {
+      width: 100%;
+      position: relative;
+
+      &:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: rem(1);
+        background: var(--Color-Border--variant-3--theme-default);
+      }
+    }
+
+    &HoverActions {
+      border-radius: $border-radius--small;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(29, 112, 199, 0.83);
+      transition: opacity .5s;
+      gap: rem(10);
+      padding: 2% 10%;
+      overflow: hidden;
+
+      :is(#{$this}--status_close) & {
+        flex-direction: column;
+        justify-content: center;
+        padding: 0;
+        gap: rem(1);
+      }
+
+      & > * {
+        flex: 1 1;
+        max-height: rem(25);
+        border-radius: 0;
+        overflow: hidden;
+
+        :is(#{$this}--status_close) & {
+          max-height: 100%;
+          font-size: rem(list.nth($text--8, 1));
+          height: 100%;
+          border-radius: rem(3);
+        }
+      }
+
+
+      :is(#{$contact}:hover) & {
+        opacity: 1;
+        transition: .5s;
+      }
+    }
+  }
+}

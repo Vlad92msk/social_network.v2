@@ -1,6 +1,6 @@
-import type { Account, AuthOptions, Profile } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
 import { cookies } from 'next/headers'
+import type { AuthOptions, Profile } from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
 import { CookieType } from '../types/cookie'
 
 interface ExtendedProfile extends Profile {
@@ -35,7 +35,7 @@ class AuthManager {
 
   async saveOrUpdateUser(userData: { email?: string, name?: string, provider?: string, providerAccountId?: string }) {
     try {
-      const response = await fetch('http://localhost:3000/api/users', {
+      const response = await fetch(`http://localhost:3000/api/profiles/${userData.email}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -46,7 +46,12 @@ class AuthManager {
 
         this._isAuthenticated = true
         this._userData = tokenData
-        cookies().set(CookieType.USER_ID, tokenData.id, { path: '/' })
+        cookies().set({
+          name: CookieType.USER_ID,
+          value: tokenData.userInfo.id,
+          maxAge: 60 * 60 * 24 * 30, // 30 дней
+          path: '/',
+        })
         return true
       }
       this._isAuthenticated = false

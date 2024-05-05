@@ -1,2 +1,2 @@
-export { Communicate } from './Communicate'
-export { Chat } from './Chat'
+export { DialogsDrawerBar } from './DialogsDrawerBar'
+export { DialogSelected } from './DialogSelected'

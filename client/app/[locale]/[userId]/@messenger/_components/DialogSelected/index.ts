@@ -1,0 +1,1 @@
+export { DialogSelected } from './DialogSelected'
