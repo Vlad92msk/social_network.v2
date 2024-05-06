@@ -1,24 +1,27 @@
-import Image from 'next/image'
-import { useSession } from 'next-auth/react'
-import { SpinnerBase } from 'app/_ui/base/SpinnerBase'
+import { useProfile } from '@hooks'
+import { ImageCommon } from '@ui/common/ImageCommon'
 import { TextCommon } from '@ui/common/TextCommon/TextCommon'
+import { SpinnerBase } from 'app/_ui/base/SpinnerBase'
 import { cn } from '../cn'
 
 export function UserInfo() {
-  const { data, status } = useSession()
+  const { session, profile } = useProfile()
+
+  const userImg = profile?.userInfo.profileImage || session.data?.user?.image
+  const userName = profile?.userInfo.name || session.data?.user?.name
 
   return (
     <div className={cn('UserInfo')}>
       {
-        status === 'loading' ? <SpinnerBase /> : status === 'authenticated' ? (
+        session.status === 'loading' ? <SpinnerBase /> : session.status === 'authenticated' ? (
           <>
-            {data?.user?.image && (
+            {userImg && (
             <div className={cn('UserAvatarContainer')}>
-              <Image src={data.user.image} alt="me" width={50} height={50} />
+              <ImageCommon src={userImg} alt="me" width={50} height={50} />
             </div>
             )}
             <TextCommon className={cn('UserName')} fs="12">
-              {data?.user?.name}
+              {userName}
             </TextCommon>
           </>
         ) : undefined

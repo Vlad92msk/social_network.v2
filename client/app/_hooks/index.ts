@@ -8,4 +8,5 @@ export * from './useMatchMedia'
 
 export * from './useMaterialsAttach'
 export * from './useScrollToElement'
-export * from './useWebWorker'
+// export * from './useWebWorker'
+export * from './project/useProfile'

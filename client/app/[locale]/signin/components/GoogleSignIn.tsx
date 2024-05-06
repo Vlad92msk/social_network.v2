@@ -1,8 +1,8 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
+import { useTranslate } from '@hooks'
 import { ButtonCommon } from 'app/_ui/common/ButtonCommon'
-import { useTranslate } from '../../../_hooks'
 
 export function GoogleSignIn() {
   const { translate, isLoading } = useTranslate()

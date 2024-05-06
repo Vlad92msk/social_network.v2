@@ -45,7 +45,7 @@ export function ImageCommon(props: ImageCommonProps) {
         />
       ))}
       <Image
-        src={`/images/${src}.webp`}
+        src={src.includes('https://') ? src : `/images/${src}.webp`}
         sizes={createSizeString(mediaBreakpoints, sizes)}
         placeholder={placeholder}
         blurDataURL={blurDataURL}

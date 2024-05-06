@@ -1,3 +1,4 @@
+import { UserInfo } from '@api/users/types/user.type'
 import { cookies } from 'next/headers'
 import type { AuthOptions, Profile } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
@@ -22,7 +23,7 @@ interface ExtendedToken {
   exp?: number
 }
 
-interface UserInfo {
+interface UserInfo1 {
   message: string
   token: string
   // Дополнительные поля, если требуются
