@@ -33,13 +33,15 @@
   }
 
 
-  &-SwitcherGroups {
+  &-SwitcherDialogType {
     :is(#{$this}--status_close) & {
       flex-direction: column;
+      transition: .5s;
     }
 
     :is(#{$this}--status_open) & {
       flex-direction: row;
+      transition: .5s;
     }
   }
   &-Search {

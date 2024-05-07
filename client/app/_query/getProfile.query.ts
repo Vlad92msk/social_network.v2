@@ -8,7 +8,7 @@ export const getProfileQuery = async (profileId: string): Promise<ProfileType | 
       method: 'GET',
     })
 
-    if (!response.ok) throw new Error('Failed to fetch profile')
+    if (!response.ok) throw new Error('Failed to fetch [...allRoutes]')
 
     return await response.json()
   } catch (error) {

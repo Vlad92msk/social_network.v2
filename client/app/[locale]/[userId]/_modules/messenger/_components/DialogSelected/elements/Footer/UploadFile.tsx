@@ -1,6 +1,6 @@
 import { FileUpLoad } from '@ui/common/FileUpLoadCommon'
+import { FILE_FORMAT_IMAGE } from '../../../../../../../../types/fileFormats'
 import { cn } from './cn'
-import { FILE_FORMAT_IMAGE } from '../../../../../../../types/fileFormats'
 import { useDialogStore } from '../../../../_providers/dialogSelected'
 
 export function UploadFile() {

@@ -378,7 +378,7 @@ export enum FILE_FORMAT_APP {
   AFP = 'application/vnd.ibm.modcap', // .afp - MO:DCA-P
   IRM = 'application/vnd.ibm.rights-management', // .irm - IBM DB2 Rights Manager
   SC = 'application/vnd.ibm.secure-container', // .sc - IBM Electronic Media Management System - Secure Container
-  ICC = 'application/vnd.iccprofile', // .icc - ICC profile
+  ICC = 'application/vnd.iccprofile', // .icc - ICC [...allRoutes]
   IGL = 'application/vnd.igloader', // .igl - igLoader
   IVP = 'application/vnd.immervision-ivp', // .ivp - ImmerVision PURE Players
   IVU = 'application/vnd.immervision-ivu', // .ivu - ImmerVision PURE Players

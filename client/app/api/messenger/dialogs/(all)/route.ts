@@ -11,7 +11,13 @@ export async function GET(request: Request, params: RouteQueryParams) {
   const success = true
 
   if (success) {
-    return new Response(JSON.stringify(isShorts ? DIALOGS_SHORT : DIALOGS))
+    return new Response(
+      JSON.stringify(
+        isShorts
+          ? DIALOGS_SHORT.filter(({ id }) => ids?.includes(id))
+          : DIALOGS.filter(({ id }) => ids?.includes(id))
+      )
+    )
   }
   return new Response(JSON.stringify({ error: 'Получение диалогов - что-то пошло не так' }), { status: 404 })
 }

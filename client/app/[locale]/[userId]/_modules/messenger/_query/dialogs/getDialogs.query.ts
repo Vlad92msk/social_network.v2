@@ -19,8 +19,10 @@ export const getDialogsQuery = async (dialogIds: string[]): Promise<Dialog[]> =>
 }
 
 
-export const getDialogsShortQuery = async (dialogIds: string[]): Promise<Dialog[]> => {
+export const getDialogsShortQuery = async (dialogIds?: string[]): Promise<Dialog[]> => {
   // await sleep(2000)
+
+  if (!dialogIds) return []
 
   try {
     const response = await fetch(`http://localhost:3000/api/messenger/dialogs?dialogIds=${dialogIds}&isShorts=true`, {

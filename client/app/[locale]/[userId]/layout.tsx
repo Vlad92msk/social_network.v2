@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { Locales } from '@middlewares/location'
 import { ContentArea, Layout, MainMenu, SecondMenu } from './_components'
+import { Messenger } from './_modules/messenger'
 import { getSettings } from './_query'
 
 interface UserPageProps {
@@ -8,12 +10,11 @@ interface UserPageProps {
     userId: string
   }
   searchParams: {}
-  messenger: React.ReactNode
   children: React.ReactNode
 }
 
 export default async function UserPage(props: UserPageProps) {
-  const { params: { userId }, messenger, children } = props
+  const { params: { userId }, children } = props
   const { layoutVariant } = await getSettings(userId)
 
   return (
@@ -25,7 +26,9 @@ export default async function UserPage(props: UserPageProps) {
         content: (
           <ContentArea>
             {children}
-            {messenger}
+            <Suspense fallback={<div>.........Loading..........</div>}>
+              <Messenger params={props.params} searchParams={props.searchParams} />
+            </Suspense>
           </ContentArea>
         ),
       }}
