@@ -5,6 +5,7 @@
       "@shared/*": ["shared/*"],
       "@public/*": ["public/*"],
       "@api/*": ["app/api/*"],
+      "@types/*": ["app/types/*"],
       "@middlewares/*": ["middlwares/*"],
       "@app_components/*": ["app/_components/*"],
       "@app_modules/*": ["app/_modules/*"],

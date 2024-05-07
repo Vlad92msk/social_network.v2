@@ -124,9 +124,9 @@ export const createDialogStore = (
   fetchSelectedDialog: async (dialogId) => {
     const prev = get().selectedDialog
     set({ selectedDialog: { ...prev, apiStatus: true } })
-
     try {
       const dialog = await getDialogByIDQuery(dialogId)
+
       set({
         selectedDialog: {
           ...prev,

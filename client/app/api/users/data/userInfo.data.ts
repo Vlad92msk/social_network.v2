@@ -11,7 +11,7 @@ export const USER_INFO: UserInfo[] = [
   {
     id: '2',
     name: 'Petr',
-    profileImage: 'base/me1',
+    profileImage: 'base/me',
     contacts: [],
     onlineStatus: 'online',
   },

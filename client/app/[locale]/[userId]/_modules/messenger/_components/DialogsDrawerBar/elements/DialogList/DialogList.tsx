@@ -31,9 +31,9 @@ export function DialogList(props: DialogListProps) {
         <div key={id} className={cn('Contact')}>
           <div className={cn('ContactImgContainer')}>
             { type === SelectDialogType.PUBLIC ? (
-              <ImageCommon src={img || 'base/blur_img'} alt={title || description || ''} width="50" height="50" />
+              <ImageCommon src={img} alt={title || description || ''} width="50" height="50" />
             ) : (
-              <ImageCommon src={lastMessage?.author?.profileImage || 'base/blur_img'} alt={lastMessage?.author?.name || ''} width="50" height="50" />
+              <ImageCommon src={lastMessage?.author?.profileImage} alt={lastMessage?.author?.name || ''} width="50" height="50" />
             ) }
           </div>
           <div className={cn('ContactContentWrapper')}>

@@ -6,7 +6,7 @@ import { MediaBreakKeys, mediaBreakpoints } from '@ui/styles/variables/media'
 export type Test = Partial<Record<MediaBreakKeys, string>> | string | undefined
 
 export interface ImageCommonProps extends Omit<ImageProps, 'src' | 'loading' | 'sizes'> {
-  src: string
+  src?: string
   pictureClassName?: string
   srcSet?: Partial<Record<MediaBreakKeys, string>>;
   sizes?: Test
@@ -45,7 +45,7 @@ export function ImageCommon(props: ImageCommonProps) {
         />
       ))}
       <Image
-        src={src.includes('https://') ? src : `/images/${src}.webp`}
+        src={!src ? blurDataURL : src.includes('https://') ? src : `/images/${src}.webp`}
         sizes={createSizeString(mediaBreakpoints, sizes)}
         placeholder={placeholder}
         blurDataURL={blurDataURL}

@@ -6,6 +6,7 @@ export const getUsersProfilesQuery = async (userIds?: string[]): Promise<Profile
   try {
     const response = await fetch(`http://localhost:3000/api/users?userIds=${userIds}`, {
       method: 'GET',
+      cache: 'no-cache',
     })
 
     if (!response.ok) throw new Error('Failed to fetch users')

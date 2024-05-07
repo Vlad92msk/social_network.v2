@@ -1,25 +1,27 @@
-import { format } from 'date-fns'
+import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
+import { format, isPast } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { availableImages } from '@hooks'
+import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
+import { availableImages, useProfile } from '@hooks'
 import { TextCommon } from '@ui/common/TextCommon'
 import { cn } from './cn'
-import { FILE_FORMAT_IMAGE } from '../../../../../../../types/fileFormats'
-import { MessagePropsResponse } from '../../../../_providers/dialogSelected'
 
 interface MessageProps {
-  message: MessagePropsResponse
+  message: UserMessage
 }
 
 export function Message(props: MessageProps) {
   const { message } = props
   const {
-    id, messege: { text, forwardMessageId, media }, date, emojis, isFromMe, isRead, isDelivered,
+    id, emojis, text, forwardMessageId, media, author, dateRead, dateDeliver, dateCreated,
   } = message
+
+  const { profile } = useProfile()
 
   return (
     <div
       id={id}
-      className={cn('Message', { from: isFromMe ? 'me' : 'other' })}
+      className={cn('Message', { from: profile?.userInfo.id === author?.id ? 'me' : 'other' })}
     >
       <div className={cn('MessageMainContent')}>
         {forwardMessageId && (<div>forward</div>)}
@@ -42,11 +44,11 @@ export function Message(props: MessageProps) {
         </div>
         <div className={cn('MessageMetaInfo')}>
           <TextCommon className={cn('MessageMetaInfoDate')} fs="8">
-            {date && format(date, 'HH:mm', { locale: ru })}
+            {dateCreated && format(dateCreated, 'HH:mm', { locale: ru })}
           </TextCommon>
           <div className={cn('MessageMetaInfoDeliver')}>
-            {isDelivered && (<span>Доставлено</span>)}
-            {isRead && (<span>прочитано</span>)}
+            {isPast(dateDeliver) && (<span>Доставлено</span>)}
+            {isPast(dateRead) && (<span>прочитано</span>)}
           </div>
         </div>
       </div>
