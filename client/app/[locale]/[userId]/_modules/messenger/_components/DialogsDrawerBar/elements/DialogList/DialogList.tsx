@@ -16,6 +16,7 @@ export function DialogList(props: DialogListProps) {
   const viewDialogList = useDialogListStore((state) => state.viewDialogList())
   const status = useRootStore((state) => state.drawerStatus)
   const setChatingPanelStatus = useRootStore((state) => state.setChatingPanelStatus)
+  const setOpenedDialogIds = useRootStore((state) => state.setOpenedDialogIds)
 
   return (
     <div className={classNames(cn({ status }), className)}>
@@ -44,6 +45,7 @@ export function DialogList(props: DialogListProps) {
             <ButtonCommon onClick={() => {
               console.log(`Открыл диалог с ID:${id}`)
               setChatingPanelStatus('open')
+              setOpenedDialogIds([id])
             }}
             >
               <TextCommon fs="12">Чат</TextCommon>

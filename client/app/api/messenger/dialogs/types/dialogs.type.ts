@@ -1,3 +1,4 @@
+import { UserInfo } from '@api/users/types/user.type'
 import { Message } from './message.type'
 
 export enum SelectDialogType {
@@ -20,9 +21,13 @@ export interface Dialog {
   }
   description?: string
   type: SelectDialogType
-  participants?: any[]
+  participantsIds?: string[]
   messages?: Message[]
   lastMessage?: Message
+}
+
+export interface DialogResponse extends Dialog {
+  participants: UserInfo[]
 }
 
 /**

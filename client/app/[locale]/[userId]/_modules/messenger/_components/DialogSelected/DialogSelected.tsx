@@ -10,11 +10,16 @@ interface ChatProps {}
 
 export function DialogSelected(props: ChatProps) {
   const chatingPanelStatus = useRootStore((state) => state.chatingPanelStatus)
-  const fetchDialogs = useDialogStore((store) => store.fetchDialogs)
+  const fetchDialogs = useDialogStore((store) => store.fetchSelectedDialog)
+  const openedDialogIds = useRootStore((state) => state.openedDialogIds)
+
+  // console.log('test', test)
 
   useEffect(() => {
-    // fetchDialogs('1', '2')
-  }, [fetchDialogs])
+    if (openedDialogIds[0]) {
+      fetchDialogs(openedDialogIds[0])
+    }
+  }, [fetchDialogs, openedDialogIds])
 
   return (
     <div className={cn({ statusVisible: chatingPanelStatus })}>

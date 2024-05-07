@@ -1,26 +1,16 @@
-// import { NextResponse } from 'next/server';
+import { USER_INFO } from '@api/users/data/userInfo.data'
 
-// Данные пользователей (заглушка)
-const usersDatabaseMock = {
-  'fvsasus@gmail.com': {
-    message: 'Пользователь успешно обработан',
-    token: 'fake-auth-token',
-    id: '1'
-    // Другие данные пользователя
-  },
-}
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const ids = searchParams.get('userIds')
 
-export async function POST(req: Request) {
-  const providerData = await req.json()
+  if (!ids) return new Response(JSON.stringify([]), { status: 200 })
 
-  // Здесь должна быть логика для обработки providerData
-  // Если все прошло хорошо, возвращаем статус 200
-  // В случае ошибки - статус 400
-  const userData = usersDatabaseMock[providerData.email]
+  const users = USER_INFO.filter(({ id }) => ids.includes(id))
   const success = true // Это должно определяться на основе логики обработки providerData
 
   if (success) {
-    return new Response(JSON.stringify(userData), { status: 200 })
+    return new Response(JSON.stringify(users), { status: 200 })
   }
   return new Response(JSON.stringify({ error: 'Пользователь не найден' }), { status: 404 })
 }

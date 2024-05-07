@@ -1,8 +1,7 @@
 import { create } from 'zustand'
-import { Dialog } from '@api/messenger/communicateList/types'
+import { DialogResponse } from '@api/messenger/dialogs/types/dialogs.type'
 import { AddedFile } from '@hooks'
-import { getDialogsQuery } from '../../_query/communicateList/getDialogs.query'
-
+import { getDialogByIDQuery } from '../../_query/dialogs'
 
 export interface MessagePropsResponse {
   id: string
@@ -34,7 +33,7 @@ const initialApiState: ApiStatusState = {
  * Стейт
  */
 interface CommunicateState {
-  dialogs: ApiStatusState<Dialog[]>
+  selectedDialog: ApiStatusState<DialogResponse>
   chatMessages: MessagePropsResponse[]
   createMessage: {
     id?: string
@@ -52,14 +51,14 @@ export type DialogInitial = Partial<CommunicateState>
 interface CommunicateSetters {
   onSubmitMessage: VoidFunction
   onCreateMessage: (key: keyof CommunicateState['createMessage'], value: CommunicateState['createMessage'][keyof CommunicateState['createMessage']]) => void
-  fetchDialogs: (userId: string, dialogId: string) => Promise<void>
+  fetchSelectedDialog: (dialogId: string) => Promise<void>
 }
 
 /**
  * Геттеры
  */
 interface CommunicateGetters {
-  getDialogs: () => ApiStatusState<Dialog[]>
+  getCurrentDialog: () => ApiStatusState<DialogResponse>
 }
 
 /**
@@ -68,7 +67,7 @@ interface CommunicateGetters {
 export type MessengerDialogSlice = CommunicateState & CommunicateSetters & CommunicateGetters
 
 const defaultInitState: CommunicateState = {
-  dialogs: initialApiState,
+  selectedDialog: initialApiState,
   chatMessages: [
     {
       id: '1',
@@ -122,22 +121,22 @@ export const createDialogStore = (
     })
   },
   onCreateMessage: (key, value) => set({ createMessage: { ...get().createMessage, [key]: value } }),
-  fetchDialogs: async (userId: string, dialogId: string) => {
-    const prev = get().dialogs
-    set({ dialogs: { ...prev, apiStatus: true } })
+  fetchSelectedDialog: async (dialogId) => {
+    const prev = get().selectedDialog
+    set({ selectedDialog: { ...prev, apiStatus: true } })
 
     try {
-      const dialogs = await getDialogsQuery(userId, dialogId)
+      const dialog = await getDialogByIDQuery(dialogId)
       set({
-        dialogs: {
+        selectedDialog: {
           ...prev,
           apiStatus: false,
-          apiData: dialogs,
+          apiData: dialog,
         },
       })
     } catch (error) {
       set({
-        dialogs: {
+        selectedDialog: {
           ...prev,
           apiStatus: false,
           apiError: error,
@@ -145,5 +144,5 @@ export const createDialogStore = (
       })
     }
   },
-  getDialogs: () => get().dialogs,
+  getCurrentDialog: () => get().selectedDialog,
 }))

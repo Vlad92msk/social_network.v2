@@ -2,7 +2,7 @@ import { Dialog, DialogShort, SelectDialogType } from '../types/dialogs.type'
 
 export const DIALOGS: Dialog[] = [
   { id: '1',
-    participants: ['1', '2'],
+    participantsIds: ['1', '2'],
     type: SelectDialogType.PRIVATE,
     title: 'Диалог с пользователелем 2',
     description: undefined,
@@ -18,7 +18,7 @@ export const DIALOGS: Dialog[] = [
       },
     ] },
   { id: '2',
-    participants: ['1', '3'],
+    participantsIds: ['1', '2'],
     type: SelectDialogType.PUBLIC,
     title: 'Диалог с пользователелем 3',
     description: undefined,
@@ -35,7 +35,7 @@ export const DIALOGS: Dialog[] = [
           id: '3',
           name: 'contact 3',
           profileImage: 'base/me1',
-        }
+        },
       },
       {
         id: '2',
@@ -49,7 +49,7 @@ export const DIALOGS: Dialog[] = [
           id: '3',
           name: 'contact 3',
           profileImage: 'base/me1',
-        }
+        },
       },
       {
         id: '3',
@@ -63,7 +63,7 @@ export const DIALOGS: Dialog[] = [
           id: '3',
           name: 'contact 3',
           profileImage: 'base/me1',
-        }
+        },
       },
     ] },
 ]
@@ -87,7 +87,7 @@ export const DIALOGS_SHORT: DialogShort[] = [
         id: '3',
         name: 'contact 3',
         profileImage: 'base/me1',
-      }
+      },
     },
   },
   { id: '2',
@@ -106,6 +106,6 @@ export const DIALOGS_SHORT: DialogShort[] = [
         id: '3',
         name: 'contact 3',
         profileImage: 'base/me',
-      }
+      },
     } },
 ]

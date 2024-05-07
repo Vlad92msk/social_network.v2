@@ -1,4 +1,4 @@
-import { UserSettings } from '../../../api/settings/[userId]/route'
+import { UserSettings } from '@api/settings/[userId]/route'
 
 export const getSettings = async (id: string): Promise<UserSettings> => {
   try {

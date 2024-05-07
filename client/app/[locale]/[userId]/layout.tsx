@@ -1,7 +1,10 @@
+import { getServerSession } from 'next-auth'
 import { Suspense } from 'react'
 import { Locales } from '@middlewares/location'
+import { getProfileQuery } from '../../_query'
 import { ContentArea, Layout, MainMenu, SecondMenu } from './_components'
 import { Messenger } from './_modules/messenger'
+import { getDialogsShortQuery } from './_modules/messenger/_query/dialogs'
 import { getSettings } from './_query'
 
 interface UserPageProps {
@@ -17,6 +20,10 @@ export default async function UserPage(props: UserPageProps) {
   const { params: { userId }, children } = props
   const { layoutVariant } = await getSettings(userId)
 
+  const serverSession = await getServerSession()
+  const profile = await getProfileQuery(serverSession?.user?.email as string)
+  const dialogs = await getDialogsShortQuery(profile?.dialogsIds)
+
   return (
     <Layout
       layoutVariant={layoutVariant}
@@ -27,7 +34,12 @@ export default async function UserPage(props: UserPageProps) {
           <ContentArea>
             {children}
             <Suspense fallback={<div>.........Loading..........</div>}>
-              <Messenger params={props.params} searchParams={props.searchParams} />
+              <Messenger
+                params={props.params}
+                searchParams={props.searchParams}
+                profile={profile}
+                dialogs={dialogs}
+              />
             </Suspense>
           </ContentArea>
         ),
