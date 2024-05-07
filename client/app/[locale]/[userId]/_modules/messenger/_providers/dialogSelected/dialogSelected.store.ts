@@ -1,21 +1,11 @@
+import { addDays, subDays } from 'date-fns'
+import { get as lodashGet, set as lodashSet, random } from 'lodash'
 import { create } from 'zustand'
-import { DialogResponse } from '@api/messenger/dialogs/types/dialogs.type'
+import { Dialog, DialogResponse } from '@api/messenger/dialogs/types/dialogs.type'
+import { Message } from '@api/messenger/dialogs/types/message.type'
+import { UserInfo } from '@api/users/types/user.type'
 import { AddedFile } from '@hooks'
 import { getDialogByIDQuery } from '../../_query/dialogs'
-
-export interface MessagePropsResponse {
-  id: string
-  date: Date
-  isFromMe: boolean
-  emojis: any[]
-  isDelivered: boolean
-  isRead: boolean
-  messege: {
-    media: AddedFile[]
-    text: string
-    forwardMessageId?: string
-  }
-}
 
 interface ApiStatusState<T = any> {
   apiData: T | undefined
@@ -34,14 +24,7 @@ const initialApiState: ApiStatusState = {
  */
 interface CommunicateState {
   selectedDialog: ApiStatusState<DialogResponse>
-  chatMessages: MessagePropsResponse[]
-  createMessage: {
-    id?: string
-    date?: Date
-    media?: AddedFile[]
-    text: string
-    forwardMessageId?: string
-  }
+  createMessage: Message
 }
 export type DialogInitial = Partial<CommunicateState>
 
@@ -49,7 +32,7 @@ export type DialogInitial = Partial<CommunicateState>
  * Сеттеры
  */
 interface CommunicateSetters {
-  onSubmitMessage: VoidFunction
+  onSubmitMessage: (user: UserInfo) => void
   onCreateMessage: (key: keyof CommunicateState['createMessage'], value: CommunicateState['createMessage'][keyof CommunicateState['createMessage']]) => void
   fetchSelectedDialog: (dialogId: string) => Promise<void>
 }
@@ -68,31 +51,16 @@ export type MessengerDialogSlice = CommunicateState & CommunicateSetters & Commu
 
 const defaultInitState: CommunicateState = {
   selectedDialog: initialApiState,
-  chatMessages: [
-    {
-      id: '1',
-      date: new Date('01/02/2024'),
-      emojis: [],
-      isRead: false,
-      isDelivered: false,
-      isFromMe: true,
-      messege: { media: [], forwardMessageId: undefined, text: 'text' },
-    },
-    {
-      id: '2',
-      date: new Date('02/02/2024'),
-      emojis: [],
-      isRead: false,
-      isDelivered: false,
-      isFromMe: false,
-      messege: { media: [], forwardMessageId: undefined, text: 'text2222' },
-    },
-  ],
   createMessage: {
-    id: '34',
-    date: undefined,
+    id: random(3, 1000).toString(),
+    emojis: [],
     media: [],
     text: '',
+    dateCreated: new Date(),
+    author: undefined,
+    dateRead: addDays(new Date(), 1),
+    forwardMessageId: undefined,
+    dateDeliver: subDays(new Date(), 1),
   },
 }
 export const createDialogStore = (
@@ -100,23 +68,22 @@ export const createDialogStore = (
 ) => create<MessengerDialogSlice>((set, get) => ({
   ...defaultInitState,
   ...initState,
-  onSubmitMessage: () => {
-    const prev = get().chatMessages
+  onSubmitMessage: (user) => {
+    const prev = get().selectedDialog
     const curr = get().createMessage
 
+    const newMessage: Message = {
+      ...defaultInitState.createMessage,
+      ...curr,
+      author: user,
+    }
+
+    // @ts-ignore
+    const msgsPrev: Message[] = lodashGet(prev, 'apiData.messages')
+    const result = lodashSet(prev, 'apiData.messages', [...msgsPrev, newMessage])
+
     return set({
-      chatMessages: [
-        ...prev,
-        {
-          id: '',
-          date: new Date(),
-          emojis: [],
-          isRead: false,
-          isDelivered: false,
-          isFromMe: true,
-          messege: { media: curr.media || [], forwardMessageId: curr.forwardMessageId, text: curr.text },
-        },
-      ],
+      selectedDialog: result,
       createMessage: defaultInitState.createMessage,
     })
   },

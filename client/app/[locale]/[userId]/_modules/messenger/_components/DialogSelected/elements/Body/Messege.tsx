@@ -1,8 +1,9 @@
-import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
 import { format, isPast } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
 import { availableImages, useProfile } from '@hooks'
+// @ts-ignore
+import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
 import { TextCommon } from '@ui/common/TextCommon'
 import { cn } from './cn'
 
@@ -47,8 +48,8 @@ export function Message(props: MessageProps) {
             {dateCreated && format(dateCreated, 'HH:mm', { locale: ru })}
           </TextCommon>
           <div className={cn('MessageMetaInfoDeliver')}>
-            {isPast(dateDeliver) && (<span>Доставлено</span>)}
-            {isPast(dateRead) && (<span>прочитано</span>)}
+            {(dateDeliver && isPast(dateDeliver)) ? (<span>Доставлено</span>) : <span>Не Доставлено</span>}
+            {(dateRead && isPast(dateRead)) ? (<span>прочитано</span>) : <span>Не прочитано</span>}
           </div>
         </div>
       </div>
