@@ -10,7 +10,7 @@ export const getDialogsQuery = async (userId: string, dialogId: string): Promise
       cache: 'no-cache',
     })
 
-    if (!response.ok) throw new Error('Failed to fetch dialogs')
+    if (!response.ok) throw new Error('Failed to fetch queries')
 
     return await response.json()
   } catch (error) {

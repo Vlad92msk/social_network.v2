@@ -1,11 +1,11 @@
 import { getServerSession } from 'next-auth'
 import { Suspense } from 'react'
 import { Locales } from '@middlewares/location'
-import { getProfileQuery } from '../../_query'
+import { getProfileQuery } from '../../api/profiles/queries'
 import { ContentArea, Layout, MainMenu, SecondMenu } from './_components'
 import { Messenger } from './_modules/messenger'
-import { getDialogsShortQuery } from './_modules/messenger/_query/dialogs'
-import { getSettings } from './_query'
+import { getDialogsShortQuery } from '../../api/messenger/dialogs/queries'
+import { getSettings } from '../../api/settings/queries'
 
 interface UserPageProps {
   params: {

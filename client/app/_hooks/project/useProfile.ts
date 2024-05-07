@@ -2,7 +2,7 @@ import { useSession } from 'next-auth/react'
 import { SessionContextValue } from 'next-auth/src/react'
 import { useEffect, useState } from 'react'
 import { ProfileType } from '@api/profiles/types/profile.type'
-import { getProfileQuery } from '../../_query'
+import { getProfileQuery } from '../../api/profiles/queries'
 
 interface UserProfile {
   session: SessionContextValue

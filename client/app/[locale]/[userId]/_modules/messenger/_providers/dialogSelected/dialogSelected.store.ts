@@ -5,7 +5,7 @@ import { Dialog, DialogResponse } from '@api/messenger/dialogs/types/dialogs.typ
 import { Message } from '@api/messenger/dialogs/types/message.type'
 import { UserInfo } from '@api/users/types/user.type'
 import { AddedFile } from '@hooks'
-import { getDialogByIDQuery } from '../../_query/dialogs'
+import { getDialogByIDQuery } from '../../../../../../api/messenger/dialogs/queries'
 
 interface ApiStatusState<T = any> {
   apiData: T | undefined

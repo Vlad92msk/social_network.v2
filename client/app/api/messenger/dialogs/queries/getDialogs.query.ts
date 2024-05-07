@@ -10,7 +10,7 @@ export const getDialogsQuery = async (dialogIds: string[]): Promise<Dialog[]> =>
       cache: 'no-cache',
     })
 
-    if (!response.ok) throw new Error('Failed to fetch dialogs')
+    if (!response.ok) throw new Error('Failed to fetch queries')
 
     return await response.json()
   } catch (error) {
@@ -30,7 +30,7 @@ export const getDialogsShortQuery = async (dialogIds?: string[]): Promise<Dialog
       cache: 'no-cache',
     })
 
-    if (!response.ok) throw new Error('Failed to fetch dialogs')
+    if (!response.ok) throw new Error('Failed to fetch queries')
 
     return await response.json()
   } catch (error) {

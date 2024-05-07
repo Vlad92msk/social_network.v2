@@ -1,4 +1,4 @@
-import { getUsersProfilesQuery } from '../../../../_query'
+import { getUsersProfilesQuery } from 'app/api/users/queries'
 import { DIALOGS } from '../data/dialogs.data'
 
 interface RouteQueryParams {
