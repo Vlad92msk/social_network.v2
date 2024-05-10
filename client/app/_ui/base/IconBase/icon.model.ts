@@ -15,4 +15,6 @@ export type IconName =
   | 'sign-out'
   | 'menu-list'
   | 'search'
+  | 'check'
+  | 'checkmark'
   | string;

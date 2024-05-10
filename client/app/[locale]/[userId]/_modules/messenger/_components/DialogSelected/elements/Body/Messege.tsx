@@ -1,3 +1,4 @@
+import { IconBase } from '@ui/base/IconBase'
 import { format, isPast } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
@@ -48,8 +49,11 @@ export function Message(props: MessageProps) {
             {dateCreated && format(dateCreated, 'HH:mm', { locale: ru })}
           </TextCommon>
           <div className={cn('MessageMetaInfoDeliver')}>
-            {(dateDeliver && isPast(dateDeliver)) ? (<span>Доставлено</span>) : <span>Не Доставлено</span>}
-            {(dateRead && isPast(dateRead)) ? (<span>прочитано</span>) : <span>Не прочитано</span>}
+            {
+              (dateDeliver && dateRead) && (
+                <IconBase name={isPast(dateDeliver) ? 'check' : 'checkmark'} className={cn('MessageMetaInfoDeliverIcon', { readable: isPast(dateRead) })} />
+              )
+            }
           </div>
         </div>
       </div>

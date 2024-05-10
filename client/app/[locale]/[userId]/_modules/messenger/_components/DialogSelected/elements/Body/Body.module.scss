@@ -48,6 +48,7 @@
       display: flex;
       justify-content: space-between;
       gap: rem(5);
+      max-height: rem(20);
     }
     &Emojies {
       display: flex;
@@ -59,6 +60,7 @@
       display: flex;
       //gap: rem(5);
       flex-shrink: 0;
+      align-items: center;
     }
     &MetaInfoDate {
       display: flex;
@@ -67,6 +69,15 @@
     &MetaInfoDeliver {
       display: flex;
       justify-content: center;
+
+      &Icon {
+        color: rgba(117, 117, 122, 0.51);
+        height: 1.1em;
+
+        &--readable {
+          color: rgb(0, 144, 246);
+        }
+      }
     }
   }
 }

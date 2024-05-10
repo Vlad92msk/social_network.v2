@@ -58,9 +58,9 @@ const defaultInitState: CommunicateState = {
     text: '',
     dateCreated: new Date(),
     author: undefined,
-    dateRead: addDays(new Date(), 1),
+    dateRead: addDays(new Date(), 3),
     forwardMessageId: undefined,
-    dateDeliver: subDays(new Date(), 1),
+    dateDeliver: subDays(new Date(), 2),
   },
 }
 export const createDialogStore = (

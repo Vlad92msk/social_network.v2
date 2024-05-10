@@ -17,12 +17,14 @@
     display: flex;
     gap: rem(10);
     align-items: center;
+    height: 100%;
   }
 
   &-ImgContainer {
     position: relative;
     overflow: hidden;
     border-radius: $messenger--border-radius--medium;
+    height: max(100%, rem(20));
   }
   &-Info {
     display: flex;

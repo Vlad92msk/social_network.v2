@@ -26,6 +26,7 @@
 
   &-Header {
     display: flex;
+    max-height: rem(60);
     flex: 0 0 rem(60); // не растягивается, не сжимается, высота - 60
     justify-content: space-between;
     gap: rem(10);
