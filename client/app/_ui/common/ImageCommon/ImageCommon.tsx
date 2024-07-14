@@ -21,8 +21,9 @@ function createSizeString(bp: typeof mediaBreakpoints, sss: Test) {
   }
 
   let sizeString = ''
+  // eslint-disable-next-line no-restricted-syntax
   for (const key in bp) {
-    if (bp.hasOwnProperty(key) && sss[key]) {
+    if (Object.prototype.hasOwnProperty.call(bp, key) && sss[key]) {
       sizeString += `(min-width: ${bp[key]}px) ${sss[key]}, `
     }
   }
@@ -44,6 +45,7 @@ export function ImageCommon(props: ImageCommonProps) {
           media={`(min-width: ${mediaBreakpoints[key]}px)`}
         />
       ))}
+       {/* @ts-ignore */}
       <Image
         src={!src ? blurDataURL : src.includes('https://') ? src : `/images/${src}.webp`}
         sizes={createSizeString(mediaBreakpoints, sizes)}

@@ -43,6 +43,9 @@ module.exports = (phase, { defaultConfig }) => {
         case dev:
             return ({
                 ...baseConfig,
+                experimental:{
+                    reactCompiler: true,
+                }
             });
         case prod:
             return ({

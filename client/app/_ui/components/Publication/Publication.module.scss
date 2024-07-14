@@ -6,68 +6,107 @@ $text--min-height: rem(50);
 $text--max-height: rem(200);
 $media-container--max-height: rem(200);
 $author--max-width: rem(40);
+$padding: rem(10);
 
 .Publication {
+  padding: rem(10);
+  height: fit-content;
   display: grid;
   grid-template:
-        "change-container change-container change-container change-container ." $change-container--height
-        "media-container  media-container  media-container  media-container  author" fit-content($media-container--max-height)
-        "text             text             text             text             author" minmax(auto, $text--max-height)
-        "emojies          commets          date-delivery    date-created     author" $meta-info--height
-      / 1fr               auto             auto             auto             fit-content($author--max-width);
+        ".                              change-container change-container change-container change-container            ." fit-content($change-container--height)
+        "author-left                    media-container  media-container  media-container  media-container  author-right" fit-content($media-container--max-height)
+        "author-left                    text             text             text             text             author-right" fit-content($text--max-height)
+        "author-left                    emojies          commets          date-read        date-created     author-right" $meta-info--height
+      / fit-content($author--max-width)  1fr              auto             auto             auto             fit-content($author--max-width);
 
   &-Author {
-    grid-area: author;
     background: dodgerblue;
+    width: $author--max-width;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+
+    &--position {
+      &_left {
+        grid-area: author-left;
+        margin-right: rem(3);
+      }
+      &_right {
+        grid-area: author-right;
+        margin-left: rem(3);
+      }
+    }
   }
   &-ChangeContainer {
     grid-area: change-container;
     background: #616789;
+    padding-left: $padding;
+    padding-right: $padding;
+    align-content: center;
+    opacity: 0;
+    transition: opacity .5s;
+
+    &:hover {
+      opacity: 1;
+      transition: opacity .5s;
+    }
   }
   &-MediaContainer {
     grid-area: media-container;
     background: blueviolet;
+    padding: $padding;
   }
   &-Text {
     grid-area: text;
-    background: white;
+    overflow-y: auto;
+    padding: $padding;
   }
   &-Emojies {
     grid-area: emojies;
-    background: red;
+    padding-left: $padding;
+    padding-right: $padding;
+    align-content: center;
+    display: flex;
+    gap: rem(3);
   }
+
+  &-EmojieBox {
+    display: flex;
+    align-items: center;
+    gap: rem(3);
+
+    & > svg {
+      height: 60%;
+    }
+  }
+
   &-Commets {
     grid-area: commets;
-    background: green;
+    display: flex;
+    gap: rem(3);
+    align-items: center;
+    padding-left: $padding;
+    padding-right: $padding;
   }
-  &-DateDelivery {
-    grid-area: date-delivery;
-    background: orange;
+  &-DateRead {
+    grid-area: date-read;
+    align-content: center;
+    padding-left: $padding;
+    padding-right: $padding;
+
+    &Icon {
+      color: rgba(117, 117, 122, 0.51);
+      height: 1.1em;
+
+      &--readable {
+        color: rgb(0, 144, 246);
+      }
+    }
   }
   &-DateCreated {
     grid-area: date-created;
-    background: yellowgreen;
-  }
-
-  &-Post {
-    //grid-template:
-    //    "change-container change-container change-container change-container author" $change-container--height
-    //    "media-container  media-container  media-container  media-container  author" minmax(auto, $media-container--max-height);
-    //    "text             text             text             text             author" minmax($text--min-height, $text--max-height);
-    //    "emojies          commets          date-delivery    date-created     author" $meta-info--height / 1fr;
-  }
-  &-Message {
-    //grid-template:
-    //    "change-container change-container change-container change-container author" $change-container--height
-    //    "media-container  media-container  media-container  media-container  author" minmax(auto, $media-container--max-height);
-    //    "text             text             text             text             author" minmax($text--min-height, $text--max-height);
-    //    "emojies          commets          date-delivery    date-created     author" $meta-info--height / 1fr;
-  }
-  &-Comment {
-    //grid-template:
-    //    "change-container change-container change-container change-container author" $change-container--height
-    //    "media-container  media-container  media-container  media-container  author" minmax(auto, $media-container--max-height);
-    //    "text             text             text             text             author" minmax($text--min-height, $text--max-height);
-    //    "emojies          commets          date-delivery    date-created     author" $meta-info--height / 1fr;
+    align-content: center;
+    padding-left: $padding;
+    padding-right: $padding;
   }
 }

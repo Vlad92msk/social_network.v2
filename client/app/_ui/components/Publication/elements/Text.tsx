@@ -1,9 +1,14 @@
+import { TextCommon } from '@ui/common/TextCommon'
 import { cn } from '../cn'
 
 interface TextProps {
-  autor?: { name: string }
+ text: string
 }
 export function Text(props: TextProps) {
-  const { autor } = props
-  return <div className={cn('Text')}>Text</div>
+  const { text } = props
+  return (
+    <TextCommon className={cn('Text')} fs="14">
+      {text}
+    </TextCommon>
+  )
 }

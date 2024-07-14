@@ -17,4 +17,7 @@ export type IconName =
   | 'search'
   | 'check'
   | 'checkmark'
+  | 'chat'
+  | 'thump-up'
+  | 'thumb-down'
   | string;

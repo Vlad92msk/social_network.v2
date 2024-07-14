@@ -14,22 +14,23 @@
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "babel-plugin-react-compiler": "^0.0.0-experimental-696af53-20240625",
     "clsx": "2.0.0",
     "date-fns": "3.6.0",
     "framer-motion": "11.0.25",
     "lodash": "4.17.21",
-    "next": "14.2.3",
+    "next": "15.0.0-rc.0",
     "next-auth": "4.24.7",
     "normalize.css": "8.0.1",
-    "react": "^19.0.0-canary-e3ebcd54b-20240405",
-    "react-dom": "^19.0.0-canary-e3ebcd54b-20240405",
+    "react": "19.0.0-rc-df5f2736-20240712",
+    "react-dom": "19.0.0-rc-df5f2736-20240712",
     "react-inlinesvg": "^4.1.0",
-    "zustand": "^4.5.2"
+    "zustand": "4.5.4"
   },
   "devDependencies": {
-    "@types/node": "20.9.0",
-    "@types/react": "18.3.1",
-    "@types/react-dom": "yarn:types-react-dom@beta",
+    "@types/node": "20.14.10",
+    "@types/react": "npm:types-react@rc",
+    "@types/react-dom": "npm:types-react-dom@rc",
     "@typescript-eslint/eslint-plugin": "6.11.0",
     "@typescript-eslint/parser": "6.11.0",
     "eslint": "8.53.0",
@@ -39,10 +40,10 @@
     "eslint-plugin-simple-import-sort": "10.0.0",
     "sass": "1.74.1",
     "sass-loader": "13.3.2",
-    "typescript": "5.4.4"
+    "typescript": "5.5.3"
   },
   "overrides": {
-    "@types/react": "yarn:types-react@beta",
-    "@types/react-dom": "yarn:types-react-dom@beta"
+    "@types/react": "npm:types-react@rc",
+    "@types/react-dom": "npm:types-react-dom@rc"
   }
 }

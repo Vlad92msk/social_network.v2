@@ -1,7 +1,9 @@
+'use client'
+
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 import {
-  Author, ChangeContainer, Commets, DateCreated, DateDelivery, Emojies, MediaContainer, Text,
+  Author, ChangeContainer, Comments, DateCreated, DateRead, Emojies, MediaContainer, Text,
 } from './elements'
 
 interface PublicationComponents {
@@ -10,8 +12,8 @@ interface PublicationComponents {
   MediaContainer?: typeof MediaContainer;
   Text?: typeof Text;
   Emojies?: typeof Emojies;
-  Commets?: typeof Commets;
-  DateDelivery?: typeof DateDelivery;
+  Commets?: typeof Comments;
+  DateRead?: typeof DateRead;
   DateCreated?: typeof DateCreated;
 }
 
@@ -35,6 +37,6 @@ Publication.ChangeContainer = ChangeContainer
 Publication.MediaContainer = MediaContainer
 Publication.Text = Text
 Publication.Emojies = Emojies
-Publication.Commets = Commets
-Publication.DateDelivery = DateDelivery
+Publication.Commets = Comments
+Publication.DateRead = DateRead
 Publication.DateCreated = DateCreated
