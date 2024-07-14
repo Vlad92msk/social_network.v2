@@ -6,7 +6,7 @@ import { ChakraProvider } from '@chakra-ui/react'
 export function ChakraUI({ children }: { children: React.ReactNode }) {
   return (
     <CacheProvider>
-      <ChakraProvider disableGlobalStyle>
+      <ChakraProvider>
         {children}
       </ChakraProvider>
     </CacheProvider>

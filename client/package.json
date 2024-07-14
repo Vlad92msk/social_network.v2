@@ -19,6 +19,7 @@
     "date-fns": "3.6.0",
     "framer-motion": "11.0.25",
     "lodash": "4.17.21",
+    "mime-types": "^2.1.35",
     "next": "15.0.0-rc.0",
     "next-auth": "4.24.7",
     "normalize.css": "8.0.1",

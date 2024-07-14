@@ -1,4 +1,4 @@
-import { CSSProperties, forwardRef, PropsWithChildren } from 'react'
+import { CSSProperties, PropsWithChildren } from 'react'
 import { AdaptiveVariables, createBreakPoint } from '@ui/styles/variables/media'
 import { classNames, makeCn } from '@utils/others'
 
@@ -40,14 +40,13 @@ export interface TextCommonProps {
 
 const cn = makeCn('TextCommon', styles)
 
-export const TextCommon = forwardRef<HTMLElement, PropsWithChildren<TextCommonProps>>((props, ref) => {
+export const TextCommon = (props: PropsWithChildren<TextCommonProps>) => {
   const {
     className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, textElipsis, as: As = 'span', children, ...rest
   } = props
 
   return (
     <As
-      ref={ref}
       style={{
         ...style,
         letterSpacing: typeof letterSpacing === 'number' ? `${letterSpacing}em` : undefined,
@@ -68,4 +67,4 @@ export const TextCommon = forwardRef<HTMLElement, PropsWithChildren<TextCommonPr
       {children}
     </As>
   )
-})
+}

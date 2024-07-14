@@ -6,7 +6,7 @@ $text--min-height: rem(50);
 $text--max-height: rem(200);
 $media-container--max-height: rem(200);
 $author--max-width: rem(40);
-$padding: rem(10);
+$padding: rem(6);
 
 .Publication {
   padding: rem(10);
@@ -55,7 +55,58 @@ $padding: rem(10);
     grid-area: media-container;
     background: blueviolet;
     padding: $padding;
+    display: flex;
+    flex-direction: column;
+    gap: rem(10);
+
+    &ImgAddOtherButton {
+      position: absolute;
+      height: rem(70);
+      width: rem(100);
+      background: var(--Color-Bcg--variant-8--theme-default);
+      border-radius: $border-radius--medium;
+      border: rem(2) solid var(--Color-Border--variant-1--theme-default);
+      // Временно
+      & > span {
+        color: var(--Color-Border--variant-1--theme-default)!important;
+      }
+    }
+
+    &ImgFirstCurrentList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: rem(15);
+      align-items: center;
+      justify-content: center;
+
+      & > * {
+        width: calc(50% - #{rem(30)});
+        max-height: rem(100);
+      }
+    }
+
+    &ImgList {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &ImgBox {
+      display: block;
+    }
+
+    &AudioList {
+      display: flex;
+      flex-direction: column;
+
+      & > audio {
+        width: 100%;
+        max-height: rem(30);
+      }
+
+    }
   }
+
   &-Text {
     grid-area: text;
     overflow-y: auto;
