@@ -14,6 +14,8 @@ export function Body(props: PropsWithChildren) {
   return (
     <body className={cn({ theme })} data-project-theme={theme}>
       {children}
+      <section id="modals" />
+      <section id="notifications" />
     </body>
   )
 }

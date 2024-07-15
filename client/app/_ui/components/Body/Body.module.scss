@@ -4,9 +4,6 @@
 .Body {
   height: 100dvh;
   display: grid;
-  grid-template:
-          'root-menu-settings' $root-menu-settings-height
-          'root-page' calc(100dvh - $root-menu-settings-height);
 
   &--theme {
     &_default {
@@ -18,16 +15,5 @@
       color: var(--Color-Text--root--theme-light);
       background: var(--Color-Bcg--root--theme-light);
     }
-  }
-
-  // Применение стилей только к первому непосредственному потомку header
-  > header {
-    grid-area: root-menu-settings;
-  }
-
-  // Применение стилей только к первому непосредственному потомку main
-  > main {
-    grid-area: root-page;
-    overflow-y: auto;
   }
 }

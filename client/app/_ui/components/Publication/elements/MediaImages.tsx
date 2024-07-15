@@ -1,5 +1,5 @@
 import { useBooleanState } from '@hooks'
-import { ModalBase } from '@ui/base/Modal'
+import { ModalBase, ModalOverlay } from '@ui/base/Modal'
 import { TextCommon } from '@ui/common/TextCommon'
 import { cn } from '../cn'
 
@@ -37,6 +37,14 @@ export function MediaImages(props: MediaImagesProps) {
           ))
     }
       </div>
+      <ModalBase isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>
+        <ModalOverlay onClick={handleClose} />
+          {other.map(({ src, name }) => (
+            <div key={src} className={cn('MediaContainerImgBox')}>
+              <img src={src} alt={name} style={{ maxHeight: 'inherit' }} />
+            </div>
+          ))}
+      </ModalBase>
     </div>
   )
 }
