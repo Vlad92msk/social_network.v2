@@ -13,6 +13,9 @@
 
 > This is my educational **Fullstack Web App** where I practice my skills and explore new technologies!
 
+> Проект переписывался множество раз и я часто меняю/переписываю ранее написанный код.
+> Много экспериментирую со структурой, подходами и т.д.
+
 ## Folder Structure
 
 ```
