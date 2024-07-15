@@ -1,7 +1,7 @@
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
-import { ButtonCommon } from '@ui/common/ButtonCommon'
-import { ImageCommon } from '@ui/common/ImageCommon'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Button } from 'app/_ui/common/Button'
+import { Image } from 'app/_ui/common/Image'
+import { Text } from 'app/_ui/common/Text'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 import { useDialogListStore } from '../../../../_providers/dialogList'
@@ -31,28 +31,28 @@ export function DialogList(props: DialogListProps) {
         <div key={id} className={cn('Contact')}>
           <div className={cn('ContactImgContainer')}>
             { type === SelectDialogType.PUBLIC ? (
-              <ImageCommon src={img} alt={title || description || ''} width="50" height="50" />
+              <Image src={img} alt={title || description || ''} width="50" height="50" />
             ) : (
-              <ImageCommon src={lastMessage?.author?.profileImage} alt={lastMessage?.author?.name || ''} width="50" height="50" />
+              <Image src={lastMessage?.author?.profileImage} alt={lastMessage?.author?.name || ''} width="50" height="50" />
             ) }
           </div>
           <div className={cn('ContactContentWrapper')}>
-            <TextCommon className={cn('ContactName')} fs="12" textElipsis>{title}</TextCommon>
-            <TextCommon className={cn('ContactLastContactName')} fs="12" textElipsis>{lastMessage?.text}</TextCommon>
-            <TextCommon className={cn('ContactLastMessage')} fs="12" textElipsis>{lastMessage?.text}</TextCommon>
+            <Text className={cn('ContactName')} fs="12" textElipsis>{title}</Text>
+            <Text className={cn('ContactLastContactName')} fs="12" textElipsis>{lastMessage?.text}</Text>
+            <Text className={cn('ContactLastMessage')} fs="12" textElipsis>{lastMessage?.text}</Text>
           </div>
           <div className={cn('ContactHoverActions')}>
-            <ButtonCommon onClick={() => {
+            <Button onClick={() => {
               console.log(`Открыл диалог с ID:${id}`)
               setChatingPanelStatus('open')
               setOpenedDialogIds([id])
             }}
             >
-              <TextCommon fs="12">Чат</TextCommon>
-            </ButtonCommon>
-            <ButtonCommon>
-              <TextCommon fs="12">К контакту</TextCommon>
-            </ButtonCommon>
+              <Text fs="12">Чат</Text>
+            </Button>
+            <Button>
+              <Text fs="12">К контакту</Text>
+            </Button>
           </div>
         </div>
       ))}

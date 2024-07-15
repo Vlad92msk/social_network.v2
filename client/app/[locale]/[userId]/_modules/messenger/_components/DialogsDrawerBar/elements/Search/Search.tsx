@@ -1,5 +1,5 @@
-import { IconBase } from '@ui/base/IconBase'
-import { InputCommon, InputGroupCommon } from '@ui/common/InputCommon'
+import { Icon } from 'app/_ui/common/Icon'
+import { Input, InputGroup } from 'app/_ui/common/Input'
 import { classNames, makeCn } from '@utils/others'
 import style from './Search.module.scss'
 import { useDialogListStore } from '../../../../_providers/dialogList'
@@ -15,8 +15,8 @@ export function Search(props: SearchProps) {
   const set = useDialogListStore((state) => state.setFilter)
   return (
     <div className={classNames(cn(), className)}>
-      <InputGroupCommon leftElement={<IconBase name="search" />}>
-        <InputCommon
+      <InputGroup leftElement={<Icon name="search" />}>
+        <Input
           className={cn('Input')}
           type="text"
           fs="14"
@@ -25,7 +25,7 @@ export function Search(props: SearchProps) {
             set(e.currentTarget.value)
           }}
         />
-      </InputGroupCommon>
+      </InputGroup>
     </div>
   )
 }

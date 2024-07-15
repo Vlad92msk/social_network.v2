@@ -1,5 +1,5 @@
 import { signOut, useSession } from 'next-auth/react'
-import { ButtonCommon } from 'app/_ui/common/ButtonCommon'
+import { Button } from 'app/_ui/common/Button'
 
 
 export function ButtonExit() {
@@ -7,8 +7,8 @@ export function ButtonExit() {
 
   if (status !== 'authenticated') return undefined
   return (
-    <ButtonCommon onClick={() => signOut()} size="xs">
+    <Button onClick={() => signOut()} size="xs">
       Выйти
-    </ButtonCommon>
+    </Button>
   )
 }

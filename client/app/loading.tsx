@@ -1,6 +1,6 @@
-import { SpinnerBase } from 'app/_ui/base/SpinnerBase'
+import { Spinner } from '@ui/common/Spinner'
 
 export default function Loading() {
   // Or a custom loading skeleton component
-  return <SpinnerBase />
+  return <Spinner />
 }

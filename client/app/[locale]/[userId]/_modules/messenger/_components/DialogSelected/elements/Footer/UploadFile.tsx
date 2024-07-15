@@ -1,4 +1,4 @@
-import { FileUpLoad } from '@ui/common/FileUpLoadCommon'
+import { FileUpLoad } from 'app/_ui/common/FileUpLoad'
 import { FILE_FORMAT_IMAGE } from '../../../../../../../../types/fileFormats'
 import { cn } from './cn'
 import { useDialogStore } from '../../../../_providers/dialogSelected'

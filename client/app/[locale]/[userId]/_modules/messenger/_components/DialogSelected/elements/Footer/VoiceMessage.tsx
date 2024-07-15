@@ -1,5 +1,5 @@
 import { useProfile } from '@hooks'
-import { IconBase } from '@ui/base/IconBase'
+import { Icon } from 'app/_ui/common/Icon'
 import { cn } from './cn'
 import { useDialogStore } from '../../../../_providers/dialogSelected'
 
@@ -11,14 +11,14 @@ export function VoiceMessage() {
   if (onSubmitMessageText.length) {
     return (
       <button onClick={() => onSubmitMessage(profile?.userInfo!)}>
-        <IconBase name="send" />
+        <Icon name="send" />
       </button>
     )
   }
 
   return (
     <button className={cn('VoiceMessage')}>
-      <IconBase name="microphone" />
+      <Icon name="microphone" />
     </button>
   )
 }

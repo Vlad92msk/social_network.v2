@@ -1,5 +1,5 @@
-import { IconBase } from '@ui/base/IconBase'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Icon } from 'app/_ui/common/Icon'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 
 interface EmojiesProps {
@@ -11,12 +11,12 @@ export function Emojies(props: EmojiesProps) {
   return (
     <div className={cn('Emojies')}>
       <button className={cn('EmojieBox')} onClick={() => onClick?.({ name: 'thump-up' })}>
-        <IconBase name="thump-up" />
-        <TextCommon fs="12" letterSpacing={0.18}>2</TextCommon>
+        <Icon name="thump-up" />
+        <Text fs="12" letterSpacing={0.18}>2</Text>
       </button>
       <button className={cn('EmojieBox')} onClick={() => onClick?.({ name: 'thumb-down' })}>
-        <IconBase name="thumb-down" />
-        <TextCommon fs="12" letterSpacing={0.18}>20</TextCommon>
+        <Icon name="thumb-down" />
+        <Text fs="12" letterSpacing={0.18}>20</Text>
       </button>
     </div>
   )

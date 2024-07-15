@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useId } from 'react'
 import { AddedFile, availableFormats, MaterialAttachProps, useBooleanState, useMaterialsAttach } from '@hooks'
-import { IconBase, IconName } from '@ui/base/IconBase'
-import { ModalBase, ModalOverlay } from '@ui/base/Modal'
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { Icon, IconName } from 'app/_ui/common/Icon'
+import { ModalBase, ModalOverlay } from 'app/_ui/common/Modal'
+import { Button } from 'app/_ui/common/Button'
 import { classNames, makeCn } from '@utils/others'
 
 import styles from './FileUpLoad.module.scss'
@@ -73,7 +73,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
       <div className={classNames(cn(), className)}>
         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
         <label className={cn('AddFile', { disabled })} htmlFor={inputId}>
-          <IconBase name="attachment" fill="grey" />
+          <Icon name="attachment" fill="grey" />
           <input
             className={cn('FileInput')}
             id={inputId}
@@ -94,14 +94,14 @@ export function FileUpLoad(props: FileUpLoadProps) {
             <div className={cn('ImgWrapper')}>
               <img className={cn('Img')} src={src} alt={name} />
             </div>
-            <ButtonCommon onClick={() => removeAttach(name)}>
-              <IconBase className={cn('CloseApply')} name="git" />
-            </ButtonCommon>
+            <Button onClick={() => removeAttach(name)}>
+              <Icon className={cn('CloseApply')} name="git" />
+            </Button>
           </div>
         ))}
-        <ButtonCommon onClick={applyAttachments}>
+        <Button onClick={applyAttachments}>
           Подтвердить
-        </ButtonCommon>
+        </Button>
       </ModalBase>
     </>
   )

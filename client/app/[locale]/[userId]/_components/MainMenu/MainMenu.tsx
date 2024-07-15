@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ButtonCommon } from 'app/_ui/common/ButtonCommon'
+import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
 import { ButtonGoTo, ButtonLogOut, SelectLocale, SelectTheme, UserInfo } from './elements'
 import { NavigationContentType } from './types'
@@ -37,7 +37,7 @@ export function MainMenu() {
           </div>
         </>
       ), [gotoButtons])}
-      <ButtonCommon
+      <Button
         className={cn('ToggleMenu')}
         onClick={() => setStatus((prev) => (prev === 'open' ? 'close' : 'open'))}
         size="es"

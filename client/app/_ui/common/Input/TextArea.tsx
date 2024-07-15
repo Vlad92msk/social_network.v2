@@ -1,7 +1,7 @@
 import { RefObject, TextareaHTMLAttributes, useEffect, useRef } from 'react'
 import { classNames, rem } from '@utils/others'
 import { cn } from './cn'
-import { TextCommon, TextCommonProps } from '../TextCommon'
+import { Text, TextCommonProps } from '../Text'
 
 function useAutoResize(ref: RefObject<HTMLTextAreaElement | null>) {
   useEffect(() => {
@@ -42,14 +42,14 @@ interface InputCommonProps extends TextCommonProps, TextareaHTMLAttributes<HTMLT
   className?: string
 }
 
-export function TextAreaCommon(props: InputCommonProps) {
+export function TextArea(props: InputCommonProps) {
   const { className, ...rest } = props
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useAutoResize(textareaRef)
 
   return (
-    <TextCommon
+    <Text
       as="textarea"
       // @ts-ignore
       ref={textareaRef}

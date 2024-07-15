@@ -1,6 +1,6 @@
 import { useBooleanState } from '@hooks'
-import { ModalBase, ModalOverlay } from '@ui/base/Modal'
-import { TextCommon } from '@ui/common/TextCommon'
+import { ModalBase, ModalOverlay } from 'app/_ui/common/Modal'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 
 interface Img {
@@ -36,7 +36,7 @@ export function MediaImages(props: MediaImagesProps) {
       </div>
       {Boolean(other.length) && (
         <button className={cn('MediaContainerImgAddOtherButton')} onClick={handleOpen}>
-          <TextCommon fs="14">{`+ ${other.length}`}</TextCommon>
+          <Text fs="14">{`+ ${other.length}`}</Text>
         </button>
       )}
       <ModalBase isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>

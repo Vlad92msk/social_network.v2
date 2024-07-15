@@ -2,7 +2,7 @@ import { classNames, makeCn } from '@utils/others'
 
 import style from './Spinner.module.scss'
 
-interface SpinnerBaseProps {
+export interface SpinnerBaseProps {
   className?: string
 }
 

@@ -1,4 +1,4 @@
-import { TextAreaCommon } from '@ui/common/InputCommon'
+import { TextArea } from 'app/_ui/common/Input'
 import { cn } from './cn'
 import { useDialogStore } from '../../../../_providers/dialogSelected'
 
@@ -7,7 +7,7 @@ export function InputMessage() {
   const createMessageText = useDialogStore((store) => store.createMessage.text)
 
   return (
-    <TextAreaCommon
+    <TextArea
       className={cn('InputMessage')}
       placeholder="Сообщение"
       value={createMessageText}

@@ -1,6 +1,6 @@
 'use client'
 
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
 import { DialogList, Search, SwitcherDialogType } from './elements'
 import { useRootStore } from '../../_providers/root'
@@ -21,7 +21,7 @@ export function DialogsDrawerBar(props: MessengerProps) {
       <Search className={cn('Search')} />
       <DialogList className={cn('DialogsDrawerBar')} />
 
-      <ButtonCommon
+      <Button
         className={cn('ToggleMenu')}
         onClick={() => setStatus(status === 'open' ? 'close' : 'open')}
         size="es"

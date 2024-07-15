@@ -1,4 +1,4 @@
-import { TextCommon } from '@ui/common/TextCommon'
+import { Text as TextComponent } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 
 interface TextProps {
@@ -7,8 +7,8 @@ interface TextProps {
 export function Text(props: TextProps) {
   const { text } = props
   return (
-    <TextCommon className={cn('Text')} fs="14">
+    <TextComponent className={cn('Text')} fs="14">
       {text}
-    </TextCommon>
+    </TextComponent>
   )
 }

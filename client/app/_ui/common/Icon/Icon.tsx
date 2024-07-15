@@ -7,7 +7,7 @@ interface IconBasePros extends Omit<Props, 'src' |'name'>{
   id?: string
 }
 
-export function IconBase({ name, ...props }: IconBasePros) {
+export function Icon({ name, ...props }: IconBasePros) {
   const svgURL = `/icons/${name}.svg`
 
   return <InlineSVG src={svgURL} {...props} />

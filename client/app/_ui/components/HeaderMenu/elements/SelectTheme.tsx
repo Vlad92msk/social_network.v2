@@ -3,7 +3,7 @@
 import { ChangeEventHandler } from 'react'
 import { useThemeServiceUpdate } from '@providers/theme'
 import { DEFAULT_THEME, Theme, THEMES } from '@providers/theme/context/initialState'
-import { SelectCommon } from 'app/_ui/common/SelectCommon'
+import { Select } from 'app/_ui/common/Select'
 import { cn } from '../cn'
 
 export function SelectTheme() {
@@ -14,7 +14,7 @@ export function SelectTheme() {
   }
 
   return (
-    <SelectCommon
+    <Select
       className={cn('SelectTheme')}
       width="auto"
       size="xs"
@@ -26,6 +26,6 @@ export function SelectTheme() {
       {THEMES.map((theme) => (
         <option key={theme} value={theme}>{theme}</option>
       ))}
-    </SelectCommon>
+    </Select>
   )
 }

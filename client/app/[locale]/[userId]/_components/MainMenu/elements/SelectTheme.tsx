@@ -1,8 +1,8 @@
 import { ChangeEventHandler } from 'react'
 import { useThemeServiceUpdate } from '@providers/theme'
 import { DEFAULT_THEME, Theme, THEMES } from '@providers/theme/context/initialState'
-import { IconBase } from 'app/_ui/base/IconBase'
-import { SelectCommon } from 'app/_ui/common/SelectCommon'
+import { Icon } from 'app/_ui/common/Icon'
+import { Select } from 'app/_ui/common/Select'
 import { cn } from '../cn'
 
 export function SelectTheme() {
@@ -13,18 +13,18 @@ export function SelectTheme() {
   }
 
   return (
-    <SelectCommon
+    <Select
       className={cn('SelectTheme')}
       width="auto"
       size="xs"
       placeholder="Выбрать тему"
       defaultValue={DEFAULT_THEME}
       onChange={handleChangeTheme}
-      icon={<IconBase name="git" />}
+      icon={<Icon name="git" />}
     >
       {THEMES.map((theme) => (
         <option key={theme} value={theme}>{theme}</option>
       ))}
-    </SelectCommon>
+    </Select>
   )
 }

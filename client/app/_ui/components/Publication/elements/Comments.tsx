@@ -1,5 +1,5 @@
-import { IconBase } from '@ui/base/IconBase'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Icon } from 'app/_ui/common/Icon'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 
 interface CommentsProps {
@@ -11,8 +11,8 @@ export function Comments(props: CommentsProps) {
 
   return (
     <button className={cn('Commets')} onClick={onClick}>
-      <IconBase name="chat" />
-      <TextCommon fs="12" letterSpacing={0.18}>{countComments}</TextCommon>
+      <Icon name="chat" />
+      <Text fs="12" letterSpacing={0.18}>{countComments}</Text>
     </button>
   )
 }

@@ -1,11 +1,11 @@
-import { IconBase } from '@ui/base/IconBase'
+import { Icon } from 'app/_ui/common/Icon'
 import { format, isPast } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
 import { availableImages, useProfile } from '@hooks'
 // @ts-ignore
 import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
 
 interface MessageProps {
@@ -37,7 +37,7 @@ export function Message(props: MessageProps) {
               return <span>media</span>
             })}
           </div>
-          <TextCommon className={cn('MessageText')} fs="14">{text}</TextCommon>
+          <Text className={cn('MessageText')} fs="14">{text}</Text>
         </div>
       </div>
       <div className={cn('MessageFooter')}>
@@ -45,13 +45,13 @@ export function Message(props: MessageProps) {
           {emojis?.map(() => <span key="1">emoji</span>)}
         </div>
         <div className={cn('MessageMetaInfo')}>
-          <TextCommon className={cn('MessageMetaInfoDate')} fs="8">
+          <Text className={cn('MessageMetaInfoDate')} fs="8">
             {dateCreated && format(dateCreated, 'HH:mm', { locale: ru })}
-          </TextCommon>
+          </Text>
           <div className={cn('MessageMetaInfoDeliver')}>
             {
               (dateDeliver && dateRead) && (
-                <IconBase name={isPast(dateDeliver) ? 'check' : 'checkmark'} className={cn('MessageMetaInfoDeliverIcon', { readable: isPast(dateRead) })} />
+                <Icon name={isPast(dateDeliver) ? 'check' : 'checkmark'} className={cn('MessageMetaInfoDeliverIcon', { readable: isPast(dateRead) })} />
               )
             }
           </div>

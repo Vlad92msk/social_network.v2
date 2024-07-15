@@ -1,6 +1,6 @@
-import { IconBase } from '@ui/base/IconBase'
-import { ButtonCommon } from '@ui/common/ButtonCommon'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Icon } from 'app/_ui/common/Icon'
+import { Button } from 'app/_ui/common/Button'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 import { useSwitchContent } from '../hooks/useSwitchContent'
 import { NavigationContentType } from '../types'
@@ -14,15 +14,15 @@ export function ButtonGoTo(props: ButtonGoToProps) {
   const { to, title } = props
   const switchContent = useSwitchContent()
   return (
-    <ButtonCommon
+    <Button
       className={cn('NavigationButton')}
       size="sm"
       onClick={() => {
         switchContent(to)
       }}
     >
-      <IconBase name={to} />
-      <TextCommon className={cn('NavigationButtonText')} fs={{ es: '14', md: '16' }}>{title}</TextCommon>
-    </ButtonCommon>
+      <Icon name={to} />
+      <Text className={cn('NavigationButtonText')} fs={{ es: '14', md: '16' }}>{title}</Text>
+    </Button>
   )
 }

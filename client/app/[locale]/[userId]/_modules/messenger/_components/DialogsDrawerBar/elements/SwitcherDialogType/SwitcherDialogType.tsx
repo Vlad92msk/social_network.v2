@@ -1,6 +1,6 @@
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
-import { ButtonCommon } from '@ui/common/ButtonCommon'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Button } from 'app/_ui/common/Button'
+import { Text } from 'app/_ui/common/Text'
 import { classNames, makeCn } from '@utils/others'
 import style from './SwitcherDialogType.module.scss'
 import { useDialogListStore } from '../../../../_providers/dialogList'
@@ -20,18 +20,18 @@ export function SwitcherDialogType(props: SwitcherDialogTypeProps) {
 
   return (
     <div className={classNames(cn(), className)}>
-      <ButtonCommon
+      <Button
         className={cn('Button', { active: selectType === SelectDialogType.PRIVATE })}
         onClick={() => set(SelectDialogType.PRIVATE)}
       >
-        <TextCommon fs={status === 'open' ? '12' : '8'}>Личные</TextCommon>
-      </ButtonCommon>
-      <ButtonCommon
+        <Text fs={status === 'open' ? '12' : '8'}>Личные</Text>
+      </Button>
+      <Button
         className={cn('Button', { active: selectType === SelectDialogType.PUBLIC })}
         onClick={() => set(SelectDialogType.PUBLIC)}
       >
-        <TextCommon fs={status === 'open' ? '12' : '8'}>Групповые</TextCommon>
-      </ButtonCommon>
+        <Text fs={status === 'open' ? '12' : '8'}>Групповые</Text>
+      </Button>
     </div>
   )
 }

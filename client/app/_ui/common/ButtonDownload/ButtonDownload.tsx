@@ -1,5 +1,5 @@
 import { useHandleDownloadFile } from '@hooks'
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { Button } from 'app/_ui/common/Button'
 
 interface ButtonDownloadProps {
   // TODO: убрать any
@@ -11,12 +11,12 @@ export function ButtonDownload(props: ButtonDownloadProps) {
   const [handleDownload, downloading] = useHandleDownloadFile()
 
   return (
-    <ButtonCommon
+    <Button
       onClick={() => handleDownload(file.url, file.name)}
       disabled={downloading}
       isLoading={downloading}
     >
       {file.name}
-    </ButtonCommon>
+    </Button>
   )
 }

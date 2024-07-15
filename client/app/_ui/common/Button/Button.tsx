@@ -1,9 +1,9 @@
 import { SpinnerBase } from '@ui/base/SpinnerBase'
 import { classNames, makeCn } from '@utils/others'
 import { ButtonBase, ButtonBaseProps } from 'app/_ui/base/ButtonBase'
-import style from './ButtonCommon.module.scss'
+import style from './Button.module.scss'
 
-const cn = makeCn('ButtonCommon', style)
+const cn = makeCn('Button', style)
 
 interface ButtonCommonProps extends ButtonBaseProps {
   size?: 'xl'|
@@ -15,7 +15,7 @@ interface ButtonCommonProps extends ButtonBaseProps {
   'es'
 }
 
-export function ButtonCommon(props: ButtonCommonProps) {
+export function Button(props: ButtonCommonProps) {
   const { children, className, loadingText = <SpinnerBase />, ...rest } = props
   return (
     <ButtonBase

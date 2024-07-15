@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 
 interface DateCreatedProps {
@@ -9,8 +9,8 @@ interface DateCreatedProps {
 export function DateCreated(props: DateCreatedProps) {
   const { dateCreated } = props
   return (
-    <TextCommon className={cn('DateCreated')} fs="12" letterSpacing={0.18}>
+    <Text className={cn('DateCreated')} fs="12" letterSpacing={0.18}>
       {dateCreated && format(dateCreated, 'HH:mm', { locale: ru })}
-    </TextCommon>
+    </Text>
   )
 }

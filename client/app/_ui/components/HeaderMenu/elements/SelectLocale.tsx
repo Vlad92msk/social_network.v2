@@ -5,7 +5,7 @@ import { ChangeEventHandler } from 'react'
 import { useLocale } from '@hooks'
 import { Locales, LOCALES } from '@middlewares/location'
 import { useTranslateUpdate } from '@providers/translation'
-import { SelectCommon } from 'app/_ui/common/SelectCommon'
+import { Select } from 'app/_ui/common/Select'
 import { cn } from '../cn'
 
 export function SelectLocale() {
@@ -21,7 +21,7 @@ export function SelectLocale() {
   }
 
   return (
-    <SelectCommon
+    <Select
       className={cn('SelectLocation')}
       width="auto"
       size="xs"
@@ -32,6 +32,6 @@ export function SelectLocale() {
       {LOCALES.map((locale) => (
         <option key={locale} value={locale}>{locale}</option>
       ))}
-    </SelectCommon>
+    </Select>
   )
 }

@@ -1,10 +1,10 @@
-import { IconBase } from '@ui/base/IconBase'
+import { Icon } from 'app/_ui/common/Icon'
 import { cn } from './cn'
 
 export function ButtonAddSmiles() {
   return (
     <button className={cn('ButtonAddSmiles')}>
-      <IconBase name="face-smiling" />
+      <Icon name="face-smiling" />
     </button>
   )
 }

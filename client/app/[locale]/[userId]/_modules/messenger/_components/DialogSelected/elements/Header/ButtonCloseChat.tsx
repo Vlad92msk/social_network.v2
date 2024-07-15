@@ -1,4 +1,4 @@
-import { ButtonCommon } from '@ui/common/ButtonCommon'
+import { Button } from 'app/_ui/common/Button'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 import { useRootStore } from '../../../../_providers/root'
@@ -13,11 +13,11 @@ export function ButtonCloseChat(props: ButtonCloseChatProps) {
   const handleCloseChat = useRootStore((state) => state.setChatingPanelStatus)
 
   return (
-    <ButtonCommon
+    <Button
       className={classNames(cn('ButtonCloseChat'), className)}
       onClick={() => handleCloseChat('close')}
     >
       X
-    </ButtonCommon>
+    </Button>
   )
 }

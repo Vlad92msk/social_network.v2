@@ -1,7 +1,7 @@
-import { classNames } from '@utils/others'
 import React, { PropsWithChildren, ReactElement } from 'react'
-import { cn } from '@ui/base/Modal/cn'
+import { cn } from '@ui/common/Modal/cn'
 import { Portal } from '@ui/base/Portal'
+import { classNames } from '@utils/others'
 import { ModalCloseButton } from './ModalCloseButton'
 import { ModalOverlay } from './ModalOverlayProps'
 

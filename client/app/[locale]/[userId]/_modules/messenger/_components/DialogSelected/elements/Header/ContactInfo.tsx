@@ -1,9 +1,9 @@
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { useProfile } from '@hooks'
-import { SpinnerBase } from '@ui/base/SpinnerBase'
-import { ImageCommon } from '@ui/common/ImageCommon'
-import { TextCommon } from '@ui/common/TextCommon'
+import { Spinner } from '@ui/common/Spinner'
 import { classNames } from '@utils/others'
+import { Image } from 'app/_ui/common/Image'
+import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
 import { useDialogStore } from '../../../../_providers/dialogSelected'
 
@@ -20,9 +20,9 @@ export function ContactInfo(props: ContactInfoProps) {
     const { apiData } = store.getCurrentDialog()
 
     const byDefault = {
-      img: <ImageCommon alt="contact" width={50} height={50} />,
-      name: <TextCommon className={cn('InfoName')} fs="14" />,
-      status: <TextCommon className={cn('OnlineStatus')} fs="10" />,
+      img: <Image alt="contact" width={50} height={50} />,
+      name: <Text className={cn('InfoName')} fs="14" />,
+      status: <Text className={cn('OnlineStatus')} fs="10" />,
     }
 
     if (!apiData) return byDefault
@@ -34,32 +34,32 @@ export function ContactInfo(props: ContactInfoProps) {
         const [participant] = participants.filter(({ id }) => id !== profile?.userInfo.id)
 
         return ({
-          img: <ImageCommon src={participant.profileImage} alt="contact" width={50} height={50} />,
+          img: <Image src={participant.profileImage} alt="contact" width={50} height={50} />,
           name: (
-            <TextCommon className={cn('InfoName')} fs="14">
+            <Text className={cn('InfoName')} fs="14">
               {participant.name}
-            </TextCommon>
+            </Text>
           ),
           status: (
-            <TextCommon className={cn('OnlineStatus')} fs="10">
+            <Text className={cn('OnlineStatus')} fs="10">
               {participant.onlineStatus}
-            </TextCommon>
+            </Text>
           ),
         })
       }
       case SelectDialogType.PUBLIC: {
         return ({
-          img: <ImageCommon src={picture} alt="contact" width={50} height={50} />,
+          img: <Image src={picture} alt="contact" width={50} height={50} />,
           name: (
-            <TextCommon className={cn('InfoName')} fs="14">
+            <Text className={cn('InfoName')} fs="14">
               {title}
-            </TextCommon>
+            </Text>
           ),
           status: (
-            <TextCommon className={cn('OnlineStatus')} fs="10">
+            <Text className={cn('OnlineStatus')} fs="10">
               {`${participants.length} участников,
               ${participants.filter(({ onlineStatus }) => onlineStatus === 'online').length} в сети`}
-            </TextCommon>
+            </Text>
           ),
         })
       }
@@ -67,15 +67,15 @@ export function ContactInfo(props: ContactInfoProps) {
     }
   })
 
-  if (apiStatus) return <SpinnerBase />
+  if (apiStatus) return <Spinner />
   if (apiError) return <div>Error</div>
 
   return (
     <div className={classNames(cn('ContactInfo'), className)}>
       <div className={cn('ImgContainer')}>{img}</div>
       <div className={cn('Info')}>
-        <TextCommon className={cn('InfoName')} fs="14">{name}</TextCommon>
-        <TextCommon className={cn('OnlineStatus')} fs="10">{status}</TextCommon>
+        <Text className={cn('InfoName')} fs="14">{name}</Text>
+        <Text className={cn('OnlineStatus')} fs="10">{status}</Text>
       </div>
     </div>
   )

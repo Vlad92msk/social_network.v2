@@ -1,11 +1,11 @@
 'use client'
 
-import Image, { ImageProps } from 'next/image'
+import NextImage, { ImageProps as NextImageProps } from 'next/image'
 import { MediaBreakKeys, mediaBreakpoints } from '@ui/styles/variables/media'
 
 export type Test = Partial<Record<MediaBreakKeys, string>> | string | undefined
 
-export interface ImageCommonProps extends Omit<ImageProps, 'src' | 'loading' | 'sizes'> {
+export interface ImageCommonProps extends Omit<NextImageProps, 'src' | 'loading' | 'sizes'> {
   src?: string
   pictureClassName?: string
   srcSet?: Partial<Record<MediaBreakKeys, string>>;
@@ -31,7 +31,7 @@ function createSizeString(bp: typeof mediaBreakpoints, sss: Test) {
   return sizeString || '100vw' // Значение по умолчанию, если не определено
 }
 
-export function ImageCommon(props: ImageCommonProps) {
+export function Image(props: ImageCommonProps) {
   const {
     src, pictureClassName, blurDataURL = '/images/base/blur_img.webp', placeholder = 'blur', sizes, srcSet, ...rest
   } = props
@@ -46,7 +46,7 @@ export function ImageCommon(props: ImageCommonProps) {
         />
       ))}
        {/* @ts-ignore */}
-      <Image
+      <NextImage
         src={!src ? blurDataURL : src.includes('https://') ? src : `/images/${src}.webp`}
         sizes={createSizeString(mediaBreakpoints, sizes)}
         placeholder={placeholder}

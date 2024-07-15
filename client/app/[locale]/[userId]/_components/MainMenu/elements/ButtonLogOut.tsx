@@ -1,23 +1,23 @@
 import { signOut } from 'next-auth/react'
-import { TextCommon } from '@ui/common/TextCommon'
-import { IconBase } from 'app/_ui/base/IconBase'
-import { ButtonCommon } from 'app/_ui/common/ButtonCommon'
+import { Text } from 'app/_ui/common/Text'
+import { Icon } from 'app/_ui/common/Icon'
+import { Button } from 'app/_ui/common/Button'
 import { cn } from '../cn'
 
 export function ButtonLogOut() {
   return (
-    <ButtonCommon
+    <Button
       className={cn('NavigationButton')}
       size="sm"
       onClick={() => signOut()}
     >
-      <IconBase name="sign-out" />
-      <TextCommon
+      <Icon name="sign-out" />
+      <Text
         className={cn('NavigationButtonText')}
         fs={{ es: '14', md: '16' }}
       >
         Выйти
-      </TextCommon>
-    </ButtonCommon>
+      </Text>
+    </Button>
   )
 }

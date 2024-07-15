@@ -1,5 +1,5 @@
 import { InputHTMLAttributes } from 'react'
-import { TextCommon, TextCommonProps } from '@ui/common/TextCommon'
+import { Text, TextCommonProps } from 'app/_ui/common/Text'
 
 import { classNames } from '@utils/others'
 import { cn } from './cn'
@@ -8,8 +8,8 @@ interface InputCommonProps extends TextCommonProps, InputHTMLAttributes<HTMLInpu
   className?: string
 }
 
-export function InputCommon(props: InputCommonProps) {
+export function Input(props: InputCommonProps) {
   const { className, ...rest } = props
 
-  return <TextCommon className={classNames(cn('Text'), className)} as="input" {...rest} />
+  return <Text className={classNames(cn('Text'), className)} as="input" {...rest} />
 }

@@ -10,7 +10,7 @@ interface InputGroupCommonProps {
   rightElement?: React.ReactNode
 }
 
-export function InputGroupCommon(props: InputGroupCommonProps) {
+export function InputGroup(props: InputGroupCommonProps) {
   const { className, children, leftElement, rightElement, ...rest } = props
 
   const containerRef = useRef<HTMLDivElement>(null)

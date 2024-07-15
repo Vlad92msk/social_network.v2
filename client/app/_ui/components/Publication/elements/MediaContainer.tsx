@@ -1,6 +1,6 @@
-import { MediaOther } from './MediaOther'
 import { MediaAudio } from './MediaAudio'
 import { MediaImages } from './MediaImages'
+import { MediaOther } from './MediaOther'
 import { MediaVideo } from './MediaVideo'
 import { cn } from '../cn'
 
