@@ -1,5 +1,7 @@
-import { MediaAudio } from '@ui/components/Publication/elements/MediaAudio'
-import { MediaImages } from '@ui/components/Publication/elements/MediaImages'
+import { MediaOther } from './MediaOther'
+import { MediaAudio } from './MediaAudio'
+import { MediaImages } from './MediaImages'
+import { MediaVideo } from './MediaVideo'
 import { cn } from '../cn'
 
 export interface Media111 {
@@ -23,7 +25,9 @@ export function MediaContainer(props: MediaContainerProps) {
   return (
     <div className={cn('MediaContainer')}>
       <MediaImages images={media.image} />
+      <MediaVideo videos={media.video} />
       <MediaAudio audios={media.audio} />
+      <MediaOther files={[...media.other, ...media.text]} />
     </div>
   )
 }

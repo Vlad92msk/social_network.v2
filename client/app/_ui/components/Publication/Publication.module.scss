@@ -53,7 +53,6 @@ $padding: rem(6);
   }
   &-MediaContainer {
     grid-area: media-container;
-    background: blueviolet;
     padding: $padding;
     display: flex;
     flex-direction: column;
@@ -73,15 +72,31 @@ $padding: rem(6);
     }
 
     &ImgFirstCurrentList {
+      $gap: rem(15);
+
       display: flex;
       flex-wrap: wrap;
-      gap: rem(15);
-      align-items: center;
-      justify-content: center;
+      gap: $gap;
+      width: 100%;
 
       & > * {
-        width: calc(50% - #{rem(30)});
-        max-height: rem(100);
+        flex-basis: calc(50% - #{$gap});
+        max-width: calc(50% - #{$gap});
+        height: rem(150);
+        position: relative;
+        overflow: hidden;
+
+        // Для случая с одним видео
+        &:first-child:last-child {
+          flex-basis: 100%;
+          max-width: 100%;
+        }
+
+        // Для случая с тремя видео (третье видео занимает всю ширину)
+        &:nth-child(3):last-child {
+          flex-basis: 100%;
+          max-width: 100%;
+        }
       }
     }
 
