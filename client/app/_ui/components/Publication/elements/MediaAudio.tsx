@@ -1,4 +1,4 @@
-import { cn } from '@ui/components/Publication/cn'
+import { cn } from '../cn'
 
 interface Audio {
   type: string

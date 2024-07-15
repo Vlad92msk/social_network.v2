@@ -1,6 +1,7 @@
 .ButtonBase {
   display: flex;
   align-items: center;
+  padding: 5px;
 
   &--isLoading {
     opacity: 0.5;

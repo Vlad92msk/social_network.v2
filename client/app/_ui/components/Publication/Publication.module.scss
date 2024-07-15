@@ -134,6 +134,19 @@ $padding: rem(6);
         height: 100%;
       }
     }
+
+    // Для прочих файлов которые приложил пользователь
+    &MediaOther {
+      display: flex;
+      flex-direction: column;
+      gap: rem(5);
+      overflow: hidden;
+      align-items: end;
+    }
+    &MediaOtherItem {
+      width: fit-content;
+      max-width: 100%;
+    }
   }
 
   &-Text {

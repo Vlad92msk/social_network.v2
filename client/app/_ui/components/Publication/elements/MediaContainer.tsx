@@ -18,7 +18,6 @@ interface MediaContainerProps {
 
 export function MediaContainer(props: MediaContainerProps) {
   const { media } = props
-  console.log('media', media)
 
   if (!media) return null
 
