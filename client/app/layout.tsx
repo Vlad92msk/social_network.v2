@@ -1,4 +1,3 @@
-import { ChakraUI } from '@providers/chakraUI/ChakraUI'
 import { Session } from '@providers/session/Session'
 import { ThemeService } from '@providers/theme'
 import { Translation } from '@providers/translation'
@@ -28,9 +27,7 @@ export default async function RootLayout({ children }) {
         <Html>
           <Session>
             <Body>
-              <ChakraUI>
-                {children}
-              </ChakraUI>
+              {children}
             </Body>
           </Session>
         </Html>

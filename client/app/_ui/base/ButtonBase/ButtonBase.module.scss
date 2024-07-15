@@ -1,3 +1,8 @@
 .ButtonBase {
+  display: flex;
+  align-items: center;
 
+  &--isLoading {
+    opacity: 0.5;
+  }
 }

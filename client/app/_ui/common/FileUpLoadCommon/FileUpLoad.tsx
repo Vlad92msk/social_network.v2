@@ -1,8 +1,7 @@
-import { ModalContent, ModalOverlay } from '@chakra-ui/react'
 import React, { useCallback, useEffect, useId } from 'react'
 import { AddedFile, availableFormats, MaterialAttachProps, useBooleanState, useMaterialsAttach } from '@hooks'
 import { IconBase, IconName } from '@ui/base/IconBase'
-import { ModalBase } from '@ui/base/Modal'
+import { ModalBase, ModalOverlay } from '@ui/base/Modal'
 import { ButtonCommon } from '@ui/common/ButtonCommon'
 import { classNames, makeCn } from '@utils/others'
 
@@ -85,28 +84,24 @@ export function FileUpLoad(props: FileUpLoadProps) {
           />
         </label>
       </div>
-      <ModalBase isOpen={Boolean(isOpenPevFiles && isConfirm)} onClose={() => 1}>
+      <ModalBase isOpen={Boolean(isOpenPevFiles && isConfirm)} contentClassName={cn('ApplyAttachments')}>
         <ModalOverlay />
-        <ModalContent>
-          <div className={cn('ApplyAttachments')}>
-            {addedFiles.map(({
-              name,
-              src,
-            }) => (
-              <div key={name} className={cn('ApplyImg')}>
-                <div className={cn('ImgWrapper')}>
-                  <img className={cn('Img')} src={src} alt={name} />
-                </div>
-                <ButtonCommon onClick={() => removeAttach(name)}>
-                  <IconBase className={cn('CloseApply')} name="git" />
-                </ButtonCommon>
-              </div>
-            ))}
+        {addedFiles.map(({
+          name,
+          src,
+        }) => (
+          <div key={name} className={cn('ApplyImg')}>
+            <div className={cn('ImgWrapper')}>
+              <img className={cn('Img')} src={src} alt={name} />
+            </div>
+            <ButtonCommon onClick={() => removeAttach(name)}>
+              <IconBase className={cn('CloseApply')} name="git" />
+            </ButtonCommon>
           </div>
-          <ButtonCommon onClick={applyAttachments}>
-            Подтвердить
-          </ButtonCommon>
-        </ModalContent>
+        ))}
+        <ButtonCommon onClick={applyAttachments}>
+          Подтвердить
+        </ButtonCommon>
       </ModalBase>
     </>
   )

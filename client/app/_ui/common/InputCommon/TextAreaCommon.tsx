@@ -1,13 +1,11 @@
-import { TextareaProps as ChakraTextAreaProps } from '@chakra-ui/react'
-import { RefObject, useEffect, useRef } from 'react'
-import { TextCommon, TextCommonProps } from '@ui/common/TextCommon'
-
+import { RefObject, TextareaHTMLAttributes, useEffect, useRef } from 'react'
 import { classNames, rem } from '@utils/others'
 import { cn } from './cn'
+import { TextCommon, TextCommonProps } from '../TextCommon'
 
-function useAutoResize(ref: RefObject<HTMLTextAreaElement>) {
+function useAutoResize(ref: RefObject<HTMLTextAreaElement | null>) {
   useEffect(() => {
-    const element = ref.current
+    const element = ref?.current
 
     const handleResize = () => {
       if (element) {
@@ -40,8 +38,8 @@ function useAutoResize(ref: RefObject<HTMLTextAreaElement>) {
   }, [ref]) // Хук не зависит от внешних переменных
 }
 
-interface InputCommonProps extends TextCommonProps, Pick<ChakraTextAreaProps, 'placeholder' | 'value' | 'onChange' | 'onBlur'> {
-// className?: string
+interface InputCommonProps extends TextCommonProps, TextareaHTMLAttributes<HTMLTextAreaElement> {
+  className?: string
 }
 
 export function TextAreaCommon(props: InputCommonProps) {
@@ -53,6 +51,7 @@ export function TextAreaCommon(props: InputCommonProps) {
   return (
     <TextCommon
       as="textarea"
+      // @ts-ignore
       ref={textareaRef}
       className={classNames(cn('TextArea'), className)}
       {...rest}
