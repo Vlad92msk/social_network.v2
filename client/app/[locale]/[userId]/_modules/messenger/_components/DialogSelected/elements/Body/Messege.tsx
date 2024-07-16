@@ -1,11 +1,11 @@
+import { addDays } from 'date-fns'
+import { useEffect, useState } from 'react'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
 import { useProfile } from '@hooks'
 import { Publication } from '@ui/components/Publication'
 import { Media111 } from '@ui/components/Publication/elements'
-import { addDays } from 'date-fns'
-import { useEffect, useState } from 'react'
-import { generateText } from '../../../../../../(content)/profile/_components/data'
 import { cn } from './cn'
+import { generateText } from '../../../../../../(content)/profile/_components/data'
 
 interface MessageProps {
   message: UserMessage
@@ -42,16 +42,16 @@ export function Message(props: MessageProps) {
       id={id}
       className={cn('Message', { from })}
     >
-      <Publication className={cn()} authorPosition={from === 'me' ? 'right': 'left'} >
+      <Publication className={cn('MessageItem')} authorPosition={from === 'me' ? 'right' : 'left'}>
         <Publication.ChangeContainer />
         <Publication.MediaContainer media={media} />
-        <Publication.Text text={generateText(900)} />
+        <Publication.Text className={cn('MessageItemText')} text={generateText(900)} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
-        <Publication.Commets countComments={10} onClick={() => console.log('dwe')} />
         <Publication.DateCreated dateCreated={new Date()} />
 
         <Publication.Author />
-        <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), 1)} />
+        <Publication.DateCreated dateCreated={new Date()} />
+        <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), -1)} />
       </Publication>
     </div>
   )

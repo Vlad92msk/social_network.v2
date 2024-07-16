@@ -1,10 +1,9 @@
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
+import { classNames, makeCn } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Text } from 'app/_ui/common/Text'
-import { classNames, makeCn } from '@utils/others'
 import style from './SwitcherDialogType.module.scss'
-import { useDialogListStore } from '../../../../_providers/dialogList'
-import { useRootStore } from '../../../../_providers/root'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 export const cn = makeCn('SwitcherDialogType', style)
 
@@ -14,9 +13,9 @@ interface SwitcherDialogTypeProps {
 
 export function SwitcherDialogType(props: SwitcherDialogTypeProps) {
   const { className } = props
-  const selectType = useDialogListStore((state) => state.selectType)
-  const set = useDialogListStore((state) => state.setSelectType)
-  const status = useRootStore((state) => state.drawerStatus)
+  const selectType = useMessageStore((state) => state.selectType)
+  const set = useMessageStore((state) => state.setSelectType)
+  const status = useMessageStore((state) => state.drawerStatus)
 
   return (
     <div className={classNames(cn(), className)}>

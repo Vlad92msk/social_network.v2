@@ -1,8 +1,8 @@
+import { classNames, makeCn } from '@utils/others'
 import { Icon } from 'app/_ui/common/Icon'
 import { Input, InputGroup } from 'app/_ui/common/Input'
-import { classNames, makeCn } from '@utils/others'
 import style from './Search.module.scss'
-import { useDialogListStore } from '../../../../_providers/dialogList'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 export const cn = makeCn('Search', style)
 
@@ -12,7 +12,7 @@ interface SearchProps {
 
 export function Search(props: SearchProps) {
   const { className } = props
-  const set = useDialogListStore((state) => state.setFilter)
+  const set = useMessageStore((state) => state.setFilter)
   return (
     <div className={classNames(cn(), className)}>
       <InputGroup leftElement={<Icon name="search" />}>

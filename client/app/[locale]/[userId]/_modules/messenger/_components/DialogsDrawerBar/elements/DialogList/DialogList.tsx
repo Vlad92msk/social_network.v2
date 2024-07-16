@@ -1,11 +1,10 @@
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
+import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
-import { classNames } from '@utils/others'
 import { cn } from './cn'
-import { useDialogListStore } from '../../../../_providers/dialogList'
-import { useRootStore } from '../../../../_providers/root'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 interface DialogListProps{
   className?: string;
@@ -13,10 +12,10 @@ interface DialogListProps{
 
 export function DialogList(props: DialogListProps) {
   const { className } = props
-  const viewDialogList = useDialogListStore((state) => state.viewDialogList())
-  const status = useRootStore((state) => state.drawerStatus)
-  const setChatingPanelStatus = useRootStore((state) => state.setChatingPanelStatus)
-  const setOpenedDialogIds = useRootStore((state) => state.setOpenedDialogIds)
+  const viewDialogList = useMessageStore((state) => state.viewDialogList())
+  const status = useMessageStore((state) => state.drawerStatus)
+  const setChatingPanelStatus = useMessageStore((state) => state.setChatingPanelStatus)
+  const setOpenedDialogIds = useMessageStore((state) => state.setOpenedDialogIds)
 
   return (
     <div className={classNames(cn({ status }), className)}>

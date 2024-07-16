@@ -1,12 +1,12 @@
 import { useProfile } from '@hooks'
 import { Icon } from 'app/_ui/common/Icon'
 import { cn } from './cn'
-import { useDialogStore } from '../../../../_providers/dialogSelected'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 export function VoiceMessage() {
   const { profile } = useProfile()
-  const onSubmitMessageText = useDialogStore((store) => store.createMessage.text)
-  const onSubmitMessage = useDialogStore((store) => store.onSubmitMessage)
+  const onSubmitMessageText = useMessageStore((store) => store.createMessage.text)
+  const onSubmitMessage = useMessageStore((store) => store.onSubmitMessage)
 
   if (onSubmitMessageText.length) {
     return (

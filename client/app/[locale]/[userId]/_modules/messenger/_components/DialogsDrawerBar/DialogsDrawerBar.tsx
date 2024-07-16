@@ -3,16 +3,16 @@
 import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
 import { DialogList, Search, SwitcherDialogType } from './elements'
-import { useRootStore } from '../../_providers/root'
+import { useMessageStore } from '../../_providers/message/message.provider'
 
 interface MessengerProps {}
 
 export function DialogsDrawerBar(props: MessengerProps) {
   // const { } = props
 
-  const status = useRootStore((state) => state.drawerStatus)
-  const setStatus = useRootStore((state) => state.setDrawerStatus)
-  const chatingPanelStatus = useRootStore((state) => state.chatingPanelStatus)
+  const status = useMessageStore((state) => state.drawerStatus)
+  const setStatus = useMessageStore((state) => state.setDrawerStatus)
+  const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
 
   return (
     <div className={cn({ status, hide: chatingPanelStatus === 'open' })}>

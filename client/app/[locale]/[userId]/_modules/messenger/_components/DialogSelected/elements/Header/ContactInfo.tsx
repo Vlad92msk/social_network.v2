@@ -5,7 +5,7 @@ import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
-import { useDialogStore } from '../../../../_providers/dialogSelected'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 interface ContactInfoProps {
   className?: string
@@ -13,10 +13,10 @@ interface ContactInfoProps {
 
 export function ContactInfo(props: ContactInfoProps) {
   const { className } = props
-  const { apiStatus, apiError } = useDialogStore((store) => store.getCurrentDialog())
+  const { apiStatus, apiError } = useMessageStore((store) => store.getCurrentDialog())
   const { profile } = useProfile()
 
-  const { img, name, status } = useDialogStore((store) => {
+  const { img, name, status } = useMessageStore((store) => {
     const { apiData } = store.getCurrentDialog()
 
     const byDefault = {

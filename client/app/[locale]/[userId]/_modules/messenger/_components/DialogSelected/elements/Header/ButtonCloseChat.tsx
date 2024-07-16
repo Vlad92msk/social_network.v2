@@ -1,7 +1,7 @@
-import { Button } from 'app/_ui/common/Button'
 import { classNames } from '@utils/others'
+import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
-import { useRootStore } from '../../../../_providers/root'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 interface ButtonCloseChatProps {
   className?: string
@@ -10,7 +10,7 @@ interface ButtonCloseChatProps {
 export function ButtonCloseChat(props: ButtonCloseChatProps) {
   const { className } = props
 
-  const handleCloseChat = useRootStore((state) => state.setChatingPanelStatus)
+  const handleCloseChat = useMessageStore((state) => state.setChatingPanelStatus)
 
   return (
     <Button

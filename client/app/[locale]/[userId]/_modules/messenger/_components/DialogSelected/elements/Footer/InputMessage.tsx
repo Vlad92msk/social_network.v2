@@ -1,10 +1,10 @@
 import { TextArea } from 'app/_ui/common/Input'
 import { cn } from './cn'
-import { useDialogStore } from '../../../../_providers/dialogSelected'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 export function InputMessage() {
-  const onCreateMessage = useDialogStore((store) => store.onCreateMessage)
-  const createMessageText = useDialogStore((store) => store.createMessage.text)
+  const onCreateMessage = useMessageStore((store) => store.onCreateMessage)
+  const createMessageText = useMessageStore((store) => store.createMessage.text)
 
   return (
     <TextArea

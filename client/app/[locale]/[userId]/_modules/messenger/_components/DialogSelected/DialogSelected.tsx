@@ -3,15 +3,14 @@
 import { useEffect } from 'react'
 import { cn } from './cn'
 import { Body, ButtonCloseChat, CallButtons, ContactInfo, Footer } from './elements'
-import { useDialogStore } from '../../_providers/dialogSelected'
-import { useRootStore } from '../../_providers/root'
+import { useMessageStore } from '../../_providers/message/message.provider'
 
 interface ChatProps {}
 
 export function DialogSelected(props: ChatProps) {
-  const chatingPanelStatus = useRootStore((state) => state.chatingPanelStatus)
-  const fetchDialogs = useDialogStore((store) => store.fetchSelectedDialog)
-  const openedDialogIds = useRootStore((state) => state.openedDialogIds)
+  const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
+  const fetchDialogs = useMessageStore((store) => store.fetchSelectedDialog)
+  const openedDialogIds = useMessageStore((state) => state.openedDialogIds)
 
   // console.log('test', test)
 

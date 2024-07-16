@@ -1,25 +1,23 @@
-import { ReactNode } from 'react'
+import { PropsWithChildren } from 'react'
 import { classNames, makeCn } from '@utils/others'
 import style from './Messenger.module.scss'
-import { MessengerRootProvider } from '../_providers/root'
+import { MessageProvider } from '../_providers/message/message.provider'
+import { MessengerState } from '../_providers/message/message.store'
 
 export const cn = makeCn('Messenger', style)
 
-interface MessengerProps {
+interface MessengerProps extends Partial<MessengerState>, PropsWithChildren {
   className?: string;
-  communicate: ReactNode
-  chat: ReactNode
 }
 
 export function Messenger(props: MessengerProps) {
-  const { className, communicate, chat } = props
+  const { className, children, ...rest } = props
 
   return (
-    <MessengerRootProvider>
+    <MessageProvider {...rest}>
       <div className={classNames(cn(), className)}>
-        {communicate}
-        {chat}
+        {children}
       </div>
-    </MessengerRootProvider>
+    </MessageProvider>
   )
 }

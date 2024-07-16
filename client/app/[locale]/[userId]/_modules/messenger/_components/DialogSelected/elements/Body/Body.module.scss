@@ -28,6 +28,15 @@
       }
     }
 
+    &Item {
+      width: 100%;
+      background: #192935;
+      border-radius: $paddings--medium;
+      &Text {
+        margin-bottom: rem(10);
+      }
+    }
+
     &MainContent {
       display: flex;
       flex-direction: column;

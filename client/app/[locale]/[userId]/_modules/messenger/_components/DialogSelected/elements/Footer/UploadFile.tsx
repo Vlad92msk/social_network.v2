@@ -1,10 +1,10 @@
 import { FileUpLoad } from 'app/_ui/common/FileUpLoad'
-import { FILE_FORMAT_IMAGE } from '../../../../../../../../types/fileFormats'
 import { cn } from './cn'
-import { useDialogStore } from '../../../../_providers/dialogSelected'
+import { FILE_FORMAT_IMAGE } from '../../../../../../../../types/fileFormats'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 export function UploadFile() {
-  const onCreateMessage = useDialogStore((store) => store.onCreateMessage)
+  const onCreateMessage = useMessageStore((store) => store.onCreateMessage)
 
   return (
     <FileUpLoad

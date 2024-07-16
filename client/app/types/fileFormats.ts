@@ -133,7 +133,7 @@ export enum FILE_FORMAT_TEXT {
   RTX = 'text/richtext', // .rtx - Rich Text Format (RTF)
   SGML = 'text/sgml', // .sgml - Standard Generalized Markup Language (SGML)
   TSV = 'text/tab-separated-values', // .tsv - Tab Seperated Values
-  T = 'text/troff', // .t - troff
+  T = 'text/troff', // .message - troff
   TTL = 'text/turtle', // .ttl - Turtle (Terse RDF Triple Language)
   URI = 'text/uri-list', // .uri - URI Resolution Services
   CURL = 'text/vnd.curl', // .curl - Curl - Applet
@@ -157,7 +157,7 @@ export enum FILE_FORMAT_TEXT {
   UU = 'text/x-uuencode', // .uu - UUEncode
   VCS = 'text/x-vcalendar', // .vcs - vCalendar
   VCF = 'text/x-vcard', // .vcf - vCard
-  YAML = 'text/yaml', // .yaml - YAML Ain't Markup Language / Yet Another Markup Language
+  YAML = 'text/yaml', // .yaml - YAML Ain'message Markup Language / Yet Another Markup Language
 }
 
 /**

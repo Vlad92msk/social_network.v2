@@ -1,13 +1,15 @@
+import { classNames } from '@utils/others'
 import { Text as TextComponent } from 'app/_ui/common/Text'
 import { cn } from '../cn'
 
 interface TextProps {
- text: string
+  text: string
+  className?: string
 }
 export function Text(props: TextProps) {
-  const { text } = props
+  const { text, className } = props
   return (
-    <TextComponent className={cn('Text')} fs="14">
+    <TextComponent className={classNames(cn('Text'), className)} fs="14">
       {text}
     </TextComponent>
   )
