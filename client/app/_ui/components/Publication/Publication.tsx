@@ -27,7 +27,9 @@ export function Publication(props: PublicationProps) {
 
   return (
     <div className={classNames(cn(), className)}>
-      {children}
+      <div className={cn('Wrapper')}>
+        {children}
+      </div>
     </div>
   )
 }

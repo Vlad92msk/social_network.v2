@@ -4,6 +4,11 @@ import { addDays } from 'date-fns'
 import { useEffect, useState } from 'react'
 import { Publication } from '@ui/components/Publication'
 import { Media111 } from '@ui/components/Publication/elements'
+import { makeCn } from '@utils/others'
+import { generateText } from './data'
+import style from './Publication.module.scss'
+
+const cn = makeCn('Pub', style)
 
 export function Pub() {
   const [media, setMedia] = useState<Media111>()
@@ -25,10 +30,10 @@ export function Pub() {
     fetchMedia()
   }, [])
   return (
-    <Publication>
+    <Publication className={cn()}>
       <Publication.ChangeContainer />
       <Publication.MediaContainer media={media} />
-      <Publication.Text text="text message" />
+      <Publication.Text text={generateText(900)} />
       <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
       <Publication.Commets countComments={10} onClick={() => console.log('dwe')} />
       <Publication.DateCreated dateCreated={new Date()} />

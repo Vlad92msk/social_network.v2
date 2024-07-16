@@ -20,7 +20,6 @@ export function MediaContainer(props: MediaContainerProps) {
   const { media } = props
 
   if (!media) return null
-
   return (
     <div className={cn('MediaContainer')}>
       <MediaImages images={media.image} />

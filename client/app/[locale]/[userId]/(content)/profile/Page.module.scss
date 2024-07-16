@@ -1,0 +1,10 @@
+@import "@ui/styles/for_components";
+
+.Page {
+  display: flex;
+  flex-direction: column;
+  padding-left: 3%;
+  padding-right: 3%;
+  overflow-y: auto;
+  padding-top: rem(50);
+}

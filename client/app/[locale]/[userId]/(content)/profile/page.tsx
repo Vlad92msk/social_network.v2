@@ -1,5 +1,9 @@
 import { Locales } from '@middlewares/location'
+import { makeCn } from '@utils/others'
 import { Pub } from './_components/Publication'
+import style from './Page.module.scss'
+
+const cn = makeCn('Page', style)
 
 interface UserPageProps {
   params: {
@@ -11,6 +15,8 @@ interface UserPageProps {
 
 export default async function ProfileContent(props: UserPageProps) {
   return (
-    <Pub />
+    <div className={cn()}>
+      <Pub />
+    </div>
   )
 }

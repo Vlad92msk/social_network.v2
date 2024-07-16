@@ -20,4 +20,8 @@ export type IconName =
   | 'chat'
   | 'thump-up'
   | 'thumb-down'
+  | 'edit'
+  | 'delete'
+  | 'close'
+  | 'approve'
   | string;

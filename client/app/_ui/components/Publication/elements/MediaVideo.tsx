@@ -17,42 +17,42 @@ export function MediaVideo(props: MediaVideoProps) {
   const { videos } = props
   const {
     current = [],
-    other = []
+    other = [],
   } = Object.groupBy(videos, (item, indx) => (indx <= 3 ? 'current' : 'other'))
   const [open, handleOpen, handleClose] = useBooleanState(false)
   return (
     <div className={cn('MediaContainerImgList')}>
-      {Boolean(other.length) && (
-        <button className={cn('MediaContainerImgAddOtherButton')} onClick={handleOpen}>
-          <Text fs="14">{`+ ${other.length}`}</Text>
-        </button>
-      )}
       <div className={cn('MediaContainerImgFirstCurrentList')}>
         {
           current.length === 1 ? (
-              <div className={cn('MediaContainerImgBox')}>
-                <video controls>
-                  <source src={current[0].src} type={current[0].type}/>
-                  Your browser does not support the video element.
-                </video>
-              </div>
-            ) :
-            current.map(({ src, type }) => (
+            <div className={cn('MediaContainerImgBox')}>
+              <video controls>
+                <source src={current[0].src} type={current[0].type} />
+                Your browser does not support the video element.
+              </video>
+            </div>
+          )
+            : current.map(({ src, type }) => (
               <div key={src} className={cn('MediaContainerImgBox')}>
                 <video controls>
-                  <source src={src} type={type}/>
+                  <source src={src} type={type} />
                   Your browser does not support the video element.
                 </video>
               </div>
             ))
         }
       </div>
+      {Boolean(other.length) && (
+        <button className={cn('MediaContainerImgAddOtherButton')} onClick={handleOpen}>
+          <Text>{`+ ${other.length}`}</Text>
+        </button>
+      )}
       <ModalBase isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>
-        <ModalOverlay onClick={handleClose}/>
+        <ModalOverlay onClick={handleClose} />
         {other.map(({ src, type }) => (
           <div key={src} className={cn('MediaContainerImgBox')}>
             <video controls>
-              <source src={src} type={type}/>
+              <source src={src} type={type} />
               Your browser does not support the video element.
             </video>
           </div>

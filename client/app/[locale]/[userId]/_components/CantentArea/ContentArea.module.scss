@@ -3,5 +3,6 @@
 .ContentArea {
   flex: 1 1;
   display: grid;
-  grid-template: 'content messenger' 100% / 1fr auto;
+  grid-template-columns: 1fr auto;
+  column-gap: rem(10);
 }

@@ -4,21 +4,46 @@ $change-container--height: rem(30);
 $meta-info--height: rem(30);
 $text--min-height: rem(50);
 $text--max-height: rem(200);
-$media-container--max-height: rem(200);
+$media-container--max-height: rem(800);
 $author--max-width: rem(40);
 $padding: rem(6);
 
+@media (max-width: 400px) {
+  .Publication {
+    background: red !important;
+  }
+}
+
 .Publication {
-  padding: rem(10);
-  height: fit-content;
-  display: grid;
-  grid-template:
+  container-type: inline-size;
+  max-width: rem(800);
+
+  &-Wrapper {
+    width: 100%;
+    height: fit-content;
+    padding: rem(10);
+    display: grid;
+    grid-template:
         ".                              change-container change-container change-container change-container            ." fit-content($change-container--height)
-        "author-left                    media-container  media-container  media-container  media-container  author-right" fit-content($media-container--max-height)
+        "author-left                    media-container  media-container  media-container  media-container  author-right" auto
         "author-left                    text             text             text             text             author-right" fit-content($text--max-height)
         "author-left                    emojies          commets          date-read        date-created     author-right" $meta-info--height
       / fit-content($author--max-width)  1fr              auto             auto             auto             fit-content($author--max-width);
 
+  }
+  @container (max-width: 400px) {
+    &-Wrapper {
+      grid-template:
+        "author-right     author-right     author-right    " auto
+        "author-left      author-left      author-left     " auto
+        "change-container change-container change-container" fit-content($change-container--height)
+        "media-container  media-container  media-container " auto
+        "text             text             text            " fit-content($text--max-height)
+        "emojies          emojies          date-read       " $meta-info--height
+        "commets          .                date-created    " $meta-info--height
+      / fit-content($author--max-width)  auto             auto            auto             fit-content($author--max-width);
+    }
+  }
   &-Author {
     background: dodgerblue;
     width: $author--max-width;
@@ -39,16 +64,30 @@ $padding: rem(6);
   }
   &-ChangeContainer {
     grid-area: change-container;
-    background: #616789;
-    padding-left: $padding;
-    padding-right: $padding;
+    background: rgba(97, 103, 137, 0.11);
+    padding: $padding;
     align-content: center;
     opacity: 0;
     transition: opacity .5s;
+    display: flex;
+    justify-content: space-between;
 
     &:hover {
       opacity: 1;
       transition: opacity .5s;
+    }
+     svg {
+      height: rem(15);
+      width: rem(15);
+    }
+
+    &MainActionList {
+      display: flex;
+      gap: rem(5);
+    }
+    &SubmitActionList {
+      display: flex;
+      gap: rem(5);
     }
   }
   &-MediaContainer {
@@ -60,42 +99,48 @@ $padding: rem(6);
 
     &ImgAddOtherButton {
       position: absolute;
-      height: rem(70);
-      width: rem(100);
+      width: 25%;
+      aspect-ratio: 2 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: var(--Color-Bcg--variant-8--theme-default);
       border-radius: $border-radius--medium;
       border: rem(2) solid var(--Color-Border--variant-1--theme-default);
       // Временно
       & > span {
         color: var(--Color-Border--variant-1--theme-default)!important;
+        font-size: 3vw;
       }
     }
 
     &ImgFirstCurrentList {
-      $gap: rem(15);
+      $gap: .5vw;
 
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
       gap: $gap;
-      width: 100%;
 
       & > * {
-        flex-basis: calc(50% - #{$gap});
-        max-width: calc(50% - #{$gap});
-        height: rem(150);
+        width: calc(50% - #{$gap});
+        //height: calc(50% - #{$gap});
+        aspect-ratio: 3 / 2;
         position: relative;
         overflow: hidden;
 
         // Для случая с одним видео
         &:first-child:last-child {
           flex-basis: 100%;
-          max-width: 100%;
+          width: 100%;
+          height: 100%;
         }
 
         // Для случая с тремя видео (третье видео занимает всю ширину)
         &:nth-child(3):last-child {
           flex-basis: 100%;
-          max-width: 100%;
+          width: 100%;
         }
       }
     }
@@ -139,7 +184,6 @@ $padding: rem(6);
     &MediaOther {
       display: flex;
       flex-direction: column;
-      gap: rem(5);
       overflow: hidden;
       align-items: end;
     }
@@ -150,6 +194,7 @@ $padding: rem(6);
   }
 
   &-Text {
+    width: 100%;
     grid-area: text;
     overflow-y: auto;
     padding: $padding;
@@ -183,7 +228,9 @@ $padding: rem(6);
   }
   &-DateRead {
     grid-area: date-read;
-    align-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: end;
     padding-left: $padding;
     padding-right: $padding;
 
@@ -198,7 +245,9 @@ $padding: rem(6);
   }
   &-DateCreated {
     grid-area: date-created;
-    align-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: end;
     padding-left: $padding;
     padding-right: $padding;
   }
