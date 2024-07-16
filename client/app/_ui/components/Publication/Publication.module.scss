@@ -34,9 +34,8 @@ $padding: rem(6);
   @container (max-width: 400px) {
     &-Wrapper {
       grid-template:
-        "author-right     author-right     author-right    " auto
-        "author-left      author-left      author-left     " auto
-        "change-container change-container change-container" fit-content($change-container--height)
+        "author-right     change-container change-container" fit-content($change-container--height)
+        "author-left      change-container change-container" fit-content($change-container--height)
         "media-container  media-container  media-container " auto
         "text             text             text            " fit-content($text--max-height)
         "emojies          emojies          date-read       " $meta-info--height

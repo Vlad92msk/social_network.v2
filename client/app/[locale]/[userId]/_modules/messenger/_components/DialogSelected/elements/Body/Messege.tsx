@@ -1,11 +1,10 @@
-import { Icon } from 'app/_ui/common/Icon'
-import { format, isPast } from 'date-fns'
-import { ru } from 'date-fns/locale'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
-import { availableImages, useProfile } from '@hooks'
-// @ts-ignore
-import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
-import { Text } from 'app/_ui/common/Text'
+import { useProfile } from '@hooks'
+import { Publication } from '@ui/components/Publication'
+import { Media111 } from '@ui/components/Publication/elements'
+import { addDays } from 'date-fns'
+import { useEffect, useState } from 'react'
+import { generateText } from '../../../../../../(content)/profile/_components/data'
 import { cn } from './cn'
 
 interface MessageProps {
@@ -14,49 +13,46 @@ interface MessageProps {
 
 export function Message(props: MessageProps) {
   const { message } = props
-  const {
-    id, emojis, text, forwardMessageId, media, author, dateRead, dateDeliver, dateCreated,
-  } = message
+  const { id, author } = message
 
   const { profile } = useProfile()
+  const [media, setMedia] = useState<Media111>()
+
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        const response = await fetch('/api/media')
+        if (!response.ok) {
+          throw new Error('Failed to fetch media')
+        }
+        const data = await response.json()
+        setMedia(data)
+      } catch (error) {
+        console.error('Error fetching media:', error)
+      }
+    }
+
+    fetchMedia()
+  }, [])
+
+  const from = profile?.userInfo.id === author?.id ? 'me' : 'other'
 
   return (
     <div
       id={id}
-      className={cn('Message', { from: profile?.userInfo.id === author?.id ? 'me' : 'other' })}
+      className={cn('Message', { from })}
     >
-      <div className={cn('MessageMainContent')}>
-        {forwardMessageId && (<div>forward</div>)}
-        <div className={cn('MessageContent')}>
-          <div className={cn('MessageMedia')}>
-            {media?.map(({ type, src, name }) => {
-              if (Object.values(availableImages).includes(type as FILE_FORMAT_IMAGE)) {
-                return <img key={src} src={src} alt={name} style={{ maxHeight: 'inherit' }} />
-              }
+      <Publication className={cn()}>
+        <Publication.ChangeContainer />
+        <Publication.MediaContainer media={media} />
+        <Publication.Text text={generateText(900)} />
+        <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
+        <Publication.Commets countComments={10} onClick={() => console.log('dwe')} />
+        <Publication.DateCreated dateCreated={new Date()} />
 
-              return <span>media</span>
-            })}
-          </div>
-          <Text className={cn('MessageText')} fs="14">{text}</Text>
-        </div>
-      </div>
-      <div className={cn('MessageFooter')}>
-        <div className={cn('MessageEmojies')}>
-          {emojis?.map(() => <span key="1">emoji</span>)}
-        </div>
-        <div className={cn('MessageMetaInfo')}>
-          <Text className={cn('MessageMetaInfoDate')} fs="8">
-            {dateCreated && format(dateCreated, 'HH:mm', { locale: ru })}
-          </Text>
-          <div className={cn('MessageMetaInfoDeliver')}>
-            {
-              (dateDeliver && dateRead) && (
-                <Icon name={isPast(dateDeliver) ? 'check' : 'checkmark'} className={cn('MessageMetaInfoDeliverIcon', { readable: isPast(dateRead) })} />
-              )
-            }
-          </div>
-        </div>
-      </div>
+        <Publication.Author position={from === 'me' ? 'right': 'left'} />
+        <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), 1)} />
+      </Publication>
     </div>
   )
 }
