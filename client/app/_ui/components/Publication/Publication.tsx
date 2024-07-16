@@ -20,14 +20,15 @@ interface PublicationComponents {
 export interface PublicationProps extends PublicationComponents {
   className?: string
   children?: React.ReactNode[]
+  authorPosition?: 'left' | 'right'
 }
 
 export function Publication(props: PublicationProps) {
-  const { className, children } = props
+  const { className, authorPosition = 'right', children } = props
 
   return (
     <div className={classNames(cn(), className)}>
-      <div className={cn('Wrapper')}>
+      <div className={cn('Wrapper', { authorPosition })}>
         {children}
       </div>
     </div>

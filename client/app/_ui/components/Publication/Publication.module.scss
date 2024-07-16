@@ -8,11 +8,7 @@ $media-container--max-height: rem(800);
 $author--max-width: rem(40);
 $padding: rem(6);
 
-@media (max-width: 400px) {
-  .Publication {
-    background: red !important;
-  }
-}
+
 
 .Publication {
   container-type: inline-size;
@@ -23,44 +19,60 @@ $padding: rem(6);
     height: fit-content;
     padding: rem(10);
     display: grid;
-    grid-template:
-        ".                              change-container change-container change-container change-container            ." fit-content($change-container--height)
-        "author-left                    media-container  media-container  media-container  media-container  author-right" auto
-        "author-left                    text             text             text             text             author-right" fit-content($text--max-height)
-        "author-left                    emojies          commets          date-read        date-created     author-right" $meta-info--height
-      / fit-content($author--max-width)  1fr              auto             auto             auto             fit-content($author--max-width);
 
+    &--authorPosition {
+      &_left {
+        grid-template:
+        ".                              change-container change-container change-container change-container " fit-content($change-container--height)
+        "author                         media-container  media-container  media-container  media-container  " auto
+        "author                         text             text             text             text             " fit-content($text--max-height)
+        "author                         emojies          commets          date-read        date-created     " $meta-info--height
+      / fit-content($author--max-width)  1fr              auto             auto             auto             ;
+      }
+      &_right {
+        grid-template:
+        "change-container change-container change-container change-container            ." fit-content($change-container--height)
+        "media-container  media-container  media-container  media-container        author" auto
+        "text             text             text             text                   author" fit-content($text--max-height)
+        "emojies          commets          date-read        date-created           author" $meta-info--height
+      /  1fr              auto             auto             auto                   fit-content($author--max-width);
+      }
+    }
   }
   @container (max-width: 400px) {
     &-Wrapper {
-      grid-template:
-        "author-right     change-container change-container" fit-content($change-container--height)
-        "author-left      change-container change-container" fit-content($change-container--height)
-        "media-container  media-container  media-container " auto
-        "text             text             text            " fit-content($text--max-height)
-        "emojies          emojies          date-read       " $meta-info--height
-        "commets          .                date-created    " $meta-info--height
-      / fit-content($author--max-width)  auto             auto            auto             fit-content($author--max-width);
+      &--authorPosition {
+        &_left {
+              grid-template:
+              "author                         change-container change-container " fit-content($change-container--height)
+              "media-container                media-container  media-container  " auto
+              "text                           text             text             " fit-content($text--max-height)
+              "emojies                        emojies          date-read        " $meta-info--height
+              "commets                        .                date-created     " $meta-info--height
+            / fit-content($author--max-width)  auto             auto             ;
+        }
+        &_right {
+
+          grid-template:
+                "change-container  change-container author                         " fit-content($change-container--height)
+                "media-container   media-container  media-container                " auto
+                "text              text             text                           " fit-content($text--max-height)
+                "emojies           emojies          date-read                      " $meta-info--height
+                "commets           .                date-created                   " $meta-info--height
+              /  auto              auto             fit-content($author--max-width) ;
+        }
+      }
     }
   }
   &-Author {
-    background: dodgerblue;
-    width: $author--max-width;
-    aspect-ratio: 1;
-    overflow: hidden;
-    border-radius: 50%;
-
-    &--position {
-      &_left {
-        grid-area: author-left;
-        margin-right: rem(3);
-      }
-      &_right {
-        grid-area: author-right;
-        margin-left: rem(3);
-      }
-    }
+    grid-area: author;
+      background: dodgerblue;
+      width: $author--max-width;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 50%;
   }
+
   &-ChangeContainer {
     grid-area: change-container;
     background: rgba(97, 103, 137, 0.11);

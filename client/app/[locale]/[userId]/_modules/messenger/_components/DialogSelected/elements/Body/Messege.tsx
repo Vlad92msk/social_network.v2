@@ -42,7 +42,7 @@ export function Message(props: MessageProps) {
       id={id}
       className={cn('Message', { from })}
     >
-      <Publication className={cn()}>
+      <Publication className={cn()} authorPosition={from === 'me' ? 'right': 'left'} >
         <Publication.ChangeContainer />
         <Publication.MediaContainer media={media} />
         <Publication.Text text={generateText(900)} />
@@ -50,7 +50,7 @@ export function Message(props: MessageProps) {
         <Publication.Commets countComments={10} onClick={() => console.log('dwe')} />
         <Publication.DateCreated dateCreated={new Date()} />
 
-        <Publication.Author position={from === 'me' ? 'right': 'left'} />
+        <Publication.Author />
         <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), 1)} />
       </Publication>
     </div>
