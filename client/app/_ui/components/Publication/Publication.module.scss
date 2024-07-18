@@ -11,6 +11,7 @@ $padding: rem(6);
 
 
 .Publication {
+  $this: &;
   container-type: inline-size;
   max-width: rem(800);
 
@@ -19,6 +20,12 @@ $padding: rem(6);
     height: fit-content;
     padding: rem(10);
     display: grid;
+    border-radius: $paddings--medium;
+    background: #192935;
+
+    &--isChangeActive {
+      border: rem(1) dotted var(--Color-Border--variant-2--theme-default);
+    }
 
     &--authorPosition {
       &_left {
@@ -82,6 +89,10 @@ $padding: rem(6);
     display: flex;
     justify-content: space-between;
 
+    :is(#{$this}-Wrapper--isChangeActive) & {
+      opacity: 1;
+
+    }
     &:hover {
       opacity: 1;
       transition: opacity .5s;
@@ -207,7 +218,13 @@ $padding: rem(6);
     width: 100%;
     grid-area: text;
     overflow-y: auto;
-    padding: $padding;
+    display: flex;
+
+    &Content {
+      padding: $padding;
+      display: flex;
+      width: 100%;
+    }
   }
   &-Emojies {
     grid-area: emojies;

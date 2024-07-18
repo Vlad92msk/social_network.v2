@@ -42,15 +42,23 @@ export function Message(props: MessageProps) {
       id={id}
       className={cn('Message', { from })}
     >
-      <Publication className={cn('MessageItem')} authorPosition={from === 'me' ? 'right' : 'left'}>
+      <Publication
+        contextProps={{
+          text: generateText(900),
+          media,
+          dateCreated: new Date(),
+          dateChanged: undefined,
+        }}
+        className={cn('MessageItem')}
+        authorPosition={from === 'me' ? 'right' : 'left'}
+      >
         <Publication.ChangeContainer />
-        <Publication.MediaContainer media={media} />
-        <Publication.Text className={cn('MessageItemText')} text={generateText(900)} />
+        <Publication.MediaContainer />
+        <Publication.Text className={cn('MessageItemText')} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
-        <Publication.DateCreated dateCreated={new Date()} />
 
         <Publication.Author />
-        <Publication.DateCreated dateCreated={new Date()} />
+        <Publication.DateCreated />
         <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), -1)} />
       </Publication>
     </div>

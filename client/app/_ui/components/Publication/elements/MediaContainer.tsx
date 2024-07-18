@@ -3,6 +3,7 @@ import { MediaImages } from './MediaImages'
 import { MediaOther } from './MediaOther'
 import { MediaVideo } from './MediaVideo'
 import { cn } from '../cn'
+import { usePublicationCtxSelect } from '../Publication'
 
 export interface Media111 {
   image: []
@@ -12,12 +13,9 @@ export interface Media111 {
   other: []
 }
 
-interface MediaContainerProps {
-  media?: Media111
-}
 
-export function MediaContainer(props: MediaContainerProps) {
-  const { media } = props
+export function MediaContainer() {
+  const media = usePublicationCtxSelect((store) => store.media)
 
   if (!media) return null
   return (

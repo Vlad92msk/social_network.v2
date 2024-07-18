@@ -16,7 +16,6 @@
     "clsx": "2.0.0",
     "date-fns": "3.6.0",
     "framer-motion": "11.0.25",
-    "lodash": "4.17.21",
     "mime-types": "^2.1.35",
     "next": "15.0.0-rc.0",
     "next-auth": "4.24.7",
@@ -27,6 +26,7 @@
     "zustand": "4.5.4"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.7",
     "@types/node": "20.14.10",
     "@types/react": "npm:types-react@rc",
     "@types/react-dom": "npm:types-react-dom@rc",

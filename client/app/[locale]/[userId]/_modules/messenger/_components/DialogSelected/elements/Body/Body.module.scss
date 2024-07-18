@@ -15,8 +15,6 @@
     width: 80%;
     overflow: hidden;
     position: relative;
-    //padding: $messenger--padding--super-small;
-    //border: rem(1) solid var(--Color-Border--variant-3--theme-default);
     flex-shrink: 0;
 
     &--from {
@@ -30,8 +28,6 @@
 
     &Item {
       width: 100%;
-      background: #192935;
-      border-radius: $paddings--medium;
       &Text {
         margin-bottom: rem(10);
       }

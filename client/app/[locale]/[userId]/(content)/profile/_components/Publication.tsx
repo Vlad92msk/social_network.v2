@@ -30,13 +30,21 @@ export function Pub() {
     fetchMedia()
   }, [])
   return (
-    <Publication className={cn()}>
+    <Publication
+      contextProps={{
+        text: generateText(900),
+        media,
+        dateCreated: new Date(),
+        dateChanged: undefined,
+      }}
+      className={cn()}
+    >
       <Publication.ChangeContainer />
-      <Publication.MediaContainer media={media} />
-      <Publication.Text text={generateText(900)} />
+      <Publication.MediaContainer />
+      <Publication.Text />
       <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
       <Publication.Commets countComments={10} onClick={() => console.log('dwe')} />
-      <Publication.DateCreated dateCreated={new Date()} />
+      <Publication.DateCreated />
 
       <Publication.Author />
       <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), 1)} />

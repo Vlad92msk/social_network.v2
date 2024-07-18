@@ -1,12 +1,11 @@
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { cn } from '../cn'
+import { usePublicationCtxUpdate } from '../Publication'
 
-interface AuthorProps {
-  autor?: { name: string }
-}
-export function ChangeContainer(props: AuthorProps) {
-  const { autor } = props
+export function ChangeContainer() {
+  const handleSetChangeActive = usePublicationCtxUpdate()
+
   return (
     <div className={cn('ChangeContainer')}>
       <div className={cn('ChangeContainerMainActionList')}>
@@ -14,14 +13,26 @@ export function ChangeContainer(props: AuthorProps) {
           <Icon name="delete" />
         </Button>
         <Button>
-          <Icon name="edit" />
+          <Icon name="edit" onClick={() => handleSetChangeActive(() => ({ isChangeActive: true }))} />
         </Button>
       </div>
       <div className={cn('ChangeContainerSubmitActionList')}>
         <Button>
-          <Icon name="close" />
+          <Icon
+            name="close"
+            onClick={() => handleSetChangeActive(({ changeState, ...ctx }) => {
+              const newState = {
+                ...ctx,
+                isChangeActive: false,
+              }
+              return ({
+                ...newState,
+                changeState: newState,
+              })
+            })}
+          />
         </Button>
-        <Button>
+        <Button onClick={() => handleSetChangeActive(({ changeState }) => ({ ...changeState, changeState }))}>
           <Icon name="approve" />
         </Button>
       </div>

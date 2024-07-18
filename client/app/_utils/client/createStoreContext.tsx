@@ -1,11 +1,8 @@
 'use client'
 
-import React, { createContext, PropsWithChildren, use, useCallback, useRef, useSyncExternalStore } from 'react'
+import { cloneDeep, merge } from 'lodash'
+import { ComponentType, createContext, PropsWithChildren, use, useRef, useSyncExternalStore } from 'react'
 import { DeepPartial } from '../tsUtils'
-
-// function isReact18OrNewer() {
-//   return !!React.useSyncExternalStore
-// }
 
 export interface Options<Store> {
   initialState: Store;
@@ -13,28 +10,29 @@ export interface Options<Store> {
 
 export function createStoreContext<Store>({ initialState: initial }: Options<Store>) {
   const StoreContext = createContext<{
-    get:() => Store;
-    set: (v: (s: Store) => DeepPartial<Store>) => void;
-    subscribe: (callback: VoidFunction) => VoidFunction;
+    get:() => Store
+    set: (v: (s: Store) => DeepPartial<Store>) => void
+    subscribe: (callback: VoidFunction) => VoidFunction
       } | null>(null)
 
   function useStoreData() {
     const store = useRef<Store>(initial)
     const subscribers = useRef(new Set<VoidFunction>())
 
-    const get = useCallback(() => store.current, [store])
-    const set = useCallback((update: (s: Store) => DeepPartial<Store>) => {
-      const newState = { ...store.current, ...update(store.current) }
+    const get = () => store.current
+
+    const set = (update: (s: Store) => Partial<Store>) => {
+      const newState = merge(cloneDeep(store.current), update(store.current))
       if (!Object.is(store.current, newState)) {
         store.current = newState
         subscribers.current.forEach((callback) => callback())
       }
-    }, [store, subscribers])
+    }
 
-    const subscribe = useCallback((callback: VoidFunction) => {
+    const subscribe = (callback: VoidFunction) => {
       subscribers.current.add(callback)
       return () => subscribers.current.delete(callback)
-    }, [subscribers])
+    }
 
     return { get, set, subscribe }
   }
@@ -44,7 +42,7 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     if (initialState) {
       storeData.set(() => initialState)
     }
-    return <StoreContext.Provider value={storeData}>{children}</StoreContext.Provider>
+    return <StoreContext value={storeData}>{children}</StoreContext>
   }
 
   // Для React 18 и новее
@@ -59,23 +57,6 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     )
   }
 
-  // Для React 17 и старше
-  // function useStoreSelectorReact17<SelectorOutput>(selector: (store: Store) => SelectorOutput): SelectorOutput {
-  //   const store = useContext(StoreContext)
-  //   if (!store) throw new Error('Store not found')
-  //
-  //   const [state, setState] = useState(() => selector(store.get()))
-  //   useEffect(() => {
-  //     const unsubscribe = store.subscribe(() => setState(selector(store.get())))
-  //     return unsubscribe
-  //   }, [selector, store])
-  //
-  //   return state
-  // }
-
-  // const useStoreSelector = isReact18OrNewer() ? useStoreSelectorReact18 : useStoreSelectorReact17
-  const useStoreSelector = useStoreSelectorReact18
-
   function useStoreDispatch() {
     const store = use(StoreContext)
     if (!store) throw new Error('Store not found')
@@ -83,20 +64,18 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     return store.set
   }
 
-  function contextWrapper<SelfComponentProps, PublicContextProps extends Partial<Store>>(
-    Module: React.ComponentType<SelfComponentProps & { contextProps?: PublicContextProps }>,
-  ) {
-    return function ({ contextProps, ...props }: SelfComponentProps & { contextProps?: PublicContextProps }) {
+  const contextWrapper = <SelfComponentProps, PublicContextProps extends Partial<Store>> (
+    Module: ComponentType<SelfComponentProps & { contextProps?: PublicContextProps }>,
+  ) => function ({ contextProps, ...props }: SelfComponentProps & { contextProps?: PublicContextProps }) {
       return (
         <ContextProvider initialState={contextProps}>
-          <Module {...props as React.PropsWithChildren<SelfComponentProps>} />
+          <Module {...props as PropsWithChildren<SelfComponentProps>} />
         </ContextProvider>
       )
     }
-  }
 
   return {
-    useStoreSelector,
+    useStoreSelector: useStoreSelectorReact18,
     useStoreDispatch,
     contextWrapper,
   }
