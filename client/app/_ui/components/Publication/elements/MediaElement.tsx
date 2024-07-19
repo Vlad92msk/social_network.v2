@@ -1,4 +1,4 @@
-import { usePublicationCtxSelect } from '@ui/components/Publication'
+import { usePublicationCtxSelect } from '../Publication'
 import { ReactElement } from 'react'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
@@ -18,7 +18,9 @@ export function MediaElement<T>(props: MediaElementProps<T>) {
     <div className={cn('MediaContainerImgBox')}>
       <Button
         className={cn('MediaContainerImgButtonRemove', { active: isChangeActive })}
-        onClick={() => onRemove(data)}
+        onClick={(event) => {
+          onRemove(data)
+        }}
       >
         <Icon name="delete" />
       </Button>

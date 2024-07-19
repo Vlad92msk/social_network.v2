@@ -1,7 +1,6 @@
+import { MediaContent } from './MediaContent'
 import { MediaAudio } from './MediaAudio'
-import { MediaImages } from './MediaImages'
 import { MediaOther } from './MediaOther'
-import { MediaVideo } from './MediaVideo'
 import { cn } from '../cn'
 
 export interface Media111 {
@@ -26,8 +25,10 @@ export function MediaContainer(props: MediaContainerProps) {
   if (![audio, text, other, image, video].filter(Boolean).every((m) => m?.length)) return null
   return (
     <div className={cn('MediaContainer')}>
-      {image && (<MediaImages images={image} />)}
-      {video && (<MediaVideo videos={video} />)}
+      {/* {image && (<MediaImages images={image} />)} */}
+      {image && <MediaContent type={'image'} data={image} />}
+      {image && <MediaContent type={'video'} data={video} />}
+      {/* {video && (<MediaVideo videos={video} />)} */}
       {audio && (<MediaAudio audios={audio} />)}
       {(other || text) && (<MediaOther files={[...(other || []), ...(text || [])]} />)}
     </div>

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
 import { TextArea } from '@ui/common/Input'
+import { useReset } from '../hooks'
 import { classNames, setImmutable } from '@utils/others'
 import { Text as TextComponent } from 'app/_ui/common/Text'
+import { useState } from 'react'
 import { cn } from '../cn'
 import { usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
 
@@ -12,16 +13,10 @@ interface TextProps {
 export function Text(props: TextProps) {
   const { className, text } = props
   const [getText, setText] = useState(text)
-  const status = usePublicationCtxSelect((store) => (store.status))
   const isChangeActive = usePublicationCtxSelect((store) => (store.isChangeActive))
   const handleSetChangeActive = usePublicationCtxUpdate()
 
-  useEffect(() => {
-    if (status === 'reset') {
-      setText(text)
-      handleSetChangeActive((ctx) => setImmutable(ctx, 'changeState.text', text))
-    }
-  }, [handleSetChangeActive, status, text])
+  useReset('text', text, setText)
 
   return (
     <div className={classNames(cn('Text'), className)}>
