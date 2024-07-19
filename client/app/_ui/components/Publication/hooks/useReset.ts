@@ -1,6 +1,6 @@
-import { usePublicationCtxSelect, usePublicationCtxUpdate } from '@ui/components/Publication'
-import { setImmutable } from '@utils/others'
 import { useEffect } from 'react'
+import { usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
+import { setImmutable } from '@utils/others'
 
 export const useReset = <Value>(path: string, initialValue: Value, cb: (init: Value) => void) => {
   const updateCtx = usePublicationCtxUpdate()
@@ -11,6 +11,5 @@ export const useReset = <Value>(path: string, initialValue: Value, cb: (init: Va
       cb?.(initialValue)
       updateCtx((ctx) => setImmutable(ctx, `changeState.${path}`, initialValue))
     }
-  }, [updateCtx, status])
-
+  }, [updateCtx, status, cb, initialValue, path])
 }

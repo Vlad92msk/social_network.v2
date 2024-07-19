@@ -25,10 +25,8 @@ export function MediaContainer(props: MediaContainerProps) {
   if (![audio, text, other, image, video].filter(Boolean).every((m) => m?.length)) return null
   return (
     <div className={cn('MediaContainer')}>
-      {/* {image && (<MediaImages images={image} />)} */}
       {image && <MediaContent type={'image'} data={image} />}
       {image && <MediaContent type={'video'} data={video} />}
-      {/* {video && (<MediaVideo videos={video} />)} */}
       {audio && (<MediaAudio audios={audio} />)}
       {(other || text) && (<MediaOther files={[...(other || []), ...(text || [])]} />)}
     </div>
