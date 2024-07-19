@@ -91,7 +91,6 @@ $padding: rem(6);
 
     :is(#{$this}-Wrapper--isChangeActive) & {
       opacity: 1;
-
     }
     &:hover {
       opacity: 1;
@@ -174,6 +173,31 @@ $padding: rem(6);
 
     &ImgBox {
       display: block;
+      position: relative;
+      overflow: hidden;
+
+      :is(#{$this}-Wrapper--isChangeActive) & {
+        border: rem(1) dotted var(--Color-Border--variant-2--theme-default);
+        padding: $paddings--super-small;
+      }
+    }
+    &ImgButtonRemove {
+      position: absolute;
+      right: 0;
+      top: 0;
+      transform: translateX(100%);
+      border: rem(1) dotted var(--Color-Border--variant-2--theme-default);
+      transition: transform .5s;
+
+      &--active {
+        transform: translateX(0);
+        transition: transform .5s;
+      }
+
+      //:is(#{$this}-Wrapper--isChangeActive) & {
+      //  transform: translateX(0);
+      //  transition: transform .5s;
+      //}
     }
 
     &AudioList {

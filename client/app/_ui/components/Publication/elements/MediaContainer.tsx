@@ -3,7 +3,6 @@ import { MediaImages } from './MediaImages'
 import { MediaOther } from './MediaOther'
 import { MediaVideo } from './MediaVideo'
 import { cn } from '../cn'
-import { usePublicationCtxSelect } from '../Publication'
 
 export interface Media111 {
   image: []
@@ -13,17 +12,24 @@ export interface Media111 {
   other: []
 }
 
+interface MediaContainerProps {
+  image?: []
+  audio?: []
+  video?: []
+  text?: []
+  other?: []
+}
 
-export function MediaContainer() {
-  const media = usePublicationCtxSelect((store) => store.media)
+export function MediaContainer(props: MediaContainerProps) {
+  const { audio, text, other, image, video } = props
 
-  if (!media) return null
+  if (![audio, text, other, image, video].filter(Boolean).every((m) => m?.length)) return null
   return (
     <div className={cn('MediaContainer')}>
-      <MediaImages images={media.image} />
-      <MediaVideo videos={media.video} />
-      <MediaAudio audios={media.audio} />
-      <MediaOther files={[...media.other, ...media.text]} />
+      {image && (<MediaImages images={image} />)}
+      {video && (<MediaVideo videos={video} />)}
+      {audio && (<MediaAudio audios={audio} />)}
+      {(other || text) && (<MediaOther files={[...(other || []), ...(text || [])]} />)}
     </div>
   )
 }

@@ -22,7 +22,7 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     const get = () => store.current
 
     const set = (update: (s: Store) => Partial<Store>) => {
-      const newState = merge(cloneDeep(store.current), update(store.current))
+      const newState = { ...store.current, ...update(store.current) }
       if (!Object.is(store.current, newState)) {
         store.current = newState
         subscribers.current.forEach((callback) => callback())

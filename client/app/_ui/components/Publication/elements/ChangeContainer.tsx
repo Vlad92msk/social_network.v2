@@ -1,11 +1,15 @@
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { cn } from '../cn'
-import { usePublicationCtxUpdate } from '../Publication'
+import { PublicationContextChangeState, usePublicationCtxUpdate } from '../Publication'
 
-export function ChangeContainer() {
+interface ChangeContainerProps {
+  onSubmit: (data?: PublicationContextChangeState) => void
+}
+
+export function ChangeContainer(props:ChangeContainerProps) {
+  const { onSubmit } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
-
   return (
     <div className={cn('ChangeContainer')}>
       <div className={cn('ChangeContainerMainActionList')}>
@@ -20,19 +24,17 @@ export function ChangeContainer() {
         <Button>
           <Icon
             name="close"
-            onClick={() => handleSetChangeActive(({ changeState, ...ctx }) => {
-              const newState = {
-                ...ctx,
-                isChangeActive: false,
-              }
-              return ({
-                ...newState,
-                changeState: newState,
-              })
-            })}
+            onClick={() => handleSetChangeActive(() => ({ isChangeActive: false, status: 'reset' }))}
           />
         </Button>
-        <Button onClick={() => handleSetChangeActive(({ changeState }) => ({ ...changeState, changeState }))}>
+        <Button onClick={() => handleSetChangeActive(({ changeState }) => {
+          onSubmit(changeState)
+          return ({
+            isChangeActive: false,
+            status: 'approve',
+          })
+        })}
+        >
           <Icon name="approve" />
         </Button>
       </div>

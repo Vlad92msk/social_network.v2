@@ -10,13 +10,17 @@ import { generateText } from '../../../../../../(content)/profile/_components/da
 interface MessageProps {
   message: UserMessage
 }
+// TODO: временно для тестов
+interface Ppdwe extends Omit<UserMessage, 'media'> {
+  media?: Media111
+}
 
 export function Message(props: MessageProps) {
   const { message } = props
   const { id, author } = message
 
   const { profile } = useProfile()
-  const [media, setMedia] = useState<Media111>()
+  const [publication, setPublication] = useState<Ppdwe>({ ...message, media: undefined })
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -26,7 +30,7 @@ export function Message(props: MessageProps) {
           throw new Error('Failed to fetch media')
         }
         const data = await response.json()
-        setMedia(data)
+        setPublication((prev) => ({ ...prev, media: data }))
       } catch (error) {
         console.error('Error fetching media:', error)
       }
@@ -44,17 +48,21 @@ export function Message(props: MessageProps) {
     >
       <Publication
         contextProps={{
-          text: generateText(900),
-          media,
           dateCreated: new Date(),
           dateChanged: undefined,
         }}
         className={cn('MessageItem')}
         authorPosition={from === 'me' ? 'right' : 'left'}
       >
-        <Publication.ChangeContainer />
-        <Publication.MediaContainer />
-        <Publication.Text className={cn('MessageItemText')} />
+        <Publication.ChangeContainer onSubmit={(d) => console.log('d', d)} />
+        <Publication.MediaContainer
+          text={publication.media?.text}
+          audio={publication.media?.audio}
+          video={publication.media?.video}
+          image={publication.media?.image}
+          other={publication.media?.other}
+        />
+        <Publication.Text className={cn('MessageItemText')} text={generateText(900)} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
 
         <Publication.Author />

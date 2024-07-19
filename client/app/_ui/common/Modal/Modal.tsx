@@ -48,11 +48,11 @@ export function ModalBase(props: PropsWithChildren<ModalProps>) {
   return (
     <Portal open={isOpen}>
       <div className={classNames(cn(), rootClassName)}>
-        {overlay}
         <div className={classNames(cn('Content'), contentClassName)} onClick={(e) => e.stopPropagation()}>
           {closeButton}
           {content}
         </div>
+        {overlay}
       </div>
     </Portal>
   )

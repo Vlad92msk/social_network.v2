@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react'
 
 export type UseAsyncStateReturn<T = any> = [() => T, (newValue: T) => void];
 
@@ -6,19 +6,22 @@ export const useAsyncState = <T = any>(
   value: T,
   { isUpdate = false } = {},
 ): UseAsyncStateReturn<T> => {
-  const state = useRef<T>(value);
+  const state = useRef<T>(value)
 
-  const getValue = useCallback(() => state.current, []);
+  const getValue = () => state.current
 
-  const setState = useCallback((newValue: T) => {
-    state.current = newValue;
-  }, []);
+  const setState = (newValue: T) => {
+    state.current = newValue
+  }
 
   useEffect(() => {
     if (isUpdate) {
-      setState(value);
+      console.log('1232')
+      setState(value)
     }
-  }, [isUpdate, setState, value]);
+  }, [isUpdate, setState, value])
 
-  return [getValue, setState];
-};
+  console.log('setState', getValue())
+
+  return [getValue, setState]
+}

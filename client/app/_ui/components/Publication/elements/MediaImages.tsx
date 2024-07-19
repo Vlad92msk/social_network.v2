@@ -1,7 +1,11 @@
+import { useEffect, useState } from 'react'
 import { useBooleanState } from '@hooks'
+import { setImmutable } from '@utils/others'
 import { ModalBase, ModalOverlay } from 'app/_ui/common/Modal'
 import { Text } from 'app/_ui/common/Text'
+import { MediaElement } from './MediaElement'
 import { cn } from '../cn'
+import { usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
 
 interface Img {
   type: string
@@ -15,22 +19,47 @@ interface MediaImagesProps {
 
 export function MediaImages(props: MediaImagesProps) {
   const { images } = props
-  const { current = [], other = [] } = Object.groupBy(images, (item, indx) => (indx <= 3 ? 'current' : 'other'))
+  const handleSetChangeActive = usePublicationCtxUpdate()
+  const status = usePublicationCtxSelect((store) => (store.status))
+
+  const [getImages, setImages] = useState(images)
+  const { current = [], other = [] } = Object.groupBy(getImages, (item, indx) => (indx <= 3 ? 'current' : 'other'))
   const [open, handleOpen, handleClose] = useBooleanState(false)
 
+  const handleRemove = (data: any) => {
+    setImages((prev) => {
+      const result = prev.filter((i) => i.src !== data.src)
+      handleSetChangeActive((ctx) => setImmutable(ctx, 'changeState.media.image', result))
+      return result
+    })
+  }
+
+  useEffect(() => {
+    if (status === 'reset') {
+      setImages(images)
+      handleSetChangeActive((ctx) => setImmutable(ctx, 'changeState.media.image', images))
+    }
+  }, [handleSetChangeActive, images, status])
+
+  if (current.length === 0) return null
   return (
     <div className={cn('MediaContainerImgList')}>
       <div className={cn('MediaContainerImgFirstCurrentList')}>
         {
           current.length === 1 ? (
-            <div className={cn('MediaContainerImgBox')}>
-              <img src={current[0].src} alt={current[0].name} style={{ maxHeight: 'inherit' }} />
-            </div>
+            <MediaElement
+              data={current}
+              element={(data) => <img src={data[0].src} alt={data[0].name} style={{ maxHeight: 'inherit' }} />}
+              onRemove={(data) => handleRemove(data[0])}
+            />
           )
-            : current.map(({ src, name }) => (
-              <div key={src} className={cn('MediaContainerImgBox')}>
-                <img src={src} alt={name} style={{ maxHeight: 'inherit' }} />
-              </div>
+            : current.map((img) => (
+              <MediaElement
+                key={img.src}
+                data={img}
+                element={({ src, name }) => <img src={src} alt={name} style={{ maxHeight: 'inherit' }} />}
+                onRemove={handleRemove}
+              />
             ))
         }
       </div>
@@ -41,10 +70,13 @@ export function MediaImages(props: MediaImagesProps) {
       )}
       <ModalBase isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>
         <ModalOverlay onClick={handleClose} />
-        {other.map(({ src, name }) => (
-          <div key={src} className={cn('MediaContainerImgBox')}>
-            <img src={src} alt={name} style={{ maxHeight: 'inherit' }} />
-          </div>
+        {other.map((img) => (
+          <MediaElement
+            key={img.src}
+            data={img}
+            element={({ src, name }) => <img src={src} alt={name} style={{ maxHeight: 'inherit' }} />}
+            onRemove={handleRemove}
+          />
         ))}
       </ModalBase>
     </div>

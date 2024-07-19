@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
@@ -19,14 +18,6 @@ interface PublicationComponents {
   DateCreated?: typeof DateCreated
 }
 
-interface PublicationMedia {
-  image: []
-  audio: []
-  video: []
-  text: []
-  other: []
-}
-
 type PublicationEmojis = any[]
 
 /**
@@ -34,28 +25,30 @@ type PublicationEmojis = any[]
  */
 interface PublicationContextState {
   isChangeActive?: boolean
-  text?: string
-  media?: PublicationMedia
-  emojis?: PublicationEmojis
   dateChanged?: Date
   dateCreated?: Date
+}
+
+// Поля, которые могут быть отредактированы
+export interface PublicationContextChangeState {
+  media?: any
+  text?: string
+  emojis?: PublicationEmojis
 }
 
 /**
  * Приватные поля (используются для редактирования состояния)
  */
 interface PublicationContextPrivateState {
-  changeState?: PublicationContextState
+  status?: 'view' | 'reset' | 'approve'
+  changeState?: PublicationContextChangeState
 }
 
 const initialState: PublicationContextState & PublicationContextPrivateState = {
   isChangeActive: false,
-  text: undefined,
-  media: undefined,
-  emojis: undefined,
   dateChanged: undefined,
   dateCreated: undefined,
-  changeState: undefined,
+  status: 'view',
 }
 
 export const {
@@ -75,12 +68,6 @@ export interface PublicationProps extends PublicationComponents {
 function BasePublication(props: PublicationProps) {
   const { className, authorPosition = 'right', children } = props
   const isChangeActive = usePublicationCtxSelect((store) => store.isChangeActive)
-  const updateState = usePublicationCtxUpdate()
-
-  useEffect(() => {
-    // Сохраняем все переданные параметры отдельно, чтобы их редактировать и иметь возможность отменить изменения
-    updateState(({ changeState, ...cxt }) => ({ changeState: cxt }))
-  }, [updateState])
 
   return (
     <div className={classNames(cn(), className)}>
