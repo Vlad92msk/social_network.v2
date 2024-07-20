@@ -103,6 +103,7 @@ $padding: rem(6);
   &-ChangeContainer {
     grid-area: change-container;
     background: rgba(97, 103, 137, 0.11);
+    border-radius: $border-radius--super-small;
     padding: $padding;
     align-content: center;
     opacity: 0;
@@ -112,11 +113,10 @@ $padding: rem(6);
 
     :is(#{$this}-Wrapper--isChangeActive) & {
       opacity: 1;
-    }
-    &:hover {
-      opacity: 1;
       transition: opacity .5s;
+
     }
+
      svg {
       height: rem(15);
       width: rem(15);

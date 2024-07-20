@@ -11,7 +11,10 @@ interface ChangeContainerProps {
 export function ChangeContainer(props:ChangeContainerProps) {
   const { onSubmit, onRemove } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
+  const isChangeActive = usePublicationCtxSelect((ctx) => ctx.isChangeActive)
   const publicationId = usePublicationCtxSelect((ctx) => ctx.id)
+
+  if (!isChangeActive) return null
   return (
     <div className={cn('ChangeContainer')}>
       <div className={cn('ChangeContainerMainActionList')}>

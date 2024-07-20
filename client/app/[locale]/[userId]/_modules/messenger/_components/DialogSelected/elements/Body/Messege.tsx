@@ -2,6 +2,7 @@ import { Message as UserMessage } from '@api/messenger/dialogs/types/message.typ
 import { useProfile } from '@hooks'
 import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
+import { addMinutes, subMinutes } from 'date-fns'
 import { cn } from './cn'
 import { useMessageStore } from '../../../../_providers/message/message.provider'
 
@@ -28,11 +29,17 @@ export function Message(props: MessageProps) {
         contextProps={{ dateChanged, id }}
         className={cn('MessageItem')}
         authorPosition={from === 'me' ? 'right' : 'left'}
+        dateRead={dateRead}
+        onRead={(publicationId) => {
+          const newDate = subMinutes(new Date(), 1)
+          console.log('read', publicationId, newDate)
+          handleUpdateMsg({ id: publicationId, dateRead: newDate, dateDeliver: newDate })
+        }}
       >
         <Publication.ChangeContainer
           onSubmit={(result) => {
             console.log('result', result)
-            handleUpdateMsg({ id, ...result })
+            handleUpdateMsg({ id, ...result, dateChanged: new Date() })
           }}
           onRemove={handleRemoveMsg}
         />

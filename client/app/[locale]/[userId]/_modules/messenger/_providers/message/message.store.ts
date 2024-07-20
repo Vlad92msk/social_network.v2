@@ -71,7 +71,7 @@ const defaultInitState: MessengerState = {
     text: '',
     dateCreated: new Date(),
     author: undefined,
-    dateRead: addDays(new Date(), 3),
+    dateRead: undefined,
     forwardMessageId: undefined,
     dateDeliver: subDays(new Date(), 2),
   },
@@ -100,6 +100,8 @@ export const createMessengerStore = (initState: Partial<MessengerState> = {}) =>
   },
   onUpdateMessage: ({ id, ...rest }: Partial<Message>) => {
     const prev = get().selectedDialog
+    console.log('id', id)
+    console.log('rest', rest)
     const result = lodashSet(prev, 'apiData.messages', prev.apiData?.messages?.map((msg) => {
       if (msg.id === id) {
         return ({

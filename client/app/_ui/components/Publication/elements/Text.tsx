@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import { TextArea } from '@ui/common/Input'
-import { useReset } from '../hooks'
 import { classNames, setImmutable } from '@utils/others'
 import { Text as TextComponent } from 'app/_ui/common/Text'
-import { useState } from 'react'
 import { cn } from '../cn'
+import { useReset } from '../hooks'
 import { usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
 
 interface TextProps {
@@ -19,7 +19,12 @@ export function Text(props: TextProps) {
   useReset('text', text, setText)
 
   return (
-    <div className={classNames(cn('Text'), className)}>
+    <div
+      className={classNames(cn('Text'), className)}
+      onContextMenu={(event) => {
+        event.stopPropagation()
+      }}
+    >
       {
         isChangeActive ? (
           <TextArea

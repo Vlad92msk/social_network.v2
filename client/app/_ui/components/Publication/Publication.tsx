@@ -1,11 +1,13 @@
 'use client'
 
+import { useRef } from 'react'
 import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 import {
-  Author, ChangeContainer, Comments, DateCreated, DateRead, Emojies, MediaContainer, Text, Response
+  Author, ChangeContainer, Comments, DateCreated, DateRead, Emojies, MediaContainer, Response, Text,
 } from './elements'
+import { useUpdateDateRead } from './hooks'
 
 interface PublicationComponents {
   Author?: typeof Author
@@ -64,14 +66,35 @@ export interface PublicationProps extends PublicationComponents {
   className?: string
   children?: React.ReactNode[]
   authorPosition?: 'left' | 'right'
+  onRead?: (publicationId?: string) => void
+  dateRead?: Date
 }
 
 function BasePublication(props: PublicationProps) {
-  const { className, authorPosition = 'right', children } = props
+  const { className, authorPosition = 'right', children, onRead, dateRead } = props
   const isChangeActive = usePublicationCtxSelect((store) => store.isChangeActive)
+  const handleSetChangeActive = usePublicationCtxUpdate()
 
+  const publicationRef = useRef<HTMLDivElement>(null)
+
+  /**
+   * Обновляем дату прочтения если ее нет
+   */
+  useUpdateDateRead({
+    ref: publicationRef,
+    onRead,
+    dateRead,
+  })
+  /**
+   * Нажатие правой кнопкой мыши
+   * TODO потом сделать появление контекстного меню
+   */
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault() // предотвращаем появление стандартного контекстного меню
+    handleSetChangeActive((prevState) => ({ isChangeActive: !prevState.isChangeActive }))
+  }
   return (
-    <div className={classNames(cn(), className)}>
+    <div ref={publicationRef} className={classNames(cn(), className)} onContextMenu={handleContextMenu}>
       <div className={cn('Wrapper', { authorPosition, isChangeActive })}>
         {children}
       </div>
