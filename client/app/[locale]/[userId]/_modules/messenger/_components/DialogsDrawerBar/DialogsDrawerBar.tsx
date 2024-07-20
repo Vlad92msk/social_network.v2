@@ -8,12 +8,10 @@ import { useMessageStore } from '../../_providers/message/message.provider'
 interface MessengerProps {}
 
 export function DialogsDrawerBar(props: MessengerProps) {
-  // const { } = props
-
   const status = useMessageStore((state) => state.drawerStatus)
   const setStatus = useMessageStore((state) => state.setDrawerStatus)
   const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
-console.log('chatingPanelStatus', chatingPanelStatus)
+
   return (
     <div className={cn({ status, hide: chatingPanelStatus === 'open' })}>
 

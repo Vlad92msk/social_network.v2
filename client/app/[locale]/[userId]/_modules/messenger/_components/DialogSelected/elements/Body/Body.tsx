@@ -9,9 +9,9 @@ interface BodyProps {
 }
 
 export function Body(props: BodyProps) {
-  const { apiError, apiStatus } = useMessageStore((store) => store.getCurrentDialog())
-  const messages = useMessageStore((store) => {
-    const m = store.getCurrentDialog().apiData?.messages?.map((msg, index, array) => ({
+  const { apiError, apiStatus } = useMessageStore(({getCurrentDialog}) => getCurrentDialog())
+  const messages = useMessageStore(({getCurrentDialog}) => {
+    const m = getCurrentDialog().apiData?.messages?.map((msg, index, array) => ({
       ...msg,
       forwardMsg: array.find(({ id }) => `dialog-message-${id}` === msg.forwardMessageId),
     }))

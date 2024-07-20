@@ -30,7 +30,7 @@ $padding: rem(6);
 
     &--authorPosition {
       &_left {
-        column-gap: rem(5);
+        gap: rem(5);
         grid-template:
         ".                              change-container change-container change-container change-container " fit-content($change-container--height)
         "author                         response         response         response         response         " fit-content($response--height)
@@ -40,7 +40,7 @@ $padding: rem(6);
       / fit-content($author--max-width)  1fr              auto             auto             auto             ;
       }
       &_right {
-        column-gap: rem(5);
+        gap: rem(5);
         grid-template:
         "change-container change-container change-container change-container           . " fit-content($change-container--height)
         "response         response         response         response              author " fit-content($response--height)
@@ -55,7 +55,7 @@ $padding: rem(6);
     &-Wrapper {
       &--authorPosition {
         &_left {
-          column-gap: rem(5);
+          gap: rem(5);
               grid-template:
               "author                         change-container change-container " fit-content($change-container--height)
               "response                       response         response         " fit-content($response--height)
@@ -66,7 +66,7 @@ $padding: rem(6);
             / fit-content($author--max-width)  auto             auto             ;
         }
         &_right {
-          column-gap: rem(5);
+          gap: rem(5);
           grid-template:
                 "change-container  change-container author                         " fit-content($change-container--height)
                 "response          response         response                       " fit-content($response--height)

@@ -25,12 +25,14 @@ type PublicationEmojis = any[]
  * То что можно передать в контекст Компонента
  */
 interface PublicationContextState {
+  id?: string
   isChangeActive?: boolean
   dateChanged?: Date
 }
 
 // Поля, которые могут быть отредактированы
 export interface PublicationContextChangeState {
+  id?: string
   media?: any
   text?: string
   emojis?: PublicationEmojis

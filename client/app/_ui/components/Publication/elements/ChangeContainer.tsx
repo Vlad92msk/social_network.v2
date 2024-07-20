@@ -1,20 +1,21 @@
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { cn } from '../cn'
-import { PublicationContextChangeState, usePublicationCtxUpdate } from '../Publication'
+import { PublicationContextChangeState, usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
 
 interface ChangeContainerProps {
   onSubmit: (data?: PublicationContextChangeState) => void
-  onRemove: VoidFunction
+  onRemove: (id?: string) => void
 }
 
 export function ChangeContainer(props:ChangeContainerProps) {
   const { onSubmit, onRemove } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
+  const publicationId = usePublicationCtxSelect((ctx) => ctx.id)
   return (
     <div className={cn('ChangeContainer')}>
       <div className={cn('ChangeContainerMainActionList')}>
-        <Button onClick={onRemove}>
+        <Button onClick={() => onRemove(publicationId)}>
           <Icon name="delete" />
         </Button>
         <Button>
@@ -28,8 +29,8 @@ export function ChangeContainer(props:ChangeContainerProps) {
             onClick={() => handleSetChangeActive(() => ({ isChangeActive: false, status: 'reset' }))}
           />
         </Button>
-        <Button onClick={() => handleSetChangeActive(({ changeState }) => {
-          onSubmit(changeState)
+        <Button onClick={() => handleSetChangeActive(({ changeState, id }) => {
+          onSubmit({ ...changeState, id })
           return ({
             isChangeActive: false,
             status: 'approve',

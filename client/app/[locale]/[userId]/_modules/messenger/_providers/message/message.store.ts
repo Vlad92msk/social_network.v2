@@ -43,19 +43,17 @@ interface MessengerActions {
   setChatingPanelStatus: (newStatus: 'open' | 'close') => void
   setOpenedDialogIds: (ids: string[]) => void
 
-  // CommunicateSetters
-  onSubmitMessage: (user: UserInfo) => void
-  onCreateMessage: (key: keyof Message, value: Message[keyof Message]) => void
-
   // DialogSelected
+  onRemoveMessage: (msgId: string) => void
+  onSubmitMessage: (user: UserInfo) => void
+  onUpdateMessage: (newData: Partial<Message>) => void
+  onCreateMessage: (key: keyof Message, value: Message[keyof Message]) => void
   fetchSelectedDialog: (dialogId: string) => Promise<void>
   getCurrentDialog: () => ApiStatusState<DialogResponse>
 
   // DialogListSetters
   setSelectType: (select: SelectDialogType) => void
   setFilter: (s: string) => void
-
-  // DialogListGetters
   viewDialogList: () => DialogShort[]
 }
 
@@ -91,6 +89,31 @@ export const createMessengerStore = (initState: Partial<MessengerState> = {}) =>
   setChatingPanelStatus: (newStatus) => set({ chatingPanelStatus: newStatus }),
   setOpenedDialogIds: (ids) => set({ openedDialogIds: ids }),
 
+  getCurrentDialog: () => get().selectedDialog,
+  onRemoveMessage: (msgId: string) => {
+    const prev = get().selectedDialog
+    const result = lodashSet(prev, 'apiData.messages', prev.apiData?.messages?.filter(({ id }) => id !== msgId))
+
+    set({
+      selectedDialog: result,
+    })
+  },
+  onUpdateMessage: ({ id, ...rest }: Partial<Message>) => {
+    const prev = get().selectedDialog
+    const result = lodashSet(prev, 'apiData.messages', prev.apiData?.messages?.map((msg) => {
+      if (msg.id === id) {
+        return ({
+          ...msg,
+          ...rest,
+        })
+      }
+      return msg
+    }))
+
+    set({
+      selectedDialog: result,
+    })
+  },
   onSubmitMessage: (user) => {
     const prev = get().selectedDialog
     const curr = get().createMessage
@@ -138,8 +161,6 @@ export const createMessengerStore = (initState: Partial<MessengerState> = {}) =>
 
   setSelectType: (select: SelectDialogType) => set({ selectType: select }),
   setFilter: (newFilter) => set({ filter: newFilter }),
-
-  getCurrentDialog: () => get().selectedDialog,
 
   viewDialogList: () => {
     const { filter, dialogsShort, selectType } = get()

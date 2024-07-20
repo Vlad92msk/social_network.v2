@@ -3,6 +3,7 @@ import { useProfile } from '@hooks'
 import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
 import { cn } from './cn'
+import { useMessageStore } from '../../../../_providers/message/message.provider'
 
 interface MessageProps {
   message: UserMessage & {forwardMsg?: UserMessage}
@@ -11,10 +12,11 @@ interface MessageProps {
 export function Message(props: MessageProps) {
   const { message } = props
   const {
-    id, author, text, media, dateRead, dateCreated, dateDeliver, dateChanged, forwardMessageId, forwardMsg
+    id, author, text, media, dateRead, dateCreated, dateDeliver, dateChanged, forwardMessageId, forwardMsg,
   } = message
   const { profile } = useProfile()
-
+  const handleRemoveMsg = useMessageStore((store) => store.onRemoveMessage)
+  const handleUpdateMsg = useMessageStore((store) => store.onUpdateMessage)
 
   const from = profile?.userInfo.id === author?.id ? 'me' : 'other'
   return (
@@ -23,13 +25,16 @@ export function Message(props: MessageProps) {
       className={cn('Message', { from })}
     >
       <Publication
-        contextProps={{ dateChanged }}
+        contextProps={{ dateChanged, id }}
         className={cn('MessageItem')}
         authorPosition={from === 'me' ? 'right' : 'left'}
       >
         <Publication.ChangeContainer
-          onSubmit={(result) => console.log('result', result)}
-          onRemove={() => console.log('remove', id)}
+          onSubmit={(result) => {
+            console.log('result', result)
+            handleUpdateMsg({ id, ...result })
+          }}
+          onRemove={handleRemoveMsg}
         />
         {/* <Publication.MediaContainer */}
         {/*   text={publication.media?.text} */}
