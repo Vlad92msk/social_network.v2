@@ -13,7 +13,7 @@ export function DialogsDrawerBar(props: MessengerProps) {
   const status = useMessageStore((state) => state.drawerStatus)
   const setStatus = useMessageStore((state) => state.setDrawerStatus)
   const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
-
+console.log('chatingPanelStatus', chatingPanelStatus)
   return (
     <div className={cn({ status, hide: chatingPanelStatus === 'open' })}>
 

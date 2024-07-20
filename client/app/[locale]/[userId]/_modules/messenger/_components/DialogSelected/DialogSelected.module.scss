@@ -5,13 +5,18 @@
 
 .DialogSelected {
   position: absolute;
+  //position: fixed;
   top: 0;
   right: 0;
   height: 100%;
   width: $messenger-chats--max-width;
   background: #2c3156;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template:
+        "header" rem(60)
+        "body" auto
+        "footer" fit-content(50%)
+      / 1fr;
 
   &--statusVisible {
     &_open {
@@ -25,9 +30,10 @@
   }
 
   &-Header {
+    grid-area: header;
     display: flex;
-    max-height: rem(60);
-    flex: 0 0 rem(60); // не растягивается, не сжимается, высота - 60
+    //max-height: rem(60);
+    //flex: 0 0 rem(60); // не растягивается, не сжимается, высота - 60
     justify-content: space-between;
     gap: rem(10);
     padding: $messenger--padding--small;
@@ -36,19 +42,21 @@
   }
 
   &-Body {
+    grid-area: body;
     display: flex;
-    flex: 1 1; // растягивается, сжимается
-    overflow-y: auto;
+    height: 100%;
     padding: $messenger--padding--small;
     margin-bottom: $messenger--padding--small;
+    overflow-y: auto;
   }
 
   &-Footer {
+    grid-area: footer;
     display: flex;
     gap: rem(5);
     height: auto;
-    max-height: 50%;
-    min-height: rem(50);
+    //max-height: 50%;
+    //min-height: rem(50);
     overflow-y: auto;
     padding: $messenger--padding--small;
     border-top: rem(1) solid var(--Color-Border--variant-3--theme-default);

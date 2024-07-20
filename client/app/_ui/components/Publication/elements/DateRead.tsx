@@ -3,8 +3,8 @@ import { Icon } from 'app/_ui/common/Icon'
 import { cn } from '../cn'
 
 interface DateDeliveryProps {
-  dateDeliver: Date
-  dateRead: Date
+  dateDeliver?: Date
+  dateRead?: Date
 }
 export function DateRead(props: DateDeliveryProps) {
   const { dateDeliver, dateRead } = props

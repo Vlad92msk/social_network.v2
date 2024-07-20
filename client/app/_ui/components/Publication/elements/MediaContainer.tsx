@@ -1,5 +1,5 @@
-import { MediaContent } from './MediaContent'
 import { MediaAudio } from './MediaAudio'
+import { MediaContent } from './MediaContent'
 import { MediaOther } from './MediaOther'
 import { cn } from '../cn'
 
@@ -25,8 +25,8 @@ export function MediaContainer(props: MediaContainerProps) {
   if (![audio, text, other, image, video].filter(Boolean).every((m) => m?.length)) return null
   return (
     <div className={cn('MediaContainer')}>
-      {image && <MediaContent type={'image'} data={image} />}
-      {image && <MediaContent type={'video'} data={video} />}
+      {image && <MediaContent type="image" data={image} />}
+      {image && <MediaContent type="video" data={video} />}
       {audio && (<MediaAudio audios={audio} />)}
       {(other || text) && (<MediaOther files={[...(other || []), ...(text || [])]} />)}
     </div>

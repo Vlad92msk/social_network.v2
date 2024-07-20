@@ -22,6 +22,8 @@ export interface MessengerState {
   // RootState
   drawerStatus: 'open' | 'close'
   chatingPanelStatus: 'open' | 'close'
+
+  // DialogSelected
   openedDialogIds: string[]
 
   // CommunicateState
@@ -44,14 +46,14 @@ interface MessengerActions {
   // CommunicateSetters
   onSubmitMessage: (user: UserInfo) => void
   onCreateMessage: (key: keyof Message, value: Message[keyof Message]) => void
+
+  // DialogSelected
   fetchSelectedDialog: (dialogId: string) => Promise<void>
+  getCurrentDialog: () => ApiStatusState<DialogResponse>
 
   // DialogListSetters
   setSelectType: (select: SelectDialogType) => void
   setFilter: (s: string) => void
-
-  // CommunicateGetters
-  getCurrentDialog: () => ApiStatusState<DialogResponse>
 
   // DialogListGetters
   viewDialogList: () => DialogShort[]
@@ -97,6 +99,9 @@ export const createMessengerStore = (initState: Partial<MessengerState> = {}) =>
       ...defaultInitState.createMessage,
       ...curr,
       author: user,
+      id: random(3, 1000).toString(),
+      forwardMessageId: 'dialog-message-1',
+      dateCreated: new Date(),
     }
 
     const msgsPrev: Message[] = lodashGet(prev, 'apiData.messages', [])

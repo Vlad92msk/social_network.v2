@@ -11,8 +11,9 @@ export interface Message {
   text: string
   media?: AddedFile[]
   forwardMessageId?: string
-  dateCreated?: Date
+  dateCreated: Date
   dateDeliver?: Date
+  dateChanged?: Date
   dateRead?: Date
   emojis?: EmojiAdded[]
   author?: UserInfo

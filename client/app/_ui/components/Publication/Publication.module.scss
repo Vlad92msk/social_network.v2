@@ -1,11 +1,12 @@
 @import "@ui/styles/for_components";
 
 $change-container--height: rem(30);
+$response--height: rem(50);
 $meta-info--height: rem(30);
 $text--min-height: rem(50);
 $text--max-height: rem(200);
 $media-container--max-height: rem(800);
-$author--max-width: rem(40);
+$author--max-width: rem(30);
 $padding: rem(6);
 
 
@@ -29,20 +30,24 @@ $padding: rem(6);
 
     &--authorPosition {
       &_left {
+        column-gap: rem(5);
         grid-template:
         ".                              change-container change-container change-container change-container " fit-content($change-container--height)
+        "author                         response         response         response         response         " fit-content($response--height)
         "author                         media-container  media-container  media-container  media-container  " auto
         "author                         text             text             text             text             " fit-content($text--max-height)
         "author                         emojies          commets          date-read        date-created     " $meta-info--height
       / fit-content($author--max-width)  1fr              auto             auto             auto             ;
       }
       &_right {
+        column-gap: rem(5);
         grid-template:
-        "change-container change-container change-container change-container            ." fit-content($change-container--height)
-        "media-container  media-container  media-container  media-container        author" auto
-        "text             text             text             text                   author" fit-content($text--max-height)
-        "emojies          commets          date-read        date-created           author" $meta-info--height
-      /  1fr              auto             auto             auto                   fit-content($author--max-width);
+        "change-container change-container change-container change-container           . " fit-content($change-container--height)
+        "response         response         response         response              author " fit-content($response--height)
+        "media-container  media-container  media-container  media-container       author " auto
+        "text             text             text             text                  author " fit-content($text--max-height)
+        "emojies          commets          date-read        date-created          author " $meta-info--height
+      /  1fr              auto             auto             auto                  fit-content($author--max-width);
       }
     }
   }
@@ -50,8 +55,10 @@ $padding: rem(6);
     &-Wrapper {
       &--authorPosition {
         &_left {
+          column-gap: rem(5);
               grid-template:
               "author                         change-container change-container " fit-content($change-container--height)
+              "response                       response         response         " fit-content($response--height)
               "media-container                media-container  media-container  " auto
               "text                           text             text             " fit-content($text--max-height)
               "emojies                        emojies          date-read        " $meta-info--height
@@ -59,9 +66,10 @@ $padding: rem(6);
             / fit-content($author--max-width)  auto             auto             ;
         }
         &_right {
-
+          column-gap: rem(5);
           grid-template:
                 "change-container  change-container author                         " fit-content($change-container--height)
+                "response          response         response                       " fit-content($response--height)
                 "media-container   media-container  media-container                " auto
                 "text              text             text                           " fit-content($text--max-height)
                 "emojies           emojies          date-read                      " $meta-info--height
@@ -71,12 +79,25 @@ $padding: rem(6);
       }
     }
   }
+  &-Response {
+    grid-area: response;
+    padding: $padding;
+    border-radius: $border-radius--small;
+    width: 100%;
+    background: rgba(97, 103, 137, 0.12)!important;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start!important;
+    gap: rem(2);
+    border-left: rem(2) solid var(--Color-Border--variant-2--theme-light);
+  }
+
   &-Author {
     grid-area: author;
-      width: $author--max-width;
-      aspect-ratio: 1;
-      overflow: hidden;
-      border-radius: 50%;
+    width: $author--max-width;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
   }
 
   &-ChangeContainer {

@@ -1,7 +1,7 @@
 @import "@ui/styles/for_components";
 
 .ContentArea {
-  flex: 1 1;
+  flex: 1 1 100%;
   display: grid;
   grid-template-columns: 1fr auto;
   column-gap: rem(10);

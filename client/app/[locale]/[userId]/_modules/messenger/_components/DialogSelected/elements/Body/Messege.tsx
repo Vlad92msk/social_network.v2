@@ -1,73 +1,49 @@
-import { addDays } from 'date-fns'
-import { useEffect, useState } from 'react'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
 import { useProfile } from '@hooks'
+import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
-import { Media111 } from '@ui/components/Publication/elements'
 import { cn } from './cn'
-import { generateText } from '../../../../../../(content)/profile/_components/data'
 
 interface MessageProps {
-  message: UserMessage
-}
-// TODO: временно для тестов
-interface Ppdwe extends Omit<UserMessage, 'media'> {
-  media?: Media111
+  message: UserMessage & {forwardMsg?: UserMessage}
 }
 
 export function Message(props: MessageProps) {
   const { message } = props
-  const { id, author } = message
-
+  const {
+    id, author, text, media, dateRead, dateCreated, dateDeliver, dateChanged, forwardMessageId, forwardMsg
+  } = message
   const { profile } = useProfile()
-  const [publication, setPublication] = useState<Ppdwe>({ ...message, media: undefined })
 
-  useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const response = await fetch('/api/media')
-        if (!response.ok) {
-          throw new Error('Failed to fetch media')
-        }
-        const data = await response.json()
-        setPublication((prev) => ({ ...prev, media: data }))
-      } catch (error) {
-        console.error('Error fetching media:', error)
-      }
-    }
-
-    fetchMedia()
-  }, [])
 
   const from = profile?.userInfo.id === author?.id ? 'me' : 'other'
-
   return (
     <div
-      id={id}
+      id={`dialog-message-${id}`}
       className={cn('Message', { from })}
     >
       <Publication
-        contextProps={{
-          dateCreated: new Date(),
-          dateChanged: undefined,
-        }}
+        contextProps={{ dateChanged }}
         className={cn('MessageItem')}
         authorPosition={from === 'me' ? 'right' : 'left'}
       >
-        <Publication.ChangeContainer onSubmit={(d) => console.log('d', d)} />
-        <Publication.MediaContainer
-          text={publication.media?.text}
-          audio={publication.media?.audio}
-          video={publication.media?.video}
-          image={publication.media?.image}
-          other={publication.media?.other}
+        <Publication.ChangeContainer
+          onSubmit={(result) => console.log('result', result)}
+          onRemove={() => console.log('remove', id)}
         />
-        <Publication.Text className={cn('MessageItemText')} text={generateText(900)} />
+        {/* <Publication.MediaContainer */}
+        {/*   text={publication.media?.text} */}
+        {/*   audio={publication.media?.audio} */}
+        {/*   video={publication.media?.video} */}
+        {/*   image={publication.media?.image} */}
+        {/*   other={publication.media?.other} */}
+        {/* /> */}
+        <Publication.Response quoteMessageId={forwardMessageId} text={forwardMsg?.text} name={forwardMsg?.author?.name} />
+        <Publication.Text className={cn('MessageItemText')} text={text} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
-
-        <Publication.Author />
-        <Publication.DateCreated />
-        <Publication.DateRead dateDeliver={new Date()} dateRead={addDays(new Date(), -1)} />
+        <Publication.Author authorComponent={<Image src={author?.profileImage} height={40} width={40} alt={author?.name || ''} />} />
+        <Publication.DateCreated dateCreated={dateCreated} />
+        <Publication.DateRead dateDeliver={dateDeliver} dateRead={dateRead} />
       </Publication>
     </div>
   )

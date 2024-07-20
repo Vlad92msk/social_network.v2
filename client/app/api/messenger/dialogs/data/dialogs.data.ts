@@ -36,7 +36,7 @@ export const DIALOGS: Dialog[] = [
         author: {
           id: '1',
           name: 'contact 1',
-          profileImage: 'base/me1',
+          profileImage: 'base/me',
         },
       },
       {

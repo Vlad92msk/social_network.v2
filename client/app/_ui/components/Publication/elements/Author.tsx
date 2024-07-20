@@ -1,14 +1,14 @@
-import { Image } from 'app/_ui/common/Image'
+import { ReactNode } from 'react'
 import { cn } from '../cn'
 
 interface AuthorProps {
-  autor?: { name: string }
+  authorComponent: ReactNode
 }
 export function Author(props: AuthorProps) {
-  const { autor } = props
+  const { authorComponent } = props
   return (
     <div className={cn('Author')}>
-      <Image src="base/me" height={40} width={40} alt="Author" />
+      {authorComponent}
     </div>
   )
 }

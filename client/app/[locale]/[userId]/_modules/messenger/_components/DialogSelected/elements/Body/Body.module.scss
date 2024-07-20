@@ -10,24 +10,29 @@
   flex-direction: column;
   gap: rem(20);
   padding-bottom: rem(20);
+  overflow-y: auto;
+  //justify-content: flex-end;
 
   &-Message {
-    width: 80%;
+    $this: &;
+    width: 100%;
     overflow: hidden;
     position: relative;
     flex-shrink: 0;
+    display: flex;
 
     &--from {
       &_me {
-        place-self: end;
+        justify-content: flex-end;
       }
       &_other {
-        place-self: start;
+        justify-content: flex-start;
       }
     }
 
     &Item {
-      width: 100%;
+      width: 80%;
+
       &Text {
         margin-bottom: rem(10);
       }

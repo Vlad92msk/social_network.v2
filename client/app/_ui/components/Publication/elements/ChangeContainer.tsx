@@ -5,15 +5,16 @@ import { PublicationContextChangeState, usePublicationCtxUpdate } from '../Publi
 
 interface ChangeContainerProps {
   onSubmit: (data?: PublicationContextChangeState) => void
+  onRemove: VoidFunction
 }
 
 export function ChangeContainer(props:ChangeContainerProps) {
-  const { onSubmit } = props
+  const { onSubmit, onRemove } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
   return (
     <div className={cn('ChangeContainer')}>
       <div className={cn('ChangeContainerMainActionList')}>
-        <Button>
+        <Button onClick={onRemove}>
           <Icon name="delete" />
         </Button>
         <Button>

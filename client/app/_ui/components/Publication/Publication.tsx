@@ -4,7 +4,7 @@ import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 import {
-  Author, ChangeContainer, Comments, DateCreated, DateRead, Emojies, MediaContainer, Text,
+  Author, ChangeContainer, Comments, DateCreated, DateRead, Emojies, MediaContainer, Text, Response
 } from './elements'
 
 interface PublicationComponents {
@@ -16,6 +16,7 @@ interface PublicationComponents {
   Commets?: typeof Comments
   DateRead?: typeof DateRead
   DateCreated?: typeof DateCreated
+  Response?: typeof Response
 }
 
 type PublicationEmojis = any[]
@@ -26,7 +27,6 @@ type PublicationEmojis = any[]
 interface PublicationContextState {
   isChangeActive?: boolean
   dateChanged?: Date
-  dateCreated?: Date
 }
 
 // Поля, которые могут быть отредактированы
@@ -47,7 +47,6 @@ interface PublicationContextPrivateState {
 const initialState: PublicationContextState & PublicationContextPrivateState = {
   isChangeActive: false,
   dateChanged: undefined,
-  dateCreated: undefined,
   status: 'view',
 }
 
@@ -86,6 +85,7 @@ BasePublication.Emojies = Emojies
 BasePublication.Commets = Comments
 BasePublication.DateRead = DateRead
 BasePublication.DateCreated = DateCreated
+BasePublication.Response = Response
 
 export const Publication = Object.assign(
   contextWrapper<PublicationProps, PublicationContextState>(BasePublication),
