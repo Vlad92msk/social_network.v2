@@ -2,7 +2,7 @@ import { Icon } from '@ui/common/Icon'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_providers/message/message.provider'
+import { useMessageStore } from '../../../../_store'
 
 interface ButtonCloseChatProps {
   className?: string

@@ -1,5 +1,5 @@
 import {
-  arrow,
+  arrow, autoPlacement,
   autoUpdate,
   flip,
   FloatingArrow,
@@ -17,7 +17,7 @@ import {
   useRole,
 } from '@floating-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import React, { ReactElement, ReactNode, useRef, useState } from 'react'
+import React, { ReactElement, ReactNode, useCallback, useRef, useState } from 'react'
 
 // interface ReferenceProps extends Record<string, unknown> {
 //   ref: (node: (ReferenceType | null)) => void
@@ -80,7 +80,7 @@ interface PopoverProps {
    * Способ активации попапа: 'click', 'hover', 'focus' или 'manual'.
    * По умолчанию: 'click'
    */
-  trigger?: 'click' | 'hover' | 'focus' | 'manual';
+  trigger?: 'click' | 'hover' | 'focus' | 'manual' | 'contextMenu';
 
   /**
    * Закрывать ли попап при клике вне его области.
@@ -171,7 +171,7 @@ interface PopoverProps {
   onOpenChange?: (open: boolean) => void;
   interactive?: boolean;
   floatingStyles?: React.CSSProperties;
-  trigger?: 'click' | 'hover' | 'focus' | 'manual';
+  trigger?: 'click' | 'hover' | 'focus' | 'manual' | 'contextMenu';
   closeOnOutsideClick?: boolean;
   usePortal?: boolean;
   zIndex?: number;
@@ -186,6 +186,27 @@ interface PopoverProps {
   arrowStaticOffset?: number | string | null;
 }
 
+function useContextMenu(context) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault()
+      setIsOpen((prev) => {
+        context.onOpenChange(!prev)
+        return !prev
+      })
+    },
+    [context],
+  )
+
+  return {
+    getReferenceProps: () => ({
+      onContextMenu: handleContextMenu,
+    }),
+    isOpen,
+  }
+}
 export function Popover(props: PopoverProps) {
   const {
     children,
@@ -248,12 +269,16 @@ export function Popover(props: PopoverProps) {
   const role = useRole(context)
   const click = useClick(context, { enabled: trigger === 'click' })
 
+  const contextMenu = useContextMenu(context)
+
   const { getReferenceProps, getFloatingProps } = useInteractions([
     hover,
     focus,
     dismiss,
     role,
     click,
+    // @ts-ignore
+    ...(trigger === 'contextMenu' ? [contextMenu] : []),
   ])
 
   const popover = (
@@ -266,7 +291,7 @@ export function Popover(props: PopoverProps) {
         width: 'max-content',
       }}
       {...getFloatingProps()}
-      // FIXME пока не рабоатет анимация
+      // FIXME пока не рабоатет анимация - хотя тут вроде есть встроенный способ анимации - надо бы его попробовать
       // initial={animationProps.initial}
       // animate={animationProps.animate}
       // exit={animationProps.exit}
@@ -291,8 +316,12 @@ export function Popover(props: PopoverProps) {
 
   return (
     <>
-      {/* @ts-ignore */}
-      {React.cloneElement(children, { ref: refs.setReference, ...getReferenceProps() })}
+      {React.cloneElement(children, {
+        // @ts-ignore
+        ref: refs.setReference,
+        ...getReferenceProps(),
+        ...(trigger === 'contextMenu' ? contextMenu.getReferenceProps() : {}),
+      })}
       <AnimatePresence>
         {isOpen && (usePortal ? <FloatingPortal>{popover}</FloatingPortal> : popover)}
       </AnimatePresence>

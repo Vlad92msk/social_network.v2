@@ -4,7 +4,7 @@ import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
 import { addMinutes, subMinutes } from 'date-fns'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_providers/message/message.provider'
+import { useMessageStore } from '../../../../_store'
 
 interface MessageProps {
   message: UserMessage & {forwardMsg?: UserMessage}

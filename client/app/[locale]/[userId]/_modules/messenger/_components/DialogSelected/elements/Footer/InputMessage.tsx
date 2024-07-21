@@ -1,6 +1,6 @@
 import { TextArea } from 'app/_ui/common/Input'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_providers/message/message.provider'
+import { useMessageStore } from '../../../../_store'
 
 export function InputMessage() {
   const onCreateMessage = useMessageStore((store) => store.onCreateMessage)

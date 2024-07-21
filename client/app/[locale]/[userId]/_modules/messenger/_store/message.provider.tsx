@@ -2,9 +2,9 @@
 
 import { createContext, use, useRef } from 'react'
 import { StoreApi, useStore } from 'zustand'
-import { createMessengerStore, MessengerState, MessengerStore } from './message.store'
+import { createMessengerStore, MessengerState } from './message.store'
 
-const Context = createContext<StoreApi<MessengerStore> | null>(null)
+const Context = createContext<StoreApi<MessengerState> | null>(null)
 
 interface ProviderProps extends Partial<MessengerState> {
   children: React.ReactNode
@@ -13,7 +13,7 @@ interface ProviderProps extends Partial<MessengerState> {
 export function MessageProvider(props: ProviderProps) {
   const { children, ...rest } = props
 
-  const storeRef = useRef<StoreApi<MessengerStore>>(null)
+  const storeRef = useRef<StoreApi<MessengerState>>(null)
   if (!storeRef.current) {
     storeRef.current = createMessengerStore(rest)
   }
@@ -25,10 +25,10 @@ export function MessageProvider(props: ProviderProps) {
   )
 }
 
-export const useMessageStore = <T, >(selector: (store: MessengerStore) => T): T => {
+export const useMessageStore = <T, >(selector: (store: MessengerState) => T): T => {
   const context = use(Context)
   if (!context) {
-    throw new Error('Что-то пошло не так в DialogSelectedProvider')
+    throw new Error('Что-то пошло не так в MessageProvider')
   }
   return useStore(context, selector)
 }

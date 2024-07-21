@@ -1,6 +1,9 @@
 'use client'
 
 import { useRef } from 'react'
+import { Button } from '@ui/common/Button'
+import { Popover, PopoverContent } from '@ui/common/Popover'
+import { Text as TextComponent } from '@ui/common/Text'
 import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
@@ -85,20 +88,34 @@ function BasePublication(props: PublicationProps) {
     onRead,
     dateRead,
   })
-  /**
-   * Нажатие правой кнопкой мыши
-   * TODO потом сделать появление контекстного меню
-   */
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault() // предотвращаем появление стандартного контекстного меню
-    handleSetChangeActive((prevState) => ({ isChangeActive: !prevState.isChangeActive }))
-  }
+
   return (
-    <div ref={publicationRef} className={classNames(cn(), className)} onContextMenu={handleContextMenu}>
-      <div className={cn('Wrapper', { authorPosition, isChangeActive })}>
-        {children}
+    <Popover
+      content={(
+        <PopoverContent>
+          <Button
+            onClick={() => {
+              handleSetChangeActive((ctx) => ({ isChangeActive: !ctx.isChangeActive }))
+            }}
+          >
+            <TextComponent fs="12">Редактировать</TextComponent>
+          </Button>
+        </PopoverContent>
+    )}
+      trigger="contextMenu"
+      strategy="absolute"
+      offset={0}
+    >
+      <div ref={publicationRef} className={classNames(cn(), className)}>
+        <div className={cn('Wrapper', {
+          authorPosition,
+          isChangeActive,
+        })}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </Popover>
   )
 }
 

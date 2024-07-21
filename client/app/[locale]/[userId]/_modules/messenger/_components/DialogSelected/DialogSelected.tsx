@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton } from './elements'
-import { useMessageStore } from '../../_providers/message/message.provider'
+import { useMessageStore } from '../../_store'
 
 interface ChatProps {}
 
