@@ -262,6 +262,7 @@ $padding: rem(6);
   }
 
   &-Text {
+    @include scrollbarMini();
     width: 100%;
     grid-area: text;
     overflow-y: auto;

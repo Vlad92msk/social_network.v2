@@ -5,12 +5,13 @@
 
 .Header {
   &-ButtonCloseChat {
-    $size: rem(20);
+    $size: rem(25);
     max-width: $size;
     width: $size;
     height: $size;
     min-width: $size;
     padding: 0;
+    background: transparent!important;
   }
 
   &-ContactInfo {
@@ -42,5 +43,6 @@
     display: flex;
     gap: rem(10);
     color: var(--Color-Text--root--theme-default);
+
   }
 }

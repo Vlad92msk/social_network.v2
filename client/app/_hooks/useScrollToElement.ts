@@ -1,8 +1,11 @@
 import { RefObject, useCallback } from 'react'
 
-interface ScrollToElementProps {
+interface TargetEl {
   targetElementId?: string | null
   targetElementRef?: RefObject<HTMLElement | null>
+}
+
+interface ScrollToElementProps {
   behavior?: ScrollBehavior;
   block?: ScrollLogicalPosition;
   inline?: ScrollLogicalPosition;
@@ -12,12 +15,12 @@ interface ScrollToElementProps {
  * Скролл до элемента
  */
 export const useScrollToElement = (props: ScrollToElementProps) => {
-  const {
-    targetElementId, targetElementRef, behavior, block, inline,
-  } = props
+  const { behavior, block, inline } = props
   return (
-    useCallback(() => {
-      const targetElement = targetElementRef ? targetElementRef.current : document.getElementById(targetElementId || '')
+    useCallback((target?: TargetEl) => {
+
+      const targetElement = target?.targetElementRef ? target.targetElementRef.current : document.getElementById(target?.targetElementId || '')
+
       if (targetElement) {
         targetElement.scrollIntoView({
           behavior,
@@ -25,6 +28,6 @@ export const useScrollToElement = (props: ScrollToElementProps) => {
           inline,
         })
       }
-    }, [targetElementRef, targetElementId, behavior, block, inline])
+    }, [behavior, block, inline])
   )
 }

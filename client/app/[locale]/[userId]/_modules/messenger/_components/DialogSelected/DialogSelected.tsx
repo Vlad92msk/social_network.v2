@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Body, ButtonCloseChat, CallButtons, ContactInfo, Footer, Skeleton } from './elements'
+import { Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton } from './elements'
 import { useMessageStore } from '../../_providers/message/message.provider'
 
 interface ChatProps {}
@@ -20,15 +20,16 @@ export function DialogSelected(props: ChatProps) {
 
   return (
     <Skeleton
-      renderHeader={(
+      headerComponent={(
         <>
           <ContactInfo />
           <CallButtons />
           <ButtonCloseChat />
         </>
       )}
-      renderBody={<Body />}
-      renderFooter={<Footer />}
+      bodyComponent={<Body />}
+      footerComponent={<Footer />}
+      fixedMessages={<FixedMessages />}
     />
   )
 }

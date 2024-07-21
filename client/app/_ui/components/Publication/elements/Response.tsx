@@ -23,7 +23,6 @@ export function Response(props: ResponseProps) {
 
   const scrollToComment = useScrollToElement({
     behavior: 'smooth',
-    targetElementId: forwardMessageId || quoteMessageId,
   })
 
   if (!(forwardMessageId || quoteMessageId)) return null
@@ -31,7 +30,9 @@ export function Response(props: ResponseProps) {
     <Button
       className={classNames(cn('Response'), className)}
       onClick={() => {
-        scrollToComment()
+        scrollToComment({
+          targetElementId: forwardMessageId || quoteMessageId,
+        })
       }}
     >
       <Text fs="12" weight="bold">{name}</Text>

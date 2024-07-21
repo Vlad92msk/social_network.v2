@@ -1,3 +1,4 @@
+import { Icon } from '@ui/common/Icon'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
@@ -17,7 +18,7 @@ export function ButtonCloseChat(props: ButtonCloseChatProps) {
       className={classNames(cn('ButtonCloseChat'), className)}
       onClick={() => handleCloseChat('close')}
     >
-      X
+      <Icon name={'close'} />
     </Button>
   )
 }

@@ -11,21 +11,23 @@ interface BodyProps {
 export function Body(props: BodyProps) {
   const { apiError, apiStatus } = useMessageStore(({getCurrentDialog}) => getCurrentDialog())
   const messages = useMessageStore(({getCurrentDialog}) => {
-    const m = getCurrentDialog().apiData?.messages?.map((msg, index, array) => ({
+    const dialog = getCurrentDialog().apiData
+    if (!dialog) return []
+
+    const m = dialog?.messages?.map((msg, index, array) => ({
       ...msg,
       forwardMsg: array.find(({ id }) => `dialog-message-${id}` === msg.forwardMessageId),
     }))
     return orderBy(m, (value) => value.dateCreated, 'asc')
   })
 
-  console.log('messages', messages)
 
   if (apiStatus) return <Spinner />
   if (apiError) return <div>Error</div>
 
   return (
-    <div className={cn()}>
-      {messages?.map((msg) => <Message key={msg.id} message={msg} />)}
-    </div>
+  <div className={cn()}>
+    {messages.map((msg) => <Message key={msg.id} message={msg} />)}
+  </div>
   )
 }

@@ -2,25 +2,27 @@ import { useMessageStore } from '../../../_providers/message/message.provider'
 import { cn } from '../cn'
 
 interface SkeletonProps {
-  renderHeader: React.ReactNode
-  renderBody: React.ReactNode
-  renderFooter: React.ReactNode
+  headerComponent: React.ReactNode
+  bodyComponent: React.ReactNode
+  footerComponent: React.ReactNode
+  fixedMessages: React.ReactNode
 }
 
 export function Skeleton(props: SkeletonProps) {
-  const { renderHeader, renderFooter, renderBody } = props
+  const { headerComponent, footerComponent, bodyComponent, fixedMessages } = props
   const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
-console.log('chatingPanelStatus', chatingPanelStatus)
+
   return (
     <div className={cn({ statusVisible: chatingPanelStatus })}>
       <div className={cn('Header')}>
-        {renderHeader}
+        {headerComponent}
       </div>
+      {fixedMessages}
       <div className={cn('Body')}>
-        {renderBody}
+        {bodyComponent}
       </div>
       <div className={cn('Footer')}>
-        {renderFooter}
+        {footerComponent}
       </div>
     </div>
   )

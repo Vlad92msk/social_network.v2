@@ -11,7 +11,7 @@
   gap: rem(20);
   padding-bottom: rem(20);
   overflow-y: auto;
-  //justify-content: flex-end;
+  @include scrollbarMini();
 
   &-Message {
     $this: &;

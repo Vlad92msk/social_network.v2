@@ -1,6 +1,25 @@
 import { pick } from 'lodash'
 import { Dialog, DialogShort, SelectDialogType } from '../types/dialogs.type'
 
+
+const a = ()  =>  ({
+  id: '1',
+  media: [],
+  emojis: [],
+  text: 'text1',
+  forwardMessageId: 'dialog-message-1',
+  dateRead: new Date('2024/02/04'),
+  dateDeliver: new Date('2024/02/04'),
+  dateCreated: new Date(),
+  author: {
+    id: '1',
+    name: 'contact 1',
+    profileImage: 'base/me',
+  },
+})
+
+
+
 export const DIALOGS: Dialog[] = [
   {
     id: '1',
@@ -70,6 +89,7 @@ export const DIALOGS: Dialog[] = [
         },
       },
     ],
+    fixedMessages: [a()]
   },
   {
     id: '2',
