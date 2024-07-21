@@ -12,6 +12,7 @@
     "@bem-react/classname": "1.6.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@floating-ui/react": "^0.26.19",
     "babel-plugin-react-compiler": "^0.0.0-experimental-696af53-20240625",
     "clsx": "2.0.0",
     "date-fns": "3.6.0",
