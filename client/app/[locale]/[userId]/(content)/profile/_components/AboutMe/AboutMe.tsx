@@ -31,15 +31,15 @@ export function AboutMe(props: AboutMeProps) {
         <Text weight="bold">Фирсов Влад</Text>
       </div>
       <div className={cn('Univercity')}>
-        <Icon name="studying-university" />
         <Text weight="bold">МГПУ</Text>
+        <Icon name="studying-university" />
       </div>
       <div className={cn('Position')}>
         <Text weight="bold">Frontend-developer</Text>
       </div>
       <div className={cn('Company')}>
-        <Icon name="job-in-company" />
         <Text weight="bold">42</Text>
+        <Icon name="job-in-company" />
       </div>
       <div className={cn('Information')}>
         <Text>

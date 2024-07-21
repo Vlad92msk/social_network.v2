@@ -55,6 +55,8 @@
     height: 70%;
     position: relative;
     width: 100%;
+    border-radius: $paddings--super-small;
+    overflow: hidden;
   }
   &-MyPhoto {
     position: absolute;
