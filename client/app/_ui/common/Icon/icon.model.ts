@@ -24,4 +24,7 @@ export type IconName =
   | 'delete'
   | 'close'
   | 'approve'
+  | 'studying-university'
+  | 'job-in-company'
+  | 'work-position'
   | string;

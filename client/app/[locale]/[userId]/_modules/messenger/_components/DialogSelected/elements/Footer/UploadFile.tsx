@@ -1,6 +1,7 @@
+// @ts-ignore
+import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
 import { FileUpLoad } from 'app/_ui/common/FileUpLoad'
 import { cn } from './cn'
-import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
 import { useMessageStore } from '../../../../_store'
 
 export function UploadFile() {

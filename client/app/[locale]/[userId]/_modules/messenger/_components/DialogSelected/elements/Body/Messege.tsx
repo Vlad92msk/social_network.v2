@@ -1,8 +1,8 @@
+import { subMinutes } from 'date-fns'
 import { Message as UserMessage } from '@api/messenger/dialogs/types/message.type'
 import { useProfile } from '@hooks'
 import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
-import { addMinutes, subMinutes } from 'date-fns'
 import { cn } from './cn'
 import { useMessageStore } from '../../../../_store'
 

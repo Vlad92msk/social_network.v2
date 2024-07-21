@@ -1,0 +1,69 @@
+@import "@ui/styles/for_components";
+
+
+.AboutMe {
+  width: 100%;
+  display: grid;
+  grid-template:
+        "bunner       bunner       " rem(250)
+        "name         univercity   " auto
+        "position     company      " auto
+        "information  information  " fit-content(rem(64))
+       / 1fr          1fr;
+
+  &-Bunner {
+    grid-area: bunner;
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+  &-Name {
+    grid-area: name;
+    padding: $paddings--small;
+  }
+  &-Univercity {
+    grid-area: univercity;
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+    justify-content: end;
+    padding: $paddings--small;
+  }
+  &-Position {
+    grid-area: position;
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+    padding: $paddings--small;
+  }
+  &-Company {
+    grid-area: company;
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+    justify-content: end;
+    padding: $paddings--small;
+  }
+  &-Information {
+    grid-area: information;
+    background: var(--Color-Bcg--variant-4--theme-default);
+    border-radius: $border-radius--small;
+    padding: $paddings--small;
+  }
+
+  &-BannerBck {
+    height: 70%;
+    position: relative;
+    width: 100%;
+  }
+  &-MyPhoto {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: rem(150);
+    height: rem(150);
+    border-radius: 50%;
+    overflow: hidden;
+    border: rem(3) solid var(--Color-Border--variant-2--theme-default);
+  }
+}

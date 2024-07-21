@@ -261,7 +261,7 @@ export enum FILE_FORMAT_APP {
   PSB = 'application/vnd.3gpp.pic-bw-small', // .psb - 3rd Generation Partnership Project - Pic Small
   PVB = 'application/vnd.3gpp.pic-bw-var', // .pvb - 3rd Generation Partnership Project - Pic Var
   TCAP = 'application/vnd.3gpp2.tcap', // .tcap - 3rd Generation Partnership Project - Transaction Capabilities Application Part
-  PWN = 'application/vnd.3m.post-it-notes', // .pwn - 3M Post It Notes
+  PWN = 'application/vnd.3m.post-it-notes', // .pwn - 3M AboutMe It Notes
   ASO = 'application/vnd.accpac.simply.aso', // .aso - Simply Accounting
   IMP = 'application/vnd.accpac.simply.imp', // .imp - Simply Accounting - Data Import
   ACU = 'application/vnd.acucobol', // .acu - ACU Cobol

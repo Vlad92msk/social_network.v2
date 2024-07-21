@@ -1,0 +1,10 @@
+@import "@ui/styles/for_components";
+
+
+.Post {
+  display: block;
+
+  &-PostItem {
+    background: var(--Color-Bcg--variant-4--theme-default);
+  }
+}

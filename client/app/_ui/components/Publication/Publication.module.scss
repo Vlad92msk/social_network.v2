@@ -15,14 +15,14 @@ $padding: rem(6);
   $this: &;
   container-type: inline-size;
   max-width: rem(800);
+  background: #192935;
+  border-radius: $paddings--medium;
 
   &-Wrapper {
     width: 100%;
     height: fit-content;
     padding: rem(10);
     display: grid;
-    border-radius: $paddings--medium;
-    background: #192935;
 
     &--isChangeActive {
       border: rem(1) dotted var(--Color-Border--variant-2--theme-default);
