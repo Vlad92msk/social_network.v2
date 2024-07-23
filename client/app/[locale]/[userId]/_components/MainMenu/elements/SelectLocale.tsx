@@ -22,8 +22,6 @@ export function SelectLocale() {
   return (
     <Select
       className={cn('SelectLocation')}
-      width="auto"
-      size="xs"
       placeholder="Выбрать язык"
       defaultValue={currentLocale}
       onChange={handleChangeLocation}

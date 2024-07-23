@@ -1,0 +1,10 @@
+@import "@ui/styles/for_components";
+
+$paddingLR: 5%;
+
+.PageContent {
+  padding-left: $paddingLR;
+  padding-right: $paddingLR;
+  overflow-y: auto;
+  @include scrollbarMini();
+}

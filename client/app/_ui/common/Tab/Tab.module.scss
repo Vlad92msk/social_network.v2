@@ -1,0 +1,15 @@
+@import "@ui/styles/for_components";
+
+
+.Tab {
+  display: flex;
+
+
+  &-TabOption {
+    display: flex;
+
+    &--active {
+      background: red;
+    }
+  }
+}

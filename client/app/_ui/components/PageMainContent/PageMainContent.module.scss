@@ -1,9 +1,0 @@
-@import "@ui/styles/for_components";
-
-.PageMainContent {
-  padding-left: 3%;
-  padding-right: 3%;
-  overflow-y: auto;
-  padding-top: rem(50);
-  @include scrollbarMini();
-}

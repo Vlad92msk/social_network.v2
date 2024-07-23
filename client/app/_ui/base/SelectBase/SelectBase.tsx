@@ -34,28 +34,24 @@ export function SelectBase(props: SelectBaseProps) {
     ...rest
   } = props
   return (
-    <div
+    <select
+      ref={ref}
       className={classNames(cn({ size, isDisabled, isReadOnly }), className)}
       style={{ width }}
-    >
-      <select
-        ref={ref}
-        className={cn('input')}
-        disabled={isDisabled}
-        required={isRequired}
+      disabled={isDisabled}
+      required={isRequired}
         // @ts-ignore
-        readOnly={isReadOnly}
-        onChange={onChange}
-        defaultValue={defaultValue}
-        {...rest}
-      >
-        {placeholder && (
-          <option value="" disabled hidden>
-            {placeholder}
-          </option>
-        )}
-        {children}
-      </select>
-    </div>
+      readOnly={isReadOnly}
+      onChange={onChange}
+      defaultValue={defaultValue}
+      {...rest}
+    >
+      {placeholder && (
+      <option value="" disabled hidden>
+        {placeholder}
+      </option>
+      )}
+      {children}
+    </select>
   )
 }

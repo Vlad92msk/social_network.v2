@@ -13,6 +13,7 @@ interface ButtonCommonProps extends ButtonBaseProps {
   'sm'|
   'xs'|
   'es'
+  ref?: React.Ref<any>,
 }
 
 export function Button(props: ButtonCommonProps) {

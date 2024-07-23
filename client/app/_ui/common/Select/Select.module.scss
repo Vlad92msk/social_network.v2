@@ -1,8 +1,11 @@
 @import "@ui/styles/for_components";
 
 .Select {
+  padding: $paddings--super-small;
+  background: transparent;
+
   @include color-theme('default') {
-    //background: orange;
+    color: var(--Color-Text--variant-1--theme-default);
   }
 
   @include color-theme('red') {

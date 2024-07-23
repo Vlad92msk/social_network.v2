@@ -15,8 +15,6 @@ export function SelectTheme() {
   return (
     <Select
       className={cn('SelectTheme')}
-      width="auto"
-      size="xs"
       placeholder="Выбрать тему"
       defaultValue={DEFAULT_THEME}
       onChange={handleChangeTheme}

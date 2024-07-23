@@ -132,7 +132,7 @@ export enum FILE_FORMAT_TEXT {
   DSC = 'text/prs.lines.tag', // .dsc - PRS Lines Tag
   RTX = 'text/richtext', // .rtx - Rich Text Format (RTF)
   SGML = 'text/sgml', // .sgml - Standard Generalized Markup Language (SGML)
-  TSV = 'text/tab-separated-values', // .tsv - Tab Seperated Values
+  TSV = 'text/tab-separated-values', // .tsv - ProfilePageTab Seperated Values
   T = 'text/troff', // .message - troff
   TTL = 'text/turtle', // .ttl - Turtle (Terse RDF Triple Language)
   URI = 'text/uri-list', // .uri - URI Resolution Services

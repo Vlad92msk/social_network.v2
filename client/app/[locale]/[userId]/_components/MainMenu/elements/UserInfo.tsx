@@ -1,10 +1,17 @@
 import { useProfile } from '@hooks'
+import { Button } from '@ui/common/Button'
 import { Spinner } from '@ui/common/Spinner'
 import { Text } from '@ui/common/Text/Text'
 import { Image } from 'app/_ui/common/Image'
+import { Dispatch, SetStateAction } from 'react'
 import { cn } from '../cn'
 
-export function UserInfo() {
+interface UserInfoProps {
+  setStatus: Dispatch<SetStateAction<'open' | 'close'>>
+}
+
+export function UserInfo(props: UserInfoProps) {
+  const { setStatus } = props
   const { session, profile } = useProfile()
 
   const userImg = profile?.userInfo.profileImage || session.data?.user?.image
@@ -26,6 +33,11 @@ export function UserInfo() {
           </>
         ) : undefined
       }
+      <Button
+        className={cn('ToggleMenu')}
+        onClick={() => setStatus((prev) => (prev === 'open' ? 'close' : 'open'))}
+        size="es"
+      />
     </div>
   )
 }

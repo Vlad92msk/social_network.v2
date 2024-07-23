@@ -1,6 +1,6 @@
 import { CSSProperties, PropsWithChildren } from 'react'
 import { AdaptiveVariables, createBreakPoint } from '@ui/styles/variables/media'
-import { classNames, makeCn } from '@utils/others'
+import { classNames, makeCn, rem } from '@utils/others'
 
 import styles from './Text.module.scss'
 
@@ -31,6 +31,7 @@ export interface TextCommonProps {
   style?: CSSProperties
   fs?: TextPropsFontSize
   letterSpacing?: number | string
+  lineHeight?: number | string
   weight?: TextPropsFontWeight
   uppercase?: boolean
   nowrap?: boolean
@@ -42,7 +43,7 @@ const cn = makeCn('Text', styles)
 
 export function Text(props: PropsWithChildren<TextCommonProps>) {
   const {
-    className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, textElipsis, as: As = 'span', children, ...rest
+    className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, textElipsis, as: As = 'span', children, lineHeight, ...rest
   } = props
 
   return (
@@ -50,6 +51,7 @@ export function Text(props: PropsWithChildren<TextCommonProps>) {
       style={{
         ...style,
         letterSpacing: typeof letterSpacing === 'number' ? `${letterSpacing}em` : undefined,
+        lineHeight: typeof lineHeight === 'number' ? rem(lineHeight) : undefined,
         textTransform: uppercase ? 'uppercase' : undefined,
         whiteSpace: nowrap ? 'nowrap' : undefined,
         textAlign,

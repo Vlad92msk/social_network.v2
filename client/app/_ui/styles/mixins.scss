@@ -15,3 +15,16 @@
     background: transparent;
   }
 }
+
+@mixin fade-in-animation($initialOpacity) {
+  animation: 0.3s showElement;
+
+  @keyframes showElement {
+    0% {
+      opacity: $initialOpacity;
+    }
+    100% {
+      opacity: 100%;
+    }
+  }
+}

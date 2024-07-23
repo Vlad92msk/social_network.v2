@@ -28,7 +28,7 @@ export function AboutMe(props: AboutMeProps) {
         </div>
       </div>
       <div className={cn('Name')}>
-        <Text weight="bold">Фирсов Влад</Text>
+        <Text weight="bold" fs={'18'}>Фирсов Влад</Text>
       </div>
       <div className={cn('Univercity')}>
         <Text weight="bold">МГПУ</Text>
@@ -42,7 +42,7 @@ export function AboutMe(props: AboutMeProps) {
         <Icon name="job-in-company" />
       </div>
       <div className={cn('Information')}>
-        <Text>
+        <Text fs={'16'} lineHeight={30}>
           Привет!
           {' '}
           <br />

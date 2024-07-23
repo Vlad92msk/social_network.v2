@@ -1,0 +1,159 @@
+@import "@ui/styles/for_components";
+
+@mixin underLineStyles {
+  position: absolute;
+  bottom: 0;
+
+  width: 100%;
+  height: 4px;
+
+  content: '';
+
+  animation: 0.3s activateUnderLine;
+  transition: 0.3s;
+}
+
+.LmTabs {
+
+  &-Tab {
+    &--active {
+      background: cornflowerblue!important;
+    }
+  }
+
+  &-TabsList {
+    display: flex;
+    width: fit-content;
+
+    &--orientation {
+
+      &_vertical {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      &_horisontal {
+        flex-direction: row;
+      }
+    }
+  }
+
+  &-TabButton {
+    $this-button: &;
+    position: relative;
+    width: 100%;
+    justify-content: center;
+    border: none;
+    font-weight: var(--LM--FontWeight-Regular);
+  }
+
+  &-TabUnderLine {
+    $this-button: &;
+    position: relative;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: content-box;
+
+    cursor: pointer;
+
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+
+    &--color {
+
+      &_accent {
+        color: var(--LM-neutrals-day-900);
+        font-weight: var(--LM--FontWeight-Medium);
+
+        // т.е. если есть еще класс --active, то ему устанавливаются следующие свойства
+        &:is(#{$this-button}--active) {
+          color: var(--LM-indigo-100);
+          animation: 0.3s activateTab;
+
+          &::before {
+            @include underLineStyles;
+            height: 4px;
+            background: var(--LM-indigo-100);
+          }
+        }
+      }
+    }
+
+    &--size {
+
+      &_medium {
+        padding-bottom: 16px;
+      }
+
+      &_large {
+        padding-bottom: 20px;
+      }
+    }
+
+    &:hover {
+      background-color: transparent;
+      &:not(#{$this-button}--active) {
+        &::before {
+          @include underLineStyles;
+          background: var(--LM-neutrals-day-200);
+        }
+      }
+    }
+    //&:active {
+    //  box-shadow: none;
+    //  &:not(#{$this-button}--active) {
+    //    &::before {
+    //      @include underLineStyles;
+    //      background: var(--LM-neutrals-day-400);
+    //    }
+    //  }
+    //}
+  }
+
+  &-TabPanel {
+    //@include fade-in-animation(50%)
+  }
+
+  //&-SelectedTextButton {
+  //  position: absolute;
+  //  top: 50%;
+  //  left: 50%;
+  //  transform: translate(-50%, -50%);
+  //  font-weight: var(--LM--FontWeight-Semibold);
+  //}
+
+  //&-SelectedTextUnderLine {
+  //  position: absolute;
+  //  top: 35%;
+  //  left: 50%;
+  //  transform: translate(-50%, -50%);
+  //  font-weight: var(--LM--FontWeight-Semibold);
+  //}
+
+  &-HiddenText {
+    visibility: hidden;
+  }
+}
+
+@keyframes activateTab {
+  0% {
+    color: red;
+  }
+  100% {
+    color: dodgerblue;
+  }
+}
+
+@keyframes activateUnderLine {
+  0% {
+    opacity: 0;
+    width: 0;
+  }
+  100% {
+    opacity: 100;
+    width: 100%;
+  }
+}
