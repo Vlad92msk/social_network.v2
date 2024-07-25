@@ -66,6 +66,7 @@
     justify-content: start;
     border-bottom-right-radius: rem(15);
     border-top-right-radius: rem(15);
+    height: rem(55);
 
     @include color-theme('default') {
       color: var(--Color-Text--root--theme-default)!important;
@@ -103,7 +104,9 @@
   }
 
   &-SelectTheme, &-SelectLocation {
+    @include text-ellipsis;
     width: 80%;
+    height: rem(55);
     border-bottom-right-radius: rem(15);
     border-top-right-radius: rem(15);
     background: rgba(128, 128, 128, 0.13)!important;

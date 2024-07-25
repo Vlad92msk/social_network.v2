@@ -2,6 +2,7 @@
 
 
 .AboutMe {
+  $this: &;
   isolation: isolate;
   width: 100%;
   display: grid;
@@ -71,6 +72,7 @@
   }
 
   &-ContactsList {
+    $ContactsList: &;
     right: 0;
     position: absolute;
     bottom: 10%;
@@ -80,25 +82,6 @@
     overflow: hidden;
     justify-content: flex-end;
 
-    & > *:nth-child(1) {
-      z-index: 3;
-      transform: translateX(rem(30));
-    }
-
-    & > *:nth-child(2) {
-      z-index: 2;
-      transform: translateX(rem(20));
-    }
-
-    & > *:nth-child(3) {
-      z-index: 1;
-      transform: translateX(rem(10));
-    }
-
-    & > *:last-child {
-      z-index: 0;
-      //transform: translateX(rem(-20));
-    }
   }
 
   &-UsersPlus {
@@ -112,6 +95,8 @@
     overflow: hidden;
     background: var(--Color-Bcg--variant-4--theme-default);
     color: var(--Color-Text--variant-1--theme-default)!important;
+    z-index: 3;
+    transform: translateX(rem(30));
   }
 
   &-ContactItemBox {

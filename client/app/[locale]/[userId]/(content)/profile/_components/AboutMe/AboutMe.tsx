@@ -4,7 +4,7 @@ import { useProfile } from '@hooks'
 import { Icon } from '@ui/common/Icon'
 import { Image } from '@ui/common/Image'
 import { Text } from '@ui/common/Text'
-import { makeCn } from '@utils/others'
+import { makeCn, rem } from '@utils/others'
 import style from './AboutMe.module.scss'
 
 const cn = makeCn('AboutMe', style)
@@ -28,10 +28,14 @@ export function AboutMe(props: AboutMeProps) {
         </div>
         <div className={cn('ContactsList')}>
           <Text className={cn('UsersPlus')} fs="10">+99</Text>
-          {[1, 23, 4].map((el) => (
+          {[1, 23, 4].map((el, index) => (
             <div
               key={el}
               className={cn('ContactItemBox')}
+              style={{
+                zIndex: 3 - (index + 1),
+                transform: `translateX(${10 * (3 - (index + 1))}px)`,
+              }}
             >
               <Image src="base/me" width={40} height={40} alt={el.toString()} />
             </div>
