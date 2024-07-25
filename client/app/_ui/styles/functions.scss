@@ -58,7 +58,7 @@ $scroll-bar--width: rem(12);
   &::-webkit-scrollbar-thumb {
     width: rem(2);
     height: rem(2);
-    background: var(--Color-ScrollBar--variant-2--theme-default);
+    background: var(--Color-ScrollBar--variant-4--theme-default);
     border-radius: rem(10);
     border: rem($offset) solid transparent;
     background-clip: padding-box;

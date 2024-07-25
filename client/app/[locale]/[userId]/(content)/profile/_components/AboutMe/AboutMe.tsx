@@ -26,9 +26,20 @@ export function AboutMe(props: AboutMeProps) {
         <div className={cn('MyPhoto')}>
           <Image alt="bunner" src="base/me" width={70} height={70} />
         </div>
+        <div className={cn('ContactsList')}>
+          <Text className={cn('UsersPlus')} fs="10">+99</Text>
+          {[1, 23, 4].map((el) => (
+            <div
+              key={el}
+              className={cn('ContactItemBox')}
+            >
+              <Image src="base/me" width={40} height={40} alt={el.toString()} />
+            </div>
+          ))}
+        </div>
       </div>
       <div className={cn('Name')}>
-        <Text weight="bold" fs={'18'}>Фирсов Влад</Text>
+        <Text weight="bold" fs="18">Фирсов Влад</Text>
       </div>
       <div className={cn('Univercity')}>
         <Text weight="bold">МГПУ</Text>
@@ -38,11 +49,11 @@ export function AboutMe(props: AboutMeProps) {
         <Text weight="bold">Frontend-developer</Text>
       </div>
       <div className={cn('Company')}>
-        <Text weight="bold">42</Text>
+        <Text weight="bold">ООО "42"</Text>
         <Icon name="job-in-company" />
       </div>
       <div className={cn('Information')}>
-        <Text fs={'16'} lineHeight={30}>
+        <Text fs="16" lineHeight={30}>
           Привет!
           {' '}
           <br />

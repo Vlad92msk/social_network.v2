@@ -9,9 +9,11 @@
   &-Button {
     flex: 1;
     max-height: rem(30);
+    justify-content: center;
 
     &--active {
-      background: lightseagreen;
+      background: rgba(128, 128, 128, 0.13)!important;
+      border-bottom: rem(1) solid  var(--Color-Bcg--variant-9--theme-default) !important;
     }
   }
 }

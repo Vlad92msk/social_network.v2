@@ -69,7 +69,8 @@ export function TabOption(props: LmTabProps) {
       ref={ref}
       key={value}
       // variant={type === 'Button' ? (tabIsActive ? 'primary' : 'secondary') : 'secondary'}
-      className={classNames(cn(`LmTab${type}`, { color, size, active: tabIsActive }), className)}
+      // className={classNames(cn(`Tab${type}`, { color, size, active: tabIsActive }), className)}
+      className={classNames(cn(`TabButton`, { color, size, active: tabIsActive }), className)}
       onClick={handleChangeActive}
     >
       {content}

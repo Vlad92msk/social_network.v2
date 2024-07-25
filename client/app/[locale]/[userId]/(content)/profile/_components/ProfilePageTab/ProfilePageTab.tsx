@@ -1,8 +1,8 @@
 'use client'
 
-import { makeCn } from '@utils/others'
 import React, { PropsWithChildren, useMemo } from 'react'
-import { TabPanel, TabsList, TabOption, Tabs } from '@ui/common/Tabs'
+import { TabOption, TabPanel, Tabs, TabsList } from '@ui/common/Tabs'
+import { makeCn } from '@utils/others'
 import style from './ProfilePageTab.module.scss'
 
 const cn = makeCn('ProfilePageTab', style)
@@ -12,7 +12,7 @@ export interface ExampleProps {
   exampleComponent: React.ReactElement;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function Example(props: ExampleProps) {
+export function ProfileTabItem(props: ExampleProps) {
   return null
 }
 
@@ -31,7 +31,7 @@ export function ProfileTab(props: ExampleModuleProps) {
 
   return (
     <Tabs
-      contextProps={{ activeTab, tabsType: 'Button' }}
+      contextProps={{ activeTab, tabsType: 'Button', tabsSize: 'medium' }}
       className={cn()}
     >
       <TabsList className={cn('ButtonsList')} orientation="horizontal">

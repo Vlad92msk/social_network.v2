@@ -5,6 +5,7 @@
 .Input {
   &-Text {
     border: $border-size--super-small solid var(--Color-Border--variant-3--theme-default);
+    border-radius: $border-radius--super-small;
     background: transparent;
     outline: none;
     max-width: 100%;

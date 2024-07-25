@@ -9,7 +9,8 @@
 
   &-Input {
     width: 100%;
-    border: 0;
-    border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default);
+    border: 0!important;
+    border-radius: 0!important;
+    border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default) !important;
   }
 }

@@ -24,6 +24,7 @@
 
   --Palette--BrightGreen--100--opacity-1: #1ae243;
   --Palette--BrightGreen--110--opacity-1: #08e0ad;
+  --Palette--BrightGreen--120--opacity-1: #1ebdbf;
 
 
   //1. Основной текст и фон
@@ -60,6 +61,7 @@
   --Color-Bcg--variant-6--theme-default: var(--Palette--TomatoRed--100--opacity-1);
   --Color-Bcg--variant-7--theme-default: var(--Palette--LightGrey--90--opacity-1);
   --Color-Bcg--variant-8--theme-default: var(--Palette--BrightGreen--110--opacity-1);
+  --Color-Bcg--variant-9--theme-default: var(--Palette--BrightGreen--120--opacity-1);
   //Для темы светлой
   //--Color-Bcg--variant-1--theme-light: var(--Palette--DarkSlate--60--opacity-1);
   //--Color-Bcg--variant-2--theme-light: var(--Palette--LightViolet--100--opacity-1);
@@ -97,5 +99,6 @@
   --Color-ScrollBar--variant-1--theme-default: var(--Palette--LightLavender--100-opacity-1);
   --Color-ScrollBar--variant-2--theme-default: var(--Palette--DarkSlate--100--opacity-1);
   --Color-ScrollBar--variant-3--theme-default: var(--Palette--TomatoRed--90--opacity-1);
+  --Color-ScrollBar--variant-4--theme-default: var(--Palette--BrightGreen--120--opacity-1);
 
 }

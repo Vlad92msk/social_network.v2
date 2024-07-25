@@ -15,9 +15,20 @@
 
 .LmTabs {
 
+  &-TabButton {
+    background: transparent;
+    border-radius: $border-radius--super-small;
+
+    &--active {
+      background: rgba(128, 128, 128, 0.13)!important;
+      border-bottom: rem(1) solid  var(--Color-Bcg--variant-9--theme-default) !important;
+      //box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+    }
+  }
+
   &-Tab {
     &--active {
-      background: cornflowerblue!important;
+      //background: cornflowerblue!important;
     }
   }
 

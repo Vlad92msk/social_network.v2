@@ -15,7 +15,7 @@ const gotoButtons: Record<NavigationContentType, string> = {
 }
 
 export function MainMenu() {
-  const [status, setStatus] = useState<'open' | 'close'>('open')
+  const [status, setStatus] = useState<'open' | 'close'>('close')
 
   return (
     <div className={cn({ status })}>

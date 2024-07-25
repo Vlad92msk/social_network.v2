@@ -6,6 +6,8 @@
   flex-direction: column;
   gap: rem(20);
   padding-bottom: rem(50);
+  width: clamp(#{rem(300)}, 100%, #{rem(800)});
+  align-self: center;
 
   &-ButtonsList {
     width: 100%;
