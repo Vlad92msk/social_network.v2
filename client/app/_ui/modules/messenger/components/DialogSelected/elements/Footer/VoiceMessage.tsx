@@ -1,7 +1,7 @@
 import { useProfile } from '@hooks'
 import { Icon } from 'app/_ui/common/Icon'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 export function VoiceMessage() {
   const { profile } = useProfile()

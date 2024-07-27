@@ -1,8 +1,14 @@
+import { UserInfo } from '@api/users/types/user.type'
 import { Image } from '@ui/common/Image'
-import { Text } from '@ui/common/Text'
+import { ContactsList } from './ContactsList'
 import { cn } from '../cn'
 
-export function Banner() {
+interface BannerProps {
+  contacts?: UserInfo[]
+}
+
+export function Banner(props: BannerProps) {
+  const { contacts } = props
   return (
     <div className={cn('Banner')}>
       <div className={cn('BannerBck')}>
@@ -11,21 +17,23 @@ export function Banner() {
       <div className={cn('MyPhoto')}>
         <Image alt="bunner" src="base/me" width={70} height={70} />
       </div>
-      <div className={cn('ContactsList')}>
-        <Text className={cn('UsersPlus')} fs="10">+99</Text>
-        {[1, 23, 4].map((el, index) => (
-          <div
-            key={el}
-            className={cn('ContactItemBox')}
-            style={{
-              zIndex: 3 - (index + 1),
-              transform: `translateX(${10 * (3 - (index + 1))}px)`,
-            }}
-          >
-            <Image src="base/me" width={40} height={40} alt={el.toString()} />
-          </div>
-        ))}
-      </div>
+      <ContactsList
+        contacts={contacts}
+        renderContacts={(visible) => (
+          visible.map(({ id, name, profileImage }, index) => (
+            <div
+              key={id}
+              className={cn('ContactItemBox')}
+              style={{
+                zIndex: 3 - (index + 1),
+                transform: `translateX(${10 * (3 - (index + 1))}px)`,
+              }}
+            >
+              <Image src={profileImage} width={40} height={40} alt={name || id} />
+            </div>
+          ))
+        )}
+      />
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { orderBy } from 'lodash'
 import { Spinner } from '@ui/common/Spinner'
 import { cn } from './cn'
 import { Message } from './Messege'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 interface BodyProps {
 

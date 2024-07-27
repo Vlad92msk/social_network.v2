@@ -1,5 +1,6 @@
 'use client'
 
+import { useProfile } from '@hooks'
 import { createZustandContext } from '@utils/client'
 import { cn } from './cn'
 import {
@@ -39,14 +40,15 @@ export interface AboutMeProps extends AboutMeContextChangeState {
 }
 
 export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((props) => {
-// const { profile } = useProfile()
+const { profile } = useProfile()
   const {
     banner, university, company, information, position, name, onSubmit,
   } = props
+  console.log('profile', profile)
   return (
     <div className={cn()}>
       <ButtonEdit onSubmit={onSubmit} />
-      <Banner />
+      <Banner contacts={profile?.userInfo.contacts} />
       <Name name={name} />
       <Univercity university={university} />
       <Position position={position} />

@@ -16,7 +16,6 @@ import {
   useInteractions,
   useRole,
 } from '@floating-ui/react'
-import { AnimatePresence, motion } from 'framer-motion'
 import React, { ReactElement, ReactNode, useCallback, useRef, useState } from 'react'
 
 // interface ReferenceProps extends Record<string, unknown> {
@@ -282,7 +281,7 @@ export function Popover(props: PopoverProps) {
   ])
 
   const popover = (
-    <motion.div
+    <div
       ref={refs.setFloating}
       style={{
         ...defaultFloatingStyles,
@@ -311,7 +310,7 @@ export function Popover(props: PopoverProps) {
           staticOffset={arrowStaticOffset}
         />
       )}
-    </motion.div>
+    </div>
   )
 
   return (
@@ -322,9 +321,7 @@ export function Popover(props: PopoverProps) {
         ...getReferenceProps(),
         ...(trigger === 'contextMenu' ? contextMenu.getReferenceProps() : {}),
       })}
-      <AnimatePresence>
         {isOpen && (usePortal ? <FloatingPortal>{popover}</FloatingPortal> : popover)}
-      </AnimatePresence>
     </>
   )
 }

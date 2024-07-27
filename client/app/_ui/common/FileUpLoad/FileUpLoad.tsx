@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId } from 'react'
 import { AddedFile, availableFormats, MaterialAttachProps, useBooleanState, useMaterialsAttach } from '@hooks'
 import { Icon, IconName } from 'app/_ui/common/Icon'
-import { ModalBase, ModalOverlay } from 'app/_ui/common/Modal'
+import { Modal, ModalOverlay } from 'app/_ui/common/Modal'
 import { Button } from 'app/_ui/common/Button'
 import { classNames, makeCn } from '@utils/others'
 
@@ -84,7 +84,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
           />
         </label>
       </div>
-      <ModalBase isOpen={Boolean(isOpenPevFiles && isConfirm)} contentClassName={cn('ApplyAttachments')}>
+      <Modal isOpen={Boolean(isOpenPevFiles && isConfirm)} contentClassName={cn('ApplyAttachments')}>
         <ModalOverlay />
         {addedFiles.map(({
           name,
@@ -102,7 +102,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
         <Button onClick={applyAttachments}>
           Подтвердить
         </Button>
-      </ModalBase>
+      </Modal>
     </>
   )
 }

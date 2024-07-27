@@ -17,7 +17,7 @@ interface ModalProps {
   contentClassName?: string
 }
 
-export function ModalBase(props: PropsWithChildren<ModalProps>) {
+export function Modal(props: PropsWithChildren<ModalProps>) {
   const { isOpen, children, rootClassName, contentClassName } = props
 
   if (!isOpen) return null

@@ -4,7 +4,7 @@ import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 interface DialogListProps{
   className?: string;

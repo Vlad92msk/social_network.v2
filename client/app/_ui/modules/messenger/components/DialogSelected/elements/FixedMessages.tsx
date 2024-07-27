@@ -2,7 +2,7 @@ import { useScrollToElement } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { Text } from '@ui/common/Text'
-import { useMessageStore } from '../../../_store'
+import { useMessageStore } from '../../../store'
 import { cn } from '../cn'
 
 export const FixedMessages = () => {

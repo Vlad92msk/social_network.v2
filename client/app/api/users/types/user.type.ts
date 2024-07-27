@@ -1,6 +1,6 @@
 export interface UserInfo {
   id: string
-  contacts?: any[]
+  contacts?: Partial<UserInfo>[]
   name?: string
   profileImage?: string
   onlineStatus?: 'online' | 'offline'

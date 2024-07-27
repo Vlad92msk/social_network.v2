@@ -2,7 +2,7 @@ import { classNames, makeCn } from '@utils/others'
 import { Icon } from 'app/_ui/common/Icon'
 import { Input, InputGroup } from 'app/_ui/common/Input'
 import style from './Search.module.scss'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 export const cn = makeCn('Search', style)
 

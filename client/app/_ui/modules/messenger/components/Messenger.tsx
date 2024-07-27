@@ -1,8 +1,8 @@
 import { PropsWithChildren } from 'react'
 import { classNames, makeCn } from '@utils/others'
 import style from './Messenger.module.scss'
-import { MessageProvider } from '../_store'
-import { MessengerState } from '../_store/message.store'
+import { MessageProvider } from '../store'
+import { MessengerState } from '../store/message.store'
 
 export const cn = makeCn('Messenger', style)
 

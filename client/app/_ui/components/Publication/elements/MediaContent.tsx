@@ -1,7 +1,7 @@
 import { useBooleanState } from '@hooks'
 import { useReset } from '../hooks'
 import { setImmutable } from '@utils/others'
-import { ModalBase, ModalOverlay } from 'app/_ui/common/Modal'
+import { Modal, ModalOverlay } from 'app/_ui/common/Modal'
 import { Text } from 'app/_ui/common/Text'
 import { useState } from 'react'
 import { cn } from '../cn'
@@ -67,7 +67,7 @@ export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]
           <Text>{`+ ${other.length}`}</Text>
         </button>
       )}
-      <ModalBase isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>
+      <Modal isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>
         <ModalOverlay onClick={handleClose} />
         {other.map((img) => (
           <MediaElement
@@ -77,7 +77,7 @@ export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]
             onRemove={handleRemove}
           />
         ))}
-      </ModalBase>
+      </Modal>
     </div>
   )
 }

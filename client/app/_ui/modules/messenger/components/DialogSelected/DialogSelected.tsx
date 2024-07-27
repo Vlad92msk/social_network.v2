@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton } from './elements'
-import { useMessageStore } from '../../_store'
+import {
+  Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton,
+} from './elements'
+import { useMessageStore } from '../../store'
 
 interface ChatProps {}
 

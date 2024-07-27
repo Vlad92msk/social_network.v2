@@ -2,7 +2,7 @@
 import { FILE_FORMAT_IMAGE } from '@types/fileFormats'
 import { FileUpLoad } from 'app/_ui/common/FileUpLoad'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 export function UploadFile() {
   const onCreateMessage = useMessageStore((store) => store.onCreateMessage)

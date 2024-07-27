@@ -3,7 +3,7 @@ import { classNames, makeCn } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Text } from 'app/_ui/common/Text'
 import style from './SwitcherDialogType.module.scss'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 export const cn = makeCn('SwitcherDialogType', style)
 

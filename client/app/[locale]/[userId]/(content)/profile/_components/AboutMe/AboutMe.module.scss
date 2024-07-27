@@ -126,4 +126,32 @@
     overflow: hidden;
     flex-shrink: 0;
   }
+
+  &-ContactsListOther {
+    border-radius: $border-radius--super-small;
+    padding: $paddings--small;
+    display: flex;
+    flex-direction: column;
+    gap: rem(10);
+    background: var(--Color-Bcg--root--theme-default);
+    height: fit-content;
+    //border: rem(1) solid var(--Palette--BrightGreen--120--opacity-1);
+
+    &Button {
+      height: rem(40);
+      display: flex;
+      gap: rem(5);
+      overflow: hidden;
+      border-radius: $border-radius--super-small;
+      border: rem(1) solid var(--Palette--BrightGreen--120--opacity-1);
+      box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+    }
+    &ImgBox {
+      position: relative;
+      height: 100%;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: $border-radius--super-small
+    }
+  }
 }

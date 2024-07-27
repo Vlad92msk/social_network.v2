@@ -3,7 +3,7 @@
 import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
 import { DialogList, Search, SwitcherDialogType } from './elements'
-import { useMessageStore } from '../../_store'
+import { useMessageStore } from '../../store'
 
 interface MessengerProps {}
 

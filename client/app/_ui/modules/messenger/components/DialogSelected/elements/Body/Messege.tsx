@@ -4,7 +4,7 @@ import { useProfile } from '@hooks'
 import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
 import { cn } from './cn'
-import { useMessageStore } from '../../../../_store'
+import { useMessageStore } from '../../../../store'
 
 interface MessageProps {
   message: UserMessage & {forwardMsg?: UserMessage}
