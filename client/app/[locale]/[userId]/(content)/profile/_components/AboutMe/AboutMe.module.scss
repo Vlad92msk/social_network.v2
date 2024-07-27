@@ -122,11 +122,16 @@
     width: rem(35);
     height: rem(35);
     border-radius: 50%;
-    border: rem(2) solid var(--Color-Border--variant-2--theme-default);
+    border: rem(1) solid var(--Color-Border--variant-2--theme-default);
     overflow: hidden;
     flex-shrink: 0;
     padding: 0!important;
+    transition: .5s;
 
+    &:hover {
+      border: rem(3) solid var(--Palette--BrightGreen--120--opacity-1);
+      transition: .5s;
+    }
   }
 
   &-ContactsListOther {

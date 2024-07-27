@@ -6,7 +6,7 @@ import { getDialogByIDQuery } from '@api/messenger/dialogs/queries'
 import { DialogResponse } from '@api/messenger/dialogs/types/dialogs.type'
 import { Message } from '@api/messenger/dialogs/types/message.type'
 import { UserInfo } from '@api/users/types/user.type'
-import { ApiStatusState, initialApiState } from '@types/apiStatus'
+import { ApiStatusState, initialApiState } from '../../../../../types/apiStatus'
 
 
 const initialMessage: Message = {
@@ -71,7 +71,7 @@ export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], []
     set((state) => ({
       ...state,
       selectedDialog: result,
-      createMessage: get().createMessage,
+      createMessage: initialMessage,
     }))
   },
   onCreateMessage: (key, value) => set((state) => ({ ...state, createMessage: { ...state.createMessage, [key]: value } })),

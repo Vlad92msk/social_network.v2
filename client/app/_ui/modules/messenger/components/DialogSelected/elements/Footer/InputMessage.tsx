@@ -1,4 +1,4 @@
-import { TextArea } from 'app/_ui/common/Input'
+import { TextAreaEmoji } from 'app/_ui/common/Input'
 import { cn } from './cn'
 import { useMessageStore } from '../../../../store'
 
@@ -7,11 +7,11 @@ export function InputMessage() {
   const createMessageText = useMessageStore((store) => store.createMessage.text)
 
   return (
-    <TextArea
+    <TextAreaEmoji
       className={cn('InputMessage')}
       placeholder="Сообщение"
       value={createMessageText}
-      onChange={(event) => onCreateMessage('text', event.target.value)}
+      onValueChange={(value) => onCreateMessage('text', value)}
     />
   )
 }

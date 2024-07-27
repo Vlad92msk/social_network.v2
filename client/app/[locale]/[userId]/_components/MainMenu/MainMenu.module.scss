@@ -68,8 +68,12 @@
     border-top-right-radius: rem(15);
     height: rem(55);
 
+    &--active {
+      background: #484e70!important;
+    }
+
     @include color-theme('default') {
-      color: var(--Color-Text--root--theme-default)!important;
+      color: var(--Palette--BrightGreen--120--opacity-1);
       background: rgba(128, 128, 128, 0.13);
       border: rem(1) solid var(--Color-Border--variant-3--theme-default);
       box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
@@ -105,6 +109,7 @@
 
   &-SelectTheme, &-SelectLocation {
     @include text-ellipsis;
+    color: var(--Palette--BrightGreen--120--opacity-1);
     width: 80%;
     height: rem(55);
     border-bottom-right-radius: rem(15);

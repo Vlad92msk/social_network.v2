@@ -1,6 +1,7 @@
 import { Icon } from 'app/_ui/common/Icon'
 import { Button } from 'app/_ui/common/Button'
 import { Text } from 'app/_ui/common/Text'
+import { usePathname } from 'next/navigation'
 import { cn } from '../cn'
 import { useSwitchContent } from '../hooks/useSwitchContent'
 import { NavigationContentType } from '../types'
@@ -13,9 +14,12 @@ interface ButtonGoToProps {
 export function ButtonGoTo(props: ButtonGoToProps) {
   const { to, title } = props
   const switchContent = useSwitchContent()
+  const pathname = usePathname()
+const {3: contentType} = pathname.split('/')
+  console.log('contentType', contentType)
   return (
     <Button
-      className={cn('NavigationButton')}
+      className={cn('NavigationButton', { active: contentType === to })}
       size="sm"
       onClick={() => {
         switchContent(to)

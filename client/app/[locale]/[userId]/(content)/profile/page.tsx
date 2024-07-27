@@ -17,7 +17,7 @@ interface UserPageProps {
 export default async function ProfileContent(props: UserPageProps) {
   return (
     <PageContent className={cn()}>
-      <ProfileTab activeTab="Обо мне">
+      <ProfileTab activeTab="Публикации">
         <ProfileTabItem
           name="Обо мне"
           exampleComponent={(

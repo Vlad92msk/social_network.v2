@@ -1,6 +1,7 @@
 import { MutableRefObject, useEffect, useRef } from 'react'
+import { RefObject } from 'react'
 
-type CombinedRef<T> = ((value: T) => void) | MutableRefObject<T>;
+type CombinedRef<T> = ((value: T) => void) | MutableRefObject<T> | RefObject<HTMLTextAreaElement | null> | undefined;
 
 export const useCombinedRefs = <T>(...refs: CombinedRef<T>[]) => {
   // @ts-ignore

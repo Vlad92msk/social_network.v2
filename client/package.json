@@ -16,6 +16,7 @@
     "babel-plugin-react-compiler": "^0.0.0-experimental-696af53-20240625",
     "clsx": "2.0.0",
     "date-fns": "3.6.0",
+    "emoji-picker-react": "^4.11.1",
     "framer-motion": "11.0.25",
     "mime-types": "^2.1.35",
     "next": "15.0.0-rc.0",
