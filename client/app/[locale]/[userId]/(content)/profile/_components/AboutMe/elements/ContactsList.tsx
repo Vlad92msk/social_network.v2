@@ -8,10 +8,11 @@ import { cn } from '../cn'
 interface ContactsListProps {
   contacts?: UserInfo[]
   renderContacts: (contacts: UserInfo[]) => React.ReactNode
+  onClickUser?: (id: string) => void
 }
 
 export function ContactsList(props: ContactsListProps) {
-  const { contacts = [], renderContacts } = props
+  const { contacts = [], renderContacts, onClickUser } = props
   const [visible, other] = (contacts || []).reduce((acc, el, index) => {
     if (index < 3) {
       acc[0].push(el)
@@ -21,7 +22,7 @@ export function ContactsList(props: ContactsListProps) {
 
     return acc
   }, [[], []] as [UserInfo[], UserInfo[]])
-  console.log('other', other)
+
   return (
     <div className={cn('ContactsList')}>
       <Popover
@@ -29,7 +30,11 @@ export function ContactsList(props: ContactsListProps) {
           <div className={cn('ContactsListOther')}>
             {
                 other?.map(({ name, id, profileImage }) => (
-                  <Button className={cn('ContactsListOtherButton')} key={id} onClick={() => console.log(`Переходим к пользователю ${id} - ${name}`)}>
+                  <Button
+                    className={cn('ContactsListOtherButton')}
+                    key={id}
+                    onClick={() => onClickUser?.(id)}
+                  >
                     <div className={cn('ContactsListOtherImgBox')}>
                       <Image alt="bunner" src={profileImage} width={30} height={30} />
                     </div>

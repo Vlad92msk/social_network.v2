@@ -125,6 +125,8 @@
     border: rem(2) solid var(--Color-Border--variant-2--theme-default);
     overflow: hidden;
     flex-shrink: 0;
+    padding: 0!important;
+
   }
 
   &-ContactsListOther {

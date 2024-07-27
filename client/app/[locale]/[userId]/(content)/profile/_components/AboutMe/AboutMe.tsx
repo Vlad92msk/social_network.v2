@@ -40,15 +40,19 @@ export interface AboutMeProps extends AboutMeContextChangeState {
 }
 
 export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((props) => {
-const { profile } = useProfile()
   const {
     banner, university, company, information, position, name, onSubmit,
   } = props
-  console.log('profile', profile)
+  const { profile } = useProfile()
+
+  const handleClickFriend = (id: string) => {
+    console.log(`Переходим к пользователю ${id}`)
+  }
+
   return (
     <div className={cn()}>
       <ButtonEdit onSubmit={onSubmit} />
-      <Banner contacts={profile?.userInfo.contacts} />
+      <Banner contacts={profile?.userInfo.contacts} onClickUser={handleClickFriend} />
       <Name name={name} />
       <Univercity university={university} />
       <Position position={position} />
