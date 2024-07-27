@@ -5,7 +5,7 @@ import { getProfileQuery } from '@api/profiles/queries'
 import { getSettings } from '@api/settings/queries'
 import { Locales } from '@middlewares/location'
 import { ContentArea, Layout, MainMenu, SecondMenu } from './_components'
-import { Messenger } from './_modules/messenger'
+import { Messenger } from '@ui/modules/messenger'
 
 interface UserPageProps {
   params: {

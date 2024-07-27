@@ -24,7 +24,7 @@ export function ButtonEdit(props: ButtonEditProps) {
       <Button
         disabled={disabled}
         onClick={() => aboutMeUpdate(({ changeState }) => {
-          onSubmit?.({ ...changeState })
+          onSubmit?.(changeState)
           return ({
             isChangeActive: false,
             status: 'approve',
