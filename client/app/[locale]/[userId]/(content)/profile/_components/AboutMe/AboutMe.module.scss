@@ -6,15 +6,33 @@
   isolation: isolate;
   width: 100%;
   display: grid;
+  position: relative;
+  overflow: hidden;
   grid-template:
-        "bunner       bunner       " rem(250)
+        "banner       banner       " rem(250)
         "name         univercity   " auto
         "position     company      " auto
         "information  information  " fit-content(rem(64))
        / 1fr          1fr;
 
-  &-Bunner {
-    grid-area: bunner;
+  &-ButtonEdit {
+    position: absolute;
+    right: 0;
+    transform: translateY(-100%);
+    top: 0;
+    z-index: 1;
+    display: flex;
+    gap: rem(10);
+    transition: transform .5s;
+
+    :is(#{$this}:hover) & {
+      transform: translateY(0);
+      transition: transform .5s;
+    }
+
+  }
+  &-Banner {
+    grid-area: banner;
     position: relative;
     height: 100%;
     width: 100%;

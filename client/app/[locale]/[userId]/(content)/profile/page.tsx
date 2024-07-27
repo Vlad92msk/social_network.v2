@@ -18,7 +18,19 @@ export default async function ProfileContent(props: UserPageProps) {
   return (
     <PageContent className={cn()}>
       <ProfileTab activeTab="Обо мне">
-        <ProfileTabItem name="Обо мне" exampleComponent={<AboutMe />} />
+        <ProfileTabItem
+          name="Обо мне"
+          exampleComponent={(
+            <AboutMe
+              position="Frontend-developer"
+              university="МГПУ"
+              company={'ООО "42"'}
+              name="Фирсов Влад"
+              // события должны обрабатываться на стороне клиента
+              // onSubmit={(infoChanged) => console.log('изменил инф о себе', infoChanged)}
+            />
+        )}
+        />
         <ProfileTabItem
           name="Публикации"
           exampleComponent={(

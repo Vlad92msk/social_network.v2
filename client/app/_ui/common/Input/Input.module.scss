@@ -23,8 +23,8 @@
 
     &:focus {
       outline: none;
-      font-size: rem(list.nth($text--12, 1));
-      width: 100%;
+      //font-size: rem(list.nth($text--12, 1));
+      //width: 100%;
       transition: font-size .5s;
       //background: yellow;
     }
