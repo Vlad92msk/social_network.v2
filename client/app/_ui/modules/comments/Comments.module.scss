@@ -1,18 +1,42 @@
 @import "@ui/styles/for_components";
 
 .Comments {
-  @include scrollbarMini();
+  //@include scrollbarMini();
   display: flex;
   flex-direction: column;
-  max-height: rem(600);
-  overflow-y: auto;
-  align-items: flex-end;
-  padding: rem(20);
-  gap: rem(5);
+
+
+  &-CommentsList {
+    @include scrollbarMini();
+    display: flex;
+    flex-direction: column;
+    max-height: rem(600);
+    overflow-y: auto;
+    align-items: flex-end;
+    padding: rem(20);
+    gap: rem(5);
+  }
 
   &-Comment {
     display: flex;
     width: 95%;
-    border-radius: 0;
+    border-radius: $border-radius--super-small;
+    background: rgba(128, 128, 128, 0.13);
+  }
+
+
+  &-InputContainer {
+    display: flex;
+    flex-direction: column;
+    gap: rem(10);
+  }
+  &-AddCommentInput {
+    border-bottom: rem(1) solid var(--Palette--BrightGreen--120--opacity-1);
+  }
+
+  &-SubmitActions {
+    display: flex;
+    gap: rem(5);
+    place-content: end;
   }
 }

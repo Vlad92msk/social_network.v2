@@ -1,6 +1,6 @@
 import { Image } from '@ui/common/Image'
-import { cn } from '../cn'
 import { Publication } from '@ui/components/Publication'
+import { cn } from '../cn'
 
 interface CommentProps {
   text: string
@@ -9,8 +9,8 @@ interface CommentProps {
   dateCreated: Date
 }
 
-export const Comment = (props: CommentProps) => {
-const { text, authorImg, authorName, dateCreated } = props
+export function Comment(props: CommentProps) {
+  const { text, authorImg, authorName, dateCreated } = props
 
   return (
     <Publication
