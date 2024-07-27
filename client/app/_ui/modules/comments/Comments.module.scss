@@ -1,12 +1,18 @@
 @import "@ui/styles/for_components";
 
 .Comments {
+  @include scrollbarMini();
   display: flex;
   flex-direction: column;
+  max-height: rem(600);
+  overflow-y: auto;
+  align-items: flex-end;
+  padding: rem(20);
   gap: rem(5);
 
   &-Comment {
     display: flex;
-    width: 100%;
+    width: 95%;
+    border-radius: 0;
   }
 }

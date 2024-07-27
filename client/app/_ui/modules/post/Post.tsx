@@ -62,10 +62,10 @@ export function Post(props: PostsListProps) {
         />
         <Publication.MediaContainer
           text={media?.text}
-          audio={media?.audio}
-          video={media?.video}
-          image={media?.image}
-          other={media?.other}
+          // audio={media?.audio}
+          // video={media?.video}
+          // image={media?.image}
+          // other={media?.other}
         />
         <Publication.Text className={cn('MessageItemText')} text={generateText(300)} />
         <Publication.Commets countComments={19} onClick={() => console.log('Открыть комментарии')} />
