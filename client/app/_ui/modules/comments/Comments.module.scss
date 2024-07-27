@@ -1,0 +1,12 @@
+@import "@ui/styles/for_components";
+
+.Comments {
+  display: flex;
+  flex-direction: column;
+  gap: rem(5);
+
+  &-Comment {
+    display: flex;
+    width: 100%;
+  }
+}

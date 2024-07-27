@@ -1,5 +1,4 @@
-import { MutableRefObject, useEffect, useRef } from 'react'
-import { RefObject } from 'react'
+import { MutableRefObject, RefObject, useEffect, useRef } from 'react'
 
 type CombinedRef<T> = ((value: T) => void) | MutableRefObject<T> | RefObject<HTMLTextAreaElement | null> | undefined;
 

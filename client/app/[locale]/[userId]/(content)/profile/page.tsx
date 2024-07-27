@@ -1,7 +1,8 @@
 import { Locales } from '@middlewares/location'
 import { PageContent } from '@ui/components/PageMainContent'
 import { makeCn } from '@utils/others'
-import { AboutMe, Post, PostsList, ProfileTab, ProfileTabItem } from './_components'
+import { Post } from 'app/_ui/modules/post'
+import { AboutMe, PostsList, ProfileTab, ProfileTabItem } from './_components'
 import style from './Page.module.scss'
 
 const cn = makeCn('Page', style)
@@ -37,11 +38,6 @@ export default async function ProfileContent(props: UserPageProps) {
             <PostsList
               title="Мои публикации"
               posts={[1, 2, 3, 4, 5]}
-              renderPosts={(items) => (
-                <>
-                  {items.map((a) => <Post key={a} />)}
-                </>
-              )}
             />
           )}
         />

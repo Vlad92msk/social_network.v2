@@ -3,12 +3,12 @@
 import { subMinutes } from 'date-fns'
 import { useEffect, useState } from 'react'
 import { useProfile } from '@hooks'
-import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
 import { Media111 } from '@ui/components/Publication/elements'
+import { Comments } from '@ui/modules/comments'
 import { makeCn } from '@utils/others'
 import style from './Post.module.scss'
-import { generateText } from '../data'
+import { generateText } from '../../../[locale]/[userId]/(content)/profile/_components/data'
 
 const cn = makeCn('Post', style)
 
@@ -72,6 +72,7 @@ export function Post(props: PostsListProps) {
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
         <Publication.DateCreated dateCreated={new Date()} />
       </Publication>
+      <Comments />
     </div>
   )
 }

@@ -49,7 +49,7 @@ export function TextArea(props: InputCommonProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const currentRef = useCombinedRefs(textareaRef, ref)
-  useAutoResize(textareaRef)
+  useAutoResize(currentRef)
 
   return (
     <Text
