@@ -1,0 +1,12 @@
+@import "@ui/styles/for_components";
+
+
+.PostItem {
+  display: flex;
+  flex-direction: column;
+  gap: rem(30);
+
+  &-PostItem {
+    //background: var(--Color-Bcg--variant-4--theme-default);
+  }
+}

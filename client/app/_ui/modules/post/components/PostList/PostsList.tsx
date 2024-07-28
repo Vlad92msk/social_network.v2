@@ -1,20 +1,18 @@
 'use client'
 
-import { Post } from '@ui/modules/post'
 import { Button } from '@ui/common/Button'
 import { Text } from '@ui/common/Text'
-import { makeCn } from '@utils/others'
-import style from './PostsList.module.scss'
+import { cn } from './cn'
 
-const cn = makeCn('PostsList', style)
 
 interface PostsListProps<Posts> {
   posts: Posts
   title?: string
+  renderPosts: (posts: Posts) => React.ReactNode
 }
 
 export function PostsList<Posts extends any[], >(props: PostsListProps<Posts>) {
-  const { posts, title } = props
+  const { posts, title, renderPosts } = props
   return (
     <div className={cn()}>
       <div className={cn('Header')}>
@@ -22,7 +20,7 @@ export function PostsList<Posts extends any[], >(props: PostsListProps<Posts>) {
         <Button onClick={() => console.log('Создать пост')}>Создать</Button>
       </div>
       <div className={cn('List')}>
-        {posts.map((a) => <Post key={a} />)}
+        {renderPosts(posts)}
       </div>
     </div>
   )

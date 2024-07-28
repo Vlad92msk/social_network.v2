@@ -9,7 +9,7 @@ const cn = makeCn('ProfilePageTab', style)
 
 export interface ExampleProps {
   name: string;
-  exampleComponent: React.ReactElement;
+  content: React.ReactElement;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ProfileTabItem(props: ExampleProps) {
@@ -45,12 +45,12 @@ export function ProfileTab(props: ExampleModuleProps) {
 
       {columns?.map((column) => {
         const columnProps = column.props
-        const { name, exampleComponent } = columnProps
+        const { name, content } = columnProps
         const nameTrim = name.trim()
 
         return (
           <TabPanel className={cn('Panel')} key={nameTrim} value={nameTrim}>
-            {exampleComponent}
+            {content}
           </TabPanel>
         )
       })}

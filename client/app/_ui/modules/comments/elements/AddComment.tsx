@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import { TextAreaEmoji } from '@ui/common/Input'
 import { cn } from '../cn'
-import { useState } from 'react'
 
-export const AddComment = () => {
-const [t, setT] = useState('')
+export function AddComment() {
+  const [t, setT] = useState('')
 
   return (
     <TextAreaEmoji

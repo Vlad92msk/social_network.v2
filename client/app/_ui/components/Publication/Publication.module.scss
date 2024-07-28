@@ -15,7 +15,7 @@ $padding: rem(6);
   $this: &;
   container-type: inline-size;
   max-width: rem(800);
-  background: #192935;
+  background: var(--Palette--LightGrey--80--opacity-1);
   border-radius: $paddings--medium;
 
   &-Wrapper {

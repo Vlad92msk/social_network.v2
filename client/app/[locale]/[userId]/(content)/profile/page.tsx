@@ -2,7 +2,7 @@ import { Locales } from '@middlewares/location'
 import { PageContent } from '@ui/components/PageMainContent'
 import { makeCn } from '@utils/others'
 import { Post } from 'app/_ui/modules/post'
-import { AboutMe, PostsList, ProfileTab, ProfileTabItem } from './_components'
+import { AboutMe, ProfileTab, ProfileTabItem } from './_components'
 import style from './Page.module.scss'
 
 const cn = makeCn('Page', style)
@@ -21,7 +21,7 @@ export default async function ProfileContent(props: UserPageProps) {
       <ProfileTab activeTab="Публикации">
         <ProfileTabItem
           name="Обо мне"
-          exampleComponent={(
+          content={(
             <AboutMe
               position="Frontend-developer"
               university="МГПУ"
@@ -34,15 +34,10 @@ export default async function ProfileContent(props: UserPageProps) {
         />
         <ProfileTabItem
           name="Публикации"
-          exampleComponent={(
-            <PostsList
-              title="Мои публикации"
-              posts={[1, 2, 3, 4, 5]}
-            />
-          )}
+          content={<Post posts={['1', '2', '3', '4', '5']} />}
         />
-        <ProfileTabItem name="Музыка" exampleComponent={<div>Музыка</div>} />
-        <ProfileTabItem name="Видео" exampleComponent={<div>Видео</div>} />
+        <ProfileTabItem name="Музыка" content={<div>Музыка</div>} />
+        <ProfileTabItem name="Видео" content={<div>Видео</div>} />
       </ProfileTab>
     </PageContent>
   )

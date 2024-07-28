@@ -2,17 +2,20 @@ import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { cn } from '../cn'
 
-export const ButtonSubmit = () => {
+interface ButtonSubmitProps {
+  onClose: VoidFunction
+  onSubmit: (comment: string) => void
+}
 
-
-
+export function ButtonSubmit(props: ButtonSubmitProps) {
+  const { onClose, onSubmit } = props
   return (
     <div className={cn('SubmitActions')}>
-      <Button>
-        <Icon name={'close'} />
+      <Button className={cn('SubmitButton')} onClick={onClose}>
+        <Icon name="close" />
       </Button>
-      <Button>
-        <Icon name={'send'} />
+      <Button className={cn('SubmitButton')}>
+        <Icon name="send" />
       </Button>
     </div>
   )
