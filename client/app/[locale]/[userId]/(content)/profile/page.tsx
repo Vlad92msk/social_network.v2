@@ -1,4 +1,4 @@
-import { Locales } from '@middlewares/location'
+import { Locale } from '@middlewares/variables'
 import { PageContent } from '@ui/components/PageMainContent'
 import { makeCn } from '@utils/others'
 import { Post } from 'app/_ui/modules/post'
@@ -9,7 +9,7 @@ const cn = makeCn('Page', style)
 
 interface UserPageProps {
   params: {
-    locale: Locales
+    locale: Locale
     userId: string
   }
   searchParams: {}

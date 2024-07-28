@@ -21,6 +21,7 @@
     "mime-types": "^2.1.35",
     "next": "15.0.0-rc.0",
     "next-auth": "4.24.7",
+    "next-intl": "^3.17.2",
     "normalize.css": "8.0.1",
     "react": "19.0.0-rc-df5f2736-20240712",
     "react-dom": "19.0.0-rc-df5f2736-20240712",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",
+    "@types/negotiator": "^0.6.3",
     "@types/node": "20.14.10",
     "@types/react": "npm:types-react@rc",
     "@types/react-dom": "npm:types-react-dom@rc",

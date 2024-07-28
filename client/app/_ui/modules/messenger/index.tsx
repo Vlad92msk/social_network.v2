@@ -1,12 +1,12 @@
 import { Dialog } from '@api/messenger/dialogs/types/dialogs.type'
 import { ProfileType } from '@api/profiles/types/profile.type'
-import { Locales } from '@middlewares/location'
+import { Locale } from '@middlewares/variables'
 import { DialogsDrawerBar, DialogSelected } from './components'
 import { Messenger as MessengerModule } from '@ui/modules/messenger/components/Messenger'
 
 interface MessengerProps {
   params: {
-    locale: Locales
+    locale: Locale
     userId: string
   }
   searchParams: {}

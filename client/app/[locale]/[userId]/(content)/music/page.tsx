@@ -1,8 +1,8 @@
-import { Locales } from '@middlewares/location'
+import { Locale } from '@middlewares/variables'
 
 interface UserPageProps {
   params: {
-    locale: Locales
+    locale: Locale
     userId: string
   }
   searchParams: {}

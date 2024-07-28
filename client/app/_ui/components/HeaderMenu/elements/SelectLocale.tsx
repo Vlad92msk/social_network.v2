@@ -1,10 +1,10 @@
 'use client'
 
+import { LOCALES } from '@middlewares/variables'
+import { useLocale } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { ChangeEventHandler } from 'react'
-import { useLocale } from '@hooks'
-import { Locales, LOCALES } from '@middlewares/location'
-import { useTranslateUpdate } from '@providers/translation'
+// import { useTranslateUpdate } from '@providers/translation'
 import { Select } from 'app/_ui/common/Select'
 import { cn } from '../cn'
 
@@ -12,10 +12,9 @@ export function SelectLocale() {
   const router = useRouter()
   const pathname = usePathname()
   const currentLocale = useLocale()
-  const updateLocation = useTranslateUpdate()
 
   const handleChangeLocation: ChangeEventHandler<HTMLSelectElement> = (e) => {
-    updateLocation((ctx) => ({ ...ctx, locale: e.target.value as Locales }))
+    // updateLocation((ctx) => ({ ...ctx, locale: e.target.value as Locales }))
     const newUrl = pathname.replace(/\/[a-z]{2}\//, `/${e.target.value}/`)
     router.push(newUrl)
   }

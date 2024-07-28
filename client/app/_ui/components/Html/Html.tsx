@@ -1,11 +1,12 @@
-'use client'
-
+import { Locale } from '@middlewares/intlMiddleware'
 import { PropsWithChildren } from 'react'
-import { useLocale } from '@hooks'
 
-export function Html(props: PropsWithChildren) {
-  const { children } = props
-  const locale = useLocale()
+interface HtmlProps extends PropsWithChildren {
+  locale: Locale
+}
+
+export function Html(props: HtmlProps) {
+  const { children, locale } = props
   return (
     <html lang={locale}>
       {children}

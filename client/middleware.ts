@@ -1,17 +1,29 @@
-import { NextRequest } from 'next/server'
-import { authMiddleware } from './middlwares/auth'
-import { locationMiddleware } from './middlwares/location'
-import { runMiddlewares } from './middlwares/utils'
+import { authMiddleware } from '@middlewares/authMiddleware'
+import { intlMiddleware } from '@middlewares/intlMiddleware'
+import { NextRequest, NextResponse } from 'next/server'
 
-export default function middleware(req: NextRequest) {
-  // Вызываем мидлвары поочереди
-  return runMiddlewares(
-    req,
-    [
-      locationMiddleware,
-      authMiddleware,
-    ],
-  )
+export default async function middleware(request: NextRequest) {
+  try {
+    console.log(`Processing request for path: ${request.nextUrl.pathname}`)
+
+    // Применяем intlMiddleware
+    let response = intlMiddleware(request)
+    if (!response) {
+      response = NextResponse.next()
+    }
+
+    // Применяем authMiddleware
+    const authResponse = await authMiddleware(request, response)
+    if (authResponse) {
+      return authResponse
+    }
+
+    console.log('Proceeding with the request')
+    return response
+  } catch (error) {
+    console.error('Error in middleware:', error)
+    return NextResponse.error()
+  }
 }
 
 export const config = {

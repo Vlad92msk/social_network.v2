@@ -1,38 +1,42 @@
+import { Locale } from '@middlewares/variables'
 import { Session } from '@providers/session/Session'
 import { ThemeService } from '@providers/theme'
-import { Translation } from '@providers/translation'
 import { Body } from '@ui/components/Body'
 import { Html } from '@ui/components/Html'
-import './_ui/styles/_index.scss'
-import { getMessages } from '@utils/others'
-import { getServerLocale, getServerTranslate } from '@utils/server'
+import '@ui/styles/_index.scss'
 import { Metadata } from 'next'
+import {NextIntlClientProvider} from 'next-intl';
 
-export async function generateMetadata() {
-  const t = await getServerTranslate()
+import { getMessages, getTranslations } from 'next-intl/server'
+
+export async function generateMetadata({params: {locale}}) {
+  const t = await getTranslations({locale, namespace: 'Metadata'});
   const meta: Metadata = {
-    title: t('Metadata.title'),
+    title: t('title'),
   }
 
   return meta
 }
-
-export default async function RootLayout({ children }) {
-  const locale = await getServerLocale()
-  const messages = await getMessages(locale)
+interface RootLayoutProps {
+  children: React.ReactNode;
+  params: {locale: Locale};
+}
+export default async function RootLayout(props: RootLayoutProps) {
+  const { children, params } = props
+  const messages = await getMessages();
 
   return (
-    <Translation contextProps={{ locale, messages }}>
       <ThemeService contextProps={{ theme: 'default' }}>
-        <Html>
-          <Session>
-            <Body>
-              {children}
-            </Body>
-          </Session>
-        </Html>
+        <NextIntlClientProvider messages={messages}>
+          <Html locale={params.locale}>
+            <Session>
+              <Body>
+                {children}
+              </Body>
+            </Session>
+          </Html>
+        </NextIntlClientProvider>
       </ThemeService>
-    </Translation>
   )
 }
 

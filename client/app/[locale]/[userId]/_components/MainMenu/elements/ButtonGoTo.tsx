@@ -15,8 +15,8 @@ export function ButtonGoTo(props: ButtonGoToProps) {
   const { to, title } = props
   const switchContent = useSwitchContent()
   const pathname = usePathname()
-const {3: contentType} = pathname.split('/')
-  console.log('contentType', contentType)
+  const { 3: contentType } = pathname.split('/')
+
   return (
     <Button
       className={cn('NavigationButton', { active: contentType === to })}

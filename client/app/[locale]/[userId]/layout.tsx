@@ -1,15 +1,15 @@
+import { Locale } from '@middlewares/variables'
 import { getServerSession } from 'next-auth'
 import { Suspense } from 'react'
 import { getDialogsShortQuery } from '@api/messenger/dialogs/queries'
 import { getProfileQuery } from '@api/profiles/queries'
 import { getSettings } from '@api/settings/queries'
-import { Locales } from '@middlewares/location'
 import { ContentArea, Layout, MainMenu, SecondMenu } from './_components'
 import { Messenger } from '@ui/modules/messenger'
 
 interface UserPageProps {
   params: {
-    locale: Locales
+    locale: Locale
     userId: string
   }
   searchParams: {}
