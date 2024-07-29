@@ -1,16 +1,14 @@
+import { getTranslations } from 'next-intl/server'
 import { Text } from '@ui/common/Text/Text'
-import { HeaderMenu } from '@ui/components/HeaderMenu'
+import { HeaderMenu } from 'app/[locale]/signin/components/HeaderMenu'
 import { makeCn } from '@utils/others'
 import { GoogleSignIn } from './components'
 import style from './page.module.scss'
 
-import {getTranslations} from 'next-intl/server';
-
 const cn = makeCn('Signin', style)
 
 export default async function SignInPage() {
-
-  const t = await getTranslations();
+  const t = await getTranslations()
   return (
     <>
       <HeaderMenu />
@@ -37,8 +35,8 @@ export default async function SignInPage() {
           <Text className={cn('EnterText')} fs="14">
             {t('Auth.enterBy')}
           </Text>
-          <div className={cn('EnterButtons')}>
-            <GoogleSignIn />
+          <div className={cn('EnterButtonsList')}>
+            <GoogleSignIn className={cn('EnterButton')} />
           </div>
         </section>
       </main>

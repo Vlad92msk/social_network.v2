@@ -1,5 +1,5 @@
-import { Session } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { Session } from 'next-auth'
 
 export type MiddlewareFunction = (
   request: NextRequest,
@@ -10,12 +10,12 @@ export type MiddlewareFunction = (
 export async function runMiddleware(
   request: NextRequest,
   middlewares: MiddlewareFunction[],
-  session: Session | null
+  session: Session | null,
 ): Promise<NextResponse | null> {
   let response: NextResponse | null = null
 
   for (const middleware of middlewares) {
-    console.log(`Executing middleware: ${middleware.name}`);
+    console.log(`Executing middleware: ${middleware.name}`)
     response = await middleware(request, response, session)
     if (response instanceof NextResponse) {
       return response

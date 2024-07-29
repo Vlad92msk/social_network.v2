@@ -5,12 +5,12 @@ import { Body } from '@ui/components/Body'
 import { Html } from '@ui/components/Html'
 import '@ui/styles/_index.scss'
 import { Metadata } from 'next'
-import {NextIntlClientProvider} from 'next-intl';
+import { NextIntlClientProvider } from 'next-intl'
 
 import { getMessages, getTranslations } from 'next-intl/server'
 
-export async function generateMetadata({params: {locale}}) {
-  const t = await getTranslations({locale, namespace: 'Metadata'});
+export async function generateMetadata({ params: { locale } }) {
+  const t = await getTranslations({ locale, namespace: 'Metadata' })
   const meta: Metadata = {
     title: t('title'),
   }
@@ -23,20 +23,20 @@ interface RootLayoutProps {
 }
 export default async function RootLayout(props: RootLayoutProps) {
   const { children, params } = props
-  const messages = await getMessages();
+  const messages = await getMessages()
 
   return (
-      <ThemeService contextProps={{ theme: 'default' }}>
-        <NextIntlClientProvider messages={messages}>
-          <Html locale={params.locale}>
-            <Session>
-              <Body>
-                {children}
-              </Body>
-            </Session>
-          </Html>
-        </NextIntlClientProvider>
-      </ThemeService>
+    <ThemeService contextProps={{ theme: 'default' }}>
+      <NextIntlClientProvider messages={messages}>
+        <Html locale={params.locale}>
+          <Session>
+            <Body>
+              {children}
+            </Body>
+          </Session>
+        </Html>
+      </NextIntlClientProvider>
+    </ThemeService>
   )
 }
 

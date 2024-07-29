@@ -1,34 +1,57 @@
 @import "@ui/styles/for_components";
 
 .Signin {
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: rem(20);
-  align-items: center;
   padding: 5%;
+  place-self: center;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
 
   &-Salutation {
     width: 100%;
-    text-align: center;
     display: block;
   }
   &-Enter {
     width: 100%;
     display: flex;
     justify-content: center;
+    flex-direction: column;
+    align-items: center;
   }
 
   &-EnterText {
     display: flex;
     flex-shrink: 0;
-    align-items: center;
   }
 
-  &-EnterButtons {
+  &-EnterButtonsList {
     display: flex;
     justify-content: center;
     padding: rem(10);
+  }
+
+  &-EnterButton {
+    border-radius: $border-radius--medium;
+    height: rem(50);
+    width: rem(50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @include color-theme('default') {
+      color: var(--Color-ScrollBar--variant-4--theme-default);
+      background: rgba(128, 128, 128, 0.13);
+      border: rem(1) solid var(--Color-Border--variant-3--theme-default);
+      box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+
+      &:hover {
+        background: var(--Palette--DarkSlate--90--opacity-1);
+      }
+    }
   }
 }

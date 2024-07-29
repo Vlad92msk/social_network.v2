@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { ChangeEventHandler } from 'react'
 // import { useTranslateUpdate } from '@providers/translation'
-import { Select } from 'app/_ui/common/Select'
+import { Select } from '@ui/common/Select'
 import { cn } from '../cn'
 
 export function SelectLocale() {

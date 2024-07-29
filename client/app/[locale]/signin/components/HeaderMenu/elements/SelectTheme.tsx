@@ -3,7 +3,7 @@
 import { ChangeEventHandler } from 'react'
 import { useThemeServiceUpdate } from '@providers/theme'
 import { DEFAULT_THEME, Theme, THEMES } from '@providers/theme/context/initialState'
-import { Select } from 'app/_ui/common/Select'
+import { Select } from '@ui/common/Select'
 import { cn } from '../cn'
 
 export function SelectTheme() {

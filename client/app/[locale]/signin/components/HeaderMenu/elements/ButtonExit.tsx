@@ -1,5 +1,5 @@
 import { signOut, useSession } from 'next-auth/react'
-import { Button } from 'app/_ui/common/Button'
+import { Button } from '@ui/common/Button'
 
 
 export function ButtonExit() {

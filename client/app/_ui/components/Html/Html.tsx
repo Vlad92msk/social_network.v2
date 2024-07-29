@@ -1,4 +1,4 @@
-import { Locale } from '@middlewares/intlMiddleware'
+import { Locale } from '@middlewares/variables'
 import { PropsWithChildren } from 'react'
 
 interface HtmlProps extends PropsWithChildren {

@@ -27,4 +27,5 @@ export type IconName =
   | 'studying-university'
   | 'job-in-company'
   | 'work-position'
+  | 'google'
   | string;

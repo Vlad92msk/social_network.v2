@@ -1,10 +1,7 @@
-import { intlMiddleware } from '@middlewares/intlMiddleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from "./auth"
 import { authMiddleware } from '@middlewares/authMiddleware'
-
-
-
+import { intlMiddleware } from '@middlewares/intlMiddleware'
+import { auth } from './auth'
 
 export default auth(async (request: NextRequest) => {
   try {
@@ -22,7 +19,6 @@ export default auth(async (request: NextRequest) => {
     // Применяем authMiddleware, передавая сессию
     const authResponse = await authMiddleware(request, session)
     if (authResponse) return authResponse
-
 
     return response
   } catch (error) {
