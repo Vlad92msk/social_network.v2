@@ -1,8 +1,6 @@
 import { UserInfo } from '@api/users/types/user.type'
-import { cookies } from 'next/headers'
-import type { AuthOptions, Profile } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
-import { CookieType } from '../types/cookie'
+import Google from "next-auth/providers/google"
+import { NextAuthConfig, Profile } from 'next-auth'
 
 interface ExtendedProfile extends Profile {
   email_verified?: boolean
@@ -23,12 +21,6 @@ interface ExtendedToken {
   exp?: number
 }
 
-interface UserInfo1 {
-  message: string
-  token: string
-  // Дополнительные поля, если требуются
-}
-
 class AuthManager {
   private _isAuthenticated: boolean = false
 
@@ -47,12 +39,12 @@ class AuthManager {
 
         this._isAuthenticated = true
         this._userData = tokenData
-        cookies().set({
-          name: CookieType.USER_ID,
-          value: tokenData.userInfo.id,
-          maxAge: 60 * 60 * 24 * 30, // 30 дней
-          path: '/',
-        })
+        // cookies().set({
+        //   name: CookieType.USER_ID,
+        //   value: tokenData.userInfo.id,
+        //   maxAge: 60 * 60 * 24 * 30, // 30 дней
+        //   path: '/',
+        // })
         return true
       }
       this._isAuthenticated = false
@@ -75,7 +67,7 @@ class AuthManager {
 
 const authManager = new AuthManager()
 
-export const authConfig: AuthOptions = {
+export default {
   callbacks: {
     async session({ session, token }) {
       if ((token as ExtendedToken).myUserInfo) {
@@ -94,7 +86,7 @@ export const authConfig: AuthOptions = {
         case 'facebook':
           // Здесь может быть специфическая проверка для Facebook
           break
-          // Логика по умолчанию или для неизвестных провайдеров
+        // Логика по умолчанию или для неизвестных провайдеров
         default: return false
       }
 
@@ -106,6 +98,7 @@ export const authConfig: AuthOptions = {
           providerAccountId: account.providerAccountId,
         }
 
+        // @ts-ignore
         return authManager.saveOrUpdateUser(userData)
       }
 
@@ -121,10 +114,8 @@ export const authConfig: AuthOptions = {
       return token
     },
   },
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID as string,
-      clientSecret: process.env.GOOGLE_SECRET as string,
-    }),
-  ],
-}
+  providers: [Google({
+    clientId: process.env.GOOGLE_ID as string,
+    clientSecret: process.env.GOOGLE_SECRET as string,
+  })]
+} satisfies NextAuthConfig

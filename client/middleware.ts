@@ -1,10 +1,14 @@
-import { authMiddleware } from '@middlewares/authMiddleware'
 import { intlMiddleware } from '@middlewares/intlMiddleware'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from "./auth"
+import { authMiddleware } from '@middlewares/authMiddleware'
 
-export default async function middleware(request: NextRequest) {
+
+
+
+export default auth(async (request: NextRequest) => {
   try {
-    console.log(`Processing request for path: ${request.nextUrl.pathname}`)
+    console.log(`Обработка запроса на путь: ${request.nextUrl.pathname}`)
 
     // Применяем intlMiddleware
     let response = intlMiddleware(request)
@@ -12,19 +16,20 @@ export default async function middleware(request: NextRequest) {
       response = NextResponse.next()
     }
 
-    // Применяем authMiddleware
-    const authResponse = await authMiddleware(request, response)
-    if (authResponse) {
-      return authResponse
-    }
+    // Получаем сессию один раз
+    const session = await auth()
 
-    console.log('Proceeding with the request')
+    // Применяем authMiddleware, передавая сессию
+    const authResponse = await authMiddleware(request, session)
+    if (authResponse) return authResponse
+
+
     return response
   } catch (error) {
-    console.error('Error in middleware:', error)
+    console.error('Ошибка в middleware:', error)
     return NextResponse.error()
   }
-}
+})
 
 export const config = {
   matcher: [
