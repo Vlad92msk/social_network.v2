@@ -4,24 +4,56 @@
   display: flex;
   flex-direction: column;
   gap: rem(20);
-  padding: 5%;
-  place-self: center;
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  max-width: 50%;
+  top: 20%;
+  left: 7%;
+
+  &-BckImage {
+    position: absolute;
+    z-index: -1;
+  }
+
+  &-MyName {
+    color: var(--Color-Text--variant-7--theme-default)!important;
+    //color: var(--Color-Text--variant-6--theme-default)!important;
+  }
+  &-MyPosition {
+    //color: var(--Color-Text--variant-7--theme-default)!important;
+    color: var(--Color-Text--variant-6--theme-default)!important;
+  }
 
   &-Salutation {
     width: 100%;
     display: block;
+    position: relative;
+    padding: $paddings--small;
+    border-radius: $border-radius--medium;
+    overflow-y: hidden;
+    box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+
+    &:before {
+      content: '';
+      left: 0;
+      top: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: var(--Palette--DarkSlate--90--opacity-1);
+      opacity: .5;
+    }
+
+    & > span {
+      z-index: 2;
+      position: relative;
+      letter-spacing: 0.03em;
+    }
   }
   &-Enter {
     width: 100%;
     display: flex;
     justify-content: center;
     flex-direction: column;
-    align-items: center;
   }
 
   &-EnterText {
@@ -31,7 +63,6 @@
 
   &-EnterButtonsList {
     display: flex;
-    justify-content: center;
     padding: rem(10);
   }
 

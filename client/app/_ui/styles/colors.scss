@@ -22,6 +22,9 @@
   --Palette--TomatoRed--90--opacity-1: #b64a50;
 
   --Palette--LightViolet--100--opacity-1: #959afffa;
+  --Palette--LightViolet--200--opacity-1: #a63ffffa;
+
+  --Palette--Oceanic--100--opacity-1: rgba(8, 198, 222, 0.98);
 
   --Palette--BrightGreen--100--opacity-1: #1ae243;
   --Palette--BrightGreen--110--opacity-1: #08e0ad;
@@ -43,6 +46,8 @@
   --Color-Text--variant-3--theme-default: var(--Palette--DarkSlate--90--opacity-1);
   --Color-Text--variant-4--theme-default: var(--Palette--TomatoRed--90--opacity-1);
   --Color-Text--variant-5--theme-default: var(--Palette--DarkSlate--60--opacity-1);
+  --Color-Text--variant-6--theme-default: var(--Palette--Oceanic--100--opacity-1);
+  --Color-Text--variant-7--theme-default: var(--Palette--LightViolet--200--opacity-1);
   //Для темы светлой
   //--Color-Text--variant-1--theme-light: var(--Palette--LightLavender--100-opacity-1);
   //--Color-Text--variant-2--theme-light: var(--Palette--DarkSlate--100--opacity-1);
