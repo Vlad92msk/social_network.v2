@@ -10,7 +10,7 @@ export function ModalCloseButton(props : ModalCloseButtonProps) {
   const { onClick, className } = props
 
   return (
-    <button className={classNames(cn('ButtonClose'), className)} onClick={onClick} aria-label="Close modal">
+    <button className={classNames(cn('ButtonClose'), className)}>
       &times;
     </button>
   )

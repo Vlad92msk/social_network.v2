@@ -28,4 +28,5 @@ export type IconName =
   | 'job-in-company'
   | 'work-position'
   | 'google'
+  | 'pause'
   | string;

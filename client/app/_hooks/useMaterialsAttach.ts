@@ -98,6 +98,7 @@ export const availableFormats: AvailableFormats[] = Object.values(
 
 export interface AddedFile extends File {
   src: string
+  blob?: File
 }
 
 function generateFileSizeObject(maxSizeInMB: number) {
@@ -113,6 +114,13 @@ type FileSizeKeys = '1mb' | '2mb' | '3mb' | '4mb' | '5mb' | '6mb' | '7mb' | '8mb
   '11mb' | '12mb' | '13mb' | '14mb' | '15mb' | '16mb' | '17mb' | '18mb' | '19mb' | '20mb' |
   '21mb' | '22mb' | '23mb' | '24mb' | '25mb' | '26mb' | '27mb' | '28mb' | '29mb' | '30mb';
 
+export interface GroupedFiles {
+  image: AddedFile[];
+  audio: AddedFile[];
+  video: AddedFile[];
+  text: AddedFile[];
+  other: AddedFile[];
+}
 
 export type MaterialAttachProps = {
   maxFileSize?: FileSizeKeys
@@ -176,8 +184,8 @@ export const useMaterialsAttach = (props: MaterialAttachProps | undefined): Mate
           // @ts-expect-error
           lastModifiedDate: file.lastModifiedDate,
           src: url,
+          blob: file,
         }
-
         // Добавляем новый файл во временный массив.
         newFiles.push(addedFile)
       })
@@ -187,6 +195,38 @@ export const useMaterialsAttach = (props: MaterialAttachProps | undefined): Mate
   }, [props])
 
   return [addedFiles, handleAddFiles, setAddedFiles]
+}
+
+export function groupFiles(files: AddedFile[]): GroupedFiles {
+  const groupedFiles: GroupedFiles = {
+    image: [],
+    audio: [],
+    video: [],
+    text: [],
+    other: [],
+  }
+
+  files.forEach((file) => {
+    const fileType = file.type.split('/')[0]
+    switch (fileType) {
+      case 'image':
+        groupedFiles.image.push(file)
+        break
+      case 'audio':
+        groupedFiles.audio.push(file)
+        break
+      case 'video':
+        groupedFiles.video.push(file)
+        break
+      case 'text':
+        groupedFiles.text.push(file)
+        break
+      default:
+        groupedFiles.other.push(file)
+    }
+  })
+
+  return groupedFiles
 }
 
 // export const useMaterialsAttach = (props: MaterialAttachProps): MaterialAttach => {

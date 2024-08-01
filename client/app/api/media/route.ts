@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import mime from 'mime-types'
+import { NextResponse } from 'next/server'
 
 // TODO: это временное решение лиж бы работало - потом будет заменено на нормальное получение файлов
 export async function GET() {
@@ -13,7 +13,7 @@ export async function GET() {
     audio: [],
     video: [],
     text: [],
-    other: []
+    other: [],
   }
 
   for (const filename of filenames) {
@@ -31,7 +31,7 @@ export async function GET() {
       type: mimeType,
       size: stats.size,
       lastModified: stats.mtime.toISOString(),
-      blob: fileBlob
+      blob: fileBlob,
     }
 
     if (fileType in groupedFiles) {

@@ -321,7 +321,7 @@ export function Popover(props: PopoverProps) {
         ...getReferenceProps(),
         ...(trigger === 'contextMenu' ? contextMenu.getReferenceProps() : {}),
       })}
-        {isOpen && (usePortal ? <FloatingPortal>{popover}</FloatingPortal> : popover)}
+      {isOpen && (usePortal ? <FloatingPortal>{popover}</FloatingPortal> : popover)}
     </>
   )
 }

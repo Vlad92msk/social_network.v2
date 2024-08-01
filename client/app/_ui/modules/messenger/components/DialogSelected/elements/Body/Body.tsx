@@ -9,8 +9,8 @@ interface BodyProps {
 }
 
 export function Body(props: BodyProps) {
-  const { apiError, apiStatus } = useMessageStore(({getCurrentDialog}) => getCurrentDialog())
-  const messages = useMessageStore(({getCurrentDialog}) => {
+  const { apiError, apiStatus } = useMessageStore(({ getCurrentDialog }) => getCurrentDialog())
+  const messages = useMessageStore(({ getCurrentDialog }) => {
     const dialog = getCurrentDialog().apiData
     if (!dialog) return []
 
@@ -21,13 +21,12 @@ export function Body(props: BodyProps) {
     return orderBy(m, (value) => value.dateCreated, 'asc')
   })
 
-
   if (apiStatus) return <Spinner />
   if (apiError) return <div>Error</div>
 
   return (
-  <div className={cn()}>
-    {messages.map((msg) => <Message key={msg.id} message={msg} />)}
-  </div>
+    <div className={cn()}>
+      {messages.map((msg) => <Message key={msg.id} message={msg} />)}
+    </div>
   )
 }

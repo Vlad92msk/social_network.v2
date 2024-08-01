@@ -1,0 +1,105 @@
+@import "@ui/styles/for_components";
+
+$audio-height: rem(25);
+
+
+.CreatePublication {
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  flex-direction: column;
+  width: 100%;
+
+  &-ContentContainer {
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    padding-top: rem(10);
+    padding-bottom: rem(10);
+  }
+
+  &-SubmitActionsContainer {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  &-UploadFile {
+    padding: 0!important;
+  }
+
+  &-ButtonReset {
+    //transform: translateX(100%);
+    transition: 0.5s;
+
+    &--active {
+      //transform: translateX(0);
+      transition: 0.5s;
+    }
+  }
+
+  &-AddVoiceContainer {
+    display: flex;
+    width: 100%;
+  }
+
+  &-CurrentAudioBlobs {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: rem(5);
+  }
+
+  &-CreatedVoiceMessage {
+    display: flex;
+    position: relative;
+    width: 100%;
+
+    &Actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-inline: rem(10);
+    }
+    &Audio {
+      width: 100%;
+    }
+    &ButtonAdd {
+      //position: absolute;
+      //right: 0;
+    }
+  }
+
+  &-AddVoicesList {
+    margin-top: rem(20);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &List {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    &Box {
+      display: flex;
+      gap: rem(5);
+    }
+
+    &Audio {
+      width: 100%;
+    }
+
+    &ButtonRemove {
+
+    }
+  }
+
+  &-AddCommentInput {
+    padding-left: rem(20);
+    padding-right: rem(20);
+    border-bottom: rem(1) solid var(--Palette--Oceanic--100--opacity-1)!important;
+  }
+}

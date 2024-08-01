@@ -1,0 +1,6 @@
+export * from './ButtonSubmit'
+export * from './ButtonAttachment'
+export * from './InputText'
+export * from './ButtonReset'
+export * from './AddedContent'
+export * from './ButtonAddVoice'

@@ -178,3 +178,23 @@ svg {
   height: 25px;
   color: inherit;
 }
+
+
+/* Изменение цвета элементов управления (работает не во всех браузерах) */
+//audio::-webkit-media-controls-panel {
+//  background-color: var(--Color-Bcg--root--theme-default);
+//}
+//
+//audio::-webkit-media-controls-current-time-display,
+//audio::-webkit-media-controls-time-remaining-display {
+//  color: var(--Color-Bcg--root--theme-light);
+//}
+//
+///* Изменение цвета полосы прогресса */
+//audio::-webkit-media-controls-timeline {
+//  background-color: var(--Color-Bcg--root--theme-light);
+//}
+//
+//audio::-webkit-media-controls-volume-slider {
+//  //background-color: orange!important;
+//}

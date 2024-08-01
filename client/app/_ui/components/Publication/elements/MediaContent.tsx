@@ -1,13 +1,12 @@
-import { useBooleanState } from '@hooks'
-import { useReset } from '../hooks'
-import { setImmutable } from '@utils/others'
-import { Modal, ModalOverlay } from 'app/_ui/common/Modal'
-import { Text } from 'app/_ui/common/Text'
 import { useState } from 'react'
-import { cn } from '../cn'
-import { usePublicationCtxUpdate } from '../Publication'
+import { useBooleanState } from '@hooks'
+import { setImmutable } from '@utils/others'
+import { Modal } from 'app/_ui/common/Modal'
+import { Text } from 'app/_ui/common/Text'
 import { MediaElement } from './MediaElement'
-
+import { cn } from '../cn'
+import { useReset } from '../hooks'
+import { usePublicationCtxUpdate } from '../Publication'
 
 interface MediaImagesProps <Data extends Record<'src' | 'type' | 'name', any>[]> {
   data?: Data
@@ -38,14 +37,18 @@ export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]
   const element = () => {
     switch (type) {
       case 'video':
-        return (data: Data[0])=> (
-          <video controls>
-            <source src={data.src} type={data.type}/>
-            Your browser does not support the video element.
-          </video>
-        )
+        return function (data: Data[0]) {
+          return (
+            <video controls>
+              <source src={data.src} type={data.type} />
+              Your browser does not support the video element.
+            </video>
+          )
+        }
       case 'image':
-        return (data: Data[0]) => <img src={data.src} alt={data.name} style={{ maxHeight: 'inherit' }}/>
+        return function (data: Data[0]) {
+          return <img src={data.src} alt={data.name} style={{ maxHeight: 'inherit' }} />
+        }
     }
   }
 
@@ -67,8 +70,7 @@ export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]
           <Text>{`+ ${other.length}`}</Text>
         </button>
       )}
-      <Modal isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')}>
-        <ModalOverlay onClick={handleClose} />
+      <Modal isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')} onClose={handleClose}>
         {other.map((img) => (
           <MediaElement
             key={img.src}

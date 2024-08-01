@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useId } from 'react'
-import { AddedFile, availableFormats, MaterialAttachProps, useBooleanState, useMaterialsAttach } from '@hooks'
-import { Icon, IconName } from 'app/_ui/common/Icon'
-import { Modal, ModalOverlay } from 'app/_ui/common/Modal'
-import { Button } from 'app/_ui/common/Button'
+import {
+  AddedFile, availableFormats, GroupedFiles, groupFiles, MaterialAttachProps, useBooleanState, useMaterialsAttach,
+} from '@hooks'
+import { Button } from '@ui/common/Button'
+import { Icon, IconName } from '@ui/common/Icon'
+import { Modal } from '@ui/common/Modal'
 import { classNames, makeCn } from '@utils/others'
 
 import styles from './FileUpLoad.module.scss'
@@ -12,7 +14,8 @@ const cn = makeCn('FileUpLoad', styles)
 type FileUpLoadProps = {
   className?: string
   icon?: IconName
-  onApply: (files: AddedFile[]) => void
+  onApply?: (files: AddedFile[]) => void
+  onApplyWithGroup?: (files: GroupedFiles) => void
   disabled?: boolean
   availableTypes?: MaterialAttachProps
   isConfirm?: boolean
@@ -22,13 +25,14 @@ export function FileUpLoad(props: FileUpLoadProps) {
   const {
     className,
     icon = 'attachment',
-    onApply,
     disabled,
     isConfirm,
     availableTypes: { availableTypes, maxFileSize } = {
       availableTypes: availableFormats,
       maxFileSize: '1mb',
     },
+    onApply,
+    onApplyWithGroup,
   } = props
 
   const inputId = useId()
@@ -55,9 +59,10 @@ export function FileUpLoad(props: FileUpLoadProps) {
   }, [addedFiles, closePrevFiles, openPrevFiles])
 
   const applyAttachments = useCallback(() => {
-    onApply(addedFiles)
+    onApplyWithGroup?.(groupFiles(addedFiles))
+    onApply?.(addedFiles)
     setAddedFiles([])
-  }, [addedFiles, onApply, setAddedFiles])
+  }, [addedFiles, onApply, onApplyWithGroup, setAddedFiles])
 
   /**
    * Если не нужно вызывать модалку с подтверждением - просто добавляет файлы
@@ -84,22 +89,26 @@ export function FileUpLoad(props: FileUpLoadProps) {
           />
         </label>
       </div>
-      <Modal isOpen={Boolean(isOpenPevFiles && isConfirm)} contentClassName={cn('ApplyAttachments')}>
-        <ModalOverlay />
-        {addedFiles.map(({
-          name,
-          src,
-        }) => (
-          <div key={name} className={cn('ApplyImg')}>
-            <div className={cn('ImgWrapper')}>
-              <img className={cn('Img')} src={src} alt={name} />
+      <Modal
+        isOpen={Boolean(isOpenPevFiles && isConfirm)}
+        contentClassName={cn('Content')}
+      >
+        <div className={cn('ApplyAttachments')}>
+          {addedFiles.map(({
+            name,
+            src,
+          }) => (
+            <div key={name} className={cn('ApplyFile')}>
+              <div className={cn('ImgWrapper')}>
+                <img className={cn('Img')} src={src} alt={name} />
+              </div>
+              <Button className={cn('ButtonClose')} onClick={() => removeAttach(name)}>
+                <Icon name="close" />
+              </Button>
             </div>
-            <Button onClick={() => removeAttach(name)}>
-              <Icon className={cn('CloseApply')} name="git" />
-            </Button>
-          </div>
-        ))}
-        <Button onClick={applyAttachments}>
+          ))}
+        </div>
+        <Button className={cn('ButtonSubmit')} onClick={applyAttachments}>
           Подтвердить
         </Button>
       </Modal>

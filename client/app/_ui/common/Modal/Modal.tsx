@@ -1,59 +1,123 @@
-import React, { PropsWithChildren, ReactElement } from 'react'
-import { cn } from '@ui/common/Modal/cn'
-import { Portal } from '@ui/base/Portal'
+import {
+  FloatingFocusManager,
+  FloatingOverlay,
+  FloatingPortal,
+  useClick,
+  useDismiss,
+  useFloating,
+  useId,
+  useInteractions,
+  useRole,
+  useTransitionStatus,
+  useTransitionStyles,
+} from '@floating-ui/react'
+import React, { PropsWithChildren } from 'react'
 import { classNames } from '@utils/others'
-import { ModalCloseButton } from './ModalCloseButton'
-import { ModalOverlay } from './ModalOverlayProps'
+import { cn } from './cn'
 
-interface ReduceResult {
-  overlay: ReactElement | null;
-  closeButton: ReactElement | null;
-  content: React.ReactNode[];
+interface AnimationStyles {
+  initial?: React.CSSProperties;
+  open?: React.CSSProperties;
+  close?: React.CSSProperties;
 }
 
-interface ModalProps {
-  isOpen: boolean;
+interface ModalProps extends PropsWithChildren {
+  isOpen: boolean
   rootClassName?: string
   contentClassName?: string
+  onClose?: VoidFunction
+  showOverlay?: boolean
+  duration?: number
+  overlayAnimation?: AnimationStyles
+  contentAnimation?: AnimationStyles
 }
 
-export function Modal(props: PropsWithChildren<ModalProps>) {
-  const { isOpen, children, rootClassName, contentClassName } = props
+const defaultOverlayAnimation: AnimationStyles = {
+  initial: { opacity: 0 },
+  open: { opacity: 1 },
+  close: { opacity: 0 },
+}
 
-  if (!isOpen) return null
+const defaultContentAnimation: AnimationStyles = {
+  initial: { opacity: 0, transform: 'scale(0.9)' },
+  open: { opacity: 1, transform: 'scale(1)' },
+  close: { opacity: 0, transform: 'scale(0.9)' },
+}
 
-  const { overlay, closeButton, content } = React.Children.toArray(children).reduce<ReduceResult>(
-    (result, child) => {
-      if (React.isValidElement(child)) {
-        switch (child.type) {
-          case ModalOverlay: {
-            result.overlay = child
-            break
-          }
-          case ModalCloseButton: {
-            result.closeButton = child
-            break
-          }
-          default: {
-            result.content.push(child)
-          }
-        }
-      } else {
-        result.content.push(child)
-      }
-      return result
-    },
-    { overlay: null, closeButton: null, content: [] },
-  )
-  return (
-    <Portal open={isOpen}>
-      <div className={classNames(cn(), rootClassName)}>
-        <div className={classNames(cn('Content'), contentClassName)} onClick={(e) => e.stopPropagation()}>
-          {closeButton}
-          {content}
+export function Modal(props: ModalProps) {
+  const {
+    isOpen,
+    onClose,
+    children,
+    showOverlay = true,
+    duration = 300,
+    overlayAnimation = defaultOverlayAnimation,
+    contentAnimation = defaultContentAnimation,
+    rootClassName,
+    contentClassName,
+  } = props
+
+  const { refs, context } = useFloating({
+    open: isOpen,
+    onOpenChange: onClose,
+  })
+
+  const click = useClick(context)
+  const role = useRole(context)
+  const dismiss = useDismiss(context)
+
+  const { getFloatingProps } = useInteractions([
+    click,
+    role,
+    dismiss,
+  ])
+
+  const headingId = useId()
+
+  const { isMounted } = useTransitionStatus(context, {
+    duration,
+  })
+
+  const { styles: overlayStyles } = useTransitionStyles(context, {
+    duration,
+    ...overlayAnimation,
+  })
+
+  const { styles: contentStyles } = useTransitionStyles(context, {
+    duration,
+    ...contentAnimation,
+  })
+
+  if (!isMounted) return null
+
+  const ModalContent = (
+    <FloatingFocusManager context={context}>
+      <div
+        ref={refs.setFloating}
+        aria-labelledby={headingId}
+        {...getFloatingProps()}
+        className={classNames(cn(), rootClassName)}
+        style={contentStyles}
+      >
+        <div className={classNames(cn('Content'), contentClassName)}>
+          {children}
         </div>
-        {overlay}
       </div>
-    </Portal>
+    </FloatingFocusManager>
+  )
+
+  return (
+    <FloatingPortal id="modals">
+      {showOverlay ? (
+        <FloatingOverlay
+          lockScroll
+          className={cn('Overlay')}
+          onClick={onClose}
+          style={overlayStyles}
+        >
+          {ModalContent}
+        </FloatingOverlay>
+      ) : ModalContent}
+    </FloatingPortal>
   )
 }

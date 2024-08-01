@@ -20,6 +20,7 @@ export function UploadFile() {
           FILE_FORMAT_IMAGE.WEBP,
         ],
       }}
+      // @ts-ignore
       onApply={(files) => onCreateMessage('media', files)}
     />
   )
