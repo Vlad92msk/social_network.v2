@@ -1,16 +1,16 @@
+import { CommentDTO } from '../../../../types/commentDTO'
 import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
 import { cn } from '../cn'
 
-interface CommentProps {
-  text: string
-  authorImg: string
-  authorName: string
-  dateCreated: Date
+
+export interface CommentProps {
+  comment: CommentDTO
 }
 
 export function Comment(props: CommentProps) {
-  const { text, authorImg, authorName, dateCreated } = props
+  const { comment } = props
+  const { text, authorImg, authorName, dateCreated } = comment
 
   return (
     <Publication

@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { Modal } from '@ui/common/Modal'

@@ -1,41 +1,25 @@
 'use client'
 
 import { subMinutes } from 'date-fns'
-import { useEffect, useState } from 'react'
 import { useBooleanState, useProfile } from '@hooks'
 import { Publication } from '@ui/components/Publication'
-import { Media111 } from '@ui/components/Publication/elements'
 import { Comments } from '@ui/modules/comments'
 import { cn } from './cn'
-import { generateText } from '../../../../../[locale]/[userId]/(content)/profile/_components/data'
+import { PublicationDTO } from '../../../../../types/publicationDTO'
+
+export interface PostItemType extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos' | 'comments'>{
+  id: string
+}
 
 interface PostsListProps {
-  id?: string
+  post: PostItemType
 }
 
 export function PostItem(props: PostsListProps) {
-  const { id } = props
+  const { post } = props
 
   const { profile } = useProfile()
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
-
-  const [media, setMedia] = useState<Media111>()
-  useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const response = await fetch('/api/media')
-        if (!response.ok) {
-          throw new Error('Failed to fetch media')
-        }
-        const data = await response.json()
-        setMedia(data)
-      } catch (error) {
-        console.error('Error fetching media:', error)
-      }
-    }
-
-    fetchMedia()
-  }, [])
 
   return (
     <div className={cn()}>
@@ -60,18 +44,25 @@ export function PostItem(props: PostsListProps) {
           }}
         />
         <Publication.MediaContainer
-          text={media?.text}
-          // audio={media?.audio}
-          // video={media?.video}
-          // image={media?.image}
-          // other={media?.other}
+          text={post.media?.text}
+          audio={[...(post.media?.audio || []), ...(post.voices || [])]}
+          video={[...(post.media?.video || []), ...(post.videos || [])]}
+          image={post.media?.image}
+          other={post.media?.other}
         />
-        <Publication.Text className={cn('MessageItemText')} text={generateText(300)} />
-        <Publication.Commets countComments={19} onClick={onOpenComments} />
+        <Publication.Text className={cn('MessageItemText')} text={post.text} />
+        <Publication.Commets countComments={post?.comments?.length || 0} onClick={onOpenComments} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
         <Publication.DateCreated dateCreated={new Date()} />
       </Publication>
-      {isOpenComments && (<Comments module="post" id={id} onClose={onCloseComments} />)}
+      {isOpenComments && (
+        <Comments
+          module="post"
+          id={post.id}
+          onClose={onCloseComments}
+          comments={post.comments}
+        />
+      )}
     </div>
   )
 }

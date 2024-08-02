@@ -11,7 +11,7 @@ interface UserProfile {
 
 export const useProfile = () => {
   const session = useSession()
-  console.log('session', session)
+
   const [profile, setProfile] = useState<UserProfile>({ profile: undefined, session })
 
   useEffect(() => {

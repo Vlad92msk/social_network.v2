@@ -1,10 +1,10 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { pick } from 'lodash'
 import { Dialog, DialogShort, SelectDialogType } from '../types/dialogs.type'
 
-
-const a = ()  =>  ({
+const a = () => ({
   id: '1',
-  media: [],
+  media: undefined,
   emojis: [],
   text: 'text1',
   forwardMessageId: 'dialog-message-1',
@@ -18,8 +18,6 @@ const a = ()  =>  ({
   },
 })
 
-
-
 export const DIALOGS: Dialog[] = [
   {
     id: '1',
@@ -29,7 +27,7 @@ export const DIALOGS: Dialog[] = [
     description: undefined,
     lastMessage: {
       id: '3',
-      media: [],
+      media: undefined,
       emojis: [],
       text: 'private диалог',
       forwardMessageId: undefined,
@@ -45,7 +43,7 @@ export const DIALOGS: Dialog[] = [
     messages: [
       {
         id: '1',
-        media: [],
+        media: undefined,
         emojis: [],
         text: 'text1',
         forwardMessageId: undefined,
@@ -60,7 +58,7 @@ export const DIALOGS: Dialog[] = [
       },
       {
         id: '2',
-        media: [],
+        media: undefined,
         emojis: [],
         text: 'text2',
         forwardMessageId: undefined,
@@ -75,7 +73,7 @@ export const DIALOGS: Dialog[] = [
       },
       {
         id: '3',
-        media: [],
+        media: undefined,
         emojis: [],
         text: 'text3',
         forwardMessageId: undefined,
@@ -89,7 +87,7 @@ export const DIALOGS: Dialog[] = [
         },
       },
     ],
-    fixedMessages: [a()]
+    fixedMessages: [a()],
   },
   {
     id: '2',
@@ -100,7 +98,7 @@ export const DIALOGS: Dialog[] = [
     img: 'base/me1',
     lastMessage: {
       id: '3',
-      media: [],
+      media: undefined,
       emojis: [],
       text: 'Публичный диалог текст',
       forwardMessageId: undefined,
@@ -116,7 +114,7 @@ export const DIALOGS: Dialog[] = [
     messages: [
       {
         id: '1',
-        media: [],
+        media: undefined,
         emojis: [],
         text: 'text1',
         forwardMessageId: undefined,
@@ -131,7 +129,7 @@ export const DIALOGS: Dialog[] = [
       },
       {
         id: '2',
-        media: [],
+        media: undefined,
         emojis: [],
         text: 'text2',
         forwardMessageId: undefined,
@@ -146,7 +144,7 @@ export const DIALOGS: Dialog[] = [
       },
       {
         id: '3',
-        media: [],
+        media: undefined,
         emojis: [],
         text: 'text3',
         forwardMessageId: undefined,

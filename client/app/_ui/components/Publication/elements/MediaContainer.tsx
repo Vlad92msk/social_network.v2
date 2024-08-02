@@ -1,33 +1,21 @@
 import { MediaAudio } from './MediaAudio'
 import { MediaContent } from './MediaContent'
 import { MediaOther } from './MediaOther'
+import { PublicationMediaDTO } from '../../../../types/publicationDTO'
 import { cn } from '../cn'
 
-export interface Media111 {
-  image: []
-  audio: []
-  video: []
-  text: []
-  other: []
-}
-
-interface MediaContainerProps {
-  image?: []
-  audio?: []
-  video?: []
-  text?: []
-  other?: []
-}
-
-export function MediaContainer(props: MediaContainerProps) {
+export function MediaContainer(props: Partial<PublicationMediaDTO>) {
   const { audio, text, other, image, video } = props
 
-  if (![audio, text, other, image, video].filter(Boolean).every((m) => m?.length)) return null
+  if (![audio, text, other, image, video].filter(Boolean).some((m) => m?.length)) return null
+
   return (
     <div className={cn('MediaContainer')}>
       {image && <MediaContent type="image" data={image} />}
-      {image && <MediaContent type="video" data={video} />}
-      {audio && (<MediaAudio audios={audio} />)}
+      {/* @ts-ignore */}
+      {video && <MediaContent type="video" data={video.map((item) => ({ ...item, src: item.url }))} />}
+      {/* @ts-ignore */}
+      {audio && (<MediaAudio audios={audio.map((item) => ({ ...item, src: item.url }))} />)}
       {(other || text) && (<MediaOther files={[...(other || []), ...(text || [])]} />)}
     </div>
   )

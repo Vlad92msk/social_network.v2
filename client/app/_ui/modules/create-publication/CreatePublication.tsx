@@ -1,3 +1,4 @@
+import { Text } from '@ui/common/Text'
 import { createZustandContext } from '@utils/client'
 import { cn } from './cn'
 import {
@@ -13,7 +14,7 @@ import { PublicationDTO } from '../../../types/publicationDTO'
 
 export const SUBMIT_PROPS = ['text', 'emojis', 'media', 'voices', 'videos']
 
-interface CreatePublicationContextProps extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos'>{
+export interface CreatePublicationContextProps extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos'>{
 }
 
 export const initialState: CreatePublicationContextProps = {
@@ -40,6 +41,7 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
 
   return (
     <div className={cn()}>
+      <Text uppercase letterSpacing={0.08} fs="18" weight="light">Создать запись</Text>
       <ButtonAddVoice />
       <ButtonAddVideo />
       <AddVideoList />

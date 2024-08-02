@@ -1,5 +1,6 @@
 import { EmojiClickData } from 'emoji-picker-react'
 import { UserInfo } from '@api/users/types/user.type'
+import { CommentDTO } from './commentDTO'
 
 interface FileObject {
   name: string,
@@ -34,4 +35,5 @@ export interface PublicationDTO {
   dateRead?: Date
   emojis?: PublicationReactionsDTO[]
   author?: UserInfo
+  comments?: CommentDTO[]
 }

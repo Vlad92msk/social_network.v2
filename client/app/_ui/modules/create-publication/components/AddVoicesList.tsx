@@ -21,7 +21,7 @@ export function AddVoicesList() {
   if (!voices || !voices.length) return null
   return (
     <div className={cn('AddVoicesList')}>
-      <Text fs="12">Добавленные сообщения</Text>
+      <Text fs="12">Добавленные аудио</Text>
       <div className={cn('AddVoicesListList')}>
         {voices.map((voice: VoiceMessage) => (
           <div className={cn('AddVoicesListBox')} key={voice.id}>

@@ -16,7 +16,7 @@ interface MediaImagesProps <Data extends Record<'src' | 'type' | 'name', any>[]>
 export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]>(props: MediaImagesProps<Data>) {
   const { data = [], type } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
-
+console.log('data', data)
   // @ts-ignore
   const [usingData, setUsingData] = useState<Data>(data)
   const { current = [], other = [] } = Object.groupBy(usingData, (item, indx) => (indx <= 3 ? 'current' : 'other'))
