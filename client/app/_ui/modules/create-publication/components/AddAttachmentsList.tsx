@@ -28,7 +28,6 @@ export function AddAttachmentsList() {
     })
   }, [update])
 
-
   if (!media || !media.length) return null
   return (
     <div className={cn('AddAttachmentsList')}>

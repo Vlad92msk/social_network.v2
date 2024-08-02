@@ -36,9 +36,14 @@ export function FileUpLoad(props: FileUpLoadProps) {
   } = props
 
   const inputId = useId()
-  const [addedFiles, handleAttach, setAddedFiles] = useMaterialsAttach({
+  const [addedFiles, handleAddFiles, setAddedFiles] = useMaterialsAttach({
     availableTypes, maxFileSize,
   })
+
+  const handleAttach = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    handleAddFiles(event)
+    event.target.value = '' // Очищаем значение input
+  }, [handleAddFiles])
 
   const removeAttach = useCallback((attachName: string) => {
     setAddedFiles((prev) => prev.filter(({ name }) => name !== attachName))
@@ -73,6 +78,8 @@ export function FileUpLoad(props: FileUpLoadProps) {
     }
   }, [isConfirm, addedFiles, applyAttachments])
 
+  console.log('isOpenPevFiles', isOpenPevFiles)
+  console.log('addedFiles', addedFiles)
   return (
     <>
       <div className={classNames(cn(), className)}>
@@ -82,7 +89,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
           <input
             className={cn('FileInput')}
             id={inputId}
-            onChange={handleAttach}
+            onInput={handleAttach}
             multiple
             accept={availableTypes.join(',')}
             type="file"
