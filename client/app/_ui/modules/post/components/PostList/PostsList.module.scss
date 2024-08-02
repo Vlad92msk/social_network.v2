@@ -16,7 +16,7 @@
   }
   &-List {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: rem(50);
     width: clamp(#{rem(400)}, 70%, #{rem(800)});
     place-self: center;

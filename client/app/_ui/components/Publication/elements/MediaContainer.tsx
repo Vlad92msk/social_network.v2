@@ -12,10 +12,8 @@ export function MediaContainer(props: Partial<PublicationMediaDTO>) {
   return (
     <div className={cn('MediaContainer')}>
       {image && <MediaContent type="image" data={image} />}
-      {/* @ts-ignore */}
-      {video && <MediaContent type="video" data={video.map((item) => ({ ...item, src: item.url }))} />}
-      {/* @ts-ignore */}
-      {audio && (<MediaAudio audios={audio.map((item) => ({ ...item, src: item.url }))} />)}
+      {video && <MediaContent type="video" data={video} />}
+      {audio && (<MediaAudio audios={audio} />)}
       {(other || text) && (<MediaOther files={[...(other || []), ...(text || [])]} />)}
     </div>
   )

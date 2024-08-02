@@ -45,8 +45,8 @@ export function PostItem(props: PostsListProps) {
         />
         <Publication.MediaContainer
           text={post.media?.text}
-          audio={[...(post.media?.audio || []), ...(post.voices || [])]}
-          video={[...(post.media?.video || []), ...(post.videos || [])]}
+          audio={[...(post.media?.audio || []), ...(post.voices || []).map((item) => ({ ...item, src: item.url }))]}
+          video={[...(post.media?.video || []), ...(post.videos || []).map((item) => ({ ...item, src: item.url }))]}
           image={post.media?.image}
           other={post.media?.other}
         />
