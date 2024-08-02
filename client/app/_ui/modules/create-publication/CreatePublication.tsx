@@ -1,7 +1,14 @@
-import { AddVoicesList } from '@ui/modules/create-publication/components/AddVoicesList'
 import { createZustandContext } from '@utils/client'
 import { cn } from './cn'
-import { ButtonAddVoice, ButtonAttachment, ButtonReset, ButtonSubmit, InputText } from './components'
+import {
+  AddAttachmentsList,
+  AddVoicesList,
+  ButtonAddVoice,
+  ButtonAttachment,
+  ButtonReset,
+  ButtonSubmit,
+  InputText,
+} from './components'
 import { PublicationDTO } from '../../../types/publicationDTO'
 
 export const SUBMIT_PROPS = ['text', 'emojis', 'media', 'voices']
@@ -34,6 +41,7 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
     <div className={cn()}>
       <ButtonAddVoice />
       <AddVoicesList />
+      <AddAttachmentsList />
       <div className={cn('ContentContainer')}>
         <ButtonAttachment />
         <InputText placeholder="Введите текст" />

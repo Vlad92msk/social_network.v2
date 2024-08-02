@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
-import { setImmutable } from '@utils/others'
+import { rem, setImmutable } from '@utils/others'
 import { cn } from '../cn'
 import { useCreatePublicationCtxUpdate } from '../CreatePublication'
 
@@ -115,14 +115,14 @@ export function ButtonAddVoice() {
           <Icon name="microphone" />
         </Button>
       ) : (
-        <>
-          <Button onClick={isPaused ? resumeRecording : pauseRecording}>
-            <Icon name={isPaused ? 'play' : 'pause'} />
-          </Button>
+        <div style={{ display: 'flex', gap: rem(10) }}>
           <Button onClick={stopRecording}>
             ok
           </Button>
-        </>
+          <Button onClick={isPaused ? resumeRecording : pauseRecording}>
+            <Icon name={isPaused ? 'play' : 'pause'} />
+          </Button>
+        </div>
       )}
     </div>
   )

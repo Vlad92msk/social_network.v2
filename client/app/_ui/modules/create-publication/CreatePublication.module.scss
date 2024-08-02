@@ -42,6 +42,8 @@ $audio-height: rem(25);
   &-AddVoiceContainer {
     display: flex;
     width: 100%;
+    flex-direction: row-reverse;
+    gap: rem(20);
   }
 
   &-CurrentAudioBlobs {
@@ -81,6 +83,8 @@ $audio-height: rem(25);
       display: flex;
       flex-direction: column;
       width: 100%;
+      gap: rem(5);
+
     }
 
     &Box {
@@ -101,5 +105,45 @@ $audio-height: rem(25);
     padding-left: rem(20);
     padding-right: rem(20);
     border-bottom: rem(1) solid var(--Palette--Oceanic--100--opacity-1)!important;
+  }
+
+
+  &-AddAttachmentsList {
+    $AttachmentsList: &;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: rem(20);
+
+    &List {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: rem(5);
+    }
+
+    &Box {
+      height: 100px;
+      width: 100px;
+      flex-shrink: 0;
+      flex-grow: 0;
+      position: relative;
+      padding: rem(5);
+      overflow: hidden;
+
+      &:hover #{$AttachmentsList}ButtonRemove {
+        transform: translateX(0);
+        transition: transform .5s;
+      }
+    }
+
+    &ButtonRemove {
+      position: absolute;
+      right: 0;
+      top: 0;
+      transform: translateX(100%);
+      transition: transform .5s;
+    }
   }
 }

@@ -1,10 +1,10 @@
-import { ButtonDownload } from '@ui/common/ButtonDownload'
-import { usePublicationCtxUpdate } from '../Publication'
-import { MediaElement } from './MediaElement'
-import { useReset } from '../hooks'
-import { setImmutable } from '@utils/others'
 import { useState } from 'react'
+import { ButtonDownload } from '@ui/common/ButtonDownload'
+import { setImmutable } from '@utils/others'
+import { MediaElement } from './MediaElement'
 import { cn } from '../cn'
+import { useReset } from '../hooks'
+import { usePublicationCtxUpdate } from '../Publication'
 
 interface MediaOtherProps {
   files: any[];
@@ -33,7 +33,7 @@ export function MediaOther({ files }: MediaOtherProps) {
           data={file}
           element={(data) => (
             <div className={cn('MediaContainerMediaOtherItem')}>
-              <ButtonDownload file={data}/>
+              <ButtonDownload file={data} />
             </div>
           )}
           onRemove={handleRemove}
