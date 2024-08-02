@@ -39,14 +39,14 @@ $audio-height: rem(25);
     }
   }
 
-  &-AddVoiceContainer {
+  &-AddVoiceContainer, &-AddVideoContainer {
     display: flex;
     width: 100%;
     flex-direction: row-reverse;
     gap: rem(20);
   }
 
-  &-CurrentAudioBlobs {
+  &-CurrentAudioBlobs, &-CurrentVideoBlobs {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -124,8 +124,8 @@ $audio-height: rem(25);
     }
 
     &Box {
-      height: 100px;
-      width: 100px;
+      width: rem(100);
+      height: rem(100);
       flex-shrink: 0;
       flex-grow: 0;
       position: relative;
@@ -145,6 +145,110 @@ $audio-height: rem(25);
       top: 0;
       transform: translateX(100%);
       transition: transform .5s;
+    }
+  }
+
+  &-AddVideoList {
+    $VideoList: &;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: rem(20);
+
+    &List {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: rem(5);
+    }
+
+    &Box {
+      height: rem(200);
+      flex-shrink: 0;
+      flex-grow: 0;
+      position: relative;
+      padding: rem(5);
+      overflow: hidden;
+      background: var(--Palette--LightGrey--80--opacity-1);
+
+      &:hover #{$VideoList}ButtonRemove {
+        transform: translateX(0);
+        transition: transform .5s;
+      }
+    }
+
+    &ButtonRemove {
+      position: absolute;
+      right: 0;
+      top: 0;
+      transform: translateX(100%);
+      transition: transform .5s;
+    }
+  }
+
+
+  &-CurrentVideoBlobs {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: rem(5);
+
+    &--isNotEmpty {
+      border: rem(1) dotted var(--Palette--Oceanic--100--opacity-1);
+    }
+
+    &Item {
+      display: flex;
+      gap: rem(5);
+      width: rem(200);
+      max-height: rem(200);
+      flex-grow: 1;
+
+      &Video {
+        flex-grow: 1;
+      }
+      &Actions {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+
+        &ButtonAdd, &ButtonRemove {
+          flex-grow: 1;
+          width: rem(50);
+          justify-content: center;
+        }
+      }
+    }
+
+  }
+
+  &-ModalCreateVideo {
+    width: 80vw;
+    height: 80vh;
+    justify-content: center;
+
+    &Wrapper {
+      width: 100%;
+      height: 100%;
+    }
+
+    &ControlsRecording {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: rem(2);
+
+      & > button {
+        flex-grow: 1;
+        height: rem(50);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: var(--Color-Bcg--variant-4--theme-default);
+      }
     }
   }
 }

@@ -1,8 +1,8 @@
 import { createZustandContext } from '@utils/client'
 import { cn } from './cn'
 import {
-  AddAttachmentsList,
-  AddVoicesList,
+  AddAttachmentsList, AddVideoList,
+  AddVoicesList, ButtonAddVideo,
   ButtonAddVoice,
   ButtonAttachment,
   ButtonReset,
@@ -11,9 +11,9 @@ import {
 } from './components'
 import { PublicationDTO } from '../../../types/publicationDTO'
 
-export const SUBMIT_PROPS = ['text', 'emojis', 'media', 'voices']
+export const SUBMIT_PROPS = ['text', 'emojis', 'media', 'voices', 'videos']
 
-interface CreatePublicationContextProps extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices'>{
+interface CreatePublicationContextProps extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos'>{
 }
 
 export const initialState: CreatePublicationContextProps = {
@@ -21,6 +21,7 @@ export const initialState: CreatePublicationContextProps = {
   text: '',
   emojis: undefined,
   voices: undefined,
+  videos: undefined,
 }
 
 export const {
@@ -40,6 +41,8 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
   return (
     <div className={cn()}>
       <ButtonAddVoice />
+      <ButtonAddVideo />
+      <AddVideoList />
       <AddVoicesList />
       <AddAttachmentsList />
       <div className={cn('ContentContainer')}>

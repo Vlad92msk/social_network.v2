@@ -25,6 +25,7 @@ export interface PublicationDTO {
   id: string
   text: string
   voices?: any[]
+  videos?: any[]
   forwardMessageId?: string
   media?: PublicationMediaDTO
   dateCreated: Date
