@@ -10,21 +10,9 @@ export function SortableItem(props) {
     setNodeRef,
     transform,
     transition,
-    items,
-    data,
-    active,
     isOver,
-    isSorting,
   } = useSortable({ id: props.id })
 
-// console.group()
-//   console.log('items', items)
-//   console.log('data', data)
-//   console.log('active', active)
-//   console.log('isOver', isOver)
-//   console.log('isSorting', isSorting)
-//   console.log('transform', transform)
-//   console.groupEnd()
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -42,9 +30,7 @@ export function SortableItem(props) {
       {...listeners}
       className={cn('PhotoItem')}
     >
-      <div className={cn('PhotoContainer')}>
         {props.children}
-      </div>
     </div>
   )
 }

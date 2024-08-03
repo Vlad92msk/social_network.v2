@@ -15,9 +15,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { cn } from './cn'
 import { SortableItem } from './elements'
+import { groupBy, omit } from 'lodash'
 
 interface MediaItem {
   id: string
@@ -44,6 +45,7 @@ const createArr = (count: number, name = ''): MediaItem[] => Array.from({ length
 
 export function MyPhoto() {
   const [items, setItems] = useState<MediaItem[]>([])
+  const [overContainer, setOverContainer] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -57,6 +59,14 @@ export function MyPhoto() {
     }),
   )
 
+  const { groupedItems, singleItems } = useMemo(() => {
+    const grouped = groupBy(items, item => item.album || 'single')
+    return {
+      groupedItems: omit(grouped, 'single'),
+      singleItems: grouped['single'] || []
+    }
+  }, [items])
+
   const handleDragStart = useCallback((event) => {
     const { active } = event
     setActiveId(active.id)
@@ -66,9 +76,15 @@ export function MyPhoto() {
     const { active, over } = event
     if (!over) return
 
-    console.log('Active Item:', active.id)
-    console.log('Over Item:', over.id)
-  }, [])
+    const activeItem = items.find(item => item.id === active.id)
+    const overItem = items.find(item => item.id === over.id)
+
+    if (overItem && overItem.album !== activeItem?.album) {
+      setOverContainer(overItem.album || 'single')
+    } else {
+      setOverContainer(null)
+    }
+  }, [items])
 
   const handleDragEnd = useCallback((event) => {
     const { active, over } = event
@@ -100,6 +116,7 @@ export function MyPhoto() {
     })
 
     setActiveId(null)
+    setOverContainer(null)
   }, [])
 
   return (
@@ -111,15 +128,37 @@ export function MyPhoto() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={items} strategy={verticalListSortingStrategy}>
-          <div className={cn('PhotosContainer')}>
-            {items.map((item) => (
-              <SortableItem key={item.id} id={item.id}>
-                {item.name} - {item.album || 'No Album'}
-              </SortableItem>
-            ))}
-          </div>
-        </SortableContext>
+        <div className={cn('AlbumsContainer')}>
+          {Object.entries(groupedItems).map(([albumName, albumItems]) => (
+            <div key={albumName} className={cn('AlbumContainer', {active: overContainer === albumName})}>
+              <h3>{albumName}</h3>
+              <SortableContext items={albumItems} strategy={verticalListSortingStrategy}>
+                <div className={cn('PhotosContainer')}>
+                  {albumItems.map((item: MediaItem) => (
+                    <SortableItem key={item.id} id={item.id}>
+                      {item.name}
+                    </SortableItem>
+                  ))}
+                </div>
+              </SortableContext>
+            </div>
+          ))}
+
+          {singleItems.length > 0 && (
+            <div className={cn('AlbumContainer')}>
+              <SortableContext items={singleItems} strategy={verticalListSortingStrategy}>
+                <div className={cn('PhotosContainer')}>
+                  {singleItems.map((item: MediaItem) => (
+                    <SortableItem key={item.id} id={item.id}>
+                      {item.name}
+                    </SortableItem>
+                  ))}
+                </div>
+              </SortableContext>
+            </div>
+          )}
+        </div>
+
         <DragOverlay>
           {activeId ? (
             <div className={cn('PhotoItem')}>

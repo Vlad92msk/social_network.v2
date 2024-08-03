@@ -5,6 +5,7 @@
   gap: rem(20);
   width: 100%;
   position: relative;
+  flex-wrap: wrap;
 
 
   &-PhotosContainer {
@@ -15,6 +16,21 @@
     flex-wrap: wrap;
     flex-grow: 1;
     align-content: flex-start;
+
+    //display: grid;
+    //grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  &-AlbumContainer {
+    width: 100%;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+
+    &--active {
+      background-color: rgba(0, 0, 255, 0.1);
+      border: 2px solid blue;
+    }
   }
 
   &-PhotoItem {
