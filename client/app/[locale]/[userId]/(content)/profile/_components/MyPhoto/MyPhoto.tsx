@@ -15,6 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
+import { Text } from '@ui/common/Text'
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { cn } from './cn'
 import { SortableItem } from './elements'
@@ -45,8 +46,9 @@ const createArr = (count: number, name = ''): MediaItem[] => Array.from({ length
 
 export function MyPhoto() {
   const [items, setItems] = useState<MediaItem[]>([])
-  const [overContainer, setOverContainer] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [overItemId, setOverItemId] = useState<string | null>(null)
+  const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
   useEffect(() => {
     setItems(createArr(30, 'photo'))
@@ -79,10 +81,12 @@ export function MyPhoto() {
     const activeItem = items.find(item => item.id === active.id)
     const overItem = items.find(item => item.id === over.id)
 
-    if (overItem && overItem.album !== activeItem?.album) {
-      setOverContainer(overItem.album || 'single')
+    setOverItemId(over.id)
+
+    if (!activeItem?.album && !overItem?.album && active.id !== over.id) {
+      setPotentialNewAlbum(generateRandomAlbum())
     } else {
-      setOverContainer(null)
+      setPotentialNewAlbum(null)
     }
   }, [items])
 
@@ -100,15 +104,12 @@ export function MyPhoto() {
 
       if (overItem.album) {
         newAlbum = overItem.album
-      } else if (!activeItem.album && !overItem.album) {
-        newAlbum = generateRandomAlbum()
+      } else if (!activeItem.album && !overItem.album && active.id !== over.id) {
+        newAlbum = potentialNewAlbum || generateRandomAlbum()
       }
 
       return prevItems.map(item => {
-        if (item.id === active.id) {
-          return { ...item, album: newAlbum }
-        }
-        if (item.id === over.id && !overItem.album && !activeItem.album) {
+        if (item.id === active.id || (item.id === over.id && !overItem.album && !activeItem.album && active.id !== over.id)) {
           return { ...item, album: newAlbum }
         }
         return item
@@ -116,8 +117,9 @@ export function MyPhoto() {
     })
 
     setActiveId(null)
-    setOverContainer(null)
-  }, [])
+    setOverItemId(null)
+    setPotentialNewAlbum(null)
+  }, [potentialNewAlbum])
 
   return (
     <div className={cn()}>
@@ -129,27 +131,47 @@ export function MyPhoto() {
         onDragEnd={handleDragEnd}
       >
         <div className={cn('AlbumsContainer')}>
-          {Object.entries(groupedItems).map(([albumName, albumItems]) => (
-            <div key={albumName} className={cn('AlbumContainer', {active: overContainer === albumName})}>
-              <h3>{albumName}</h3>
-              <SortableContext items={albumItems} strategy={verticalListSortingStrategy}>
-                <div className={cn('PhotosContainer')}>
-                  {albumItems.map((item: MediaItem) => (
-                    <SortableItem key={item.id} id={item.id}>
-                      {item.name}
-                    </SortableItem>
-                  ))}
-                </div>
-              </SortableContext>
-            </div>
-          ))}
+          {Object.entries(groupedItems)
+            .map(([albumName, albumItems]) => (
+              <div
+                key={albumName}
+                className={cn('AlbumContainer', { active: albumItems.some(item => item.id === overItemId) })}
+              >
+                <h3>{albumName}</h3>
+                <SortableContext items={albumItems} strategy={verticalListSortingStrategy}>
+                  <div className={cn('PhotosContainer')}>
+                    {albumItems.map((item: MediaItem) => (
+                      <SortableItem
+                        key={item.id}
+                        id={item.id}
+                        isHighlighted={false}
+                        isPotentialGroup={false}
+                      >
+                        {item.name}
+                      </SortableItem>
+                    ))}
+                  </div>
+                </SortableContext>
+              </div>
+            ))}
 
           {singleItems.length > 0 && (
-            <div className={cn('AlbumContainer')}>
+            <div
+              className={cn('AlbumContainer', {
+                // active: singleItems.some(item => item.id === overItemId),
+                new: potentialNewAlbum !== null
+              })}
+            >
+              <h3>{potentialNewAlbum ? 'Новый альбом' : 'Несгруппированные'}</h3>
               <SortableContext items={singleItems} strategy={verticalListSortingStrategy}>
                 <div className={cn('PhotosContainer')}>
                   {singleItems.map((item: MediaItem) => (
-                    <SortableItem key={item.id} id={item.id}>
+                    <SortableItem
+                      key={item.id}
+                      id={item.id}
+                      isHighlighted={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
+                      isPotentialGroup={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
+                    >
                       {item.name}
                     </SortableItem>
                   ))}
@@ -161,7 +183,7 @@ export function MyPhoto() {
 
         <DragOverlay>
           {activeId ? (
-            <div className={cn('PhotoItem')}>
+            <div className={cn('PhotoItem', { dragging: true })}>
               {items.find((item) => item.id === activeId)?.name}
             </div>
           ) : null}

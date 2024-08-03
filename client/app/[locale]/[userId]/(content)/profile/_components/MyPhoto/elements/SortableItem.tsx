@@ -3,34 +3,45 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../cn'
 
-export function SortableItem(props) {
+export function SortableItem({ id, children, isHighlighted, isPotentialGroup }) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isOver,
-  } = useSortable({ id: props.id })
-
+    isDragging,
+  } = useSortable({ id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   }
 
   return (
     <div
       ref={setNodeRef}
-      style={{
-        ...style,
-        background: isOver ? 'green' : 'transparent',
-      }}
+      style={style}
       {...attributes}
       {...listeners}
-      className={cn('PhotoItem')}
+      className={
+        cn('PhotoItemPotentialContainer', {
+          highlighted: isPotentialGroup,
+          dragging: isDragging
+        })
+      }
     >
-        {props.children}
+      <div
+        className={
+        cn('PhotoItem', {
+          highlighted: isHighlighted,
+          placeholder: isDragging
+        })
+      }
+      >
+        {children}
+      </div>
     </div>
   )
 }
