@@ -1,3 +1,5 @@
+'use client'
+
 import React, { CSSProperties, PropsWithChildren, useEffect } from 'react'
 import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'

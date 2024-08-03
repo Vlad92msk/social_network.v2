@@ -51,8 +51,6 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
   return (
     <div className={classNames(className, cn())}>
       <Text uppercase letterSpacing={0.08} fs="18" weight="light">{title}</Text>
-      <ButtonAddVoice />
-      <ButtonAddVideo />
       <AddVideoList />
       <AddVoicesList />
       <AddAttachmentsList />
@@ -61,6 +59,8 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
         <InputText placeholder="Введите текст" />
       </div>
       <div className={cn('SubmitActionsContainer')}>
+        <ButtonAddVoice />
+        <ButtonAddVideo />
         <ButtonSubmit onSubmit={onSubmit} />
         <ButtonReset onReset={onReset} />
       </div>

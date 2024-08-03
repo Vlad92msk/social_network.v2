@@ -225,6 +225,7 @@ $padding: rem(6);
     &AudioList {
       display: flex;
       flex-direction: column;
+      gap: rem(5);
 
       audio {
         width: 100%;

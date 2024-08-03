@@ -1,3 +1,5 @@
-export * from '@ui/modules/post/components/PostList/PostsList'
 export * from './AboutMe/AboutMe'
 export * from './ProfilePageTab/ProfilePageTab'
+export * from './MyMusic'
+export * from './MyVideo'
+export * from './MyPhoto'
