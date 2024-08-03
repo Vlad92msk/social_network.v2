@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ModuleCreatePublication } from '@ui/modules/create-publication'
+import { CreatePublication } from '@ui/components/create-publication'
 import { PostItem, PostItemType, PostsList } from './components'
 
 interface PostProps {
@@ -20,7 +20,8 @@ export function ModulePost(props: PostProps) {
       title="Мои публикации"
       posts={localPosts}
       createPostComponent={(
-        <ModuleCreatePublication
+        <CreatePublication
+          title="Создать запись"
           onSubmit={(data) => {
             console.log('Publication', data)
             // @ts-ignore

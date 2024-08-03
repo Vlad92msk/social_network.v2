@@ -40,12 +40,12 @@ export interface CreatePublicationProps {
   className?: string
 }
 
-export const ModuleCreatePublication = contextZustand<CreatePublicationProps, CreatePublicationContextProps>((props) => {
+export const CreatePublication = contextZustand<CreatePublicationProps, CreatePublicationContextProps>((props) => {
   const {
     className,
     onSubmit,
     onReset,
-    title = 'Создать запись'
+    title
   } = props
 
   return (

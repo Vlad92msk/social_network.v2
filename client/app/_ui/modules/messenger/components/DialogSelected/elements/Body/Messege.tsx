@@ -13,7 +13,7 @@ interface MessageProps {
 export function Message(props: MessageProps) {
   const { message } = props
   const {
-    id, author, text, media, dateRead, dateCreated, dateDeliver, dateChanged, forwardMessageId, forwardMsg,
+    id, author, text, dateRead, dateCreated, dateDeliver, dateChanged, forwardMessageId, forwardMsg,
   } = message
   const { profile } = useProfile()
   const handleRemoveMsg = useMessageStore((store) => store.onRemoveMessage)
@@ -43,13 +43,13 @@ export function Message(props: MessageProps) {
           }}
           onRemove={handleRemoveMsg}
         />
-        {/* <Publication.MediaContainer */}
-        {/*   text={publication.media?.text} */}
-        {/*   audio={publication.media?.audio} */}
-        {/*   video={publication.media?.video} */}
-        {/*   image={publication.media?.image} */}
-        {/*   other={publication.media?.other} */}
-        {/* /> */}
+        <Publication.MediaContainer
+          text={message.media?.text}
+          audio={[...(message.media?.audio || []), ...(message.voices || []).map((item) => ({ ...item, src: item.url }))]}
+          video={[...(message.media?.video || []), ...(message.videos || []).map((item) => ({ ...item, src: item.url }))]}
+          image={message.media?.image}
+          other={message.media?.other}
+        />
         <Publication.Response quoteMessageId={forwardMessageId} text={forwardMsg?.text} name={forwardMsg?.author?.name} />
         <Publication.Text className={cn('MessageItemText')} text={text} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />

@@ -3,7 +3,7 @@ import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { rem, setImmutable } from '@utils/others'
 import { cn } from '../cn'
-import { useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
+import { useCreatePublicationCtxUpdate } from '../CreatePublication'
 
 export interface VoiceMessage {
   id: string;

@@ -3,7 +3,7 @@ import { FILE_FORMAT_AUDIO, FILE_FORMAT_IMAGE, FILE_FORMAT_TEXT, FILE_FORMAT_VID
 import { FileUpLoad } from '@ui/common/FileUpLoad'
 import { setImmutable } from '@utils/others'
 import { cn } from '../cn'
-import { useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
+import { useCreatePublicationCtxUpdate } from '../CreatePublication'
 
 interface ButtonAttachmentProps {
 }

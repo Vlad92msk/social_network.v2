@@ -6,7 +6,7 @@ import { Text } from '@ui/common/Text'
 import { setImmutable } from '@utils/others'
 import { PublicationMediaDTO } from '../../../../types/publicationDTO'
 import { cn } from '../cn'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
 
 export function AddAttachmentsList() {
   const update = useCreatePublicationCtxUpdate()

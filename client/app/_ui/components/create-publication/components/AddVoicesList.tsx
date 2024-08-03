@@ -5,7 +5,7 @@ import { Text } from '@ui/common/Text'
 import { setImmutable } from '@utils/others'
 import { VoiceMessage } from './ButtonAddVoice'
 import { cn } from '../cn'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
 
 export function AddVoicesList() {
   const voices = useCreatePublicationCtxSelect((ctx) => ctx.voices)

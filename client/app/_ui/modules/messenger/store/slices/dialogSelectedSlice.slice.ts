@@ -12,7 +12,7 @@ import { ApiStatusState, initialApiState } from '../../../../../types/apiStatus'
 const initialMessage: Message = {
   id: random(3, 1000).toString(),
   emojis: [],
-  media: [],
+  media: undefined,
   text: '',
   dateCreated: new Date(),
   author: undefined,
@@ -28,9 +28,8 @@ export interface DialogSelectedSlice {
   createMessage: Message
   setOpenedDialogIds: (ids: string[]) => void
   onRemoveMessage: (msgId: string) => void
-  onSubmitMessage: (user: UserInfo) => void
+  onSubmitMessage: (data: Message, user: UserInfo) => void
   onUpdateMessage: (newData: Partial<Message>) => void
-  onCreateMessage: (key: keyof Message, value: Message[keyof Message]) => void
   fetchSelectedDialog: (dialogId: string) => Promise<void>
   getCurrentDialog: () => ApiStatusState<DialogResponse>
 }
@@ -55,13 +54,11 @@ export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], []
     }))
     set((state) => ({ ...state, selectedDialog: result }))
   },
-  onSubmitMessage: (user) => {
+  onSubmitMessage: (data, user) => {
     const prev = get().selectedDialog
-    const curr = get().createMessage
     const newMessage: Message = {
-      ...get().createMessage,
-      ...curr,
       author: user,
+      ...data,
       id: random(3, 1000).toString(),
       forwardMessageId: 'dialog-message-1',
       dateCreated: new Date(),
@@ -71,10 +68,8 @@ export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], []
     set((state) => ({
       ...state,
       selectedDialog: result,
-      createMessage: initialMessage,
     }))
   },
-  onCreateMessage: (key, value) => set((state) => ({ ...state, createMessage: { ...state.createMessage, [key]: value } })),
   fetchSelectedDialog: async (dialogId) => {
     const prev = get().selectedDialog
     set((state) => ({ ...state, selectedDialog: { ...prev, apiStatus: true } }))

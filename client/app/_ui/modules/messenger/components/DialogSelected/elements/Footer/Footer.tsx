@@ -1,20 +1,23 @@
+import { useProfile } from '@hooks'
+import { CreatePublication } from '@ui/components/create-publication'
 import { cn } from './cn'
-import { InputMessage } from './InputMessage'
-import { UploadFile } from './UploadFile'
-import { VoiceMessage } from './VoiceMessage'
+import { useMessageStore } from '../../../../store'
 
 interface FooterProps {
 
 }
 
 export function Footer(props: FooterProps) {
+  const handleSubmit = useMessageStore((store) => store.onSubmitMessage)
+  const { profile } = useProfile()
   return (
-    <>
-      <UploadFile />
-      <InputMessage />
-      <div className={cn('ButtonsBox')}>
-        <VoiceMessage />
-      </div>
-    </>
+    <CreatePublication
+      className={cn('CreateMessage')}
+      onSubmit={(data) => {
+        console.log('Publication', data)
+        // @ts-ignore
+        handleSubmit(data, profile?.userInfo!)
+      }}
+    />
   )
 }

@@ -32,4 +32,9 @@
     max-width: rem(30);
     color: var(--Color-Text--root--theme-default);
   }
+
+  &-CreateMessage {
+    height: 100%;
+    background: transparent!important;
+  }
 }
