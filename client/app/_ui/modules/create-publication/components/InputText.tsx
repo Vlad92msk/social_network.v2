@@ -1,5 +1,5 @@
 import { TextAreaEmoji } from '@ui/common/Input'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 import { cn } from '@ui/modules/create-publication/cn'
 import { setImmutable } from '@utils/others'
 

@@ -1,7 +1,7 @@
 import { compact, isEmpty as isEmptyLodash, pick, values } from 'lodash'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
-import { CreatePublicationProps, initialState, SUBMIT_PROPS, useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { CreatePublicationProps, initialState, SUBMIT_PROPS, useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 
 
 

@@ -4,7 +4,7 @@ import { Icon } from '@ui/common/Icon'
 import { Modal } from '@ui/common/Modal'
 import { setImmutable } from '@utils/others'
 import { cn } from '../cn'
-import { useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 
 export interface VideoMessage {
   id: string

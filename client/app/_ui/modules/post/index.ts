@@ -1,1 +1,1 @@
-export * from './Post'
+export * from './ModulePost'

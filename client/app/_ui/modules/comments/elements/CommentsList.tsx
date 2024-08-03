@@ -9,10 +9,12 @@ interface CommentsListProps {
 
 export function CommentsList(props:CommentsListProps) {
   const { comments } = props
+
+  if (!comments) return null
   return (
     <div className={classNames(cn('CommentsList'))}>
       {comments?.map((comment) => (
-        <Comment key={comment.dateCreated.toString()} comment={comment} />
+        <Comment key={comment.id} comment={comment} />
       ))}
     </div>
   )

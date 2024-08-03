@@ -1,4 +1,4 @@
-import { useCreatePublicationCtxSelect } from '../CreatePublication'
+import { useCreatePublicationCtxSelect } from '../ModuleCreatePublication'
 
 export function AddedContent() {
   const voice = useCreatePublicationCtxSelect((ctx) => ctx.voice)

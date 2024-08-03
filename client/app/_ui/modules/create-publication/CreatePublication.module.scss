@@ -4,15 +4,18 @@ $audio-height: rem(25);
 
 
 .CreatePublication {
+  @include scrollbarMini();
+  overflow-y: auto;
   display: flex;
   align-items: flex-end;
-  overflow: hidden;
   flex-direction: column;
   width: 100%;
   background: var(--Palette--LightGrey--80--opacity-1);
   border-radius: $border-radius--medium;
   padding: $paddings--medium;
   gap: rem(20);
+
+
 
   &-ContentContainer {
     width: 100%;
@@ -21,6 +24,7 @@ $audio-height: rem(25);
     overflow: hidden;
     padding-top: rem(10);
     padding-bottom: rem(10);
+    flex-shrink: 0;
   }
 
   &-SubmitActionsContainer {
@@ -51,6 +55,10 @@ $audio-height: rem(25);
   }
 
   &-CurrentAudioBlobs, &-CurrentVideoBlobs {
+    @include scrollbarMini();
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: rem(200);
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -61,15 +69,16 @@ $audio-height: rem(25);
     display: flex;
     position: relative;
     width: 100%;
+    height: rem(30);
 
     &Actions {
       display: flex;
-      flex-direction: column;
       align-items: center;
       margin-inline: rem(10);
     }
     &Audio {
       width: 100%;
+      height: 100%;
     }
     &ButtonAdd {
       //position: absolute;
@@ -83,22 +92,28 @@ $audio-height: rem(25);
     flex-direction: column;
     width: 100%;
     gap: rem(10);
+    position: relative;
 
     &List {
       display: flex;
       flex-direction: column;
       width: 100%;
       gap: rem(5);
-
+      @include scrollbarMini();
+      flex-grow: 1;
+      overflow-y: auto;
+      max-height: rem(200);
     }
 
     &Box {
       display: flex;
       gap: rem(5);
+      height: rem(30);
     }
 
     &Audio {
       width: 100%;
+      height: 100%;
     }
 
     &ButtonRemove {
@@ -119,13 +134,25 @@ $audio-height: rem(25);
     display: flex;
     flex-direction: column;
     gap: rem(20);
+    position: relative;
+    background: transparent;
+
+    &Title {
+      position: sticky;
+      top: 0;
+      flex-shrink: 0;
+    }
 
     &List {
+      @include scrollbarMini();
+      flex-grow: 1;
       width: 100%;
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: rem(5);
+      overflow-y: auto;
+      max-height: rem(200);
     }
 
     &Box {
@@ -160,7 +187,17 @@ $audio-height: rem(25);
     flex-direction: column;
     gap: rem(20);
 
+    &Title {
+      position: sticky;
+      top: 0;
+      flex-shrink: 0;
+    }
+
     &List {
+      @include scrollbarMini();
+      flex-grow: 1;
+      overflow-y: auto;
+      max-height: rem(200);
       width: 100%;
       display: flex;
       flex-wrap: wrap;
@@ -194,12 +231,17 @@ $audio-height: rem(25);
 
 
   &-CurrentVideoBlobs {
+    @include scrollbarMini();
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: rem(200);
     width: 100%;
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: rem(5);
+
 
     &--isNotEmpty {
       border: rem(1) dotted var(--Palette--Oceanic--100--opacity-1);

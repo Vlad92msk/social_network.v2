@@ -5,7 +5,7 @@ import { Text } from '@ui/common/Text'
 import { setImmutable } from '@utils/others'
 import { VoiceMessage } from './ButtonAddVoice'
 import { cn } from '../cn'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 
 export function AddVoicesList() {
   const voices = useCreatePublicationCtxSelect((ctx) => ctx.voices)
@@ -21,7 +21,7 @@ export function AddVoicesList() {
   if (!voices || !voices.length) return null
   return (
     <div className={cn('AddVoicesList')}>
-      <Text fs="12">Добавленные аудио</Text>
+      <Text className={cn('AddVoicesListTitle')} fs="12">Добавленные аудио</Text>
       <div className={cn('AddVoicesListList')}>
         {voices.map((voice: VoiceMessage) => (
           <div className={cn('AddVoicesListBox')} key={voice.id}>

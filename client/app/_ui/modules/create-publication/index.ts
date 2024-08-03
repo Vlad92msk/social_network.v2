@@ -1,1 +1,1 @@
-export * from './CreatePublication'
+export * from './ModuleCreatePublication'

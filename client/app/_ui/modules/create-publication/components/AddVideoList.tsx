@@ -5,7 +5,7 @@ import { Text } from '@ui/common/Text'
 import { setImmutable } from '@utils/others'
 import { VoiceMessage } from './ButtonAddVoice'
 import { cn } from '../cn'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 
 export function AddVideoList() {
   const videos = useCreatePublicationCtxSelect((ctx) => ctx.videos)
@@ -21,7 +21,7 @@ export function AddVideoList() {
   if (!videos || !videos.length) return null
   return (
     <div className={cn('AddVideoList')}>
-      <Text fs="12">Добавленные видео</Text>
+      <Text className={cn('AddVideoListTitle')} fs="12">Добавленные видео</Text>
       <div className={cn('AddVideoListList')}>
         {videos.map((data) => (
           <div className={cn('AddVideoListBox')} key={data.src}>

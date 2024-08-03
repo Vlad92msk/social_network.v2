@@ -17,6 +17,8 @@
     width: fit-content;
     height: fit-content;
     z-index: 1;
+    max-height: 100vh;
+    max-width: 100vw;
   }
 
   &-ButtonClose {

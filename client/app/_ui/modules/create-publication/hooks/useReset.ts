@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { setImmutable } from '@utils/others'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 
 export const useReset = <Value>(path: string, initialValue: Value, cb: (init: Value) => void) => {
   const updateCtx = useCreatePublicationCtxUpdate()

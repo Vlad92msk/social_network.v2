@@ -3,11 +3,11 @@
 import { subMinutes } from 'date-fns'
 import { useBooleanState, useProfile } from '@hooks'
 import { Publication } from '@ui/components/Publication'
-import { Comments } from '@ui/modules/comments'
+import { ModuleComments } from '@ui/modules/comments'
 import { cn } from './cn'
 import { PublicationDTO } from '../../../../../types/publicationDTO'
 
-export interface PostItemType extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos' | 'comments'>{
+export interface PostItemType extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos' | 'commentsIds'>{
   id: string
 }
 
@@ -51,16 +51,16 @@ export function PostItem(props: PostsListProps) {
           other={post.media?.other}
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
-        <Publication.Commets countComments={post?.comments?.length || 0} onClick={onOpenComments} />
+        <Publication.Commets countComments={post?.commentsIds?.length || 0} onClick={onOpenComments} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
         <Publication.DateCreated dateCreated={new Date()} />
       </Publication>
       {isOpenComments && (
-        <Comments
+        <ModuleComments
           module="post"
           id={post.id}
           onClose={onCloseComments}
-          comments={post.comments}
+          commentsIds={post.commentsIds}
         />
       )}
     </div>

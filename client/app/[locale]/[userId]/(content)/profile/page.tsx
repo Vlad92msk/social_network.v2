@@ -1,7 +1,7 @@
 import { Locale } from '@middlewares/variables'
 import { PageContent } from '@ui/components/PageMainContent'
 import { makeCn } from '@utils/others'
-import { Post } from 'app/_ui/modules/post'
+import { ModulePost } from 'app/_ui/modules/post'
 import { AboutMe, ProfileTab, ProfileTabItem } from './_components'
 import style from './Page.module.scss'
 
@@ -34,7 +34,7 @@ export default async function ProfileContent(props: UserPageProps) {
         />
         <ProfileTabItem
           name="Публикации"
-          content={<Post posts={['1', '2', '3', '4', '5']} />}
+          content={<ModulePost posts={['1', '2', '3', '4', '5']} />}
         />
         <ProfileTabItem name="Музыка" content={<div>Музыка</div>} />
         <ProfileTabItem name="Видео" content={<div>Видео</div>} />

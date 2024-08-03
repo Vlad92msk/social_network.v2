@@ -6,7 +6,7 @@ import { Text } from '@ui/common/Text'
 import { setImmutable } from '@utils/others'
 import { PublicationMediaDTO } from '../../../../types/publicationDTO'
 import { cn } from '../cn'
-import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../CreatePublication'
+import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '../ModuleCreatePublication'
 
 export function AddAttachmentsList() {
   const update = useCreatePublicationCtxUpdate()
@@ -31,7 +31,7 @@ export function AddAttachmentsList() {
   if (!media || !media.length) return null
   return (
     <div className={cn('AddAttachmentsList')}>
-      <Text fs="12">Добавленные файлы</Text>
+      <Text className={cn('AddAttachmentsListTitle')} fs="12">Добавленные файлы</Text>
       <div className={cn('AddAttachmentsListList')}>
         {media.map((data) => (
           <div className={cn('AddAttachmentsListBox')} key={data.src}>

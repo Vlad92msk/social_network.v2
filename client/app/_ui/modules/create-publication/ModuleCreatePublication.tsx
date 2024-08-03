@@ -1,5 +1,6 @@
 import { Text } from '@ui/common/Text'
 import { createZustandContext } from '@utils/client'
+import { classNames } from '@utils/others'
 import { cn } from './cn'
 import {
   AddAttachmentsList, AddVideoList,
@@ -31,17 +32,25 @@ export const {
   useZustandDispatch: useCreatePublicationCtxUpdate,
 } = createZustandContext(initialState)
 
+
 export interface CreatePublicationProps {
   onSubmit: (data?: CreatePublicationContextProps) => void
   onReset?: VoidFunction
+  title?: string
+  className?: string
 }
 
-export const CreatePublication = contextZustand<CreatePublicationProps, CreatePublicationContextProps>((props) => {
-  const { onSubmit, onReset } = props
+export const ModuleCreatePublication = contextZustand<CreatePublicationProps, CreatePublicationContextProps>((props) => {
+  const {
+    className,
+    onSubmit,
+    onReset,
+    title = 'Создать запись'
+  } = props
 
   return (
-    <div className={cn()}>
-      <Text uppercase letterSpacing={0.08} fs="18" weight="light">Создать запись</Text>
+    <div className={classNames(className, cn())}>
+      <Text uppercase letterSpacing={0.08} fs="18" weight="light">{title}</Text>
       <ButtonAddVoice />
       <ButtonAddVideo />
       <AddVideoList />
