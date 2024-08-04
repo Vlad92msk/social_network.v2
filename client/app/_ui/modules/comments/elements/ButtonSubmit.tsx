@@ -3,7 +3,7 @@ import { Icon } from '@ui/common/Icon'
 import { cn } from '../cn'
 
 interface ButtonSubmitProps {
-  onClose: VoidFunction
+  onClose?: VoidFunction
   onSubmit: (comment: string) => void
 }
 
@@ -14,7 +14,7 @@ export function ButtonSubmit(props: ButtonSubmitProps) {
       <Button className={cn('SubmitButton')} onClick={onClose}>
         <Icon name="close" />
       </Button>
-      <Button className={cn('SubmitButton')}>
+      <Button className={cn('SubmitButton')} onClick={() => onSubmit('my comment')}>
         <Icon name="send" />
       </Button>
     </div>

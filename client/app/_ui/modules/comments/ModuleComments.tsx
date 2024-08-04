@@ -8,9 +8,9 @@ import { CommentDTO } from '../../../types/commentDTO'
 
 interface CommentsProps {
   className?: string;
-  module?: 'post' | 'video' | 'music'
+  module?: 'post' | 'video' | 'music' | 'photo'
   id?: string
-  onClose: VoidFunction
+  onClose?: VoidFunction
   commentsIds?: string[]
 }
 

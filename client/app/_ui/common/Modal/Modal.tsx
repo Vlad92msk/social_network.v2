@@ -98,6 +98,9 @@ export function Modal(props: ModalProps) {
         {...getFloatingProps()}
         className={classNames(cn(), rootClassName)}
         style={contentStyles}
+        onClick={(event) => {
+          event.stopPropagation()
+        }}
       >
         <div className={classNames(cn('Content'), contentClassName)}>
           {children}

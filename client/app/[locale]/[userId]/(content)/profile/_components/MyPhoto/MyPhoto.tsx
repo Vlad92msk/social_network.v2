@@ -1,11 +1,11 @@
 'use client'
 
-import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors, } from '@dnd-kit/core'
-import { horizontalListSortingStrategy, SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext } from '@dnd-kit/sortable'
 import { groupBy, omit } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from './cn'
-import { AlbumContainer, SortableItem } from './elements'
+import { AlbumContainer, ItemElement, SortableItem } from './elements'
 
 interface MediaItem {
   id: string
@@ -41,9 +41,10 @@ export function MyPhoto() {
   }, [])
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Активирует перетаскивание только после перемещения на 8 пикселей
+      },
     }),
   )
 
@@ -110,38 +111,39 @@ export function MyPhoto() {
   return (
     <div className={cn()}>
       <DndContext
+        sensors={sensors}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-          {Object.entries(groupedItems)
-            .map(([albumName, albumItems]) => (
-              <AlbumContainer
-                key={albumName}
-                title={albumName}
-                albumItems={albumItems}
-                overItemId={overItemId}
-              />
-            ))}
+        {Object.entries(groupedItems)
+          .map(([albumName, albumItems]) => (
+            <AlbumContainer
+              key={albumName}
+              title={albumName}
+              albumItems={albumItems}
+              overItemId={overItemId}
+            />
+          ))}
 
-          <SortableContext items={singleItems} strategy={horizontalListSortingStrategy}>
-              {singleItems.map((item: MediaItem) => (
-                <SortableItem
-                  key={item.id}
-                  id={item.id}
-                  isHighlighted={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
-                  isPotentialGroup={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
-                >
-                  {item.name}
-                </SortableItem>
-              ))}
-          </SortableContext>
+        <SortableContext items={singleItems}>
+          {singleItems.map((item: MediaItem) => (
+            <SortableItem
+              key={item.id}
+              id={item.id}
+              item={item}
+              isPotentialGroup={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
+            >
+              {item.name}
+            </SortableItem>
+          ))}
+        </SortableContext>
 
-        <DragOverlay >
+        <DragOverlay>
           {activeId ? (
-            <div className={cn('PhotoItem', { dragging: true })}>
+            <ItemElement isDraging>
               {items.find((item) => item.id === activeId)?.name}
-            </div>
+            </ItemElement>
           ) : null}
         </DragOverlay>
       </DndContext>

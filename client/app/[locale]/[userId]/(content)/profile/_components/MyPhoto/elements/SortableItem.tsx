@@ -1,16 +1,25 @@
 // SortableItem.tsx
 import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { cn } from '../cn'
+import { PropsWithChildren } from 'react'
+import { ItemElement } from './ItemElement'
 
-export function SortableItem({ id, children, isHighlighted, isPotentialGroup }) {
+
+interface SortableItemProps extends PropsWithChildren {
+  id: string
+  isPotentialGroup: boolean
+  disabled?: boolean
+  item?: any
+}
+
+export function SortableItem(props: SortableItemProps) {
+  const { id, children, isPotentialGroup, item, disabled = false } = props
   const {
     attributes,
     listeners,
     setNodeRef,
     transition,
     isDragging,
-  } = useSortable({ id })
+  } = useSortable({ id, disabled })
 
   const style = {
     transition,
@@ -18,20 +27,16 @@ export function SortableItem({ id, children, isHighlighted, isPotentialGroup }) 
   }
 
   return (
-
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        className={
-        cn('PhotoItem', {
-          highlighted: isPotentialGroup,
-          placeholder: isDragging,
-        })
-      }
-      >
-        {children}
-      </div>
+    <ItemElement
+      ref={setNodeRef}
+      isHighlighted={isPotentialGroup}
+      isPlaceholder={isDragging}
+      style={style}
+      attributes={attributes}
+      listeners={listeners}
+      item={item}
+    >
+      {children}
+    </ItemElement>
   )
 }
