@@ -133,18 +133,12 @@ export function MyPhoto() {
               id={item.id}
               item={item}
               isPotentialGroup={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
-            >
-              {item.name}
-            </SortableItem>
+            />
           ))}
         </SortableContext>
 
         <DragOverlay>
-          {activeId ? (
-            <ItemElement isDraging>
-              {items.find((item) => item.id === activeId)?.name}
-            </ItemElement>
-          ) : null}
+          {activeId ? <ItemElement isDraging /> : null}
         </DragOverlay>
       </DndContext>
     </div>

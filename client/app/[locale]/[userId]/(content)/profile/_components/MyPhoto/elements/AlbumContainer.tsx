@@ -49,9 +49,7 @@ export function AlbumContainer(props: AlbumContainerProps) {
               id={item.id}
               isPotentialGroup={false}
               item={item}
-            >
-              {item.name}
-            </SortableItem>
+            />
           ))}
           {Boolean(other.length) && (
             <Text className={cn('OtherElementsCount')} fs="18">{`+ ${other.length}`}</Text>

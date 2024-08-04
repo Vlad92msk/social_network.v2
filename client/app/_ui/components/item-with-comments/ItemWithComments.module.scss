@@ -1,0 +1,62 @@
+@import "@ui/styles/for_components";
+
+
+.ItemWithComments {
+    $metaInfo-height: rem(30);
+    $commentsActions-height: rem(30);
+    $gap: rem(10);
+
+    padding: $paddings--medium;
+    border-radius: $border-radius--medium;
+    width: 90vw;
+    height: 90vh;
+    background: var(--Color-Bcg--variant-4--theme-default);
+    display: flex;
+    gap: $gap;
+    overflow: hidden;
+    transition: width, height .5s;
+
+    &-ContentContainer {
+      flex-grow: 1;
+      height: 100%;
+    }
+
+    &-MetaInfo {
+      width: 100%;
+      height: $metaInfo-height;
+      display: flex;
+      gap: rem(10);
+    }
+
+    &-ContentItem {
+      height: calc(100% - (#{$metaInfo-height} + #{$gap}));
+      flex-grow: 1;
+    }
+
+    &-CommentsContainer {
+      width: clamp(#{rem(200)}, 30%, #{rem(500)});
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      gap: rem(20);
+    }
+
+    &-CommentsActions {
+      height: $commentsActions-height;
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    &-CommentsContent {
+      height: calc(100% - (#{$commentsActions-height} + #{$gap} + #{$paddings--small}));
+      padding: $paddings--small;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 0 rem(2) var(--Palette--DarkSlate--90--opacity-1);
+      border-radius: $border-radius--super-small;
+    }
+  }

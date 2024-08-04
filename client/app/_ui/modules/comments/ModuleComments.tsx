@@ -6,7 +6,7 @@ import { cn } from './cn'
 import { AddComment, ButtonSubmit, CommentsList } from './elements'
 import { CommentDTO } from '../../../types/commentDTO'
 
-interface CommentsProps {
+export interface CommentsProps {
   className?: string;
   module?: 'post' | 'video' | 'music' | 'photo'
   id?: string

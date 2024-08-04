@@ -1,10 +1,9 @@
 // SortableItem.tsx
 import { useSortable } from '@dnd-kit/sortable'
-import { PropsWithChildren } from 'react'
 import { ItemElement } from './ItemElement'
 
 
-interface SortableItemProps extends PropsWithChildren {
+interface SortableItemProps {
   id: string
   isPotentialGroup: boolean
   disabled?: boolean
@@ -12,7 +11,7 @@ interface SortableItemProps extends PropsWithChildren {
 }
 
 export function SortableItem(props: SortableItemProps) {
-  const { id, children, isPotentialGroup, item, disabled = false } = props
+  const { id, isPotentialGroup, item, disabled = false } = props
   const {
     attributes,
     listeners,
@@ -35,8 +34,6 @@ export function SortableItem(props: SortableItemProps) {
       attributes={attributes}
       listeners={listeners}
       item={item}
-    >
-      {children}
-    </ItemElement>
+    />
   )
 }
