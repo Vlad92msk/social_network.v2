@@ -8,15 +8,17 @@
   flex-wrap: wrap;
 
   &-AlbumContainer {
-    border: 1px solid #ccc;
+    //border: 1px solid #ccc;
     padding: 10px;
     border-radius: 5px;
     position: relative;
     width: rem(200);
     height: rem(200);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    //align-items: center;
+    //justify-content: center;
+    gap: rem(5);
 
     &--active {
       background-color: rgba(0, 0, 255, 0.1);
@@ -43,24 +45,25 @@
     height: 100%;
 
     &--isAlbum {
-      position: absolute;
+      //position: absolute;
       width: 100%;
-      height: 100%;
+      height: 90%;
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-start;
+      justify-content: flex-start;
       left: 0;
       top: 0;
       overflow: hidden;
-      place-content: center;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
 
-      & > * {
-        max-width: calc(50% - #{rem(20)});
-        max-height: calc(50% - #{rem(20)});
+      & > *:is(div) {
+        max-width: calc(50% - #{rem(5)});
+        max-height: calc(50% - #{rem(5)});
         height: 100% !important;
         width: 100% !important;
-        aspect-ratio: 1 / 1;
         display: flex;
         flex-grow: 1;
       }
@@ -68,16 +71,19 @@
   }
 
   &-AlbumTitle {
-    position: absolute;
-    bottom: 0;
-
+    text-align: center;
   }
   &-OtherElementsCount {
     position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     width: 50%;
     height: 50%;
     align-items: center;
     justify-content: center;
+    place-self: center;
     display: flex;
     background-color: var(--Color-Bcg--variant-4--theme-default);
     border: rem(1) solid var(--Color-Border--variant-3--theme-default);

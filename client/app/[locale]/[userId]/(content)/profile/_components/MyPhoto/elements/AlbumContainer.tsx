@@ -39,12 +39,12 @@ export function AlbumContainer(props: AlbumContainerProps) {
               {item.name}
             </SortableItem>
           ))}
+          {Boolean(other.length) && (
+            <Text className={cn('OtherElementsCount')}>{`+ ${other.length}`}</Text>
+          )}
         </div>
-        {Boolean(other.length) && (
-          <Text className={cn('OtherElementsCount')}>{other.length}</Text>
-        )}
       </SortableContext>
-      <Text className={cn('AlbumTitle')}>{title}</Text>
+      <Text className={cn('AlbumTitle')} fs={'12'} weight={'bold'}>{title}</Text>
     </div>
   )
 }
