@@ -40,6 +40,12 @@
       flex-direction: column;
       overflow: hidden;
       gap: rem(20);
+      transition: width .5s;
+
+      &--hide {
+        width: 0;
+        transition: .5s;
+      }
     }
 
     &-CommentsActions {

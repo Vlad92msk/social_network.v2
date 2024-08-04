@@ -1,7 +1,7 @@
 import { DraggableAttributes } from '@dnd-kit/core'
 import { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities'
-import { ItemWithComments } from '@ui/components/item-with-comments'
 import { CSSProperties } from 'react'
+import { ItemWithComments } from '@ui/components/item-with-comments'
 import { cn } from '../cn'
 
 interface ElementProps {
@@ -21,7 +21,7 @@ export function ItemElement(props: ElementProps) {
   } = props
 
   return (
-    <ItemWithComments item={item} module={'photo'}>
+    <ItemWithComments item={item} module="photo">
       <div
         className={
           cn('PhotoItem', {
