@@ -18,29 +18,20 @@ export function SortableItem({ id, children, isHighlighted, isPotentialGroup }) 
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={
-        cn('PhotoItemPotentialContainer', {
-          highlighted: isPotentialGroup,
-          dragging: isDragging
-        })
-      }
-    >
+
       <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
         className={
         cn('PhotoItem', {
-          highlighted: isHighlighted,
-          placeholder: isDragging
+          highlighted: isPotentialGroup,
+          placeholder: isDragging,
         })
       }
       >
         {children}
       </div>
-    </div>
   )
 }
-

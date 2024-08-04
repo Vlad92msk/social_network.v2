@@ -27,7 +27,6 @@
     "next-intl": "^3.17.2",
     "normalize.css": "8.0.1",
     "react": "19.0.0-rc-df5f2736-20240712",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "19.0.0-rc-df5f2736-20240712",
     "react-inlinesvg": "^4.1.0",
     "zustand": "4.5.4"
@@ -37,7 +36,6 @@
     "@types/negotiator": "^0.6.3",
     "@types/node": "20.14.10",
     "@types/react": "npm:types-react@rc",
-    "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "npm:types-react-dom@rc",
     "@typescript-eslint/eslint-plugin": "6.11.0",
     "@typescript-eslint/parser": "6.11.0",

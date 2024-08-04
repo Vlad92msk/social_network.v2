@@ -1,27 +1,11 @@
 'use client'
 
-import {
-  closestCenter,
-  closestCorners,
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  horizontalListSortingStrategy
-} from '@dnd-kit/sortable'
+import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors, } from '@dnd-kit/core'
+import { horizontalListSortingStrategy, SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { groupBy, omit } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Text } from '@ui/common/Text'
 import { cn } from './cn'
-import { SortableItem } from './elements'
+import { AlbumContainer, SortableItem } from './elements'
 
 interface MediaItem {
   id: string
@@ -130,33 +114,17 @@ export function MyPhoto() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className={cn('AlbumsContainer')}>
           {Object.entries(groupedItems)
             .map(([albumName, albumItems]) => (
-              <div
+              <AlbumContainer
                 key={albumName}
-                className={cn('AlbumContainer', { active: albumItems.some((item) => item.id === overItemId) })}
-              >
-                <h3>{albumName}</h3>
-                <SortableContext items={albumItems} strategy={horizontalListSortingStrategy}>
-                  <div className={cn('PhotosContainer')}>
-                    {albumItems.map((item: MediaItem) => (
-                      <SortableItem
-                        key={item.id}
-                        id={item.id}
-                        isHighlighted={false}
-                        isPotentialGroup={false}
-                      >
-                        {item.name}
-                      </SortableItem>
-                    ))}
-                  </div>
-                </SortableContext>
-              </div>
+                title={albumName}
+                albumItems={albumItems}
+                overItemId={overItemId}
+              />
             ))}
 
           <SortableContext items={singleItems} strategy={horizontalListSortingStrategy}>
-            <div className={cn('PhotosContainer')}>
               {singleItems.map((item: MediaItem) => (
                 <SortableItem
                   key={item.id}
@@ -167,9 +135,7 @@ export function MyPhoto() {
                   {item.name}
                 </SortableItem>
               ))}
-            </div>
           </SortableContext>
-        </div>
 
         <DragOverlay >
           {activeId ? (
