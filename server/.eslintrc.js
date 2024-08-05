@@ -5,10 +5,13 @@ module.exports = {
     tsconfigRootDir: __dirname,
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
+  plugins: [
+    '@typescript-eslint/eslint-plugin',
+    "simple-import-sort",
+    "import"
+  ],
   extends: [
     'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
   ],
   root: true,
   env: {
@@ -21,5 +24,9 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    "max-len": ["error", { "code": 180 }],
+    "semi": ["error", "never"],
+    "@typescript-eslint/semi": ["off"],
+    "quotes": ["error", "single", { "avoidEscape": true }],
   },
 };

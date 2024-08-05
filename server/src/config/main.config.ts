@@ -1,3 +1,4 @@
+// main.config.ts
 import { registerAs } from '@nestjs/config'
 import { ConfigEnum } from '@config/config.enum'
 

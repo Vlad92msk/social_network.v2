@@ -1,9 +1,9 @@
 import { SortableContext } from '@dnd-kit/sortable'
 import { useBooleanState } from '@hooks'
 import { Text } from '@ui/common/Text'
-import { cn } from '../cn'
 import { ModalAlbum } from './ModalAlbum'
 import { SortableItem } from './SortableItem'
+import { cn } from '../cn'
 
 interface AlbumContainerProps {
   title?: string

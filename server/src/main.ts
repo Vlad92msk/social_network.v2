@@ -1,3 +1,4 @@
+// main.ts
 import { config } from 'dotenv'
 config()
 
@@ -11,7 +12,6 @@ import * as cookieParser from 'cookie-parser'
 import { ConfigEnum } from '@config/config.enum'
 import { AppModule } from '@lib/app.module'
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   app.use(cookieParser())
@@ -19,10 +19,11 @@ async function bootstrap() {
 
   const config = await app.get(ConfigService)
   const port = Number(config.get(`${ConfigEnum.MAIN}.port`))
+
   const host = String(config.get(`${ConfigEnum.MAIN}.host`))
 
   await app.listen(port, () => {
-    console.log(`Сервер доступен - http://${host}:${port}/graphql`)
+    console.log(`Сервер доступен - http://${host}:${port}`)
   })
 }
 

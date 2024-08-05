@@ -32,7 +32,7 @@ export function ItemWithComments(props: ItemWithCommentsProps) {
           onOpen()
         },
       })}
-      <Modal contentClassName={classNames(cn(), className)} isOpen={isOpen} showOverlay>
+      <Modal contentClassName={classNames(cn(), className)} isOpen={isOpen} showOverlay onClose={onClose}>
         <div className={cn('ContentContainer')}>
           <div className={cn('ContentItem')}>{item?.name}</div>
           <div className={cn('MetaInfo')}>

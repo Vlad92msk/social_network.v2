@@ -1,3 +1,4 @@
+// orm.config.ts
 import { registerAs } from '@nestjs/config'
 import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 import { ConfigEnum } from '@config/config.enum'
@@ -14,7 +15,7 @@ export default registerAs(
     autoLoadEntities: true,
     synchronize: true,
     port: +process.env.TYPEORM_PORT,
-    entities: [`${__dirname}/../lib/**/**/entities/*.entity{.ts,.js}`],
+    entities: [`${__dirname}/../lib/**/**/entities/*.entity{.ts}`],
     // migrations: [`${__dirname}/migrations/**/**/*{.ts, .js}`],
     cli: {
       migrationsDir: 'src/migrations',
