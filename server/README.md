@@ -86,3 +86,32 @@ Database Service: postgresql-16
 Command Line Tools Installation Directory: /Library/PostgreSQL/16
 pgAdmin4 Installation Directory: /Library/PostgreSQL/16/pgAdmin 4
 Installation Log: /tmp/install-postgresql.log
+
+
+// src:
+//     config:
+//         main.congig.ts
+//         orm.congig.ts
+//         ...
+//     lib:
+//         profile:
+//             user:
+//                 args:
+//                     ...
+//                 decorators:
+//                     ...
+//                 entities:
+//                     userProfile.entity.ts
+//                 inputs:
+//                     ...
+//                 interfaces:
+//                     profile.ts
+//                     index.ts
+//                 user.module.ts
+//                 user.service.ts
+//
+//     app.module.ts
+//     migrations:
+//         ...
+//     utils:
+//         ...

@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert, } from 'typeorm';
 import { UserProfileType } from "../interfaces";
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity({ comment: 'Профиль пользователя' })
 export class UserProfile implements UserProfileType {
@@ -17,33 +18,9 @@ export class UserProfile implements UserProfileType {
     //
     @Column({ type: 'text', array: true, default: [] })
     dialogsIds: string[];
+
+    @BeforeInsert()
+    generateUuid() {
+        this.uuid = uuidv4();
+    }
 }
-
-
-// src:
-//     config:
-//         main.congig.ts
-//         orm.congig.ts
-//         ...
-//     lib:
-//         profile:
-//             user:
-//                 args:
-//                     ...
-//                 decorators:
-//                     ...
-//                 entities:
-//                     userProfile.entity.ts
-//                 inputs:
-//                     ...
-//                 interfaces:
-//                     profile.ts
-//                     index.ts
-//                 user.module.ts
-//                 user.service.ts
-//
-//     app.module.ts
-//     migrations:
-//         ...
-//     utils:
-//         ...
