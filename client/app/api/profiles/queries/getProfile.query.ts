@@ -4,7 +4,7 @@ export const getProfileQuery = async (profileId: string): Promise<ProfileType | 
   // await sleep(2000)
 
   try {
-    const response = await fetch(`http://localhost:3000/api/profiles/${profileId}`, {
+    const response = await fetch(`http://localhost:3001/profile/user/${profileId}`, {
       method: 'GET',
     })
 

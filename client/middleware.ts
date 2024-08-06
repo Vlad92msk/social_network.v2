@@ -18,7 +18,32 @@ export default auth(async (request: NextRequest) => {
 
     // Применяем authMiddleware, передавая сессию
     const authResponse = await authMiddleware(request, session)
+
+
     if (authResponse) return authResponse
+
+    const { 1: locale, 2: uuid } = request.nextUrl.pathname.split('/')
+
+
+    /**
+     * Если в URL нет UUID пользователя - устанавливаем его из авторизации
+     * В дальнейшем нужно расширить это
+     * чтобы можно было проверять UUID в базе и есть он есть - редиректить на него
+     * если нет - то на страницу текщего пользователя
+     */
+    if (!uuid) {
+      // @ts-ignore
+      const userId = session?.user?.userInfo?.uuid
+      if (userId) {
+        // Если uuid отсутствует в URL, но есть в сессии, перенаправляем на URL с uuid
+        return NextResponse.redirect(new URL(`/${locale}/${userId}/profile`, request.url))
+      } else {
+        // Если uuid нет ни в URL, ни в сессии, возможно, стоит перенаправить на страницу входа или домашнюю страницу
+        console.log('UUID не найден ни в URL, ни в сессии')
+        // Пример: return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
+      }
+    }
+
 
     return response
   } catch (error) {

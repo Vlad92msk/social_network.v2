@@ -9,3 +9,8 @@ start: ## Start the Docker container.
 .PHONY: stop
 stop: ## Stop the Docker container.
 	docker-compose -f docker-compose.yml down
+
+
+start-dev:
+	(cd client && yarn dev) & \
+	(cd server && yarn start:dev)

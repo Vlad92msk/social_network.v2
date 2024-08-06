@@ -24,7 +24,7 @@ interface RootLayoutProps {
 export default async function RootLayout(props: RootLayoutProps) {
   const { children, params } = props
   const messages = await getMessages()
-
+console.log('1_______')
   return (
     <ThemeService contextProps={{ theme: 'default' }}>
       <NextIntlClientProvider messages={messages}>

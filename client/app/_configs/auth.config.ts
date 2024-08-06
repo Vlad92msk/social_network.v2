@@ -1,15 +1,12 @@
 import { UserInfo } from '@api/users/types/user.type'
 import Google from "next-auth/providers/google"
 import { NextAuthConfig, Profile } from 'next-auth'
+import { getProfileQuery } from "@api/profiles/queries";
 
 interface ExtendedProfile extends Profile {
   email_verified?: boolean
 }
 
-// interface ExtendedAccount extends Account {
-//   provider?: string
-//   providerAccountId?: string
-// }
 
 interface ExtendedToken {
   myUserInfo?: UserInfo;
@@ -26,25 +23,14 @@ class AuthManager {
 
   private _userData: UserInfo | null = null
 
-  async saveOrUpdateUser(userData: { email?: string, name?: string, provider?: string, providerAccountId?: string }) {
+  async saveOrUpdateUser(userData: { email: string, name?: string, provider?: string, providerAccountId?: string }) {
     try {
-      const response = await fetch(`http://localhost:3000/api/profiles/${userData.email}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      })
+      const response = await getProfileQuery(userData.email)
 
-      if (response.ok) {
-        const tokenData = await response.json()
+      if (response) {
 
         this._isAuthenticated = true
-        this._userData = tokenData
-        // cookies().set({
-        //   name: CookieType.USER_ID,
-        //   value: tokenData.userInfo.id,
-        //   maxAge: 60 * 60 * 24 * 30, // 30 дней
-        //   path: '/',
-        // })
+        this._userData = response
         return true
       }
       this._isAuthenticated = false

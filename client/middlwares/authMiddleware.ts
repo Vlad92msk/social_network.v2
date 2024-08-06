@@ -13,7 +13,7 @@ export async function authMiddleware(request: NextRequest, session: Session | nu
 
   if (isPublicPath(pathname) && session) {
     // @ts-ignore
-    const userId = session.user?.userInfo?.id
+    const userId = session.user?.userInfo?.uuid
     const locale = pathname.split('/')[1] || DEFAULT_LOCALE
     return NextResponse.redirect(new URL(`/${locale}/${userId}/profile`, request.url))
   }
