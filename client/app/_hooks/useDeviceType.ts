@@ -15,7 +15,7 @@ const getDeviceType = () => {
 
 export const useDeviceType = () => {
   const [deviceType, setDeviceType] = useState(getDeviceType())
-  const resizeObserverRef = useRef<ResizeObserver>()
+  const resizeObserverRef = useRef<ResizeObserver>(null)
 
   useEffect(() => {
     resizeObserverRef.current = new ResizeObserver(() => {

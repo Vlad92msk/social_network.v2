@@ -7,7 +7,7 @@ const a = () => ({
   media: undefined,
   emojis: [],
   text: 'text1',
-  forwardMessageId: 'dialog-message-1',
+  forwardMessageId: 'profile-message-1',
   dateRead: new Date('2024/02/04'),
   dateDeliver: new Date('2024/02/04'),
   dateCreated: new Date(),

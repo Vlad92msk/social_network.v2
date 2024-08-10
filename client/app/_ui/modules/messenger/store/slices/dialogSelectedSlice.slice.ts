@@ -60,7 +60,7 @@ export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], []
       author: user,
       ...data,
       id: random(3, 1000).toString(),
-      forwardMessageId: 'dialog-message-1',
+      forwardMessageId: 'profile-message-1',
       dateCreated: new Date(),
     }
     const msgsPrev: Message[] = lodashGet(prev, 'apiData.messages', [])

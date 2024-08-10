@@ -111,7 +111,7 @@
  ┃  ┃  ┃   ┣ secrets.config.ts
  ┃  ┃  ┃   ┗ ...
  ┃  ┃  ┃
- ┃  ┃  ┣📁lib (микросервисы)
+ ┃  ┃  ┣📁services (микросервисы)
  ┃  ┃  ┃   ┣📁profile
  ┃  ┃  ┃   ┃  ┗📁info
  ┃  ┃  ┃   ┃    ┣📁args
@@ -124,7 +124,7 @@
  ┃  ┃  ┃   ┃    ┃
  ┃  ┃  ┃   ┃    ┣📁entities
  ┃  ┃  ┃   ┃    ┃  ┣ profileInfo.entity.ts 
- ┃  ┃  ┃   ┃    ┃  ┣ userInfo.entity.ts 
+ ┃  ┃  ┃   ┃    ┃  ┣ user.entity.ts 
  ┃  ┃  ┃   ┃    ┃  ┗ ...
  ┃  ┃  ┃   ┃    ┃
  ┃  ┃  ┃   ┃    ┣📁inputs
@@ -251,7 +251,7 @@ What's already done on the server side was done a while ago.
 
 #### Used Technologies:
 
-| General    | <img src="./icons/typeScript.svg" width="50" height="50"> | <img src="./icons/Docker.svg" width="50" height="50"> |  <img src="./icons/git.svg" alt="git" width="50" height="50"> |                                                       |
-|------------|-----------------------------------------------------------|--------------|------|-------------------------------------------------------|
-| **Client** | <img src="./icons/nextLS.svg" width="50" height="50">        | <img src="./icons/ApolloClient.svg" alt="ApolloClient" width="50" height="50"> | <img src="./icons/rxjs.svg" width="50" height="50" alt='RxJS'> | <img src="./icons/sass.svg" alt="Sass" width="50" height="50">                                                      |
-| **Server** | <img src="./icons/nest.svg" width="50" height="50">          | <img src="./icons/typeorm.svg" width="50" height="50"> | <img src="./icons/graphql.svg" width="50" height="50"> | <img src="./icons/postgresql.svg" width="50" height="50"> |
+| General    | <img src="./icons/typeScript.svg" width="50" height="50"> | <img src="./icons/Docker.svg" width="50" height="50"> | |                                                       |
+|------------|-----------------------------------------------------------|-|-|-------------------------------------------------------|
+| **Client** | <img src="./icons/nextLS.svg" width="50" height="50">         | <img src="./icons/rxjs.svg" width="50" height="50" alt='RxJS'> | <img src="./icons/sass.svg" alt="Sass" width="50" height="50"> |
+| **Server** | <img src="./icons/nest.svg" width="50" height="50">          | <img src="./icons/typeorm.svg" width="50" height="50"> | <img src="./icons/postgresql.svg" width="50" height="50"> |

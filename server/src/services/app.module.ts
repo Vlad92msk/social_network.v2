@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import mainConfig from '@config/main.config'
 import baseOrmConfig from '@config/orm.config'
-import { UserProfileModule } from "@lib/profile/user/user.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { ProfileModule } from "@src/services/profile/profile/profile.module";
+import { UserModule } from "@src/services/users/user/user.module";
 
 @Module({
   imports: [
@@ -15,8 +16,11 @@ import { TypeOrmModule } from "@nestjs/typeorm";
     TypeOrmModule.forRootAsync({
       useFactory: baseOrmConfig,
     }),
-    UserProfileModule,
+    ProfileModule,
+    UserModule,
   ],
 })
 export class AppModule {
 }
+
+

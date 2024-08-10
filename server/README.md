@@ -101,14 +101,14 @@ Installation Log: /tmp/install-postgresql.log
 //                 decorators:
 //                     ...
 //                 entities:
-//                     userProfile.entity.ts
+//                     profileInfo.entity.ts
 //                 inputs:
 //                     ...
 //                 interfaces:
-//                     profile.ts
+//                     profileInfo.ts
 //                     index.ts
-//                 user.module.ts
-//                 user.service.ts
+//                 profile.module.ts
+//                 profile.service.ts
 //
 //     app.module.ts
 //     migrations:

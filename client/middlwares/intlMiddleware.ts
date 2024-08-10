@@ -7,11 +7,11 @@ export const intlMiddleware = createIntlMiddleware({
 })
 
 // export const intlMiddleware: MiddlewareFunction = async (request, response, session) => {
-//   console.info('intlMiddleware started')
+//   console.post('intlMiddleware started')
 //   let newResponse = createIntlMiddleware({
 //     locales: LOCALES,
 //     defaultLocale: DEFAULT_LOCALE,
 //   })(request)
-//   console.info('intlMiddleware finished')
+//   console.post('intlMiddleware finished')
 //   return newResponse || response
 // }

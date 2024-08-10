@@ -54,13 +54,13 @@ services:
     image: postgres:14.0-alpine
     restart: always
     environment:
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /var/services/postgresql/data
       POSTGRES_USER: ${TYPEORM_USERNAME}
       POSTGRES_PASSWORD: ${TYPEORM_PASSWORD}
       POSTGRES_DB: ${TYPEORM_DATABASE}
     volumes:
       - ./database:/docker-entrypoint-initdb.d/
-      - ./database:/var/lib/postgresql/data/
+      - ./database:/var/services/postgresql/data/
     ports:
       - "5432:5432"
 
@@ -69,7 +69,7 @@ services:
     container_name: pgadmin
     restart: always
     volumes:
-      - ./pgadmin:/var/lib/pgadmin/
+      - ./pgadmin:/var/services/pgadmin/
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PG_ADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PG_ADMIN_PASSWORD}

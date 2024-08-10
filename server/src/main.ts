@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import * as cookieParser from 'cookie-parser'
 import { ConfigEnum } from '@config/config.enum'
-import { AppModule } from '@lib/app.module'
+import { AppModule } from '@src/services/app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
