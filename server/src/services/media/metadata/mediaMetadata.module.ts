@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MediaMetadataService } from './mediaMetadata.service';
-import { MediaMetadataController } from './mediaMetadata.controller';
+import { MediaMetadata } from "./entities/media-metadata.entity";
+import { MetadataService } from "./mediaMetadata.service";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([])],
-    providers: [MediaMetadataService],
-    controllers: [MediaMetadataController],
+    imports: [TypeOrmModule.forFeature([MediaMetadata])],
+    providers: [MetadataService],
+    exports: [MetadataService],
 })
 export class MediaMetadataModule {}

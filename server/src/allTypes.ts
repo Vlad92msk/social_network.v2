@@ -465,7 +465,7 @@ interface PublicationReactions extends EmojiClickData {
 }
 
 /**
- * @summary emoji из 'emoji-picker-react'
+ * @summary метаданные файла
  */
 interface FileObject {
     name: string,
@@ -503,8 +503,6 @@ interface MediaItem {
     author_id: string
     /** Дата загрузки */
     date_upload: string
-    /** Массив ID комментариев */
-    comment_ids: string[]
     /** Массив ID реакций */
     reaction_ids: string[]
     /** Массив ID отмеченных пользователей */

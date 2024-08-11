@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { MediaInfoService } from './mediaInfo.service';
 import { MediaInfoController } from './mediaInfo.controller';
+import { MediaStorageModule } from "../storage/mediaStorage.module";
+import { MediaMetadataModule } from "../metadata/mediaMetadata.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([])],
+    imports: [MediaMetadataModule, MediaStorageModule],
     providers: [MediaInfoService],
     controllers: [MediaInfoController],
 })

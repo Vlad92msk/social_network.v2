@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { MediaStorageService } from './mediaStorage.service';
-import { MediaStorageController } from './mediaStorage.controller';
+import { MulterModule } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { MediaStorageService } from "./mediaStorage.service";
+import { MediaMetadataModule } from "../metadata/mediaMetadata.module";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([])],
+    imports: [
+        MulterModule.register({
+            storage: memoryStorage()
+        }),
+        MediaMetadataModule,
+        ConfigModule,
+    ],
     providers: [MediaStorageService],
-    controllers: [MediaStorageController],
+    exports: [MediaStorageService, MulterModule],
 })
-export class UserProfileModule {}
+export class MediaStorageModule {}

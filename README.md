@@ -111,6 +111,19 @@
  ┃  ┃  ┃   ┣ secrets.config.ts
  ┃  ┃  ┃   ┗ ...
  ┃  ┃  ┃
+ ┃  ┃  ┣📁uploads (физическое хранение файлов)
+ ┃  ┃  ┃  ┣📁audio
+ ┃  ┃  ┃  ┃  ┗📁[user_id_{id}] (храним файлы конкретного пользователя)
+ ┃  ┃  ┃  ┃    ┣ any.mp3
+ ┃  ┃  ┃  ┃    ┣ any1.mp3
+ ┃  ┃  ┃  ┃    ┣ any2.mp3
+ ┃  ┃  ┃  ┃    ┗ ...
+ ┃  ┃  ┃  ┃    
+ ┃  ┃  ┃  ┣📁video
+ ┃  ┃  ┃  ┣📁image
+ ┃  ┃  ┃  ┗📁other
+ ┃  ┃  ┃    
+ ┃  ┃  ┃      
  ┃  ┃  ┣📁services (микросервисы)
  ┃  ┃  ┃   ┣📁profile
  ┃  ┃  ┃   ┃  ┗📁info
@@ -169,22 +182,33 @@
  ┃  ┃  ┃   ┃     ┗ posts.module.ts 
  ┃  ┃  ┃   ┃
  ┃  ┃  ┃   ┣📁media
- ┃  ┃  ┃   ┃    ┗📁aws(для начала буду делать самописный - потом перейду на aws)
+ ┃  ┃  ┃   ┃    ┗📁info(информация о медиа-файле относительно пользователя - теги, связь с таблицей комментарией, реакции пользователей и т.д.)
  ┃  ┃  ┃   ┃    ┃ ┣📁args
  ┃  ┃  ┃   ┃    ┃ ┣📁decorators
  ┃  ┃  ┃   ┃    ┃ ┣📁entities
- ┃  ┃  ┃   ┃    ┃ ┣📁inputs
+ ┃  ┃  ┃   ┃    ┃ ┣📁dto
  ┃  ┃  ┃   ┃    ┃ ┣📁interfaces
  ┃  ┃  ┃   ┃    ┃ ┣📁args
- ┃  ┃  ┃   ┃    ┃ ┣ aws.controller.ts
- ┃  ┃  ┃   ┃    ┃ ┣ aws.service.ts
- ┃  ┃  ┃   ┃    ┃ ┗ aws.module.ts 
+ ┃  ┃  ┃   ┃    ┃ ┣ info.controller.ts
+ ┃  ┃  ┃   ┃    ┃ ┣ info.service.ts
+ ┃  ┃  ┃   ┃    ┃ ┗ info.module.ts 
  ┃  ┃  ┃   ┃    ┃
- ┃  ┃  ┃   ┃    ┗📁metadata (Метаданные о медиа файлах (имя файла, путь к файлу, тип файла, дата загрузки и т.д.))
+ ┃  ┃  ┃   ┃    ┣📁storage (отвечает за физическое хранение/получение файлов, трансформацию из одного формата в другой и т.д. - в дальнейшем вместо этого может быть переход на aws)
+ ┃  ┃  ┃   ┃    ┃ ┣📁args
+ ┃  ┃  ┃   ┃    ┃ ┣📁decorators
+ ┃  ┃  ┃   ┃    ┃ ┣📁entities
+ ┃  ┃  ┃   ┃    ┃ ┣📁dto
+ ┃  ┃  ┃   ┃    ┃ ┣📁interfaces
+ ┃  ┃  ┃   ┃    ┃ ┣📁args
+ ┃  ┃  ┃   ┃    ┃ ┣ storage.controller.ts
+ ┃  ┃  ┃   ┃    ┃ ┣ storage.service.ts
+ ┃  ┃  ┃   ┃    ┃ ┗ storage.module.ts 
+ ┃  ┃  ┃   ┃    ┃
+ ┃  ┃  ┃   ┃    ┗📁metadata (метаданные о медиа файлах (имя файла, путь к файлу, тип файла, дата загрузки и т.д.))
  ┃  ┃  ┃   ┃     ┣📁args
  ┃  ┃  ┃   ┃     ┣📁decorators
  ┃  ┃  ┃   ┃     ┣📁entities
- ┃  ┃  ┃   ┃     ┣📁inputs
+ ┃  ┃  ┃   ┃     ┣📁dto
  ┃  ┃  ┃   ┃     ┣📁interfaces
  ┃  ┃  ┃   ┃     ┣📁args
  ┃  ┃  ┃   ┃     ┣ metadata.controller.ts

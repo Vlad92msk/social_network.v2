@@ -18,7 +18,9 @@ export class UserService {
         private userAboutRepository: Repository<UserAbout>,
     ) {}
 
-
+    /**
+     * Создать информацию о пользователе
+     */
     async createUser(data?: CreateUserDto): Promise<UserInfo> {
         if (data) {
             const findUser = await this.userInfoRepository.findOne({ where: data });
@@ -38,6 +40,9 @@ export class UserService {
         return await this.userInfoRepository.save(userInfo)
     }
 
+    /**
+     * Получить всех пользователей
+     */
     async getUsers(query: GetUsersDto, params: RequestParams): Promise<ResponseWithPagination<UserInfo[]>> {
         const { user_info_id, profile_id } = params;
         const { page = 1, per_page = 10, sort_by, sort_direction, ...searchParams } = query;
@@ -63,6 +68,9 @@ export class UserService {
         return user;
     }
 
+    /**
+     * Обновить информацию о пользователе
+     */
     async updateUserInfo(data: UpdateUserDto, params: RequestParams): Promise<UserInfo> {
         const findUser = await this.userInfoRepository.findOne({
             where: { public_id: data.public_id },
