@@ -7,6 +7,7 @@ import { MediaItemType } from "../metadata/interfaces/mediaItemType";
 import { ConfigService } from "@nestjs/config";
 import { ConfigEnum } from "@config/config.enum";
 import { AbstractStorageService } from "./abstract-storage.service";
+import * as timers from "node:timers";
 
 @Injectable()
 export class LocalStorageService extends AbstractStorageService {
@@ -40,15 +41,25 @@ export class LocalStorageService extends AbstractStorageService {
     }
 
     async getFile(filePath: string): Promise<Buffer> {
-        return await fs.readFile(filePath);
+        const fullPath = path.join(this.uploadDir, filePath);
+        try {
+            return await fs.readFile(fullPath);
+        } catch (error) {
+            throw new Error('Не удалось прочитать файл');
+        }
     }
 
     getFileUrl(filePath: string): string {
-        return `http://${this.host}:${this.port}/uploads/${filePath}}`;
+        return `http://${this.host}:${this.port}/uploads/${filePath}`;
     }
 
     async deleteFile(filePath: string): Promise<void> {
-        await fs.unlink(filePath);
+        const fullPath = path.join(this.uploadDir, filePath);
+        try {
+            await fs.unlink(fullPath);
+        } catch (error) {
+            throw new Error('Не удалось удалить файл');
+        }
     }
 
     getFileType(mimeType: string): MediaItemType {

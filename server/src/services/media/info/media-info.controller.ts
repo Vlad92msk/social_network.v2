@@ -1,7 +1,8 @@
 import {
+    BadRequestException,
     Controller,
     Delete,
-    Get,
+    Get, InternalServerErrorException, NotFoundException,
     Param,
     ParseFilePipe,
     Post,
@@ -58,25 +59,33 @@ export class MediaInfoController {
         @Param('id') id: string,
         @Res() res: Response
     ) {
-        const { file, metadata } = await this.mediaInfoService.getFile(id);
-        res.set({
-            'Content-Type': metadata.mimeType,
-            'Content-Disposition': `inline; filename="${metadata.name}"`,
-        });
-        res.send(file);
+        try {
+            const { file, metadata } = await this.mediaInfoService.getFile(id);
+            res.set({
+                'Content-Type': metadata.mimeType,
+                'Content-Disposition': `inline; filename="${encodeURIComponent(metadata.name)}"`,
+            });
+            res.send(file);
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                res.status(404).send('Файл не найден');
+            } else if (error instanceof BadRequestException) {
+                res.status(400).send(error.message);
+            } else {
+                res.status(500).send('Внутренняя ошибка сервера');
+            }
+        }
     }
 
     @Delete(':id')
-    async deleteFile(
-        @Param('id') id: string
-    ) {
-        return this.mediaInfoService.deleteFile(id);
-    }
-
-    @Get('metadata/:id')
-    async getMetadata(
-        @Param('id') id: string
-    ) {
-        return this.mediaInfoService.getMetadata(id);
+    async deleteFile(@Param('id') id: string) {
+        try {
+            return await this.mediaInfoService.deleteFile(id);
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw new NotFoundException('Файл не найден');
+            }
+            throw new InternalServerErrorException('Не удалось удалить файл');
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MetadataService } from "../metadata/media-metadata.service";
 import { AbstractStorageService } from "../storage/abstract-storage.service";
 import { MediaItemType } from "../metadata/interfaces/mediaItemType";
@@ -65,18 +65,44 @@ export class MediaInfoService {
 
     async getFile(id: string) {
         const metadata = await this.metadataService.findOne(id);
-        const file = await this.storageService.getFile(metadata.src);
-        return { file, metadata };
+        if (!metadata) {
+            throw new NotFoundException('Файл не найден');
+        }
+
+        try {
+            const urlParts = new URL(metadata.src);
+            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+
+            const file = await this.storageService.getFile(relativePath);
+            return { file, metadata };
+        } catch (error) {
+            throw new BadRequestException('Не удалось получить файл');
+        }
     }
 
     async deleteFile(id: string) {
         const metadata = await this.metadataService.findOne(id);
-        await this.storageService.deleteFile(metadata.src);
-        await this.metadataService.remove(id);
-        return { message: 'File deleted successfully' };
+        if (!metadata) {
+            throw new NotFoundException('Файл не найден');
+        }
+
+        try {
+            const urlParts = new URL(metadata.src);
+            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+
+            await this.storageService.deleteFile(relativePath);
+            await this.metadataService.remove(id);
+            return { message: 'Файл успешно удален' };
+        } catch (error) {
+            throw new BadRequestException('Не удалось удалить файл');
+        }
     }
 
     async getMetadata(id: string) {
-        return this.metadataService.findOne(id);
+        const metadata = await this.metadataService.findOne(id);
+        if (!metadata) {
+            throw new NotFoundException('Файл не найден');
+        }
+        return metadata;
     }
 }
