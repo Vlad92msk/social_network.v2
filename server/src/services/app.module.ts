@@ -5,7 +5,7 @@ import baseOrmConfig from '@config/orm.config'
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ProfileModule } from "@src/services/profile/profile/profile.module";
 import { UserModule } from "@src/services/users/user/user.module";
-import { MediaInfoModule } from "@src/services/media/info/mediaInfo.module";
+import { MediaInfoModule } from "@src/services/media/info/media-info.module";
 
 @Module({
   imports: [

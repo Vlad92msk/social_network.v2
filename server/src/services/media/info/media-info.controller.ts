@@ -10,14 +10,24 @@ import {
     UploadedFiles,
     UseInterceptors
 } from '@nestjs/common';
-import { MediaInfoService } from "./mediaInfo.service";
+import { MediaInfoService } from "./media-info.service";
 import { FilesInterceptor } from "@nestjs/platform-express";
 import { Request, Response } from "express";
-import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from "@src/services/media/info/decorators";
+import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from "./decorators";
+import { ConfigService } from "@nestjs/config";
+import { ConfigEnum } from "@config/config.enum";
 
 @Controller('api/media/info')
 export class MediaInfoController {
-    constructor(private readonly mediaInfoService: MediaInfoService) {}
+    private readonly maxStorage: number;
+
+    constructor(
+        private readonly mediaInfoService: MediaInfoService,
+        private readonly configService: ConfigService
+    ) {
+        // Доступно места для загрузки
+        this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
+    }
 
     @Post('upload/:userId')
     @UseInterceptors(FilesInterceptor('files'))
@@ -36,6 +46,10 @@ export class MediaInfoController {
         @Param('userId') userId: string,
         @Req() req: Request
     ) {
+        // Проверяем квоту
+        await this.mediaInfoService.checkStorageLimit(userId, files, this.maxStorage)
+
+        // Если есть доступное место - возвращаем загруженный файл
         return this.mediaInfoService.uploadFiles(files, userId);
     }
 
