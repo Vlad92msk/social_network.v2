@@ -3,6 +3,9 @@ import { MetadataService } from "../metadata/media-metadata.service";
 import { AbstractStorageService } from "../storage/abstract-storage.service";
 import { MediaItemType } from "../metadata/interfaces/mediaItemType";
 import * as path from 'path';
+import { GetMediaDto } from "@src/services/media/info/dto/get-media.dto";
+import { RequestParams } from "@src/decorators";
+import { SortDirection } from "@src/types";
 
 @Injectable()
 export class MediaInfoService {
@@ -11,22 +14,6 @@ export class MediaInfoService {
         private readonly storageService: AbstractStorageService,
         private readonly metadataService: MetadataService,
     ) {}
-
-    /**
-     * Проверяет сколько места доступно для загрузки файлов для конкретного пользователя
-     */
-    async checkStorageLimit(userId: string, files: Express.Multer.File[], maxStorage: number): Promise<void> {
-        const currentUsage = await this.metadataService.getUserStorageUsage(userId);
-        const totalUploadSize = files.reduce((sum, file) => sum + file.size, 0);
-
-        const totalAfterUpload = currentUsage + totalUploadSize;
-
-        if (totalAfterUpload > maxStorage) {
-            throw new BadRequestException(`Превышен лимит хранения файлов. Максимальный размер хранилища: ${maxStorage} байт.`);
-        } else {
-            console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`);
-        }
-    }
 
     /**
      * Загружает файлы
@@ -65,9 +52,7 @@ export class MediaInfoService {
 
     async getFile(id: string) {
         const metadata = await this.metadataService.findOne(id);
-        if (!metadata) {
-            throw new NotFoundException('Файл не найден');
-        }
+        if (!metadata) throw new NotFoundException('Файл не найден');
 
         try {
             const urlParts = new URL(metadata.src);
@@ -78,6 +63,31 @@ export class MediaInfoService {
         } catch (error) {
             throw new BadRequestException('Не удалось получить файл');
         }
+    }
+
+    async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
+
+        const { data: foundFiles, total } = await this.metadataService.findAll({
+                file_ids: query.file_ids,
+                per_page: query.per_page,
+                page: query.page,
+            });
+
+        const filesWithContent = foundFiles.map((metadata) => {
+            const urlParts = new URL(metadata.src);
+            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+            return {
+                metadata,
+                url: this.storageService.getFileUrl(relativePath)
+            };
+        });
+
+        return {
+            data: filesWithContent,
+            total,
+            page: query.page,
+            per_page: query.per_page
+        };
     }
 
     async deleteFile(id: string) {
@@ -98,11 +108,20 @@ export class MediaInfoService {
         }
     }
 
-    async getMetadata(id: string) {
-        const metadata = await this.metadataService.findOne(id);
-        if (!metadata) {
-            throw new NotFoundException('Файл не найден');
+    /**
+     * Проверяет сколько места доступно для загрузки файлов для конкретного пользователя
+     */
+    async checkStorageLimit(userId: string, files: Express.Multer.File[], maxStorage: number): Promise<void> {
+        const currentUsage = await this.metadataService.getUserStorageUsage(userId);
+        const totalUploadSize = files.reduce((sum, file) => sum + file.size, 0);
+
+        const totalAfterUpload = currentUsage + totalUploadSize;
+
+        if (totalAfterUpload > maxStorage) {
+            throw new BadRequestException(`Превышен лимит хранения файлов. Максимальный размер хранилища: ${maxStorage} байт.`);
+        } else {
+            console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`);
         }
-        return metadata;
     }
+
 }

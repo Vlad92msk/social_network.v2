@@ -1,5 +1,5 @@
 import { IsDate, IsEnum, IsNumber, IsString } from 'class-validator';
-import { MediaItemType } from "@src/services/media/metadata/interfaces/mediaItemType";
+import { MediaItemType } from "../interfaces/mediaItemType";
 
 export class CreateMediaMetadataDto {
     @IsString()

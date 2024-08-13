@@ -1,10 +1,9 @@
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe, Res, Put, Body } from '@nestjs/common';
 import { UserService } from './user.service';
-import { USERS } from "../_data/users.data";
 import { RequestParams } from "@src/decorators";
 import { UserInfoType } from "@src/services/users/_interfaces";
 import { GetUsersDto } from "./dto/getUsers.dto";
-import { UpdateUserDto } from "@src/services/users/user/dto/updateUsers.dto";
+import { UpdateUserDto } from "./dto/updateUsers.dto";
 import { Response } from "express";
 
 @Controller('api/users')
@@ -17,7 +16,6 @@ export class UserController {
         @Query() query: GetUsersDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
-
     ): Promise<UserInfoType[]> {
         const { data, pages, per_page, current_page, count_elements } = await this.userService.getUsers(query, params)
 

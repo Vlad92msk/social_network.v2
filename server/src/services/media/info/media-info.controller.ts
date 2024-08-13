@@ -5,7 +5,7 @@ import {
     Get, InternalServerErrorException, NotFoundException,
     Param,
     ParseFilePipe,
-    Post,
+    Post, Query,
     Req,
     Res,
     UploadedFiles,
@@ -17,6 +17,8 @@ import { Request, Response } from "express";
 import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from "./decorators";
 import { ConfigService } from "@nestjs/config";
 import { ConfigEnum } from "@config/config.enum";
+import { GetMediaDto } from "@src/services/media/info/dto/get-media.dto";
+import { RequestParams } from "@src/decorators";
 
 @Controller('api/media/info')
 export class MediaInfoController {
@@ -75,6 +77,16 @@ export class MediaInfoController {
                 res.status(500).send('Внутренняя ошибка сервера');
             }
         }
+    }
+
+    @Get()
+    async getFiles(
+        @Query() query: GetMediaDto,
+        @RequestParams() params: RequestParams,
+    ) {
+        const d = await this.mediaInfoService.getFiles(query, params);
+
+        return d
     }
 
     @Delete(':id')
