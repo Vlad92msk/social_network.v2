@@ -26,7 +26,7 @@ export class MediaInfoController {
         private readonly configService: ConfigService
     ) {
         // Доступно места для загрузки
-        this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
+        this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`);
     }
 
     @Post('upload/:userId')

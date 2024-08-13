@@ -41,6 +41,7 @@ export class MetadataService {
             .where('metadata.user_id = :userId', { userId })
             .getRawOne();
 
-        return result.totalSize || 0;
+        const totalSize = Number(result.totalSize) || 0;
+        return totalSize;
     }
 }

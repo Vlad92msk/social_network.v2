@@ -16,9 +16,14 @@ export class MediaInfoService {
         const currentUsage = await this.metadataService.getUserStorageUsage(userId);
         const totalUploadSize = files.reduce((sum, file) => sum + file.size, 0);
 
-        if (currentUsage + totalUploadSize > maxStorage) {
+        const totalAfterUpload = currentUsage + totalUploadSize;
+
+        if (totalAfterUpload > maxStorage) {
             const remainingSpace = maxStorage - currentUsage;
-            throw new BadRequestException(`Превышен лимит хранения файлов. Доступно: ${remainingSpace} байт`);
+            console.log(`Throwing error. Remaining space: ${remainingSpace} bytes`);
+            throw new BadRequestException(`Превышен лимит хранения файлов. Максимальный размер хранилища: ${maxStorage} байт.`);
+        } else {
+            console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`);
         }
     }
 
