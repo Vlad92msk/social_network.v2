@@ -5,4 +5,5 @@ export abstract class AbstractStorageService {
     abstract getFile(filePath: string): Promise<Buffer>;
     abstract deleteFile(filePath: string): Promise<void>;
     abstract getFileType(mimeType: string): MediaItemType;
+    abstract getFileUrl(filePath: string): string;
 }

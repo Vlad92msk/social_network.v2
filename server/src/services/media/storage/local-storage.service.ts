@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as sharp from 'sharp';
@@ -11,10 +11,14 @@ import { AbstractStorageService } from "./abstract-storage.service";
 @Injectable()
 export class LocalStorageService extends AbstractStorageService {
     private readonly uploadDir: string;
+    private readonly host: string;
+    private readonly port: string;
 
     constructor(private readonly configService: ConfigService) {
         super()
         this.uploadDir = this.configService.get(`${ConfigEnum.MAIN}.uploadDir`);
+        this.host = this.configService.get(`${ConfigEnum.MAIN}.host`);
+        this.port = this.configService.get(`${ConfigEnum.MAIN}.port`);
     }
 
     async uploadFile(file: Buffer, fileName: string, userId: string, fileType: MediaItemType): Promise<string> {
@@ -25,15 +29,22 @@ export class LocalStorageService extends AbstractStorageService {
 
         if (fileType === MediaItemType.IMAGE) {
             await this.saveAsWebP(file, fullFilePath);
+            // Обновляем fileName, чтобы он отражал .webp расширение
+            fileName = fileName.replace(/\.[^/.]+$/, ".webp");
         } else {
             await fs.writeFile(fullFilePath, file);
         }
 
-        return path.relative(this.uploadDir, fullFilePath);
+        // Возвращаем относительный путь к файлу
+        return path.join(fileType, `user_id_${userId}`, fileName);
     }
 
     async getFile(filePath: string): Promise<Buffer> {
         return await fs.readFile(filePath);
+    }
+
+    getFileUrl(filePath: string): string {
+        return `http://${this.host}:${this.port}/uploads/${filePath}}`;
     }
 
     async deleteFile(filePath: string): Promise<void> {
@@ -48,14 +59,14 @@ export class LocalStorageService extends AbstractStorageService {
         return MediaItemType.OTHER;
     }
 
-    private async saveAsWebP(buffer: Buffer, filePath: string): Promise<void> {
+    private async saveAsWebP(buffer: Buffer, filePath: string): Promise<string> {
         const webpPath = filePath.replace(/\.[^/.]+$/, ".webp");
         try {
             await sharp(buffer)
                 .webp({ quality: 80 })
                 .toFile(webpPath);
+            return webpPath;
         } catch (error) {
-            console.error('Error saving WebP file:', error);
             throw error;
         }
     }

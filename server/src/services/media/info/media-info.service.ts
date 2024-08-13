@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { MetadataService } from "../metadata/media-metadata.service";
 import { AbstractStorageService } from "../storage/abstract-storage.service";
+import { MediaItemType } from "../metadata/interfaces/mediaItemType";
+import * as path from 'path';
 
 @Injectable()
 export class MediaInfoService {
+
     constructor(
         private readonly storageService: AbstractStorageService,
         private readonly metadataService: MetadataService,
@@ -19,8 +22,6 @@ export class MediaInfoService {
         const totalAfterUpload = currentUsage + totalUploadSize;
 
         if (totalAfterUpload > maxStorage) {
-            const remainingSpace = maxStorage - currentUsage;
-            console.log(`Throwing error. Remaining space: ${remainingSpace} bytes`);
             throw new BadRequestException(`Превышен лимит хранения файлов. Максимальный размер хранилища: ${maxStorage} байт.`);
         } else {
             console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`);
@@ -34,16 +35,21 @@ export class MediaInfoService {
         const uploadedFiles = [];
 
         for (const file of files) {
-            // Получаем тип файла
             const fileType = this.storageService.getFileType(file.mimetype);
-            const fileName = `${Date.now()}-${file.originalname}`;
-            // Сохраняем файл в хранилище и получаем путь к сохраненному файлу в системе
-            const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType);
+            let fileName = `${Date.now()}-${file.originalname}`;
 
-            // Сохранияем метаданные файла в базе
+            const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType);
+            const fileUrl = this.storageService.getFileUrl(filePath);
+
+            // Если это изображение, обновляем расширение файла и MIME-тип
+            if (fileType === MediaItemType.IMAGE) {
+                fileName = path.basename(filePath); // Получаем имя файла из пути, включая .webp расширение
+                file.mimetype = 'image/webp';
+            }
+
             const metadata = await this.metadataService.create({
                 name: fileName,
-                src: filePath,
+                src: fileUrl,
                 mimeType: file.mimetype,
                 size: file.size,
                 lastModified: new Date(),
@@ -51,7 +57,7 @@ export class MediaInfoService {
                 user_id: userId,
             });
 
-            uploadedFiles.push({ metadata, filePath });
+            uploadedFiles.push({ metadata, filePath: fileUrl });
         }
 
         return uploadedFiles;
