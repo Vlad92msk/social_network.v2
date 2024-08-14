@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, Repository, Raw } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateMediaMetadataDto } from "./dto/create-media-metadata.dto";
 import { UpdateMediaMetadataDto } from "./dto/update-media-metadata.dto";
 import { MediaMetadata } from "./entities/media-metadata.entity";
@@ -40,7 +40,7 @@ export class MetadataService {
                 throw new BadRequestException('Нет ни одного валидного значения в file_ids');
             }
 
-            where.id = Raw(alias => `${alias} IN (:...ids)`, { ids: validIds });
+            where.id = In(validIds);
         }
 
         const [data, total] = await this.metadataRepository.findAndCount({

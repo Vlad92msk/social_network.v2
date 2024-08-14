@@ -17,8 +17,9 @@ import { Request, Response } from "express";
 import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from "./decorators";
 import { ConfigService } from "@nestjs/config";
 import { ConfigEnum } from "@config/config.enum";
-import { GetMediaDto } from "@src/services/media/info/dto/get-media.dto";
+import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "@src/decorators";
+import { createPaginationHeaders } from "@src/utils";
 
 @Controller('api/media/info')
 export class MediaInfoController {
@@ -32,6 +33,9 @@ export class MediaInfoController {
         this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`);
     }
 
+    /**
+     * Загружает файлы в систему
+     */
     @Post('upload/:userId')
     @UseInterceptors(FilesInterceptor('files'))
     async uploadFiles(
@@ -56,13 +60,17 @@ export class MediaInfoController {
         return this.mediaInfoService.uploadFiles(files, userId);
     }
 
+    /**
+     * Скачивает файл
+     * Не тестировал
+     */
     @Get(':id')
-    async getFile(
+    async downLoadFile(
         @Param('id') id: string,
         @Res() res: Response
     ) {
         try {
-            const { file, metadata } = await this.mediaInfoService.getFile(id);
+            const { file, metadata } = await this.mediaInfoService.downLoadFile(id);
             res.set({
                 'Content-Type': metadata.mimeType,
                 'Content-Disposition': `inline; filename="${encodeURIComponent(metadata.name)}"`,
@@ -79,16 +87,24 @@ export class MediaInfoController {
         }
     }
 
+    /**
+     * Получить список файлов
+     */
     @Get()
     async getFiles(
         @Query() query: GetMediaDto,
         @RequestParams() params: RequestParams,
+        @Res({ passthrough: true }) response: Response
     ) {
-        const d = await this.mediaInfoService.getFiles(query, params);
+        const { data, ...paginationInfo } = await this.mediaInfoService.getFiles(query, params);
 
-        return d
+        response.set(createPaginationHeaders(paginationInfo));
+        return data;
     }
 
+    /**
+     * Удалить файл
+     */
     @Delete(':id')
     async deleteFile(@Param('id') id: string) {
         try {

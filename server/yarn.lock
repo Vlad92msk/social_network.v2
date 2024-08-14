@@ -1075,13 +1075,6 @@
     "@types/connect" "*"
     "@types/node" "*"
 
-"@types/clamav.js@^0.12.4":
-  version "0.12.4"
-  resolved "https://registry.yarnpkg.com/@types/clamav.js/-/clamav.js-0.12.4.tgz#cfc92b5167a906ece3fd7c4583d92dd5649658c2"
-  integrity sha512-EfXpbCPoAmUKSX1kRX8LEGH8HMgT9Y3tUWx7s85bhjCtoVnTVNewqsNil5Lm2D29MlWYs1MDUoXvnx0lv/7B4w==
-  dependencies:
-    "@types/node" "*"
-
 "@types/connect@*":
   version "3.4.37"
   resolved "https://registry.yarnpkg.com/@types/connect/-/connect-3.4.37.tgz#c66a96689fd3127c8772eb3e9e5c6028ec1a9af5"
@@ -2104,11 +2097,6 @@ cjs-module-lexer@^1.0.0:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.2.3.tgz#6c370ab19f8a3394e318fe682686ec0ac684d107"
   integrity sha512-0TNiGstbQmCFwt4akjjBg5pLRTSyj/PkWQ1ZoO2zntmg9yLqSRxwEa4iCfQLGjqhiqBfOJa7W/E8wfGrTDmlZQ==
-
-clamav.js@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/clamav.js/-/clamav.js-0.12.0.tgz#f654ebd2d10c707cb5f7d4453885acd88d2731f7"
-  integrity sha512-IoPwy6rzivi9PGtRR9GvnXmfCLbMi+WX46j5S/SFG3tniIqesxq6976su7jGmhSu8FLp8TUC/ZE604KxELacWg==
 
 class-transformer@^0.5.1:
   version "0.5.1"

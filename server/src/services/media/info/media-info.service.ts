@@ -3,9 +3,9 @@ import { MetadataService } from "../metadata/media-metadata.service";
 import { AbstractStorageService } from "../storage/abstract-storage.service";
 import { MediaItemType } from "../metadata/interfaces/mediaItemType";
 import * as path from 'path';
-import { GetMediaDto } from "@src/services/media/info/dto/get-media.dto";
+import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "@src/decorators";
-import { SortDirection } from "@src/types";
+import { createPaginationResponse } from "@src/utils";
 
 @Injectable()
 export class MediaInfoService {
@@ -50,11 +50,16 @@ export class MediaInfoService {
         return uploadedFiles;
     }
 
-    async getFile(id: string) {
+    /**
+     * Получить Blob файла по Id
+     */
+    async downLoadFile(id: string) {
+        // Получаем метаданные
         const metadata = await this.metadataService.findOne(id);
         if (!metadata) throw new NotFoundException('Файл не найден');
 
         try {
+            // Получаем реальную ссылку для скачивания
             const urlParts = new URL(metadata.src);
             const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
 
@@ -65,6 +70,9 @@ export class MediaInfoService {
         }
     }
 
+    /**
+     * Получить ссылки на файлы
+     */
     async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
 
         const { data: foundFiles, total } = await this.metadataService.findAll({
@@ -82,12 +90,12 @@ export class MediaInfoService {
             };
         });
 
-        return {
+        return createPaginationResponse({
             data: filesWithContent,
             total,
-            page: query.page,
-            per_page: query.per_page
-        };
+            page: query?.page,
+            per_page: query?.per_page,
+        })
     }
 
     async deleteFile(id: string) {
