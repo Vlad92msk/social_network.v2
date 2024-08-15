@@ -18,8 +18,8 @@ import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } fro
 import { ConfigService } from "@nestjs/config";
 import { ConfigEnum } from "@config/config.enum";
 import { GetMediaDto } from "./dto/get-media.dto";
-import { RequestParams } from "@src/decorators";
-import { createPaginationHeaders } from "@src/utils";
+import { RequestParams } from "src/shared/decorators";
+import { createPaginationHeaders } from "src/shared/utils";
 
 @Controller('api/media/info')
 export class MediaInfoController {

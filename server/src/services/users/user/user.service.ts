@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserInfo } from './entities/user.entity';
 import { GetUsersDto } from "./dto/getUsers.dto";
-import { RequestParams } from "@src/decorators";
+import { RequestParams } from "src/shared/decorators";
 import { UpdateUserDto } from "./dto/updateUsers.dto";
-import { ResponseWithPagination } from "@src/types";
+import { ResponseWithPagination } from "src/shared/types";
 import { UserAbout } from "./entities";
 import { CreateUserDto } from "./dto/createUser.dto";
 

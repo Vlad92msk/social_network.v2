@@ -1,6 +1,6 @@
 import { IsArray } from 'class-validator';
-import { PaginationAndSortingDto } from "@src/dto";
-import { IntersectionType } from "@nestjs/mapped-types";
+import { PaginationAndSortingDto } from "src/shared/dto";
+import { IntersectionType,  } from "@nestjs/mapped-types";
 
 
 export class GetMediaDto extends IntersectionType(

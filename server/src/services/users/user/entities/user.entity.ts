@@ -1,7 +1,19 @@
-import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert, OneToOne, JoinColumn, } from 'typeorm';
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    BeforeInsert,
+    OneToOne,
+    JoinColumn,
+    ManyToMany,
+    OneToMany,
+} from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { UserAbout } from "./userAbout.entity";
 import { UserAboutType, UserInfoType } from "../../_interfaces";
+import { MediaEntity } from "@src/services/media/info/entities/media.entity";
+import { MediaItem } from "@src/services/media/info/interfaces/media-item";
+import { CommentEntity } from "@services/comments/comment/entities/comment.entity";
 
 @Entity({ comment: 'Профиль пользователя' })
 export class UserInfo implements UserInfoType {
@@ -24,6 +36,9 @@ export class UserInfo implements UserInfoType {
     @OneToOne(type => UserAbout, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     about_info: UserAboutType
+
+    @ManyToMany(() => MediaEntity, media => media.tagged_users)
+    medias_check: MediaItem[]
 
     //__________________
     // Автогенерация

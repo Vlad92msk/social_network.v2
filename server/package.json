@@ -90,9 +90,9 @@
   "_moduleAliases": {
     "@src/*": "src/*",
     "@config/*": "src/config/*",
-    "@db/*": "src/db/*",
-    "@lib/*": "src/lib/*",
-    "@models/*": "src/models/*",
-    "@utils/*": "src/utils/*"
+    "@services/*": "src/services/*",
+    "@shared/*": "src/shared/*",
+    "@models/*": "src/shared/types/*",
+    "@utils/*": "src/shared/utils/*"
   }
 }

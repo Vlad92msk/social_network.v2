@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsEnum, IsIn } from 'class-validator';
-import { SortBy, SortDirection } from "src/types";
+import { SortBy, SortDirection } from "src/shared/types";
 import { UserInfoType } from "../../_interfaces";
-import { PaginationDto } from "@src/dto";
+import { PaginationDto } from "src/shared/dto";
 
 export class GetUsersDto extends PaginationDto implements Partial<UserInfoType>, SortBy<UserInfoType> {
     @IsString()

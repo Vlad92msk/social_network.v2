@@ -3,7 +3,7 @@ import { ProfileService } from './profile.service';
 import { UserProfileInfo } from './entities/profileInfo.entity';
 import { CreateProfileDto } from "./dto/createProfile.dto";
 import { Response } from "express";
-import { RequestParams } from "@src/decorators";
+import { RequestParams } from "src/shared/decorators";
 
 @Controller('api/profile')
 export class ProfileController {

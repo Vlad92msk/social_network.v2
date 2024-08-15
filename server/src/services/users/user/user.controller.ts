@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe, Res, Put, Body } from '@nestjs/common';
 import { UserService } from './user.service';
-import { RequestParams } from "@src/decorators";
+import { RequestParams } from "src/shared/decorators";
 import { UserInfoType } from "@src/services/users/_interfaces";
 import { GetUsersDto } from "./dto/getUsers.dto";
 import { UpdateUserDto } from "./dto/updateUsers.dto";

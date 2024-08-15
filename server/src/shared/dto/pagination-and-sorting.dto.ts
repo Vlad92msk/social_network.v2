@@ -1,7 +1,7 @@
 import { IsEnum, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
-import { SortDirection } from "@src/types";
-import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from "@src/utils";
+import { SortDirection } from "src/shared/types";
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from "src/shared/utils";
 
 export class PaginationAndSortingDto<T extends object = any> {
     @IsOptional()

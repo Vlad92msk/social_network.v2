@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 import { UserAboutType, UserInfoType } from "../../_interfaces";
-import { PaginationDto } from "@src/dto";
+import { PaginationDto } from "src/shared/dto";
 
 export class UpdateUserDto extends PaginationDto implements Partial<UserInfoType> {
     @IsNotEmpty()
