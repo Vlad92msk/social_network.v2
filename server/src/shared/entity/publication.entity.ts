@@ -54,19 +54,5 @@ export abstract class PublicationEntity {
     @ManyToOne(() => UserInfo)
     @JoinColumn({ name: 'author_id' })
     author: UserInfo
-
-    // @Column({ type: 'int', default: 0, comment: 'Количество просмотров' })
-    count_views: number
-    // @Column({ type: 'int', default: 0, comment: 'Количество репостов' })
-    count_reposts: number
-    date_delivered: Date
-    date_read: Date
-    title: string
-    forward_id: any
-    reactions: any[]
-    voices: any
-    videos: any
-    media: any
-    comments: any
 }
 

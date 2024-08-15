@@ -1,7 +1,6 @@
-import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable } from "typeorm";
 import { PublicationEntity, PublicationType } from "@shared/entity/publication.entity";
 import { MediaEntity } from "@services/media/info/entities/media.entity";
-import { JoinTable } from "typeorm/browser";
 
 @Entity({ name: 'posts', comment: 'Посты, которые пользователи могут публиковать у себя на странице/канале' })
 export class PostEntity extends PublicationEntity {
@@ -59,7 +58,6 @@ export class PostEntity extends PublicationEntity {
     /**
      * Файлы приложенные к посту
      */
-    @Index()
     @ManyToMany(() => MediaEntity, { onDelete: 'CASCADE' })
     @JoinTable({
         name: 'post_media',

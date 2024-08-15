@@ -1,7 +1,6 @@
-import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable } from "typeorm";
 import { PublicationEntity, PublicationType } from "@shared/entity/publication.entity";
 import { MediaEntity } from "@services/media/info/entities/media.entity";
-import { JoinTable } from "typeorm/browser";
 
 @Entity({ name: 'messages', comment: 'Сообщения, которыми пользователи могут обмениваться в диалоге' })
 export class MessageEntity extends PublicationEntity {
@@ -58,7 +57,6 @@ export class MessageEntity extends PublicationEntity {
     /**
      * Файлы приложенные к сообщению
      */
-    @Index()
     @ManyToMany(() => MediaEntity, { onDelete: 'CASCADE' })
     @JoinTable({
         name: 'message_media',

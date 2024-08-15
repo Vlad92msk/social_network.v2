@@ -12,7 +12,7 @@ import { memoryStorage } from "multer";
             storage: memoryStorage()
         }),
         MediaStorageModule,
-        MediaMetadataModule
+        MediaMetadataModule,
     ],
     providers: [MediaInfoService],
     controllers: [MediaInfoController],

@@ -6,6 +6,10 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ProfileModule } from "@src/services/profile/profile/profile.module";
 import { UserModule } from "@src/services/users/user/user.module";
 import { MediaInfoModule } from "@src/services/media/info/media-info.module";
+import { TagModule } from "@services/tags/tags.module";
+import { MessageModule } from "@services/messages/message/message.module";
+import { CommentModule } from "@services/comments/comment/comment.module";
+import { PostModule } from "@services/posts/post/post.module";
 
 @Module({
   imports: [
@@ -20,6 +24,10 @@ import { MediaInfoModule } from "@src/services/media/info/media-info.module";
     ProfileModule,
     UserModule,
     MediaInfoModule,
+    TagModule,
+    MessageModule,
+    CommentModule,
+    PostModule,
   ],
 })
 export class AppModule {

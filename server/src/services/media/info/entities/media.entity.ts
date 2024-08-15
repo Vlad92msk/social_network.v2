@@ -8,12 +8,12 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-    ManyToOne, Index
+    ManyToOne, Index,
+    JoinTable
 } from "typeorm";
 import { MediaItem } from "../interfaces/media-item";
 import { MediaMetadata } from "../../metadata/entities/media-metadata.entity";
 import { UserInfo } from "@src/services/users/user/entities";
-import { JoinTable } from "typeorm/browser";
 import { Tag } from "@src/services/tags/entity";
 import { CommentEntity } from "@services/comments/comment/entities/comment.entity";
 import { MessageEntity } from "@services/messages/message/entity/message.entity";
@@ -50,7 +50,6 @@ export class MediaEntity implements MediaItem {
     /**
      * Автор загруженного файла
      */
-    @Index() // Добавляем индекс для быстрого поиска по владельцу
     @ManyToOne(() => UserInfo)
     @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' })
     owner: UserInfo;
@@ -58,7 +57,6 @@ export class MediaEntity implements MediaItem {
     /**
      * Отмеченные пользователи
      */
-    @Index() // Добавляем индекс для быстрого поиска отмеченных пользователей
     @ManyToMany(() => UserInfo)
     @JoinTable({
         name: 'media_tagged_users',
@@ -81,7 +79,6 @@ export class MediaEntity implements MediaItem {
     /**
      * Комментарии к данному медиа
      */
-    @Index() // Добавляем индекс для быстрого поиска комментариев
     @OneToMany(() => CommentEntity, comment => comment.mediaRef, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
     comments: CommentEntity[];
 
@@ -93,14 +90,12 @@ export class MediaEntity implements MediaItem {
     /**
      * К каким сообщениям добавлен медиа-файл
      */
-    @Index()
     @ManyToMany(() => MessageEntity, message => message.media, { cascade: true, onDelete: 'CASCADE', lazy: true })
     messagesRef: MessageEntity[]
 
     /**
      * Обратная ссылка на сообщение к которому относится данный медиа-файл (аудио сообщение)
      */
-    @Index()
     @ManyToOne(() => MessageEntity, message => message.voices, { cascade: true, onDelete: 'CASCADE', lazy: true })
     @JoinColumn({ name: 'added_voice_id' })
     voicesRef: MessageEntity
@@ -108,7 +103,6 @@ export class MediaEntity implements MediaItem {
     /**
      * Обратная ссылка на сообщение к которому относится данный медиа-файл (видео сообщение)
      */
-    @Index()
     @ManyToOne(() => MessageEntity, message => message.videos, { cascade: true, onDelete: 'CASCADE', lazy: true })
     @JoinColumn({ name: 'added_video_id' })
     videosRef: MessageEntity
