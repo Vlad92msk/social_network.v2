@@ -5,11 +5,13 @@ import { UserInfo } from './entities/user.entity';
 import { GetUsersDto } from "./dto/getUsers.dto";
 import { RequestParams } from "src/shared/decorators";
 import { UpdateUserDto } from "./dto/updateUsers.dto";
-import { ResponseWithPagination } from "src/shared/types";
 import { UserAbout } from "./entities";
 import { CreateUserDto } from "./dto/createUser.dto";
 import { createPaginationResponse, createPaginationQueryOptions } from "@shared/utils";
-import { isEmpty, size } from "lodash";
+import { pick, merge, forIn, omit, pickBy, isEmpty, values } from 'lodash';
+import { MediaInfoService } from "@services/media/info/media-info.service";
+
+type UpdateUserInfo = UpdateUserDto & { profileImage?: Express.Multer.File, bannerImage?: Express.Multer.File }
 
 @Injectable()
 export class UserInfoService {
@@ -18,6 +20,7 @@ export class UserInfoService {
         private userInfoRepository: Repository<UserInfo>,
         @InjectRepository(UserAbout)
         private userAboutRepository: Repository<UserAbout>,
+        private mediaInfoService: MediaInfoService,
     ) {}
 
     /**
@@ -51,7 +54,6 @@ export class UserInfoService {
             createPaginationQueryOptions<UserInfo>({ query, options:{ relations: ['about_info'] }})
         );
 
-
         return createPaginationResponse({ data: users, total, query })
     }
 
@@ -64,28 +66,51 @@ export class UserInfoService {
     /**
      * Обновить информацию о пользователе
      */
-    async updateUserInfo(data: UpdateUserDto, params: RequestParams): Promise<UserInfo> {
+    async updateUserInfo(data: UpdateUserInfo, params: RequestParams): Promise<UserInfo> {
         const findUser = await this.userInfoRepository.findOne({
-            where: { public_id: data.public_id },
+            where: { public_id: String(params.user_info_id) },
             relations: ['about_info'],
         });
 
-        if (!findUser) {
-            throw new Error('User not found');
-        }
+        if (!findUser) throw new Error('Пользователь не найден');
 
-        // Обновляем данные в основной таблице UserInfo
-        findUser.name = data.name || findUser.name;
-        findUser.profile_image = data.profile_image || findUser.profile_image;
+        // Загружаем изображения если они есть
+        const filesToUpload = pickBy(
+            pick(data, ['profileImage', 'bannerImage']),
+            (file) => !isEmpty(file)
+        );
 
-        // Обновляем данные в связанной таблице UserAbout
+        const uploadedFiles = await this.mediaInfoService.uploadFiles(
+            // @ts-ignore
+            values(filesToUpload),
+            String(params.user_info_id)
+        );
+
+        forIn(filesToUpload, (file, key) => {
+            if (key === 'profileImage') {
+                findUser.profile_image = uploadedFiles[0].filePath;
+            } else if (key === 'bannerImage') {
+                findUser.about_info = findUser.about_info || new UserAbout();
+                findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].filePath;
+            }
+        });
+
+        // Обновляем все поля текущей таблицы кроме изображений
+        const updateParams = omit(data, ['profileImage', 'bannerImage', 'about_info']);
+        forIn(updateParams, (value, key) => {
+            if (value !== undefined) {
+                findUser[key] = value
+            }
+        })
+
+        // Обновляем все поля вложенной таблицы
         if (data.about_info) {
             findUser.about_info = findUser.about_info || new UserAbout();
-            findUser.about_info.study = data.about_info.study || findUser.about_info.study;
-            findUser.about_info.working = data.about_info.working || findUser.about_info.working;
-            findUser.about_info.position = data.about_info.position || findUser.about_info.position;
-            findUser.about_info.description = data.about_info.description || findUser.about_info.description;
-            findUser.about_info.banner_image = data.about_info.banner_image || findUser.about_info.banner_image;
+            forIn(data.about_info, (value, key) => {
+                if (value !== undefined) {
+                    findUser['about_info'][key] = value
+                }
+            })
         }
 
         return await this.userInfoRepository.save(findUser);

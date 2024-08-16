@@ -5,9 +5,10 @@ import * as databases from './entities'
 import { UserInfoController } from './user-info.controller';
 import { loadEntities } from "src/shared/utils";
 import { MediaEntity } from "@services/media/info/entities/media.entity";
+import { MediaInfoModule } from "@services/media/info/media-info.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([...loadEntities(databases), MediaEntity])],
+    imports: [TypeOrmModule.forFeature([...loadEntities(databases), MediaEntity]), MediaInfoModule],
     providers: [UserInfoService],
     controllers: [UserInfoController],
     exports: [UserInfoService],

@@ -1,20 +1,17 @@
-import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
-import { UserAboutType, UserInfoType } from "../../_interfaces";
-import { PaginationDto } from "src/shared/dto";
+import { IsNotEmpty, IsOptional, ValidateNested, } from 'class-validator';
+import { Type } from "class-transformer";
+import { IntersectionType, PartialType, PickType } from "@nestjs/mapped-types";
+import { UserInfo } from "../entities";
+import { UpdateUserAboutDto } from "./update-user-about.dto";
 
-export class UpdateUserDto extends PaginationDto implements Partial<UserInfoType> {
-    @IsNotEmpty()
-    public_id: string
-
-    @IsString()
-    @IsOptional()
-    name: string
-
-    @IsString()
-    @IsOptional()
-    profile_image: string
+export class UpdateUserDto extends IntersectionType(
+    PickType(PartialType(UserInfo, { skipNullProperties: true }), ['name', 'public_id']),
+) {
+    // @IsNotEmpty()
+    // public_id: string
 
     @IsOptional()
-    @IsObject()
-    about_info: UserAboutType
+    @ValidateNested()
+    @Type(() => UpdateUserAboutDto)
+    about_info?: UpdateUserAboutDto;
 }

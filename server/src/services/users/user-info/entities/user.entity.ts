@@ -8,7 +8,7 @@ import {
     ManyToMany,
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { UserAbout } from "./userAbout.entity";
+import { UserAbout } from "./user-about.entity";
 import { UserAboutType, UserInfoType } from "../../_interfaces";
 import { MediaEntity } from "@src/services/media/info/entities/media.entity";
 import { MediaItem } from "@src/services/media/info/interfaces/media-item";

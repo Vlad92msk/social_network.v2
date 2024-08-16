@@ -6,6 +6,7 @@ import * as path from 'path';
 import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "src/shared/decorators";
 import { createPaginationQueryOptions, createPaginationResponse } from "src/shared/utils";
+import { MediaMetadata } from "@services/media/metadata/entities/media-metadata.entity";
 
 @Injectable()
 export class MediaInfoService {
@@ -19,7 +20,7 @@ export class MediaInfoService {
      * Загружает файлы
      */
     async uploadFiles(files: Express.Multer.File[], userId: string) {
-        const uploadedFiles = [];
+        const uploadedFiles: { metadata: MediaMetadata, filePath: string }[] = [];
 
         for (const file of files) {
             const fileType = this.storageService.getFileType(file.mimetype);
@@ -71,17 +72,21 @@ export class MediaInfoService {
     }
 
     /**
+     * Получить статическую ссылку на файл
+     */
+    // async getFileStaticURL(id: string, requestParams?: RequestParams) {
+    //     const findMetadata = await this.metadataService.findOne(id);
+    //
+    //     // Получаем статические ссылки
+    //     const urlParts = new URL(findMetadata.src);
+    //     const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+    //     return this.storageService.getFileUrl(relativePath)
+    // }
+
+    /**
      * Получить ссылки на файлы
      */
     async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
-
-        // Получаем метаданные файлов
-        // const { data: foundFiles, total } = await this.metadataService.findAll({
-        //         file_ids: query.file_ids,
-        //         per_page: query.per_page,
-        //         page: query.page,
-        //     });
-
         const { data: foundFiles, total } = await this.metadataService.findAll(createPaginationQueryOptions({ query }));
 
         // Получаем статические ссылки
