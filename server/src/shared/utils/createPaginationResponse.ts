@@ -1,27 +1,33 @@
 import { defaultTo } from "lodash";
 import { PaginationInfo } from "./createPaginationHeaders";
 
-export interface PaginationResponse<Data> extends PaginationInfo {
+export interface PaginationResponse<Data> {
     data: Data
+    paginationInfo: PaginationInfo
 }
-interface PaginationResponsePayload<Data> extends Pick<PaginationInfo, 'per_page' | 'total' | 'page'> {
+
+interface PaginationResponsePayload<Data> {
     data: Data
+    total: number
+    query: Record<string, any>
 }
 
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PER_PAGE = 50;
 
-export const createPaginationResponse = <Data>(paginationInfo: PaginationResponsePayload<Data>): PaginationResponse<Data> => {
-    const total = defaultTo(paginationInfo.total, 0);
-    const page = defaultTo(paginationInfo.page, DEFAULT_PAGE);
-    const per_page = defaultTo(paginationInfo.per_page, DEFAULT_PER_PAGE);
-    const pages = Math.max(1, Math.ceil(total / per_page));
+export const createPaginationResponse = <Data>(props: PaginationResponsePayload<Data>): PaginationResponse<Data> => {
+    const { data, total = 0, query } = props
+    const page: number = defaultTo(query.page, DEFAULT_PAGE);
+    const per_page: number = defaultTo(query.per_page, DEFAULT_PER_PAGE);
+    const pages: number = Math.max(1, Math.ceil(total / per_page));
 
     return {
-        data: paginationInfo.data,
-        total,
-        page,
-        per_page,
-        pages,
+        data,
+        paginationInfo: {
+            total,
+            page,
+            per_page,
+            pages,
+        }
     };
 };

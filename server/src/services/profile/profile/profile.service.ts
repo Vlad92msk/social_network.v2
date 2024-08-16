@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfileInfo } from './entities/profileInfo.entity';
 import { Settings } from "@src/services/profile/profile/entities";
-import { UserService } from "@src/services/users/user/user.service";
+import { UserInfoService } from "@services/users/user-info/user-info.service";
 
 @Injectable()
 export class ProfileService {
@@ -14,7 +14,7 @@ export class ProfileService {
         @InjectRepository(Settings)
         private userSettingsRepository: Repository<Settings>,
 
-        private userService: UserService
+        private userService: UserInfoService
     ) {}
 
     async getProfiles(): Promise<UserProfileInfo[]> {

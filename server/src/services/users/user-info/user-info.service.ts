@@ -8,9 +8,11 @@ import { UpdateUserDto } from "./dto/updateUsers.dto";
 import { ResponseWithPagination } from "src/shared/types";
 import { UserAbout } from "./entities";
 import { CreateUserDto } from "./dto/createUser.dto";
+import { createPaginationResponse, createPaginationQueryOptions } from "@shared/utils";
+import { isEmpty, size } from "lodash";
 
 @Injectable()
-export class UserService {
+export class UserInfoService {
     constructor(
         @InjectRepository(UserInfo)
         private userInfoRepository: Repository<UserInfo>,
@@ -43,26 +45,17 @@ export class UserService {
     /**
      * Получить всех пользователей
      */
-    async getUsers(query: GetUsersDto, params: RequestParams): Promise<ResponseWithPagination<UserInfo[]>> {
+    async getUsers(query: GetUsersDto, params: RequestParams) {
         const { user_info_id, profile_id } = params;
-        const { page = 1, per_page = 10, sort_by, sort_direction, ...searchParams } = query;
-        const [users, total] = await this.userInfoRepository.findAndCount({
-            where: searchParams,
-            skip: (page - 1) * per_page,
-            take: per_page,
-            order: { [sort_by]: sort_direction },
-        });
+        const [users, total] = await this.userInfoRepository.findAndCount(
+            createPaginationQueryOptions<UserInfo>({ query, options:{ relations: ['about_info'] }})
+        );
 
-        return {
-            data: users,
-            per_page,
-            count_elements: total,
-            pages: Math.ceil(total / per_page),
-            current_page: page,
-        };
+
+        return createPaginationResponse({ data: users, total, query })
     }
 
-    async getUsersById(public_id: string): Promise<UserInfo> {
+    async getUsersById(public_id: string) {
         const user = await this.userInfoRepository.findOne({ where: { public_id } });
 
         return user;

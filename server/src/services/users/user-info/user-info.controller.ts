@@ -1,14 +1,15 @@
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe, Res, Put, Body } from '@nestjs/common';
-import { UserService } from './user.service';
+import { UserInfoService } from './user-info.service';
 import { RequestParams } from "src/shared/decorators";
 import { UserInfoType } from "@src/services/users/_interfaces";
 import { GetUsersDto } from "./dto/getUsers.dto";
 import { UpdateUserDto } from "./dto/updateUsers.dto";
 import { Response } from "express";
+import { createPaginationHeaders } from "@shared/utils";
 
-@Controller('api/users')
-export class UserController {
-    constructor(private readonly userService: UserService) {}
+@Controller('api/users/user-info')
+export class UserInfoController {
+    constructor(private readonly userService: UserInfoService) {}
 
     @Get()
     @UsePipes(new ValidationPipe())
@@ -17,14 +18,9 @@ export class UserController {
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ): Promise<UserInfoType[]> {
-        const { data, pages, per_page, current_page, count_elements } = await this.userService.getUsers(query, params)
+        const { data, paginationInfo } = await this.userService.getUsers(query, params)
 
-        response.set({
-            'X-Total-Count': count_elements,
-            'X-Total-Pages': pages,
-            'X-Current-Page': current_page,
-            'X-Per-Page': per_page,
-        });
+        response.set(createPaginationHeaders(paginationInfo));
         return data;
     }
 

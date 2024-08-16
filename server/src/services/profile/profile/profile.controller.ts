@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UsePipes, ValidationPipe, Res, Delete, Get } from '@nestjs/common';
+import { Controller, Post, Body, UsePipes, ValidationPipe, Res, Delete, Get, Put } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UserProfileInfo } from './entities/profileInfo.entity';
 import { CreateProfileDto } from "./dto/createProfile.dto";

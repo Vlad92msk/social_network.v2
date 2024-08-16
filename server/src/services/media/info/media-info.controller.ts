@@ -96,7 +96,7 @@ export class MediaInfoController {
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
-        const { data, ...paginationInfo } = await this.mediaInfoService.getFiles(query, params);
+        const { data, paginationInfo } = await this.mediaInfoService.getFiles(query, params);
 
         response.set(createPaginationHeaders(paginationInfo));
         return data;

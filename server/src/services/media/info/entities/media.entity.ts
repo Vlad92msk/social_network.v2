@@ -13,7 +13,7 @@ import {
 } from "typeorm";
 import { MediaItem } from "../interfaces/media-item";
 import { MediaMetadata } from "../../metadata/entities/media-metadata.entity";
-import { UserInfo } from "@src/services/users/user/entities";
+import { UserInfo } from "@services/users/user-info/entities";
 import { Tag } from "@src/services/tags/entity";
 import { CommentEntity } from "@services/comments/comment/entities/comment.entity";
 import { MessageEntity } from "@services/messages/message/entity/message.entity";

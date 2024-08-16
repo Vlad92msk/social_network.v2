@@ -12,9 +12,11 @@ import * as cookieParser from 'cookie-parser'
 import { ConfigEnum } from '@config/config.enum'
 import { AppModule } from '@src/services/app.module'
 import { NestExpressApplication } from "@nestjs/platform-express";
+import { ValidationPipe } from "@nestjs/common";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.use(cookieParser())
   app.enableCors()
 

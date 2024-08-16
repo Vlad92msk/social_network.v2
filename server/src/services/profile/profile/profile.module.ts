@@ -4,10 +4,10 @@ import { ProfileService } from './profile.service';
 import { ProfileController } from './profile.controller';
 import * as databases from './entities'
 import { loadEntities } from "src/shared/utils";
-import { UserModule } from "@src/services/users/user/user.module";
+import { UserInfoModule } from "@services/users/user-info/user-info.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([...loadEntities(databases)]), UserModule],
+    imports: [TypeOrmModule.forFeature([...loadEntities(databases)]), UserInfoModule],
     providers: [ProfileService],
     controllers: [ProfileController],
 })

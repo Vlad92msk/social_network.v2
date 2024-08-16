@@ -5,7 +5,7 @@ import { MediaItemType } from "../metadata/interfaces/mediaItemType";
 import * as path from 'path';
 import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "src/shared/decorators";
-import { createPaginationResponse } from "src/shared/utils";
+import { createPaginationQueryOptions, createPaginationResponse } from "src/shared/utils";
 
 @Injectable()
 export class MediaInfoService {
@@ -76,11 +76,13 @@ export class MediaInfoService {
     async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
 
         // Получаем метаданные файлов
-        const { data: foundFiles, total } = await this.metadataService.findAll({
-                file_ids: query.file_ids,
-                per_page: query.per_page,
-                page: query.page,
-            });
+        // const { data: foundFiles, total } = await this.metadataService.findAll({
+        //         file_ids: query.file_ids,
+        //         per_page: query.per_page,
+        //         page: query.page,
+        //     });
+
+        const { data: foundFiles, total } = await this.metadataService.findAll(createPaginationQueryOptions({ query }));
 
         // Получаем статические ссылки
         const filesWithContent = foundFiles.map((metadata) => {
@@ -93,12 +95,7 @@ export class MediaInfoService {
         });
 
         // Отдаем ответ с пагинацией
-        return createPaginationResponse({
-            data: filesWithContent,
-            total,
-            page: query?.page,
-            per_page: query?.per_page,
-        })
+        return createPaginationResponse({ data: filesWithContent, total, query })
     }
 
     async deleteFile(id: string) {

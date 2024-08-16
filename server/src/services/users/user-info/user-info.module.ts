@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserService } from './user.service';
+import { UserInfoService } from './user-info.service';
 import * as databases from './entities'
-import { UserController } from './user.controller';
+import { UserInfoController } from './user-info.controller';
 import { loadEntities } from "src/shared/utils";
 import { MediaEntity } from "@services/media/info/entities/media.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([...loadEntities(databases), MediaEntity])],
-    providers: [UserService],
-    controllers: [UserController],
-    exports: [UserService],
+    providers: [UserInfoService],
+    controllers: [UserInfoController],
+    exports: [UserInfoService],
 })
-export class UserModule {}
+export class UserInfoModule {}

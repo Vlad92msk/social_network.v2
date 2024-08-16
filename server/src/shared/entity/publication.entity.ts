@@ -7,7 +7,7 @@ import {
     ManyToOne,
     JoinColumn
 } from "typeorm";
-import { UserInfo } from "@services/users/user/entities";
+import { UserInfo } from "@services/users/user-info/entities";
 import { MediaItem } from "@services/media/info/interfaces/media-item";
 
 export enum PublicationType {
