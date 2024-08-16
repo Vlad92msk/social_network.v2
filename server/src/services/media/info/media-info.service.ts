@@ -24,7 +24,7 @@ export class MediaInfoService {
 
         for (const file of files) {
             const fileType = this.storageService.getFileType(file.mimetype);
-            let fileName = `${Date.now()}-${file.originalname}`;
+            let fileName = `${Date.now()}-${file.originalname}`.replace(' ', '_').toLowerCase().trim();
 
             const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType);
             const fileUrl = this.storageService.getFileUrl(filePath);

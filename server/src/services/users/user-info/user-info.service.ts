@@ -8,7 +8,7 @@ import { UpdateUserDto } from "./dto/updateUsers.dto";
 import { UserAbout } from "./entities";
 import { CreateUserDto } from "./dto/createUser.dto";
 import { createPaginationResponse, createPaginationQueryOptions } from "@shared/utils";
-import { pick, merge, forIn, omit, pickBy, isEmpty, values } from 'lodash';
+import { pick, forIn, omit, pickBy, isEmpty, values } from 'lodash';
 import { MediaInfoService } from "@services/media/info/media-info.service";
 
 type UpdateUserInfo = UpdateUserDto & { profileImage?: Express.Multer.File, bannerImage?: Express.Multer.File }

@@ -24,7 +24,7 @@ export class UserInfo implements UserInfoType {
     @Column({ nullable: false, type: 'varchar', length: 70, comment: 'Имя' })
     name: string
 
-    @Column({ nullable: true, type: 'varchar', length: 100, comment: 'Фото профиля' })
+    @Column({ nullable: true, type: 'varchar', length: 200, comment: 'Фото профиля' })
     profile_image: string
 
 

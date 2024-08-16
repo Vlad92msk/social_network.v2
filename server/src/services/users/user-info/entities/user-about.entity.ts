@@ -18,6 +18,6 @@ export class UserAbout implements UserAboutType {
     @Column({ type: 'text', nullable: true, comment: 'Описание'})
     description: string
 
-    @Column({ type: 'varchar', length: 100, nullable: true, comment: 'Фото баннера'})
+    @Column({ type: 'varchar', length: 200, nullable: true, comment: 'Фото баннера'})
     banner_image: string
 }
