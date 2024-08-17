@@ -57,7 +57,7 @@ export class MessageEntity extends PublicationEntity {
     /**
      * Файлы приложенные к сообщению
      */
-    @ManyToMany(() => MediaEntity, { onDelete: 'CASCADE' })
+    @ManyToMany(() => MediaEntity, (media) => media.messagesRef, { onDelete: 'CASCADE' })
     @JoinTable({
         name: 'message_media',
         joinColumn: { name: 'message_id', referencedColumnName: 'id' },

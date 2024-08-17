@@ -10,10 +10,10 @@ export class GetMediaMetadataDto extends IntersectionType(
 ) {
     @IsOptional()
     @IsString()
-    @IsIn(['name', 'type', 'user_id', 'lastModified', 'size'])
-    sort_by?: 'name' | 'type' | 'user_id' | 'lastModified' | 'size';
+    @IsIn(['name', 'type', 'lastModified', 'size'])
+    sort_by?: 'name' | 'type' | 'lastModified' | 'size'
 
     @IsOptional()
     @IsString({ each: true })
-    file_ids?: string[];
+    file_ids?: string[]
 }

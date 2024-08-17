@@ -24,5 +24,5 @@ export function createPaginationQueryOptions<Entity>(props: CreatePaginationQuer
         queryOptions.order = { [sort_by]: sort_direction };
     }
 
-    return assign(query, options);
+    return assign(queryOptions, options);
 }

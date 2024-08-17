@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserInfo } from './entities/user.entity';
@@ -20,6 +20,7 @@ export class UserInfoService {
         private userInfoRepository: Repository<UserInfo>,
         @InjectRepository(UserAbout)
         private userAboutRepository: Repository<UserAbout>,
+        @Inject(forwardRef(() => MediaInfoService))
         private mediaInfoService: MediaInfoService,
     ) {}
 
@@ -88,10 +89,10 @@ export class UserInfoService {
 
         forIn(filesToUpload, (file, key) => {
             if (key === 'profileImage') {
-                findUser.profile_image = uploadedFiles[0].filePath;
+                findUser.profile_image = uploadedFiles[0].meta.src;
             } else if (key === 'bannerImage') {
                 findUser.about_info = findUser.about_info || new UserAbout();
-                findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].filePath;
+                findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].meta.src;
             }
         });
 

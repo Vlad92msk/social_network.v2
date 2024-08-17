@@ -19,10 +19,4 @@ export class CreateMediaMetadataDto {
 
     @IsEnum(MediaItemType)
     type: MediaItemType;
-
-    @IsString()
-    user_id: string;
-
-    // @IsDate()
-    // date_upload: Date;
 }

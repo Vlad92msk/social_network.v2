@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { MetadataService } from "../metadata/media-metadata.service";
 import { AbstractStorageService } from "../storage/abstract-storage.service";
 import { MediaItemType } from "../metadata/interfaces/mediaItemType";
@@ -6,7 +6,10 @@ import * as path from 'path';
 import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "src/shared/decorators";
 import { createPaginationQueryOptions, createPaginationResponse } from "src/shared/utils";
-import { MediaMetadata } from "@services/media/metadata/entities/media-metadata.entity";
+import { MediaEntity } from "@services/media/info/entities/media.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { UserInfoService } from "@services/users/user-info/user-info.service";
 
 @Injectable()
 export class MediaInfoService {
@@ -14,13 +17,19 @@ export class MediaInfoService {
     constructor(
         private readonly storageService: AbstractStorageService,
         private readonly metadataService: MetadataService,
+        @Inject(forwardRef(() => UserInfoService))
+        private readonly userService: UserInfoService,
+        @InjectRepository(MediaEntity)
+        private mediaInfoRepository: Repository<MediaEntity>,
     ) {}
 
     /**
      * Загружает файлы
      */
     async uploadFiles(files: Express.Multer.File[], userId: string) {
-        const uploadedFiles: { metadata: MediaMetadata, filePath: string }[] = [];
+        const uploadedFiles: MediaEntity[] = [];
+
+        const user = await this.userService.getUsersById(userId)
 
         for (const file of files) {
             const fileType = this.storageService.getFileType(file.mimetype);
@@ -42,10 +51,15 @@ export class MediaInfoService {
                 size: file.size,
                 lastModified: new Date(),
                 type: fileType,
-                user_id: userId,
             });
 
-            uploadedFiles.push({ metadata, filePath: fileUrl });
+            const media = this.mediaInfoRepository.create({
+                meta: metadata,
+                owner: user,
+            });
+
+            const savedMedia = await this.mediaInfoRepository.save(media);
+            uploadedFiles.push(savedMedia);
         }
 
         return uploadedFiles;

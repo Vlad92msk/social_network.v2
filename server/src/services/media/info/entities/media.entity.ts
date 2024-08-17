@@ -68,7 +68,7 @@ export class MediaEntity implements MediaItem {
     /**
      * Тэги
      */
-    @ManyToMany(() => Tag)
+    @ManyToMany(() => Tag, (tag) => tag.media, { cascade: true })
     @JoinTable({
         name: 'media_tags',
         joinColumn: { name: 'media_id', referencedColumnName: 'id' },

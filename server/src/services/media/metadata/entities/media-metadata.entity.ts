@@ -27,8 +27,6 @@ export class MediaMetadata {
     })
     type: MediaItemType;
 
-    @Column()
-    user_id: string;
 
     @CreateDateColumn()
     date_upload: Date;

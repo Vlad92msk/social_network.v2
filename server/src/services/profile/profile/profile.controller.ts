@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UsePipes, ValidationPipe, Res, Delete, Get, Put } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UserProfileInfo } from './entities/profileInfo.entity';
-import { CreateProfileDto } from "./dto/createProfile.dto";
+import { CreateProfileDto } from "./dto/create-profile.dto";
 import { Response } from "express";
 import { RequestParams } from "src/shared/decorators";
 
