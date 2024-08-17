@@ -42,7 +42,7 @@ export class TagsService {
         const queryOptions = createPaginationQueryOptions({ query })
 
         /**
-         * FIXME: пока не разобрался как работает
+         * TODO: пока не разобрался как работает
          * и скорей всего нужно отдельный метод делать для этого
          */
         // Если нужно использовать LIKE для поиска по name или value

@@ -7,7 +7,9 @@ import { MediaInfoController } from './media-info.controller';
 import { memoryStorage } from "multer";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserInfoModule } from "@services/users/user-info/user-info.module";
-import { MediaEntity } from "./entities/media.entity"; // Import the UserInfoModule
+import { MediaEntity } from "./entities/media.entity";
+import { TagModule } from "@services/tags/tags.module";
+import { MediaTagsController } from "./media-tags.controller"; // Import the UserInfoModule
 
 @Module({
     imports: [
@@ -18,9 +20,10 @@ import { MediaEntity } from "./entities/media.entity"; // Import the UserInfoMod
         MediaMetadataModule,
         TypeOrmModule.forFeature([MediaEntity]),
         forwardRef(() => UserInfoModule),
+        forwardRef(() => TagModule),
     ],
     providers: [MediaInfoService],
-    controllers: [MediaInfoController],
+    controllers: [MediaInfoController, MediaTagsController],
     exports: [MediaInfoService, TypeOrmModule],
 })
 export class MediaInfoModule {}
