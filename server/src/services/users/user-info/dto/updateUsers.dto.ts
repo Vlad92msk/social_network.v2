@@ -1,4 +1,4 @@
-import { IsOptional, ValidateNested, } from 'class-validator';
+import { IsOptional, IsString, ValidateNested, } from 'class-validator';
 import { Type } from "class-transformer";
 import { IntersectionType, PartialType, PickType } from "@nestjs/mapped-types";
 import { UserInfo } from "../entities";
@@ -13,5 +13,13 @@ export class UpdateUserDto extends IntersectionType(
     @ValidateNested()
     @Type(() => UpdateUserAboutDto)
     @TransformToObject()
-    about_info?: UpdateUserAboutDto;
+    about_info?: UpdateUserAboutDto
+
+    @IsOptional()
+    @IsString()
+    profile_image_id: string
+
+    @IsOptional()
+    @IsString()
+    banner_image_id: string
 }

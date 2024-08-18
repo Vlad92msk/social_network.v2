@@ -5,7 +5,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  */
 export interface RequestParams {
     profile_id: number
-    user_info_id: string | number
+    user_info_id: number
 }
 
 export const RequestParams = createParamDecorator(
@@ -13,7 +13,7 @@ export const RequestParams = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         return {
             profile_id: Number(request.cookies['profile_id']),
-            user_info_id: request.cookies['user_info_id'],
+            user_info_id: Number(request.cookies['user_info_id']),
         };
     },
 );

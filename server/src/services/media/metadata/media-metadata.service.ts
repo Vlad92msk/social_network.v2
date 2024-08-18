@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateMediaMetadataDto } from "./dto/create-media-metadata.dto";
 import { UpdateMediaMetadataDto } from "./dto/update-media-metadata.dto";
 import { MediaMetadata } from "./entities/media-metadata.entity";
 import { GetMediaMetadataDto } from "./dto/get-media-metadata.dto";
 import { validate as uuidValidate } from 'uuid';
+import { createPaginationQueryOptions } from "@shared/utils";
 
 @Injectable()
 export class MetadataService {
@@ -20,10 +21,9 @@ export class MetadataService {
     }
 
     async findAll(query: GetMediaMetadataDto): Promise<{ data: MediaMetadata[]; total: number }> {
-        const { page = 1, per_page = 10, sort_by = 'name', sort_direction = 'ASC', file_ids, ...searchParams } = query;
+    const { file_ids, ...restQuery } = query
 
-        const where: FindOptionsWhere<MediaMetadata> = { ...searchParams };
-
+        let ids
         if (file_ids?.length) {
             let idsArray: string[];
             if (typeof file_ids === 'string') {
@@ -40,15 +40,12 @@ export class MetadataService {
                 throw new BadRequestException('Нет ни одного валидного значения в file_ids');
             }
 
-            where.id = In(validIds);
+            ids = In(validIds)
         }
 
-        const [data, total] = await this.metadataRepository.findAndCount({
-            where,
-            skip: (page - 1) * per_page,
-            take: per_page,
-            order: { [sort_by]: sort_direction },
-        });
+        const [data, total] = await this.metadataRepository.findAndCount(
+            createPaginationQueryOptions<MediaMetadata>({ query: { ...restQuery, id: ids } })
+        )
 
         return { data, total };
     }
@@ -66,7 +63,7 @@ export class MetadataService {
         await this.metadataRepository.delete(id);
     }
 
-    async getUserStorageUsage(userId: string): Promise<number> {
+    async getUserStorageUsage(userId: number): Promise<number> {
         const result = await this.metadataRepository
             .createQueryBuilder('metadata')
             .select('SUM(metadata.size)', 'totalSize')

@@ -9,7 +9,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserInfoModule } from "@services/users/user-info/user-info.module";
 import { MediaEntity } from "./entities/media.entity";
 import { TagModule } from "@services/tags/tags.module";
-import { MediaTagsController } from "./media-tags.controller"; // Import the UserInfoModule
+import { MediaTagsController } from "./media-tags.controller";
+import { MediaTagService } from "./media-tag.service"; // Import the UserInfoModule
 
 @Module({
     imports: [
@@ -22,7 +23,7 @@ import { MediaTagsController } from "./media-tags.controller"; // Import the Use
         forwardRef(() => UserInfoModule),
         forwardRef(() => TagModule),
     ],
-    providers: [MediaInfoService],
+    providers: [MediaInfoService, MediaTagService],
     controllers: [MediaInfoController, MediaTagsController],
     exports: [MediaInfoService, TypeOrmModule],
 })

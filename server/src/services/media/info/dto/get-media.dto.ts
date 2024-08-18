@@ -1,6 +1,7 @@
-import { IsArray } from 'class-validator';
+import { IsArray, IsOptional } from 'class-validator';
 import { PaginationAndSortingDto } from "src/shared/dto";
-import { IntersectionType,  } from "@nestjs/mapped-types";
+import { IntersectionType, } from "@nestjs/mapped-types";
+import { TransformToArray } from "@shared/decorators";
 
 
 export class GetMediaDto extends IntersectionType(
@@ -11,6 +12,8 @@ export class GetMediaDto extends IntersectionType(
     // @IsIn(['name', 'type', 'user_id', 'lastModified', 'size'])
     // sort_by?: 'name' | 'type' | 'user_id' | 'lastModified' | 'size';
 
+    @IsOptional()
     @IsArray()
-    file_ids: string[];
+    @TransformToArray()
+    file_ids: string[]
 }

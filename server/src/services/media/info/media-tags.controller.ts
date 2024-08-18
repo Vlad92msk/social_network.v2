@@ -1,9 +1,9 @@
 import { Controller, Post, Delete, Get, Param, Body } from '@nestjs/common';
-import { MediaInfoService } from './media-info.service';
+import { MediaTagService } from "@services/media/info/media-tag.service";
 
 @Controller('api/media/tags')
 export class MediaTagsController {
-    constructor(private readonly mediaInfoService: MediaInfoService) {}
+    constructor(private readonly mediaInfoService: MediaTagService) {}
 
     /**
      * Добавить теги к медиа

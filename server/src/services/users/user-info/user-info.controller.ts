@@ -41,9 +41,9 @@ export class UserInfoController {
     /**
      * Получить одного user-info по его public_id
      */
-    @Get(':public_id')
+    @Get(':user_id')
     async getUserById(
-        @Param('public_id') id: string,
+        @Param('user_id') id: number,
         @RequestParams() params: RequestParams,
     ): Promise<UserInfoType> {
         console.log("Запрашиваем пользователя", id);

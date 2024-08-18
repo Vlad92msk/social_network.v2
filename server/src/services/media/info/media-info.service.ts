@@ -3,14 +3,14 @@ import { MetadataService } from "../metadata/media-metadata.service";
 import { AbstractStorageService } from "../storage/abstract-storage.service";
 import { MediaItemType } from "../metadata/interfaces/mediaItemType";
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "src/shared/decorators";
 import { createPaginationQueryOptions, createPaginationResponse } from "src/shared/utils";
-import { MediaEntity } from "@services/media/info/entities/media.entity";
+import { MediaEntity } from "./entities/media.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UserInfoService } from "@services/users/user-info/user-info.service";
-import { TagsService } from "@services/tags/tags.service";
 
 @Injectable()
 export class MediaInfoService {
@@ -18,26 +18,38 @@ export class MediaInfoService {
     constructor(
         private readonly storageService: AbstractStorageService,
         private readonly metadataService: MetadataService,
+
         @Inject(forwardRef(() => UserInfoService))
         private readonly userService: UserInfoService,
+
         @InjectRepository(MediaEntity)
         private mediaInfoRepository: Repository<MediaEntity>,
-
-        @Inject(forwardRef(() => TagsService))
-        private readonly tagsService: TagsService,
     ) {}
 
     /**
      * Загружает файлы
      */
-    async uploadFiles(files: Express.Multer.File[], userId: string) {
+    async uploadFiles(files: Express.Multer.File[], userId: number) {
         const uploadedFiles: MediaEntity[] = [];
 
         const user = await this.userService.getUsersById(userId)
 
+
         for (const file of files) {
+            let originalName = file.originalname;
+
+            // Регулярное выражение для проверки на допустимые символы (латинские буквы, цифры, дефис, подчеркивание)
+            const isValidName = /^[a-zA-Z0-9-_]+$/.test(originalName);
+
+            if (!isValidName) {
+                // Если имя файла содержит недопустимые символы, генерируем рандомное имя
+                const randomName = crypto.randomBytes(8).toString('hex');
+                const fileExtension = originalName.split('.').pop(); // Получаем расширение файла
+                originalName = `${randomName}.${fileExtension}`;
+            }
+
             const fileType = this.storageService.getFileType(file.mimetype);
-            let fileName = `${Date.now()}-${file.originalname}`.replace(' ', '_').toLowerCase().trim();
+            let fileName = `${Date.now()}-${originalName}`.replace(' ', '_').toLowerCase().trim();
 
             const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType);
             const fileUrl = this.storageService.getFileUrl(filePath);
@@ -55,6 +67,7 @@ export class MediaInfoService {
                 size: file.size,
                 lastModified: new Date(),
                 type: fileType,
+                user_id: userId,
             });
 
             const media = this.mediaInfoRepository.create({
@@ -90,22 +103,25 @@ export class MediaInfoService {
     }
 
     /**
-     * Получить статическую ссылку на файл
+     * Получить 1 файл
      */
-    // async getFileStaticURL(id: string, requestParams?: RequestParams) {
-    //     const findMetadata = await this.metadataService.findOne(id);
-    //
-    //     // Получаем статические ссылки
-    //     const urlParts = new URL(findMetadata.src);
-    //     const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
-    //     return this.storageService.getFileUrl(relativePath)
-    // }
+    async getFileById(id: string, requestParams?: RequestParams) {
+        const findMetadata = await this.metadataService.findOne(id);
+
+        // Получаем статические ссылки
+        const urlParts = new URL(findMetadata.src);
+        const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+        return ({
+            metadata: findMetadata,
+            url: this.storageService.getFileUrl(relativePath)
+        })
+    }
 
     /**
      * Получить ссылки на файлы
      */
     async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
-        const { data: foundFiles, total } = await this.metadataService.findAll(createPaginationQueryOptions({ query }));
+        const { data: foundFiles, total } = await this.metadataService.findAll(query)
 
         // Получаем статические ссылки
         const filesWithContent = foundFiles.map((metadata) => {
@@ -142,7 +158,7 @@ export class MediaInfoService {
     /**
      * Проверяет сколько места доступно для загрузки файлов для конкретного пользователя
      */
-    async checkStorageLimit(userId: string, files: Express.Multer.File[], maxStorage: number): Promise<void> {
+    async checkStorageLimit(userId: number, files: Express.Multer.File[], maxStorage: number): Promise<void> {
         const currentUsage = await this.metadataService.getUserStorageUsage(userId)
         const totalUploadSize = files.reduce((sum, file) => sum + file.size, 0)
 
@@ -153,66 +169,5 @@ export class MediaInfoService {
         } else {
             console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`);
         }
-    }
-
-
-    //_____________________
-    // РАБОТА С ТЕГАМИ
-
-
-    /**
-     * Добавляет теги к медиафайлу
-     */
-    async addTagsToMedia(mediaId: string, tagIds: string[]) {
-        const media = await this.mediaInfoRepository.findOne({
-            where: { id: mediaId },
-            relations: ['tags']
-        });
-
-        if (!media) {
-            throw new NotFoundException(`Медиа с ID "${mediaId}" не найден`)
-        }
-
-        const tags = await this.tagsService.findTagsByIds(tagIds)
-
-        if (tags.length !== tagIds.length) {
-            throw new BadRequestException('One or more tags not found')
-        }
-
-        media.tags = [...media.tags, ...tags];
-        return this.mediaInfoRepository.save(media)
-    }
-
-    /**
-     * Удаляет теги с медиафайла
-     */
-    async removeTagsFromMedia(mediaId: string, tagIds: string[]) {
-        const media = await this.mediaInfoRepository.findOne({
-            where: { id: mediaId },
-            relations: ['tags']
-        });
-
-        if (!media) {
-            throw new NotFoundException(`Медиа с ID "${mediaId}" не найден`)
-        }
-
-        media.tags = media.tags.filter(tag => !tagIds.includes(tag.id))
-        return this.mediaInfoRepository.save(media)
-    }
-
-    /**
-     * Получает все теги для медиафайла
-     */
-    async getMediaTags(mediaId: string) {
-        const media = await this.mediaInfoRepository.findOne({
-            where: { id: mediaId },
-            relations: ['tags'],
-        });
-
-        if (!media) {
-            throw new NotFoundException(`Медиа с ID "${mediaId}" не найден`)
-        }
-
-        return media.tags
     }
 }

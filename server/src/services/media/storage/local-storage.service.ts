@@ -7,7 +7,6 @@ import { MediaItemType } from "../metadata/interfaces/mediaItemType";
 import { ConfigService } from "@nestjs/config";
 import { ConfigEnum } from "@config/config.enum";
 import { AbstractStorageService } from "./abstract-storage.service";
-import * as timers from "node:timers";
 
 @Injectable()
 export class LocalStorageService extends AbstractStorageService {
@@ -22,7 +21,7 @@ export class LocalStorageService extends AbstractStorageService {
         this.port = this.configService.get(`${ConfigEnum.MAIN}.port`);
     }
 
-    async uploadFile(file: Buffer, fileName: string, userId: string, fileType: MediaItemType): Promise<string> {
+    async uploadFile(file: Buffer, fileName: string, userId: number, fileType: MediaItemType) {
         const filePath = path.join(this.uploadDir, fileType, `user_id_${userId}`);
         const fullFilePath = path.join(filePath, fileName);
 

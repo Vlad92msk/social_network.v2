@@ -8,7 +8,7 @@ import { UpdateUserDto } from "./dto/updateUsers.dto";
 import { UserAbout } from "./entities";
 import { CreateUserDto } from "./dto/createUser.dto";
 import { createPaginationResponse, createPaginationQueryOptions } from "@shared/utils";
-import { pick, forIn, omit, pickBy, isEmpty, values } from 'lodash';
+import { pick, forIn, omit, pickBy, isEmpty, values, size } from 'lodash';
 import { MediaInfoService } from "@services/media/info/media-info.service";
 
 type UpdateUserInfo = UpdateUserDto & { profileImage?: Express.Multer.File, bannerImage?: Express.Multer.File }
@@ -58,8 +58,8 @@ export class UserInfoService {
         return createPaginationResponse({ data: users, total, query })
     }
 
-    async getUsersById(public_id: string) {
-        const user = await this.userInfoRepository.findOne({ where: { public_id } });
+    async getUsersById(id: number) {
+        const user = await this.userInfoRepository.findOne({ where: { id } });
 
         return user;
     }
@@ -69,40 +69,57 @@ export class UserInfoService {
      */
     async updateUserInfo(data: UpdateUserInfo, params: RequestParams): Promise<UserInfo> {
         const findUser = await this.userInfoRepository.findOne({
-            where: { public_id: String(params.user_info_id) },
+            where: { id: params.user_info_id },
             relations: ['about_info'],
         });
 
         if (!findUser) throw new Error('Пользователь не найден');
 
+        const uploadImages = pick(data, ['profileImage', 'bannerImage'])
+
         // Загружаем изображения если они есть
-        const filesToUpload = pickBy(
-            pick(data, ['profileImage', 'bannerImage']),
-            (file) => !isEmpty(file)
-        );
+        if (size(uploadImages)) {
+            const filesToUpload = pickBy(uploadImages, (file) => !isEmpty(file));
 
-        const uploadedFiles = await this.mediaInfoService.uploadFiles(
-            // @ts-ignore
-            values(filesToUpload),
-            String(params.user_info_id)
-        );
+            const uploadedFiles = await this.mediaInfoService.uploadFiles(
+                values(filesToUpload),
+                params.user_info_id
+            );
 
-        forIn(filesToUpload, (file, key) => {
-            if (key === 'profileImage') {
-                findUser.profile_image = uploadedFiles[0].meta.src;
-            } else if (key === 'bannerImage') {
-                findUser.about_info = findUser.about_info || new UserAbout();
-                findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].meta.src;
-            }
-        });
+            forIn(filesToUpload, (file, key) => {
+                if (key === 'profileImage') {
+                    findUser.profile_image = uploadedFiles[0].meta.src;
+                } else if (key === 'bannerImage') {
+                    findUser.about_info = findUser.about_info || new UserAbout();
+                    findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].meta.src;
+                }
+            });
+        }
+
+        // Если обновляем фото профиля
+        if (data.profile_image_id) {
+            const { url } = await this.mediaInfoService.getFileById(data.profile_image_id)
+            findUser.profile_image = url
+        }
+        // Если обновляем фото баннера
+        if (data.banner_image_id) {
+            const { url } = await this.mediaInfoService.getFileById(data.banner_image_id)
+            findUser.about_info.banner_image = url
+        }
 
         // Обновляем все поля текущей таблицы кроме изображений
-        const updateParams = omit(data, ['profileImage', 'bannerImage', 'about_info']);
-        forIn(updateParams, (value, key) => {
-            if (value !== undefined) {
-                findUser[key] = value
-            }
-        })
+        const updateParams = omit(
+            data,
+            ['profileImage', 'bannerImage', 'about_info', 'profile_image_id']
+        )
+
+        if (size(updateParams)){
+            forIn(updateParams, (value, key) => {
+                if (value !== undefined) {
+                    findUser[key] = value
+                }
+            })
+        }
 
         // Обновляем все поля вложенной таблицы
         if (data.about_info) {

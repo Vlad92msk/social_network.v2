@@ -3,6 +3,9 @@ import { MediaItemType } from "../interfaces/mediaItemType";
 
 export class CreateMediaMetadataDto {
     @IsString()
+    user_id: number;
+
+    @IsString()
     name: string;
 
     @IsString()

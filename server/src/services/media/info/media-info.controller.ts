@@ -36,7 +36,7 @@ export class MediaInfoController {
     /**
      * Загружает файлы в систему
      */
-    @Post('upload/:userId')
+    @Post('upload')
     @UseInterceptors(FilesInterceptor('files'))
     async uploadFiles(
         @UploadedFiles(
@@ -50,14 +50,14 @@ export class MediaInfoController {
             }),
         )
             files: Express.Multer.File[],
-        @Param('userId') userId: string,
+        @RequestParams() params: RequestParams,
         @Req() req: Request
     ) {
         // Проверяем квоту
-        await this.mediaInfoService.checkStorageLimit(userId, files, this.maxStorage)
+        await this.mediaInfoService.checkStorageLimit(params.user_info_id, files, this.maxStorage)
 
         // Если есть доступное место - возвращаем загруженный файл
-        return this.mediaInfoService.uploadFiles(files, userId);
+        return this.mediaInfoService.uploadFiles(files, params.user_info_id);
     }
 
     /**
