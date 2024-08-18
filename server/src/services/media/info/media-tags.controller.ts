@@ -10,10 +10,10 @@ export class MediaTagsController {
      */
     @Post(':media_id')
     async addTagsToMedia(
-        @Param('media_id') id: string,
-        @Body() tag_ids: string[]
+        @Param('media_id') media_id: string,
+        @Body() body: { tag_ids: string[] }
     ) {
-        return this.mediaInfoService.addTagsToMedia(id, tag_ids)
+        return this.mediaInfoService.addTagsToMedia(media_id, body.tag_ids)
     }
 
     /**

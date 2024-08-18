@@ -5,7 +5,7 @@ import { Tag } from "@services/tags/entity";
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { FindTagDto } from './dto/find-tag.dto';
-import { createPaginationQueryOptions, createPaginationResponse } from "@shared/utils";
+import { createPaginationQueryOptions, createPaginationResponse, validUuids } from "@shared/utils";
 import { RequestParams } from "@shared/decorators";
 
 @Injectable()
@@ -64,7 +64,9 @@ export class TagsService {
         return tag
     }
 
-    async findTagsByIds(ids: string[]) {
+    async findTagsByIds(file_ids: string[]) {
+        const ids = validUuids(file_ids)
+        console.log('ids', ids)
         return await this.tagRepository.findBy({ id: In(ids) })
     }
 }

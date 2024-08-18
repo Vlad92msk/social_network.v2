@@ -6,7 +6,7 @@ import { UpdateMediaMetadataDto } from "./dto/update-media-metadata.dto";
 import { MediaMetadata } from "./entities/media-metadata.entity";
 import { GetMediaMetadataDto } from "./dto/get-media-metadata.dto";
 import { validate as uuidValidate } from 'uuid';
-import { createPaginationQueryOptions } from "@shared/utils";
+import { createPaginationQueryOptions, createPaginationResponse, validUuids } from "@shared/utils";
 
 @Injectable()
 export class MetadataService {
@@ -20,34 +20,15 @@ export class MetadataService {
         return await this.metadataRepository.save(metadata);
     }
 
-    async findAll(query: GetMediaMetadataDto): Promise<{ data: MediaMetadata[]; total: number }> {
-    const { file_ids, ...restQuery } = query
-
-        let ids
-        if (file_ids?.length) {
-            let idsArray: string[];
-            if (typeof file_ids === 'string') {
-                // @ts-ignore
-                idsArray = file_ids.split(',').map(id => id.trim());
-            } else if (Array.isArray(file_ids)) {
-                idsArray = file_ids;
-            } else {
-                throw new BadRequestException('Невалидный формат file_ids');
-            }
-
-            const validIds = idsArray.filter(uuidValidate);
-            if (validIds.length === 0) {
-                throw new BadRequestException('Нет ни одного валидного значения в file_ids');
-            }
-
-            ids = In(validIds)
-        }
+    async findAll(query: GetMediaMetadataDto) {
+        const { file_ids, ...restQuery } = query
+        const ids = validUuids(file_ids)
 
         const [data, total] = await this.metadataRepository.findAndCount(
-            createPaginationQueryOptions<MediaMetadata>({ query: { ...restQuery, id: ids } })
+            createPaginationQueryOptions<MediaMetadata>({ query: { ...restQuery, id: ids && In(ids) } })
         )
 
-        return { data, total };
+        return createPaginationResponse({ data, total, query })
     }
 
     async findOne(id: string): Promise<MediaMetadata> {

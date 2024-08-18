@@ -98,13 +98,13 @@ export class UserInfoService {
 
         // Если обновляем фото профиля
         if (data.profile_image_id) {
-            const { url } = await this.mediaInfoService.getFileById(data.profile_image_id)
-            findUser.profile_image = url
+            const { meta } = await this.mediaInfoService.getFileById(data.profile_image_id)
+            findUser.profile_image = meta.src
         }
         // Если обновляем фото баннера
         if (data.banner_image_id) {
-            const { url } = await this.mediaInfoService.getFileById(data.banner_image_id)
-            findUser.about_info.banner_image = url
+            const { meta } = await this.mediaInfoService.getFileById(data.banner_image_id)
+            findUser.about_info.banner_image = meta.src
         }
 
         // Обновляем все поля текущей таблицы кроме изображений

@@ -6,11 +6,12 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { GetMediaDto } from "./dto/get-media.dto";
 import { RequestParams } from "src/shared/decorators";
-import { createPaginationQueryOptions, createPaginationResponse } from "src/shared/utils";
+import { createPaginationQueryOptions, createPaginationResponse, validUuids } from "src/shared/utils";
 import { MediaEntity } from "./entities/media.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { UserInfoService } from "@services/users/user-info/user-info.service";
+import { validate as uuidValidate } from 'uuid';
 
 @Injectable()
 export class MediaInfoService {
@@ -106,35 +107,29 @@ export class MediaInfoService {
      * Получить 1 файл
      */
     async getFileById(id: string, requestParams?: RequestParams) {
-        const findMetadata = await this.metadataService.findOne(id);
-
-        // Получаем статические ссылки
-        const urlParts = new URL(findMetadata.src);
-        const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
-        return ({
-            metadata: findMetadata,
-            url: this.storageService.getFileUrl(relativePath)
-        })
+        return await this.mediaInfoRepository.findOne({
+            where: { id },
+            relations: ['meta', 'owner', 'tags']
+        });
     }
 
     /**
      * Получить ссылки на файлы
      */
     async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
-        const { data: foundFiles, total } = await this.metadataService.findAll(query)
+        const { file_ids, ...restQuery } = query
 
-        // Получаем статические ссылки
-        const filesWithContent = foundFiles.map((metadata) => {
-            const urlParts = new URL(metadata.src);
-            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
-            return {
-                metadata,
-                url: this.storageService.getFileUrl(relativePath)
-            };
-        });
+        const ids = validUuids(file_ids)
+
+        const [data, total] = await this.mediaInfoRepository.findAndCount(
+            createPaginationQueryOptions<MediaEntity>({
+                query: {...restQuery, id: ids && In(ids) },
+                options: { relations: ['meta', 'owner', 'tags'] }
+            })
+        );
 
         // Отдаем ответ с пагинацией
-        return createPaginationResponse({ data: filesWithContent, total, query })
+        return createPaginationResponse({ data, total, query })
     }
 
     async deleteFile(id: string) {
