@@ -1,35 +1,35 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
-import { MediaItemType } from "../interfaces/mediaItemType";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm'
+import { MediaItemType } from '../interfaces/mediaItemType'
 
 @Entity()
 export class MediaMetadata {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id: string
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    src: string;
+    src: string
 
     @Column()
-    mimeType: string;
+    mimeType: string
 
     @Column('int')
-    size: number;
+    size: number
 
     @Column()
-    lastModified: Date;
+    lastModified: Date
 
     @Column({
         type: 'enum',
         enum: MediaItemType,
     })
-    type: MediaItemType;
+    type: MediaItemType
 
     @Column()
-    user_id: number;
+    user_id: number
 
     @CreateDateColumn()
-    date_upload: Date;
+    date_upload: Date
 }

@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, HttpCode, Res } from '@nestjs/common';
-import { TagsService } from './tags.service';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
-import { FindTagDto } from './dto/find-tag.dto';
-import { createPaginationHeaders } from "@shared/utils";
-import { RequestParams } from "@shared/decorators";
-import { Response } from "express";
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, HttpCode, Res } from '@nestjs/common'
+import { TagsService } from './tags.service'
+import { CreateTagDto } from './dto/create-tag.dto'
+import { UpdateTagDto } from './dto/update-tag.dto'
+import { FindTagDto } from './dto/find-tag.dto'
+import { createPaginationHeaders } from '@shared/utils'
+import { RequestParams } from '@shared/decorators'
+import { Response } from 'express'
 
 @Controller('api/tags')
 export class TagsController {
@@ -17,7 +17,7 @@ export class TagsController {
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async createTag(@Body() createTagDto: CreateTagDto) {
-        return await this.tagsService.createTag(createTagDto);
+        return await this.tagsService.createTag(createTagDto)
     }
 
     /**
@@ -31,8 +31,8 @@ export class TagsController {
     ) {
         const { data, paginationInfo } = await this.tagsService.findTags(query, params)
 
-        response.set(createPaginationHeaders(paginationInfo));
-        return data;
+        response.set(createPaginationHeaders(paginationInfo))
+        return data
     }
 
     /**
@@ -40,7 +40,7 @@ export class TagsController {
      */
     @Get(':id')
     async findTagById(@Param('id') id: string) {
-        return await this.tagsService.findTagById(id);
+        return await this.tagsService.findTagById(id)
     }
 
     /**
@@ -51,7 +51,7 @@ export class TagsController {
         @Param('id') id: string,
         @Body() updateTagDto: UpdateTagDto
     ) {
-        return await this.tagsService.updateTag(id, updateTagDto);
+        return await this.tagsService.updateTag(id, updateTagDto)
     }
 
     /**
@@ -59,7 +59,7 @@ export class TagsController {
      */
     @Delete(':id')
     async deleteTag(@Param('id') id: string) {
-        await this.tagsService.deleteTag(id);
+        await this.tagsService.deleteTag(id)
     }
 
     /**
@@ -70,6 +70,6 @@ export class TagsController {
         @Query() query: { ids: string[] },
         @RequestParams() params: RequestParams,
     ) {
-        return await this.tagsService.findTagsByIds(query.ids);
+        return await this.tagsService.findTagsByIds(query.ids)
     }
 }

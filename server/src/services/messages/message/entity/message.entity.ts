@@ -1,6 +1,6 @@
-import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable } from "typeorm";
-import { PublicationEntity, PublicationType } from "@shared/entity/publication.entity";
-import { MediaEntity } from "@services/media/info/entities/media.entity";
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable } from 'typeorm'
+import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
+import { MediaEntity } from '@services/media/info/entities/media.entity'
 
 @Entity({ name: 'messages', comment: 'Сообщения, которыми пользователи могут обмениваться в диалоге' })
 export class MessageEntity extends PublicationEntity {

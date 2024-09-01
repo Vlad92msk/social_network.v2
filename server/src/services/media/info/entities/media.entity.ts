@@ -10,13 +10,13 @@ import {
     UpdateDateColumn,
     ManyToOne, Index,
     JoinTable
-} from "typeorm";
-import { MediaItem } from "../interfaces/media-item";
-import { MediaMetadata } from "../../metadata/entities/media-metadata.entity";
-import { UserInfo } from "@services/users/user-info/entities";
-import { Tag } from "@src/services/tags/entity";
-import { CommentEntity } from "@services/comments/comment/entities/comment.entity";
-import { MessageEntity } from "@services/messages/message/entity/message.entity";
+} from 'typeorm'
+import { MediaItem } from '../interfaces/media-item'
+import { MediaMetadata } from '../../metadata/entities/media-metadata.entity'
+import { UserInfo } from '@services/users/user-info/entities'
+import { Tag } from '@src/services/tags/entity'
+import { CommentEntity } from '@services/comments/comment/entities/comment.entity'
+import { MessageEntity } from '@services/messages/message/entity/message.entity'
 
 @Entity({ name: 'media', comment: 'Общая информация о файле, который пользователь загружает в систему' })
 export class MediaEntity implements MediaItem {
@@ -45,14 +45,14 @@ export class MediaEntity implements MediaItem {
      */
     @OneToOne(() => MediaMetadata, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'metadata_id', referencedColumnName: 'id' })
-    meta: MediaMetadata;
+    meta: MediaMetadata
 
     /**
      * Автор загруженного файла
      */
     @ManyToOne(() => UserInfo)
     @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' })
-    owner: UserInfo;
+    owner: UserInfo
 
     /**
      * Отмеченные пользователи
@@ -63,7 +63,7 @@ export class MediaEntity implements MediaItem {
         joinColumn: { name: 'media_id', referencedColumnName: 'id' },
         inverseJoinColumn: { name: 'user_id', referencedColumnName: 'id' },
     })
-    tagged_users: UserInfo[];
+    tagged_users: UserInfo[]
 
     /**
      * Тэги
@@ -74,13 +74,13 @@ export class MediaEntity implements MediaItem {
         joinColumn: { name: 'media_id', referencedColumnName: 'id' },
         inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
     })
-    tags: Tag[];
+    tags: Tag[]
 
     /**
      * Комментарии к данному медиа
      */
     @OneToMany(() => CommentEntity, comment => comment.mediaRef, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
-    comments: CommentEntity[];
+    comments: CommentEntity[]
 
     //
     //

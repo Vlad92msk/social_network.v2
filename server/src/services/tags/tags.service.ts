@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
-import { Tag } from "@services/tags/entity";
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
-import { FindTagDto } from './dto/find-tag.dto';
-import { createPaginationQueryOptions, createPaginationResponse, validUuids } from "@shared/utils";
-import { RequestParams } from "@shared/decorators";
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { In, Repository } from 'typeorm'
+import { Tag } from '@services/tags/entity'
+import { CreateTagDto } from './dto/create-tag.dto'
+import { UpdateTagDto } from './dto/update-tag.dto'
+import { FindTagDto } from './dto/find-tag.dto'
+import { createPaginationQueryOptions, createPaginationResponse, validUuids } from '@shared/utils'
+import { RequestParams } from '@shared/decorators'
 
 @Injectable()
 export class TagsService {
@@ -16,14 +16,14 @@ export class TagsService {
     ) {}
 
     async createTag(createTagDto: CreateTagDto){
-        const newTag = this.tagRepository.create(createTagDto);
-        return await this.tagRepository.save(newTag);
+        const newTag = this.tagRepository.create(createTagDto)
+        return await this.tagRepository.save(newTag)
     }
 
     async deleteTag(id: string) {
-        const result = await this.tagRepository.delete(id);
+        const result = await this.tagRepository.delete(id)
         if (result.affected === 0) {
-            throw new NotFoundException(`Tag with ID "${id}" not found`);
+            throw new NotFoundException(`Tag with ID "${id}" not found`)
         }
     }
 
@@ -31,7 +31,7 @@ export class TagsService {
         const tag = await this.tagRepository.preload({
             id: id,
             ...updateTagDto,
-        });
+        })
         if (!tag) {
             throw new NotFoundException(`Tag with ID "${id}" not found`)
         }

@@ -1,5 +1,5 @@
-import { assign, isEmpty } from "lodash"
-import { FindOneOptions } from "typeorm/find-options/FindOneOptions"
+import { assign, isEmpty } from 'lodash'
+import { FindOneOptions } from 'typeorm/find-options/FindOneOptions'
 
 
 interface CreatePaginationQueryOptions<Entity> {
@@ -14,7 +14,7 @@ export function createPaginationQueryOptions<Entity>(props: CreatePaginationQuer
     const queryOptions: any = {
         skip: (page - 1) * per_page,
         take: per_page,
-    };
+    }
 
     if (!isEmpty(searchParams)) {
         queryOptions.where = searchParams

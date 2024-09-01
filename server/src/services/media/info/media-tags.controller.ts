@@ -1,5 +1,5 @@
-import { Controller, Post, Delete, Get, Param, Body } from '@nestjs/common';
-import { MediaTagService } from "@services/media/info/media-tag.service";
+import { Controller, Post, Delete, Get, Param, Body } from '@nestjs/common'
+import { MediaTagService } from '@services/media/info/media-tag.service'
 
 @Controller('api/media/tags')
 export class MediaTagsController {

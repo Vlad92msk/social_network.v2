@@ -1,5 +1,5 @@
-import { IntersectionType, OmitType, PartialType } from "@nestjs/mapped-types";
-import { UserAbout } from "../entities";
+import { IntersectionType, OmitType, PartialType } from '@nestjs/mapped-types'
+import { UserAbout } from '../entities'
 
 
 export class UpdateUserAboutDto extends IntersectionType(

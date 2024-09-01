@@ -1,8 +1,8 @@
-import { UserAboutType, UserInfoType } from "../_interfaces";
+import { UserAboutType, UserInfoType } from '../_interfaces'
 
 export const ABOUT_INFO: UserAboutType = {
     id: 1,
-    description: "About",
+    description: 'About',
     study: 'mgpu',
     working: '42',
     position: 'frontend-developer',

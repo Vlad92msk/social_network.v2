@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from "@nestjs/config";
-import { AbstractStorageService } from "./abstract-storage.service";
-import { LocalStorageService } from "./local-storage.service";
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { AbstractStorageService } from './abstract-storage.service'
+import { LocalStorageService } from './local-storage.service'
 
 @Module({
     imports: [ConfigModule],

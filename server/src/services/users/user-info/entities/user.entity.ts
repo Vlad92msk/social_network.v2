@@ -6,12 +6,12 @@ import {
     OneToOne,
     JoinColumn,
     ManyToMany,
-} from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
-import { UserAbout } from "./user-about.entity";
-import { UserAboutType, UserInfoType } from "../../_interfaces";
-import { MediaEntity } from "@src/services/media/info/entities/media.entity";
-import { MediaItem } from "@src/services/media/info/interfaces/media-item";
+} from 'typeorm'
+import { v4 as uuidv4 } from 'uuid'
+import { UserAbout } from './user-about.entity'
+import { UserAboutType, UserInfoType } from '../../_interfaces'
+import { MediaEntity } from '@src/services/media/info/entities/media.entity'
+import { MediaItem } from '@src/services/media/info/interfaces/media-item'
 
 @Entity({ comment: 'Профиль пользователя' })
 export class UserInfo implements UserInfoType {
@@ -48,6 +48,6 @@ export class UserInfo implements UserInfoType {
 
     @BeforeInsert()
     generatePublicId() {
-        this.public_id = uuidv4();
+        this.public_id = uuidv4()
     }
 }

@@ -1,16 +1,16 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { LessThanOrEqual, Repository } from 'typeorm';
-import { PostEntity } from './entities/post.entity';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
-import { MediaInfoService } from '@services/media/info/media-info.service';
-import { TagsService } from '@services/tags/tags.service';
-import { PostVisibility, PublicationType } from "@shared/entity/publication.entity";
-import { UserInfoService } from "@services/users/user-info/user-info.service";
-import { RequestParams } from "@shared/decorators";
-import { FindPostDto } from "@services/posts/post/dto/find-post.dto";
-import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from "@shared/utils";
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { LessThanOrEqual, Repository } from 'typeorm'
+import { PostEntity } from './entities/post.entity'
+import { CreatePostDto } from './dto/create-post.dto'
+import { UpdatePostDto } from './dto/update-post.dto'
+import { MediaInfoService } from '@services/media/info/media-info.service'
+import { TagsService } from '@services/tags/tags.service'
+import { PostVisibility, PublicationType } from '@shared/entity/publication.entity'
+import { UserInfoService } from '@services/users/user-info/user-info.service'
+import { RequestParams } from '@shared/decorators'
+import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
+import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from '@shared/utils'
 
 @Injectable()
 export class PostsService {
@@ -35,7 +35,7 @@ export class PostsService {
         { videos, voices, createPostDto, media }: { createPostDto: CreatePostDto, media: Express.Multer.File[], voices: Express.Multer.File[], videos: Express.Multer.File[] },
         params: RequestParams
     ) {
-        const author = await this.userInfoService.getUsersById(params.user_info_id);
+        const author = await this.userInfoService.getUsersById(params.user_info_id)
 
         const post = this.postRepository.create({
             author,
@@ -44,7 +44,7 @@ export class PostsService {
             location: createPostDto.location,
             pinned: createPostDto.pinned,
             visibility: createPostDto.visibility,
-        });
+        })
 
         if (media) {
             post.media = await this.mediaInfoService.uploadFiles(media, author.id)
@@ -56,7 +56,7 @@ export class PostsService {
             post.videos = await this.mediaInfoService.uploadFiles(videos, author.id)
         }
         if (createPostDto.tag_ids) {
-            post.tags = await this.tagsService.findTagsByIds(createPostDto.tag_ids);
+            post.tags = await this.tagsService.findTagsByIds(createPostDto.tag_ids)
         }
 
         if (createPostDto?.media_ids) {
@@ -65,10 +65,10 @@ export class PostsService {
         }
 
         if (createPostDto.scheduled_publish_time) {
-            post.visibility = PostVisibility.PRIVATE;
+            post.visibility = PostVisibility.PRIVATE
         }
 
-        return this.postRepository.save(post);
+        return this.postRepository.save(post)
     }
 
     /**
@@ -82,17 +82,17 @@ export class PostsService {
         const post = await this.postRepository.findOne({
             where: { id },
             relations: ['media', 'voices', 'videos', 'tags', 'author']
-        });
+        })
 
-        if (!post) throw new NotFoundException(`Пост с ID "${id}" не найден`);
-        if (post.author.id !== userId) throw new BadRequestException('Вы не можете обновить чужой пост');
+        if (!post) throw new NotFoundException(`Пост с ID "${id}" не найден`)
+        if (post.author.id !== userId) throw new BadRequestException('Вы не можете обновить чужой пост')
 
         // Обновляем простые поля если они переданы
         updateEntityParams(
             post,
             updatePostDto,
             ['title', 'location', 'pinned', 'visibility']
-        );
+        )
 
         // Если есть ID тегов которые нужно добавить
         if (updatePostDto.tag_ids) {
@@ -161,7 +161,7 @@ export class PostsService {
         const post = await this.postRepository.findOne({
             where: { id },
             relations: ['media', 'tags', 'original_post', 'reply_to', 'forwarded_post']
-        });
+        })
         if (!post) {
             throw new NotFoundException(`Post with ID "${id}" not found`)
         }
@@ -229,7 +229,7 @@ export class PostsService {
         return this.postRepository.find({
             where: { pinned: true, author: { id: userId } },
             relations: ['media', 'tags']
-        });
+        })
     }
 
     /**
@@ -238,7 +238,7 @@ export class PostsService {
     async togglePinPost(postId: string, userId: number) {
         const post = await this.findOne(postId)
         if (post.author.id !== userId) {
-            throw new BadRequestException('You can only pin/unpin your own posts');
+            throw new BadRequestException('You can only pin/unpin your own posts')
         }
         post.pinned = !post.pinned
         return this.postRepository.save(post)
@@ -255,7 +255,7 @@ export class PostsService {
                 visibility: PostVisibility.PRIVATE // Предполагаем, что запланированные посты изначально приватны
             },
             relations: ['media', 'tags']
-        });
+        })
     }
 
     /**
@@ -296,7 +296,7 @@ export class PostsService {
             author,
             type: PublicationType.POST
         })
-        return this.postRepository.save(newPost)
+        return this.postRepository.save(newPost);
     }
 
     /**
@@ -323,12 +323,12 @@ export class PostsService {
      * Обновление местоположения поста
      */
     async updatePostLocation(postId: string, location: string, userId: number) {
-        const post = await this.findOne(postId);
+        const post = await this.findOne(postId)
         if (post.author.id !== userId) {
-            throw new BadRequestException('You can only update the location of your own posts');
+            throw new BadRequestException('You can only update the location of your own posts')
         }
-        post.location = location;
-        return this.postRepository.save(post);
+        post.location = location
+        return this.postRepository.save(post)
     }
 
     /**
@@ -338,7 +338,7 @@ export class PostsService {
         return this.postRepository.find({
             where: { location },
             relations: ['author', 'media', 'tags']
-        });
+        })
     }
 
     /**
@@ -348,7 +348,7 @@ export class PostsService {
         return this.postRepository.find({
             where: { original_post: { id: postId } },
             relations: ['author', 'media', 'tags']
-        });
+        })
     }
 
     /**
@@ -358,7 +358,7 @@ export class PostsService {
         return this.postRepository.find({
             where: { reply_to: { id: postId } },
             relations: ['author', 'media', 'tags']
-        });
+        })
     }
 
     /**
@@ -368,7 +368,7 @@ export class PostsService {
         return this.postRepository.find({
             where: { forwarded_post: { id: postId } },
             relations: ['author', 'media', 'tags']
-        });
+        })
     }
 
     /**
@@ -379,28 +379,28 @@ export class PostsService {
             this.getRepostsOfPost(postId),
             this.getRepliesOfPost(postId),
             this.getForwardsOfPost(postId)
-        ]);
+        ])
 
         return {
             reposts,
             replies,
             forwards
-        };
+        }
     }
 
     /**
      * Получение цепочки ответов
      */
     async getReplyChain(postId: string) {
-        const post = await this.findOne(postId);
-        const chain = [post];
+        const post = await this.findOne(postId)
+        const chain = [post]
 
-        let currentPost = post;
+        let currentPost = post
         while (currentPost.reply_to) {
-            currentPost = await this.findOne(currentPost.reply_to.id);
-            chain.unshift(currentPost);
+            currentPost = await this.findOne(currentPost.reply_to.id)
+            chain.unshift(currentPost)
         }
 
-        return chain;
+        return chain
     }
 }

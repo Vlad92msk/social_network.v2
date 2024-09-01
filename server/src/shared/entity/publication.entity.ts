@@ -6,9 +6,9 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn
-} from "typeorm";
-import { UserInfo } from "@services/users/user-info/entities";
-import { MediaItem } from "@services/media/info/interfaces/media-item";
+} from 'typeorm'
+import { UserInfo } from '@services/users/user-info/entities'
+import { MediaItem } from '@services/media/info/interfaces/media-item'
 
 export enum PublicationType {
     POST='post',
@@ -19,17 +19,6 @@ export enum PostVisibility {
     PUBLIC = 'public',
     FRIENDS = 'friends',
     PRIVATE = 'private'
-}
-
-/**
- * @summary Медиа файлы к публикации
- */
-interface PublicationMedia {
-    image: MediaItem[]
-    audio: MediaItem[]
-    video: MediaItem[]
-    text: MediaItem[]
-    other: MediaItem[]
 }
 
 /**

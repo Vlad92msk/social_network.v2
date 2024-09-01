@@ -1,7 +1,7 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
-import { PostVisibility, PublicationEntity, PublicationType } from "@shared/entity/publication.entity";
-import { MediaEntity } from "@services/media/info/entities/media.entity";
-import { Tag } from "@services/tags/entity";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm'
+import { PostVisibility, PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
+import { MediaEntity } from '@services/media/info/entities/media.entity'
+import { Tag } from '@services/tags/entity'
 
 @Entity({ name: 'posts', comment: 'Посты, которые пользователи могут публиковать у себя на странице/канале' })
 export class PostEntity extends PublicationEntity {
@@ -58,7 +58,7 @@ export class PostEntity extends PublicationEntity {
      * Cодержит массив всех постов, которые являются ответами на данное сообщение
      */
     @OneToMany(() => PostEntity, message => message.forwarded_post)
-    forwarded_to: PostEntity[];
+    forwarded_to: PostEntity[]
 
     /**
      * Голосовые вложения

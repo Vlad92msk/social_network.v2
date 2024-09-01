@@ -1,7 +1,7 @@
-import { IsString, IsOptional, IsBoolean, IsDate, IsEnum, IsUUID, IsArray } from 'class-validator';
-import { PostVisibility, PublicationType } from '@shared/entity/publication.entity';
-import { IntersectionType, PartialType, PickType } from "@nestjs/mapped-types";
-import { PostEntity } from "@services/posts/post/entities/post.entity";
+import { IsString, IsOptional, IsBoolean, IsDate, IsEnum, IsUUID, IsArray } from 'class-validator'
+import { PostVisibility, PublicationType } from '@shared/entity/publication.entity'
+import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
+import { PostEntity } from '@services/posts/post/entities/post.entity'
 
 export class CreatePostDto extends IntersectionType(
     PartialType(PickType(PostEntity, [
@@ -41,12 +41,12 @@ export class CreatePostDto extends IntersectionType(
     forwarded_post: PostEntity
 
     @IsArray()
-    @IsUUID("all", { each: true })
+    @IsUUID('all', { each: true })
     @IsOptional()
     media_ids: string[]
 
     @IsArray()
-    @IsUUID("all", { each: true })
+    @IsUUID('all', { each: true })
     @IsOptional()
     tag_ids: string[]
 

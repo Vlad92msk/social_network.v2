@@ -1,4 +1,4 @@
-import { SortDirection } from "typeorm";
+import { SortDirection } from 'typeorm'
 
 interface SortBy <T> {
     sort_by: keyof T;

@@ -1,15 +1,15 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserInfo } from './entities/user.entity';
-import { GetUsersDto } from "./dto/getUsers.dto";
-import { RequestParams } from "src/shared/decorators";
-import { UpdateUserDto } from "./dto/updateUsers.dto";
-import { UserAbout } from "./entities";
-import { CreateUserDto } from "./dto/createUser.dto";
-import { createPaginationResponse, createPaginationQueryOptions } from "@shared/utils";
-import { pick, forIn, omit, pickBy, isEmpty, values, size } from 'lodash';
-import { MediaInfoService } from "@services/media/info/media-info.service";
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { UserInfo } from './entities/user.entity'
+import { GetUsersDto } from './dto/getUsers.dto'
+import { RequestParams } from 'src/shared/decorators'
+import { UpdateUserDto } from './dto/updateUsers.dto'
+import { UserAbout } from './entities'
+import { CreateUserDto } from './dto/createUser.dto'
+import { createPaginationResponse, createPaginationQueryOptions } from '@shared/utils'
+import { pick, forIn, omit, pickBy, isEmpty, values, size } from 'lodash'
+import { MediaInfoService } from '@services/media/info/media-info.service'
 
 type UpdateUserInfo = UpdateUserDto & { profileImage?: Express.Multer.File, bannerImage?: Express.Multer.File }
 
@@ -29,9 +29,9 @@ export class UserInfoService {
      */
     async createUser(data?: CreateUserDto): Promise<UserInfo> {
         if (data) {
-            const findUser = await this.userInfoRepository.findOne({ where: data });
+            const findUser = await this.userInfoRepository.findOne({ where: data })
             if (findUser) {
-                throw new Error('Такой пользователь уже существует');
+                throw new Error('Такой пользователь уже существует')
             }
         }
 
@@ -50,18 +50,18 @@ export class UserInfoService {
      * Получить всех пользователей
      */
     async getUsers(query: GetUsersDto, params: RequestParams) {
-        const { user_info_id, profile_id } = params;
+        const { user_info_id, profile_id } = params
         const [users, total] = await this.userInfoRepository.findAndCount(
             createPaginationQueryOptions<UserInfo>({ query, options:{ relations: ['about_info'] }})
-        );
+        )
 
         return createPaginationResponse({ data: users, total, query })
     }
 
     async getUsersById(id: number) {
-        const user = await this.userInfoRepository.findOne({ where: { id } });
+        const user = await this.userInfoRepository.findOne({ where: { id } })
 
-        return user;
+        return user
     }
 
     /**
@@ -71,29 +71,29 @@ export class UserInfoService {
         const findUser = await this.userInfoRepository.findOne({
             where: { id: params.user_info_id },
             relations: ['about_info'],
-        });
+        })
 
-        if (!findUser) throw new Error('Пользователь не найден');
+        if (!findUser) throw new Error('Пользователь не найден')
 
         const uploadImages = pick(data, ['profileImage', 'bannerImage'])
 
         // Загружаем изображения если они есть
         if (size(uploadImages)) {
-            const filesToUpload = pickBy(uploadImages, (file) => !isEmpty(file));
+            const filesToUpload = pickBy(uploadImages, (file) => !isEmpty(file))
 
             const uploadedFiles = await this.mediaInfoService.uploadFiles(
                 values(filesToUpload),
                 params.user_info_id
-            );
+            )
 
             forIn(filesToUpload, (file, key) => {
                 if (key === 'profileImage') {
-                    findUser.profile_image = uploadedFiles[0].meta.src;
+                    findUser.profile_image = uploadedFiles[0].meta.src
                 } else if (key === 'bannerImage') {
-                    findUser.about_info = findUser.about_info || new UserAbout();
-                    findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].meta.src;
+                    findUser.about_info = findUser.about_info || new UserAbout()
+                    findUser.about_info.banner_image = uploadedFiles[data.profileImage ? 1 : 0].meta.src
                 }
-            });
+            })
         }
 
         // Если обновляем фото профиля
@@ -123,7 +123,7 @@ export class UserInfoService {
 
         // Обновляем все поля вложенной таблицы
         if (data.about_info) {
-            findUser.about_info = findUser.about_info || new UserAbout();
+            findUser.about_info = findUser.about_info || new UserAbout()
             forIn(data.about_info, (value, key) => {
                 if (value !== undefined) {
                     findUser['about_info'][key] = value
@@ -131,6 +131,6 @@ export class UserInfoService {
             })
         }
 
-        return await this.userInfoRepository.save(findUser);
+        return await this.userInfoRepository.save(findUser)
     }
 }

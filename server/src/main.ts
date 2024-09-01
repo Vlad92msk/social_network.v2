@@ -11,12 +11,12 @@ import { NestFactory } from '@nestjs/core'
 import * as cookieParser from 'cookie-parser'
 import { ConfigEnum } from '@config/config.enum'
 import { AppModule } from '@src/services/app.module'
-import { NestExpressApplication } from "@nestjs/platform-express";
-import { ValidationPipe } from "@nestjs/common";
+import { NestExpressApplication } from '@nestjs/platform-express'
+import { ValidationPipe } from '@nestjs/common'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ transform: true }))
   app.use(cookieParser())
   app.enableCors()
 
@@ -30,7 +30,7 @@ async function bootstrap() {
 // Настройка статической директории для uploads
   app.useStaticAssets(uploadPath, {
     prefix: '/uploads/',
-  });
+  })
 
   await app.listen(port, () => {
     console.log(`Сервер доступен - http://${host}:${port}`)

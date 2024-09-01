@@ -1,5 +1,5 @@
-import { IsObject, IsOptional, IsString } from 'class-validator';
-import { UserAboutType, UserInfoType } from "../../_interfaces";
+import { IsObject, IsOptional, IsString } from 'class-validator'
+import { UserAboutType, UserInfoType } from '../../_interfaces'
 
 export class CreateUserDto implements Partial<UserInfoType> {
     @IsOptional()

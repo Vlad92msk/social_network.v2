@@ -1,4 +1,4 @@
-import { isNil } from "lodash";
+import { isNil } from 'lodash'
 
 export interface PaginationInfo {
     total: number
@@ -12,20 +12,20 @@ export interface PaginationInfo {
  * @param paginationInfo
  */
 export const createPaginationHeaders = (paginationInfo: Partial<PaginationInfo>): Record<string, string> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = {}
 
     if (!isNil(paginationInfo.total)) {
-        headers['X-Total-Count'] = paginationInfo.total.toString();
+        headers['X-Total-Count'] = paginationInfo.total.toString()
     }
     if (!isNil(paginationInfo.pages)) {
-        headers['X-Total-Pages'] = paginationInfo.pages.toString();
+        headers['X-Total-Pages'] = paginationInfo.pages.toString()
     }
     if (!isNil(paginationInfo.page)) {
-        headers['X-Current-Page'] = paginationInfo.page.toString();
+        headers['X-Current-Page'] = paginationInfo.page.toString()
     }
     if (!isNil(paginationInfo.per_page)) {
-        headers['X-Per-Page'] = paginationInfo.per_page.toString();
+        headers['X-Per-Page'] = paginationInfo.per_page.toString()
     }
 
-    return headers;
-};
+    return headers
+}

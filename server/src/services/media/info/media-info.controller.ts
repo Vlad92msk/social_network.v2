@@ -10,16 +10,16 @@ import {
     Res,
     UploadedFiles,
     UseInterceptors
-} from '@nestjs/common';
-import { MediaInfoService } from "./media-info.service";
-import { FilesInterceptor } from "@nestjs/platform-express";
-import { Request, Response } from "express";
-import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from "./decorators";
-import { ConfigService } from "@nestjs/config";
-import { ConfigEnum } from "@config/config.enum";
-import { GetMediaDto } from "./dto/get-media.dto";
-import { RequestParams } from "src/shared/decorators";
-import { createPaginationHeaders } from "src/shared/utils";
+} from '@nestjs/common'
+import { MediaInfoService } from './media-info.service'
+import { FilesInterceptor } from '@nestjs/platform-express'
+import { Request, Response } from 'express'
+import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from './decorators'
+import { ConfigService } from '@nestjs/config'
+import { ConfigEnum } from '@config/config.enum'
+import { GetMediaDto } from './dto/get-media.dto'
+import { RequestParams } from 'src/shared/decorators'
+import { createPaginationHeaders } from 'src/shared/utils'
 
 @Controller('api/media/info')
 export class MediaInfoController {
@@ -57,7 +57,7 @@ export class MediaInfoController {
         await this.mediaInfoService.checkStorageLimit(params.user_info_id, files, this.maxStorage)
 
         // Если есть доступное место - возвращаем загруженный файл
-        return this.mediaInfoService.uploadFiles(files, params.user_info_id);
+        return this.mediaInfoService.uploadFiles(files, params.user_info_id)
     }
 
     /**
@@ -70,19 +70,19 @@ export class MediaInfoController {
         @Res() res: Response
     ) {
         try {
-            const { file, metadata } = await this.mediaInfoService.downLoadFile(id);
+            const { file, metadata } = await this.mediaInfoService.downLoadFile(id)
             res.set({
                 'Content-Type': metadata.mimeType,
                 'Content-Disposition': `inline; filename="${encodeURIComponent(metadata.name)}"`,
-            });
-            res.send(file);
+            })
+            res.send(file)
         } catch (error) {
             if (error instanceof NotFoundException) {
-                res.status(404).send('Файл не найден');
+                res.status(404).send('Файл не найден')
             } else if (error instanceof BadRequestException) {
-                res.status(400).send(error.message);
+                res.status(400).send(error.message)
             } else {
-                res.status(500).send('Внутренняя ошибка сервера');
+                res.status(500).send('Внутренняя ошибка сервера')
             }
         }
     }
@@ -96,10 +96,10 @@ export class MediaInfoController {
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
-        const { data, paginationInfo } = await this.mediaInfoService.getFiles(query, params);
+        const { data, paginationInfo } = await this.mediaInfoService.getFiles(query, params)
 
-        response.set(createPaginationHeaders(paginationInfo));
-        return data;
+        response.set(createPaginationHeaders(paginationInfo))
+        return data
     }
 
     /**
@@ -108,12 +108,12 @@ export class MediaInfoController {
     @Delete(':id')
     async deleteFile(@Param('id') id: string) {
         try {
-            return await this.mediaInfoService.deleteFile(id);
+            return await this.mediaInfoService.deleteFile(id)
         } catch (error) {
             if (error instanceof NotFoundException) {
-                throw new NotFoundException('Файл не найден');
+                throw new NotFoundException('Файл не найден')
             }
-            throw new InternalServerErrorException('Не удалось удалить файл');
+            throw new InternalServerErrorException('Не удалось удалить файл')
         }
     }
 }

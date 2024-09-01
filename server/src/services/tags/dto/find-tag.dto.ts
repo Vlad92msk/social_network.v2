@@ -1,8 +1,8 @@
-import { IntersectionType, PartialType, PickType } from "@nestjs/mapped-types";
-import { Tag } from "../entity";
-import { IsEnum, IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { EntityType } from "@shared/types";
-import { PaginationAndSortingDto } from "@shared/dto";
+import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
+import { Tag } from '../entity'
+import { IsEnum, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { EntityType } from '@shared/types'
+import { PaginationAndSortingDto } from '@shared/dto'
 
 export class FindTagDto extends IntersectionType(
     PartialType(PickType(Tag, ['value', 'name', 'entity_type'])),

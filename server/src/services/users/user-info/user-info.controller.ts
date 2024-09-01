@@ -9,15 +9,15 @@ import {
     Res,
     UploadedFiles,
     UseInterceptors
-} from '@nestjs/common';
-import { UserInfoService } from './user-info.service';
-import { RequestParams } from "src/shared/decorators";
-import { UserInfoType } from "../_interfaces";
-import { GetUsersDto } from "./dto/getUsers.dto";
-import { UpdateUserDto } from "./dto/updateUsers.dto";
-import { Response } from "express";
-import { createPaginationHeaders } from "@shared/utils";
-import { FileFieldsInterceptor } from "@nestjs/platform-express";
+} from '@nestjs/common'
+import { UserInfoService } from './user-info.service'
+import { RequestParams } from 'src/shared/decorators'
+import { UserInfoType } from '../_interfaces'
+import { GetUsersDto } from './dto/getUsers.dto'
+import { UpdateUserDto } from './dto/updateUsers.dto'
+import { Response } from 'express'
+import { createPaginationHeaders } from '@shared/utils'
+import { FileFieldsInterceptor } from '@nestjs/platform-express'
 
 @Controller('api/users/user-info')
 export class UserInfoController {
@@ -34,8 +34,8 @@ export class UserInfoController {
     ): Promise<UserInfoType[]> {
         const { data, paginationInfo } = await this.userService.getUsers(query, params)
 
-        response.set(createPaginationHeaders(paginationInfo));
-        return data;
+        response.set(createPaginationHeaders(paginationInfo))
+        return data
     }
 
     /**
@@ -46,9 +46,9 @@ export class UserInfoController {
         @Param('user_id') id: number,
         @RequestParams() params: RequestParams,
     ): Promise<UserInfoType> {
-        console.log("Запрашиваем пользователя", id);
+        console.log('Запрашиваем пользователя', id)
         const user = await this.userService.getUsersById(id)
-        return user;
+        return user
     }
 
     /**
@@ -69,13 +69,13 @@ export class UserInfoController {
     ) {
 
         try {
-            const profileImage = files.profile_image?.[0];
-            const bannerImage = files.banner_image?.[0];
+            const profileImage = files.profile_image?.[0]
+            const bannerImage = files.banner_image?.[0]
 
-            const user = await this.userService.updateUserInfo({ ...data, profileImage, bannerImage }, params);
-            return user;
+            const user = await this.userService.updateUserInfo({ ...data, profileImage, bannerImage }, params)
+            return user
         } catch (error) {
-            throw new BadRequestException(error.message);
+            throw new BadRequestException(error.message)
         }
     }
 }

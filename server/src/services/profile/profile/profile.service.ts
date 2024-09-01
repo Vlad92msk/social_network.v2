@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserProfileInfo } from './entities/profileInfo.entity';
-import { Settings } from "@src/services/profile/profile/entities";
-import { UserInfoService } from "@services/users/user-info/user-info.service";
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { UserProfileInfo } from './entities/profileInfo.entity'
+import { Settings } from '@src/services/profile/profile/entities'
+import { UserInfoService } from '@services/users/user-info/user-info.service'
 
 @Injectable()
 export class ProfileService {
@@ -24,7 +24,7 @@ export class ProfileService {
                 'settings',
                 'user_info.about_info',
             ]
-        });
+        })
     }
 
 
@@ -32,34 +32,34 @@ export class ProfileService {
         let profile = await this.userProfileRepository.findOne({
             where: { email },
             relations: ['user_info', 'settings', 'user_info.about_info',]
-        });
+        })
 
         if (!profile) {
 
             const settings = await this.userSettingsRepository.create()
-            await this.userSettingsRepository.save(settings);
+            await this.userSettingsRepository.save(settings)
 
-            const userInfo = await this.userService.createUser();
+            const userInfo = await this.userService.createUser()
 
-            profile = this.userProfileRepository.create({ email, user_info: userInfo, settings });
+            profile = this.userProfileRepository.create({ email, user_info: userInfo, settings })
 
 
-            await this.userProfileRepository.save(profile);
+            await this.userProfileRepository.save(profile)
         }
 
-        return profile;
+        return profile
     }
 
     async removeProfile(id: number): Promise<void> {
         const profile = await this.userProfileRepository.findOne({
             where: { id },
             relations: ['user_info', 'user_info.about_info', 'settings']
-        });
+        })
 
         if (!profile) {
-            throw new Error('Профиль не найден');
+            throw new Error('Профиль не найден')
         }
 
-        await this.userProfileRepository.remove(profile);
+        await this.userProfileRepository.remove(profile)
     }
 }

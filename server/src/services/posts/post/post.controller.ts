@@ -10,19 +10,19 @@ import {
     UploadedFiles,
     Query,
     Res
-} from '@nestjs/common';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { RequestParams } from '@shared/decorators';
-import { PostVisibility } from "@shared/entity/publication.entity";
-import { PostsService } from "@services/posts/post/post.service";
-import { ConfigService } from "@nestjs/config";
-import { ConfigEnum } from "@config/config.enum";
-import { MediaInfoService } from "@services/media/info/media-info.service";
-import { Response } from "express";
-import { FindPostDto } from "@services/posts/post/dto/find-post.dto";
-import { createPaginationHeaders } from "@shared/utils";
+} from '@nestjs/common'
+import { CreatePostDto } from './dto/create-post.dto'
+import { UpdatePostDto } from './dto/update-post.dto'
+import { FileFieldsInterceptor } from '@nestjs/platform-express'
+import { RequestParams } from '@shared/decorators'
+import { PostVisibility } from '@shared/entity/publication.entity'
+import { PostsService } from '@services/posts/post/post.service'
+import { ConfigService } from '@nestjs/config'
+import { ConfigEnum } from '@config/config.enum'
+import { MediaInfoService } from '@services/media/info/media-info.service'
+import { Response } from 'express'
+import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
+import { createPaginationHeaders } from '@shared/utils'
 
 @Controller('api/posts')
 export class PostsController {
@@ -68,7 +68,7 @@ export class PostsController {
             videos: files?.videos
         },
             params
-        );
+        )
     }
 
     /**
@@ -82,8 +82,8 @@ export class PostsController {
     ) {
         const { data, paginationInfo } = await this.postsService.findAll(query, params)
 
-        response.set(createPaginationHeaders(paginationInfo));
-        return data;
+        response.set(createPaginationHeaders(paginationInfo))
+        return data
     }
 
     /**
@@ -91,7 +91,7 @@ export class PostsController {
      */
     @Get(':id')
     async findOne(@Param('id') id: string) {
-        return await this.postsService.findOne(id);
+        return await this.postsService.findOne(id)
     }
 
     /**
@@ -128,7 +128,7 @@ export class PostsController {
                 videos: files?.videos
             },
             params.user_info_id
-        );
+        )
     }
 
     /**
@@ -136,7 +136,7 @@ export class PostsController {
      */
     @Delete(':id')
     async remove(@Param('id') id: string) {
-        return await this.postsService.remove(id);
+        return await this.postsService.remove(id)
     }
 
     /**
@@ -148,7 +148,7 @@ export class PostsController {
         @Body('text') text: string,
         @RequestParams() params: RequestParams
     ) {
-        return await this.postsService.createRepost(id, params, text);
+        return await this.postsService.createRepost(id, params, text)
     }
 
     /**
@@ -185,7 +185,7 @@ export class PostsController {
                 videos: files?.videos
             },
             params
-        );
+        )
     }
 
     /**
@@ -193,7 +193,7 @@ export class PostsController {
      */
     @Get('pinned')
     async getPinnedPosts(@RequestParams() params: RequestParams) {
-        return await this.postsService.getPinnedPosts(params.user_info_id);
+        return await this.postsService.getPinnedPosts(params.user_info_id)
     }
 
     /**
@@ -201,7 +201,7 @@ export class PostsController {
      */
     @Patch(':id/pin')
     async togglePinPost(@Param('id') id: string, @RequestParams() params: RequestParams) {
-        return await this.postsService.togglePinPost(id, params.user_info_id);
+        return await this.postsService.togglePinPost(id, params.user_info_id)
     }
 
     /**
@@ -213,7 +213,7 @@ export class PostsController {
         @Body('visibility') visibility: PostVisibility,
         @RequestParams() params: RequestParams
     ) {
-        return await this.postsService.updatePostVisibility(id, visibility, params.user_info_id);
+        return await this.postsService.updatePostVisibility(id, visibility, params.user_info_id)
     }
 
     /**
@@ -225,7 +225,7 @@ export class PostsController {
         @Body('text') text: string,
         @RequestParams() params: RequestParams
     ) {
-        return await this.postsService.createForwardedPost(id, params, text);
+        return await this.postsService.createForwardedPost(id, params, text)
     }
 
     /**
@@ -233,7 +233,7 @@ export class PostsController {
      */
     @Get(':id/media')
     async getAllMediaForPost(@Param('id') id: string) {
-        return await this.postsService.getAllMediaForPost(id);
+        return await this.postsService.getAllMediaForPost(id)
     }
 
     /**
@@ -245,7 +245,7 @@ export class PostsController {
         @Body('location') location: string,
         @RequestParams() params: RequestParams
     ) {
-        return await this.postsService.updatePostLocation(id, location, params.user_info_id);
+        return await this.postsService.updatePostLocation(id, location, params.user_info_id)
     }
 
     /**
@@ -253,7 +253,7 @@ export class PostsController {
      */
     @Get('by-location')
     async getPostsByLocation(@Query('location') location: string) {
-        return await this.postsService.getPostsByLocation(location);
+        return await this.postsService.getPostsByLocation(location)
     }
 
     /**
@@ -261,7 +261,7 @@ export class PostsController {
      */
     @Get(':id/reposts')
     async getRepostsOfPost(@Param('id') id: string) {
-        return await this.postsService.getRepostsOfPost(id);
+        return await this.postsService.getRepostsOfPost(id)
     }
 
     /**
@@ -269,7 +269,7 @@ export class PostsController {
      */
     @Get(':id/replies')
     async getRepliesOfPost(@Param('id') id: string) {
-        return await this.postsService.getRepliesOfPost(id);
+        return await this.postsService.getRepliesOfPost(id)
     }
 
     /**
@@ -277,7 +277,7 @@ export class PostsController {
      */
     @Get(':id/forwards')
     async getForwardsOfPost(@Param('id') id: string) {
-        return await this.postsService.getForwardsOfPost(id);
+        return await this.postsService.getForwardsOfPost(id)
     }
 
     /**
@@ -285,7 +285,7 @@ export class PostsController {
      */
     @Get(':id/related')
    async getAllRelatedPosts(@Param('id') id: string) {
-        return await this.postsService.getAllRelatedPosts(id);
+        return await this.postsService.getAllRelatedPosts(id)
     }
 
     /**
@@ -293,7 +293,7 @@ export class PostsController {
      */
     @Get(':id/reply-chain')
     async getReplyChain(@Param('id') id: string) {
-        return await this.postsService.getReplyChain(id);
+        return await this.postsService.getReplyChain(id)
     }
 
     /**
@@ -301,6 +301,6 @@ export class PostsController {
      */
     @Post(':id/increment-view')
     async incrementViewCount(@Param('id') id: string) {
-        return await this.postsService.incrementViewCount(id);
+        return await this.postsService.incrementViewCount(id)
     }
 }

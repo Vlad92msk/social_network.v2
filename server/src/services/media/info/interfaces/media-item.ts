@@ -1,5 +1,5 @@
-import { MediaMetadata } from "../../metadata/entities/media-metadata.entity";
-import { UserInfoType } from "@src/services/users/_interfaces";
+import { MediaMetadata } from '../../metadata/entities/media-metadata.entity'
+import { UserInfoType } from '@src/services/users/_interfaces'
 
 /**
  * @summary Медиа файл который пользователь загружает в систему

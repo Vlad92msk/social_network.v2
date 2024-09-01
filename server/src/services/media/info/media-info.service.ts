@@ -1,16 +1,16 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { MetadataService } from "../metadata/media-metadata.service";
-import { AbstractStorageService } from "../storage/abstract-storage.service";
-import { MediaItemType } from "../metadata/interfaces/mediaItemType";
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { GetMediaDto } from "./dto/get-media.dto";
-import { RequestParams } from "src/shared/decorators";
-import { createPaginationQueryOptions, createPaginationResponse, validUuids } from "src/shared/utils";
-import { MediaEntity } from "./entities/media.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
-import { UserInfoService } from "@services/users/user-info/user-info.service";
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { MetadataService } from '../metadata/media-metadata.service'
+import { AbstractStorageService } from '../storage/abstract-storage.service'
+import { MediaItemType } from '../metadata/interfaces/mediaItemType'
+import * as path from 'path'
+import * as crypto from 'crypto'
+import { GetMediaDto } from './dto/get-media.dto'
+import { RequestParams } from 'src/shared/decorators'
+import { createPaginationQueryOptions, createPaginationResponse, validUuids } from 'src/shared/utils'
+import { MediaEntity } from './entities/media.entity'
+import { InjectRepository } from '@nestjs/typeorm'
+import { In, Repository } from 'typeorm'
+import { UserInfoService } from '@services/users/user-info/user-info.service'
 
 @Injectable()
 export class MediaInfoService {
@@ -30,34 +30,34 @@ export class MediaInfoService {
      * Загружает файлы
      */
     async uploadFiles(files: Express.Multer.File[], userId: number) {
-        const uploadedFiles: MediaEntity[] = [];
+        const uploadedFiles: MediaEntity[] = []
 
         const user = await this.userService.getUsersById(userId)
 
 
         for (const file of files) {
-            let originalName = file.originalname;
+            let originalName = file.originalname
 
             // Регулярное выражение для проверки на допустимые символы (латинские буквы, цифры, дефис, подчеркивание)
-            const isValidName = /^[a-zA-Z0-9-_]+$/.test(originalName);
+            const isValidName = /^[a-zA-Z0-9-_]+$/.test(originalName)
 
             if (!isValidName) {
                 // Если имя файла содержит недопустимые символы, генерируем рандомное имя
-                const randomName = crypto.randomBytes(8).toString('hex');
-                const fileExtension = originalName.split('.').pop(); // Получаем расширение файла
-                originalName = `${randomName}.${fileExtension}`;
+                const randomName = crypto.randomBytes(8).toString('hex')
+                const fileExtension = originalName.split('.').pop() // Получаем расширение файла
+                originalName = `${randomName}.${fileExtension}`
             }
 
-            const fileType = this.storageService.getFileType(file.mimetype);
-            let fileName = `${Date.now()}-${originalName}`.replace(' ', '_').toLowerCase().trim();
+            const fileType = this.storageService.getFileType(file.mimetype)
+            let fileName = `${Date.now()}-${originalName}`.replace(' ', '_').toLowerCase().trim()
 
-            const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType);
-            const fileUrl = this.storageService.getFileUrl(filePath);
+            const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType)
+            const fileUrl = this.storageService.getFileUrl(filePath)
 
             // Если это изображение, обновляем расширение файла и MIME-тип
             if (fileType === MediaItemType.IMAGE) {
-                fileName = path.basename(filePath); // Получаем имя файла из пути, включая .webp расширение
-                file.mimetype = 'image/webp';
+                fileName = path.basename(filePath) // Получаем имя файла из пути, включая .webp расширение
+                file.mimetype = 'image/webp'
             }
 
             const metadata = await this.metadataService.create({
@@ -68,18 +68,18 @@ export class MediaInfoService {
                 lastModified: new Date(),
                 type: fileType,
                 user_id: userId,
-            });
+            })
 
             const media = this.mediaInfoRepository.create({
                 meta: metadata,
                 owner: user,
-            });
+            })
 
-            const savedMedia = await this.mediaInfoRepository.save(media);
-            uploadedFiles.push(savedMedia);
+            const savedMedia = await this.mediaInfoRepository.save(media)
+            uploadedFiles.push(savedMedia)
         }
 
-        return uploadedFiles;
+        return uploadedFiles
     }
 
     /**
@@ -87,18 +87,18 @@ export class MediaInfoService {
      */
     async downLoadFile(id: string) {
         // Получаем метаданные
-        const metadata = await this.metadataService.findOne(id);
-        if (!metadata) throw new NotFoundException('Файл не найден');
+        const metadata = await this.metadataService.findOne(id)
+        if (!metadata) throw new NotFoundException('Файл не найден')
 
         try {
             // Получаем реальную ссылку для скачивания
-            const urlParts = new URL(metadata.src);
-            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+            const urlParts = new URL(metadata.src)
+            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''))
 
-            const file = await this.storageService.getFile(relativePath);
-            return { file, metadata };
+            const file = await this.storageService.getFile(relativePath)
+            return { file, metadata }
         } catch (error) {
-            throw new BadRequestException('Не удалось получить файл');
+            throw new BadRequestException('Не удалось получить файл')
         }
     }
 
@@ -109,7 +109,7 @@ export class MediaInfoService {
         return await this.mediaInfoRepository.findOne({
             where: { id },
             relations: ['meta', 'owner', 'tags']
-        });
+        })
     }
 
     /**
@@ -125,27 +125,27 @@ export class MediaInfoService {
                 query: {...restQuery, id: ids && In(ids) },
                 options: { relations: ['meta', 'owner', 'tags'] }
             })
-        );
+        )
 
         // Отдаем ответ с пагинацией
         return createPaginationResponse({ data, total, query })
     }
 
     async deleteFile(id: string) {
-        const metadata = await this.metadataService.findOne(id);
+        const metadata = await this.metadataService.findOne(id)
         if (!metadata) {
-            throw new NotFoundException('Файл не найден');
+            throw new NotFoundException('Файл не найден')
         }
 
         try {
-            const urlParts = new URL(metadata.src);
-            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''));
+            const urlParts = new URL(metadata.src)
+            const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''))
 
-            await this.storageService.deleteFile(relativePath);
-            await this.metadataService.remove(id);
-            return { message: 'Файл успешно удален' };
+            await this.storageService.deleteFile(relativePath)
+            await this.metadataService.remove(id)
+            return { message: 'Файл успешно удален' }
         } catch (error) {
-            throw new BadRequestException('Не удалось удалить файл');
+            throw new BadRequestException('Не удалось удалить файл')
         }
     }
 
@@ -159,9 +159,9 @@ export class MediaInfoService {
         const totalAfterUpload = currentUsage + totalUploadSize
 
         if (totalAfterUpload > maxStorage) {
-            throw new BadRequestException(`Превышен лимит хранения файлов. Максимальный размер хранилища: ${maxStorage} байт.`);
+            throw new BadRequestException(`Превышен лимит хранения файлов. Максимальный размер хранилища: ${maxStorage} байт.`)
         } else {
-            console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`);
+            console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`)
         }
     }
 }

@@ -1,25 +1,25 @@
-import { IsDate, IsEnum, IsNumber, IsString } from 'class-validator';
-import { MediaItemType } from "../interfaces/mediaItemType";
+import { IsDate, IsEnum, IsNumber, IsString } from 'class-validator'
+import { MediaItemType } from '../interfaces/mediaItemType'
 
 export class CreateMediaMetadataDto {
     @IsString()
-    user_id: number;
+    user_id: number
 
     @IsString()
-    name: string;
+    name: string
 
     @IsString()
-    src: string;
+    src: string
 
     @IsString()
-    mimeType: string;
+    mimeType: string
 
     @IsNumber()
-    size: number;
+    size: number
 
     @IsDate()
-    lastModified: Date;
+    lastModified: Date
 
     @IsEnum(MediaItemType)
-    type: MediaItemType;
+    type: MediaItemType
 }

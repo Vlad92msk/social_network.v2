@@ -1,5 +1,5 @@
-import { UserInfoType } from "@src/services/users/_interfaces";
-import { ProfileSettings } from "./settings";
+import { UserInfoType } from '@src/services/users/_interfaces'
+import { ProfileSettings } from './settings'
 
 /**
  * @summary Тип профиля

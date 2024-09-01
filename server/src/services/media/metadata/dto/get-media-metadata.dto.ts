@@ -1,7 +1,7 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
-import { IntersectionType, PartialType } from "@nestjs/mapped-types";
-import { CreateMediaMetadataDto } from "./create-media-metadata.dto";
-import { PaginationAndSortingDto } from "src/shared/dto";
+import { IsIn, IsOptional, IsString } from 'class-validator'
+import { IntersectionType, PartialType } from '@nestjs/mapped-types'
+import { CreateMediaMetadataDto } from './create-media-metadata.dto'
+import { PaginationAndSortingDto } from 'src/shared/dto'
 
 
 export class GetMediaMetadataDto extends IntersectionType(

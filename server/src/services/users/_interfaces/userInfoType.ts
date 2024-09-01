@@ -1,4 +1,4 @@
-import { UserAboutType } from "./userAboutType";
+import { UserAboutType } from './userAboutType'
 
 /**
  * @summary Информация о пользователе / канале

@@ -1,7 +1,7 @@
-import { IntersectionType, PartialType, PickType } from "@nestjs/mapped-types";
-import { PaginationAndSortingDto } from "@shared/dto";
-import { IsArray, IsEnum, IsIn, IsOptional, IsString, IsUUID } from "class-validator";
-import { PostEntity } from "@services/posts/post/entities/post.entity";
+import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
+import { PaginationAndSortingDto } from '@shared/dto'
+import { IsArray, IsEnum, IsIn, IsOptional, IsString, IsUUID } from 'class-validator'
+import { PostEntity } from '@services/posts/post/entities/post.entity'
 
 export class FindPostDto extends IntersectionType(
     PartialType(PickType(PostEntity, [
@@ -18,7 +18,7 @@ export class FindPostDto extends IntersectionType(
     PaginationAndSortingDto<PostEntity>
 ) {
     @IsArray()
-    @IsUUID("all", { each: true })
+    @IsUUID('all', { each: true })
     @IsOptional()
     tag_ids: string[]
 

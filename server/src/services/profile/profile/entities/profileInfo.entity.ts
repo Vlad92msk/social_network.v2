@@ -1,9 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
-import { ProfileInfoType, ProfileType } from "../../_interfaces";
-import { UserInfo } from "@services/users/user-info/entities/user.entity";
-import { UserInfoType } from "@src/services/users/_interfaces";
-import { Settings } from "./settings.entity";
-import { ProfileSettings } from "../../_interfaces/settings";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm'
+import { ProfileInfoType, ProfileType } from '../../_interfaces'
+import { UserInfo } from '@services/users/user-info/entities/user.entity'
+import { UserInfoType } from '@src/services/users/_interfaces'
+import { Settings } from './settings.entity'
+import { ProfileSettings } from '../../_interfaces/settings'
 
 @Entity({ comment: 'Профиль пользователя' })
 export class UserProfileInfo implements ProfileInfoType {
@@ -11,7 +11,7 @@ export class UserProfileInfo implements ProfileInfoType {
     id: number
 
     @Column({ type: 'varchar', length: 40, nullable: false, unique: true })
-    email: string;
+    email: string
 
     @Column({ type: 'enum', nullable: false, enum: ProfileType, default: ProfileType.USER })
     type: ProfileType

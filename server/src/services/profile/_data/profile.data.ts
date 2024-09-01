@@ -1,5 +1,5 @@
-import { ProfileInfoType, ProfileType } from "../_interfaces";
-import { USER } from "@src/services/users/_data/users.data";
+import { ProfileInfoType, ProfileType } from '../_interfaces'
+import { USER } from '@src/services/users/_data/users.data'
 
 
 export const PROFILE_INFO: ProfileInfoType = {

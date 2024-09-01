@@ -1,5 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
-import { UserAboutType } from "@src/services/users/_interfaces";
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm'
+import { UserAboutType } from '@src/services/users/_interfaces'
 
 @Entity({ comment: 'Общая информация о пользователе' })
 export class UserAbout implements UserAboutType {

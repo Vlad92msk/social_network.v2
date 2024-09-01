@@ -1,6 +1,6 @@
-import { Entity, JoinColumn, ManyToOne } from "typeorm";
-import { PublicationEntity, PublicationType } from "@shared/entity/publication.entity";
-import { MediaEntity } from "@services/media/info/entities/media.entity";
+import { Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
+import { MediaEntity } from '@services/media/info/entities/media.entity'
 
 @Entity({ name: 'comments', comment: 'Комментарии, которые пользователь может оставлять под те или иные сущности' })
 export class CommentEntity extends PublicationEntity {
@@ -11,10 +11,10 @@ export class CommentEntity extends PublicationEntity {
      */
     @ManyToOne(() => MediaEntity, { nullable: true })
     @JoinColumn({ name: 'media_id' })
-    mediaRef: MediaEntity;
+    mediaRef: MediaEntity
 
     constructor() {
-        super();
-        this.type = PublicationType.COMMENTARY;
+        super()
+        this.type = PublicationType.COMMENTARY
     }
 }

@@ -1,9 +1,9 @@
-import { Controller, Post, Body, UsePipes, ValidationPipe, Res, Delete, Get, Put } from '@nestjs/common';
-import { ProfileService } from './profile.service';
-import { UserProfileInfo } from './entities/profileInfo.entity';
-import { CreateProfileDto } from "./dto/create-profile.dto";
-import { Response } from "express";
-import { RequestParams } from "src/shared/decorators";
+import { Controller, Post, Body, UsePipes, ValidationPipe, Res, Delete, Get, Put } from '@nestjs/common'
+import { ProfileService } from './profile.service'
+import { UserProfileInfo } from './entities/profileInfo.entity'
+import { CreateProfileDto } from './dto/create-profile.dto'
+import { Response } from 'express'
+import { RequestParams } from 'src/shared/decorators'
 
 @Controller('api/profile')
 export class ProfileController {
@@ -15,7 +15,7 @@ export class ProfileController {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             path: '/'
-        });
+        })
     }
 
     /**
@@ -29,8 +29,8 @@ export class ProfileController {
     ): Promise<UserProfileInfo>{
         const profile = await this.profileService.getProfileInfo(createProfileDto.email)
 
-        response.cookie('profile_id', profile.id, { httpOnly: true });
-        response.cookie('user_info_id', profile.user_info.id, { httpOnly: true });
+        response.cookie('profile_id', profile.id, { httpOnly: true })
+        response.cookie('user_info_id', profile.user_info.id, { httpOnly: true })
 
         return profile
     }
@@ -53,10 +53,10 @@ export class ProfileController {
         @Res({ passthrough: true }) response: Response
     ){
         await this.profileService.removeProfile(params.profile_id)
-        this.clearCookie(response, 'profile_id');
-        this.clearCookie(response, 'user_info_id');
+        this.clearCookie(response, 'profile_id')
+        this.clearCookie(response, 'user_info_id')
 
-        response.status(200);
-        return { message: 'Профиль успешно удален' };
+        response.status(200)
+        return { message: 'Профиль успешно удален' }
     }
 }

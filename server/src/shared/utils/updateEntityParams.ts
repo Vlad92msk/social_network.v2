@@ -1,4 +1,4 @@
-import { forIn, pick, size } from "lodash";
+import { forIn, pick, size } from 'lodash'
 
 export const updateEntityParams = <T extends Record<string, any>, K extends keyof T>(
     entity: T,
@@ -14,4 +14,4 @@ export const updateEntityParams = <T extends Record<string, any>, K extends keyo
             }
         })
     }
-};
+}

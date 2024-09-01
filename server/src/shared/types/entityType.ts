@@ -3,6 +3,6 @@
  * Необходимо для понимания к чему могут относиться комментарии/теги и т.д. так как их может быть очень много.
  */
 export enum EntityType {
-    MEDIA= "media",
-    POST= "post",
+    MEDIA= 'media',
+    POST= 'post',
 }

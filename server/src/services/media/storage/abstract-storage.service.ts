@@ -1,4 +1,4 @@
-import { MediaItemType } from "../metadata/interfaces/mediaItemType";
+import { MediaItemType } from '../metadata/interfaces/mediaItemType'
 
 export abstract class AbstractStorageService {
     abstract uploadFile(file: Buffer, fileName: string, userId: number, fileType: MediaItemType): Promise<string>;
