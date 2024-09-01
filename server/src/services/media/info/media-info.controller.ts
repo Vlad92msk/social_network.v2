@@ -23,14 +23,14 @@ import { createPaginationHeaders } from "src/shared/utils";
 
 @Controller('api/media/info')
 export class MediaInfoController {
-    private readonly maxStorage: number;
+    private readonly maxStorage: number
 
     constructor(
         private readonly mediaInfoService: MediaInfoService,
         private readonly configService: ConfigService
     ) {
         // Доступно места для загрузки
-        this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`);
+        this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
     }
 
     /**

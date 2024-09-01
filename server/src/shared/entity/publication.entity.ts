@@ -15,6 +15,11 @@ export enum PublicationType {
     COMMENTARY='commentary',
     MESSAGE='message',
 }
+export enum PostVisibility {
+    PUBLIC = 'public',
+    FRIENDS = 'friends',
+    PRIVATE = 'private'
+}
 
 /**
  * @summary Медиа файлы к публикации
@@ -34,7 +39,7 @@ interface PublicationMedia {
 @Entity({ name: 'publication', comment: 'Общий тип.  в Буквальном смысле не используется нигде в самостоятельной форме. На основе "Публикации" будут построены такие интерфейсы как "Пост", "Сообщение", "Комментарий" и возможно что-то еще.' })
 export abstract class PublicationEntity {
     @PrimaryGeneratedColumn('uuid')
-    id: number
+    id: string
 
     @Column({ type: 'text', nullable: false, comment: 'Текст' })
     text: string

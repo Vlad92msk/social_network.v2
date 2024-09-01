@@ -11,7 +11,6 @@ import { MediaEntity } from "./entities/media.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { UserInfoService } from "@services/users/user-info/user-info.service";
-import { validate as uuidValidate } from 'uuid';
 
 @Injectable()
 export class MediaInfoService {

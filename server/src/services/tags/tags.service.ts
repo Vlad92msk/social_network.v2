@@ -66,7 +66,6 @@ export class TagsService {
 
     async findTagsByIds(file_ids: string[]) {
         const ids = validUuids(file_ids)
-        console.log('ids', ids)
         return await this.tagRepository.findBy({ id: In(ids) })
     }
 }
