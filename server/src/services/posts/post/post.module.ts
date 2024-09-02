@@ -7,10 +7,11 @@ import { ConfigModule } from '@nestjs/config'
 import { TagModule } from '@services/tags/tags.module'
 import { PostsService } from '@services/posts/post/post.service'
 import { PostsController } from '@services/posts/post/post.controller'
+import { PublicationEntity } from '@shared/entity/publication.entity'
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([PostEntity]),
+        TypeOrmModule.forFeature([PostEntity, PublicationEntity]),
         forwardRef(() => MediaInfoModule),
         forwardRef(() => UserInfoModule),
         forwardRef(() => TagModule),

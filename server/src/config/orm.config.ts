@@ -15,7 +15,7 @@ export default registerAs(
     autoLoadEntities: true,
     synchronize: true,
     port: +process.env.TYPEORM_PORT,
-    entities: [`${__dirname}/../lib/**/**/entities/*.entity{.ts}`],
+    entities: [`${__dirname}/../services/**/**/entities/*.entity{.ts}`],
     // migrations: [`${__dirname}/migrations/**/**/*{.ts, .js}`],
     cli: {
       migrationsDir: 'src/migrations',

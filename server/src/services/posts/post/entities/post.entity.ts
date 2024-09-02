@@ -1,80 +1,69 @@
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm'
-import { PostVisibility, PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
+import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
 import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { Tag } from '@services/tags/entity'
+import { ApiProperty } from '@nestjs/swagger'
+
+export enum PostVisibility {
+    PUBLIC = 'public',
+    FRIENDS = 'friends',
+    PRIVATE = 'private'
+}
 
 @Entity({ name: 'posts', comment: 'Посты, которые пользователи могут публиковать у себя на странице/канале' })
 export class PostEntity extends PublicationEntity {
+    @ApiProperty({ description: 'Заголовок поста', required: false })
     @Column({ nullable: true, type: 'varchar', length: 50, comment: 'Заголовок (если есть)' })
     title: string
 
+    @ApiProperty({ description: 'Количество просмотров', default: 0 })
     @Column({ type: 'int', default: 0, comment: 'Количество просмотров' })
     count_views: number
 
+    @ApiProperty({ description: 'Количество репостов', default: 0 })
     @Column({ type: 'int', default: 0, comment: 'Количество репостов' })
     repost_count: number
 
+    @ApiProperty({ description: 'Является ли пост репостом', default: false })
     @Column({ type: 'boolean', default: false, comment: 'Является ли пост пересылкой' })
     is_repost: boolean
 
-    /**
-     * Ссылка на оригинальный пост, если текущий пост является репостом.
-     * Позволяет отслеживать источник контента при репостах.
-     */
+    @ApiProperty({ description: 'Оригинальный пост (если это репост)', type: () => PostEntity, required: false })
     @ManyToOne(() => PostEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'original_post_id' })
     original_post: PostEntity
 
-    /**
-     * Массив всех репостов данного поста.
-     * Позволяет отслеживать, сколько раз и кем был репостнут данный пост.
-     */
+    @ApiProperty({ description: 'Репосты данного поста', type: () => [PostEntity] })
     @OneToMany(() => PostEntity, post => post.original_post)
     reposts: PostEntity[]
 
-    /**
-     * Ссылка на пост, на который данный пост является ответом.
-     * Используется для создания древовидной структуры обсуждений.
-     */
+    @ApiProperty({ description: 'Пост, на который это ответ', type: () => PostEntity, required: false })
     @ManyToOne(() => PostEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'reply_to_id' })
     reply_to: PostEntity
 
-    /**
-     * Массив всех постов, которые являются ответами на данный пост.
-     * Позволяет легко получить все ответы на конкретный пост.
-     */
+    @ApiProperty({ description: 'Ответы на данный пост', type: () => [PostEntity] })
     @OneToMany(() => PostEntity, post => post.reply_to)
     replies: PostEntity[]
 
-    /**
-     * Указывает на пост, на которое отвечает данный пост
-     */
+    @ApiProperty({ description: 'Пост, на которое отвечает данный пост', type: () => PostEntity, required: false })
     @ManyToOne(() => PostEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'forward_id' })
     forwarded_post: PostEntity
 
-    /**
-     * Cодержит массив всех постов, которые являются ответами на данное сообщение
-     */
+    @ApiProperty({ description: 'Посты, которые являются ответами на данное сообщение', type: () => [PostEntity] })
     @OneToMany(() => PostEntity, message => message.forwarded_post)
     forwarded_to: PostEntity[]
 
-    /**
-     * Голосовые вложения
-     */
+    @ApiProperty({ description: 'Голосовые вложения', type: () => [MediaEntity] })
     @OneToMany(type => MediaEntity, publication => publication.voicesRef)
     voices: MediaEntity[]
 
-    /**
-     * Видео вложения
-     */
+    @ApiProperty({ description: 'Видео вложения', type: () => [MediaEntity] })
     @OneToMany(type => MediaEntity, publication => publication.videosRef)
     videos: MediaEntity[]
 
-    /**
-     * Файлы приложенные к посту
-     */
+    @ApiProperty({ description: 'Файлы, приложенные к посту', type: () => [MediaEntity] })
     @ManyToMany(() => MediaEntity, { onDelete: 'CASCADE' })
     @JoinTable({
         name: 'post_media',
@@ -83,9 +72,7 @@ export class PostEntity extends PublicationEntity {
     })
     media: MediaEntity[]
 
-    /**
-     * Теги, связанные с постом
-     */
+    @ApiProperty({ description: 'Теги, связанные с постом', type: () => [Tag] })
     @ManyToMany(() => Tag)
     @JoinTable({
         name: 'post_tags',
@@ -94,18 +81,33 @@ export class PostEntity extends PublicationEntity {
     })
     tags: Tag[]
 
+    @ApiProperty({ description: 'Был ли пост отредактирован', default: false })
     @Column({ type: 'boolean', default: false, comment: 'Флаг, показывающий, был ли пост отредактирован' })
     is_edited: boolean
 
-    @Column({ type: 'enum', enum: PostVisibility, default: PostVisibility.PUBLIC, comment: 'Уровень видимости поста' })
+    @ApiProperty({
+        description: 'Уровень видимости поста',
+        enum: PostVisibility,
+        enumName: 'PostVisibility',
+        default: PostVisibility.PUBLIC
+    })
+    @Column({
+        type: 'enum',
+        enum: PostVisibility,
+        default: PostVisibility.PUBLIC,
+        comment: 'Уровень видимости поста'
+    })
     visibility: PostVisibility
 
+    @ApiProperty({ description: 'Закреплен ли пост', default: false })
     @Column({ type: 'boolean', default: false, comment: 'Флаг для закрепления поста' })
     pinned: boolean
 
+    @ApiProperty({ description: 'Местоположение, связанное с постом', required: false })
     @Column({ type: 'varchar', nullable: true, comment: 'Местоположение, связанное с постом' })
     location: string
 
+    @ApiProperty({ description: 'Время запланированной публикации поста', required: false })
     @Column({ type: 'timestamp', nullable: true, comment: 'Время запланированной публикации поста' })
     scheduled_publish_time: Date
 

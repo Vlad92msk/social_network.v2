@@ -1,12 +1,12 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { LessThanOrEqual, Repository } from 'typeorm'
-import { PostEntity } from './entities/post.entity'
+import { PostEntity, PostVisibility } from './entities/post.entity'
 import { CreatePostDto } from './dto/create-post.dto'
 import { UpdatePostDto } from './dto/update-post.dto'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { TagsService } from '@services/tags/tags.service'
-import { PostVisibility, PublicationType } from '@shared/entity/publication.entity'
+import { PublicationType } from '@shared/entity/publication.entity'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
 import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
@@ -296,7 +296,7 @@ export class PostsService {
             author,
             type: PublicationType.POST
         })
-        return this.postRepository.save(newPost);
+        return this.postRepository.save(newPost)
     }
 
     /**
