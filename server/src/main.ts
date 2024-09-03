@@ -50,36 +50,28 @@ async function bootstrap() {
             module: PostModule,
             url: 'posts',
             name: 'Посты',
-            title: 'Посты API',
             description: 'API операций с постами',
-            tag: 'Посты',
+            version: '1.0'
+          },
+          {
+            module: UserInfoModule,
+            url: 'user-info',
+            name: 'Пользователи',
+            description: 'API операций с gолзователями',
+            version: '1.0'
+          },
+          {
+            module: ProfileModule,
+            url: 'profile',
+            name: 'Профили',
+            description: 'API операций с профилями',
             version: '1.0'
           },
           {
             module: TagModule,
             url: 'tags',
             name: 'Теги',
-            title: 'Теги API',
             description: 'API операций с тегами',
-            tag: 'Теги',
-            version: '1.0'
-          },
-          {
-            module: UserInfoModule,
-            url: 'user-info',
-            name: 'Инф о пользователе',
-            title: 'Инф о пользователе API',
-            description: 'API операций с gолзователями',
-            tag: 'Инф о пользователе',
-            version: '1.0'
-          },
-          {
-            module: ProfileModule,
-            url: 'profile',
-            name: 'Инф о профиле',
-            title: 'Инф о профиле API',
-            description: 'API операций с профилями',
-            tag: 'Профиль',
             version: '1.0'
           },
         ]

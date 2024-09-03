@@ -12,11 +12,9 @@ interface YamlGenerationConfig {
 
 interface Docs {
     module: any,
-        url: string,
+    url: string,
     name: string,
-    title: string,
-    description: string,
-    tag: string
+    description?: string,
     version: string
 }
 
@@ -65,10 +63,10 @@ export function setupSwagger(app: INestApplication, config: YamlGenerationConfig
 
     docs.forEach(doc => {
         const options = new DocumentBuilder()
-            .setTitle(doc.title)
+            .setTitle(doc.name)
             .setDescription(doc.description)
             .setVersion(doc.version)
-            .addTag(doc.tag)
+            .addTag(doc.name)
             .build();
 
         const document = SwaggerModule.createDocument(app, options, {
