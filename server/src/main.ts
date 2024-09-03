@@ -12,12 +12,10 @@ import { ConfigEnum } from '@config/config.enum'
 import { AppModule } from '@src/services/app.module'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { ValidationPipe } from '@nestjs/common'
-import * as YAML from 'yaml'
-import * as fs from 'fs'
-import * as path from 'path'
 import { setupSwagger } from '../swagger.config'
 import { PostModule } from '@services/posts/post/post.module'
 import { TagModule } from '@services/tags/tags.module'
+import { UserInfoModule } from "@services/users/user-info/user-info.module";
 
 
 
@@ -64,7 +62,16 @@ async function bootstrap() {
             description: 'API операций с тегами',
             tag: 'Теги',
             version: '1.0'
-          }
+          },
+          {
+            module: UserInfoModule,
+            url: 'user-info',
+            name: 'Инф о пользователе',
+            title: 'Инф о пользователе API',
+            description: 'API операций с gолзователями',
+            tag: 'Инф о пользователе',
+            version: '1.0'
+          },
         ]
     )
   }
