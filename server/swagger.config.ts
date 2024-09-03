@@ -21,7 +21,7 @@ interface Docs {
 function generateYamlFiles(document: any, config: YamlGenerationConfig, moduleName: string) {
     console.log(`Начало генерации YAML файлов для модуля ${moduleName}`);
 
-    const outputDir = path.join(process.cwd(), 'swagger-yaml', moduleName);
+    const outputDir = path.join(process.cwd(), 'swagger', moduleName);
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
