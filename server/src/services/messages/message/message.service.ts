@@ -42,12 +42,6 @@ export class MessageService {
 
     /**
      * Создать новое сообщение
-     * @param createMessageDto - DTO с данными для создания сообщения
-     * @param media - прикрепленные медиафайлы
-     * @param voices - прикрепленные голосовые сообщения
-     * @param videos - прикрепленные видео
-     * @param params - параметры запроса
-     * @returns Promise<MessageEntity>
      */
     async create(
         { createMessageDto, media, voices, videos }: { createMessageDto: CreateMessageDto, media: Express.Multer.File[], voices: Express.Multer.File[], videos: Express.Multer.File[] },
@@ -90,13 +84,6 @@ export class MessageService {
 
     /**
      * Обновить существующее сообщение
-     * @param id - идентификатор сообщения
-     * @param updateMessageDto - DTO с данными для обновления
-     * @param media - новые медиафайлы
-     * @param voices - новые голосовые сообщения
-     * @param videos - новые видео
-     * @param userId - идентификатор пользователя, выполняющего обновление
-     * @returns Promise<MessageEntity>
      */
     async update(
         id: string,
@@ -148,9 +135,6 @@ export class MessageService {
 
     /**
      * Получить список всех сообщений с возможностью фильтрации по диапазонам
-     * @param query - параметры запроса для фильтрации и пагинации
-     * @param params - дополнительные параметры запроса
-     * @returns Promise<PaginatedResponse<MessageEntity>>
      */
     async findAll(query: FindMessageDto, params: RequestParams) {
         const {
@@ -184,9 +168,6 @@ export class MessageService {
 
     /**
      * Найти сообщение по идентификатору
-     * @param id - идентификатор сообщения
-     * @returns Promise<MessageEntity>
-     * @throws NotFoundException если сообщение не найдено
      */
     async findOne(id: string) {
         const message = await this.messageRepository.findOne({
@@ -201,8 +182,6 @@ export class MessageService {
 
     /**
      * Удалить сообщение
-     * @param id - идентификатор сообщения
-     * @returns Promise<void>
      */
     async remove(id: string) {
         const message = await this.findOne(id)
@@ -226,8 +205,6 @@ export class MessageService {
 
     /**
      * Отметить сообщение как доставленное
-     * @param id - идентификатор сообщения
-     * @returns Promise<MessageEntity>
      */
     async markAsDelivered(id: string) {
         const message = await this.findOne(id)
@@ -237,8 +214,6 @@ export class MessageService {
 
     /**
      * Отметить сообщение как прочитанное
-     * @param id - идентификатор сообщения
-     * @returns Promise<MessageEntity>
      */
     async markAsRead(id: string) {
         const message = await this.findOne(id)
@@ -248,10 +223,6 @@ export class MessageService {
 
     /**
      * Создать пересланное сообщение
-     * @param originalMessageId - идентификатор оригинального сообщения
-     * @param params - параметры запроса
-     * @param text - опциональный текст для нового сообщения
-     * @returns Promise<MessageEntity>
      */
     async createForwardedMessage(originalMessageId: string, params: RequestParams, text?: string) {
         const author = await this.userInfoService.getUsersById(params.user_info_id)
@@ -272,13 +243,6 @@ export class MessageService {
 
     /**
      * Создать ответ на сообщение
-     * @param replyToId - идентификатор сообщения, на которое отвечаем
-     * @param createMessageDto - DTO с данными для создания ответа
-     * @param media - прикрепленные медиафайлы
-     * @param voices - прикрепленные голосовые сообщения
-     * @param videos - прикрепленные видео
-     * @param params - параметры запроса
-     * @returns Promise<MessageEntity>
      */
     async createReply(
         replyToId: string,
@@ -311,8 +275,6 @@ export class MessageService {
 
     /**
      * Получить цепочку ответов на сообщение
-     * @param messageId - идентификатор исходного сообщения
-     * @returns Promise<MessageEntity[]>
      */
     async getReplyChain(messageId: string) {
         const message = await this.findOne(messageId)
@@ -329,10 +291,6 @@ export class MessageService {
 
     /**
      * Добавить реакцию к сообщению
-     * @param messageId - идентификатор сообщения
-     * @param userId - идентификатор пользователя, добавляющего реакцию
-     * @param emoji - эмодзи реакции
-     * @returns Promise<ReactionEntity>
      */
     async addReaction(messageId: string, userId: number, emoji: string) {
         const message = await this.findOne(messageId)
@@ -349,9 +307,6 @@ export class MessageService {
 
     /**
      * Удалить реакцию с сообщения
-     * @param reactionId - идентификатор реакции
-     * @param userId - идентификатор пользователя, удаляющего реакцию
-     * @returns Promise<void>
      */
     async removeReaction(reactionId: string, userId: number) {
         const reaction = await this.reactionRepository.findOne({
@@ -372,8 +327,6 @@ export class MessageService {
 
     /**
      * Получить все реакции на сообщение
-     * @param messageId - идентификатор сообщения
-     * @returns Promise<ReactionEntity[]>
      */
     async getReactions(messageId: string) {
         const message = await this.findOne(messageId)
@@ -385,9 +338,6 @@ export class MessageService {
 
     /**
      * Выполнить полнотекстовый поиск по сообщениям
-     * @param searchTerm - поисковый запрос
-     * @param params - параметры запроса
-     * @returns Promise<PaginatedResponse<MessageEntity>>
      */
     async fullTextSearch(searchTerm: string, params: RequestParams) {
         const queryBuilder = this.messageRepository.createQueryBuilder('message')
@@ -404,9 +354,6 @@ export class MessageService {
 
     /**
      * Получить количество реакций на сообщение
-     * @param messageId - идентификатор сообщения
-     * @param emoji - опциональный параметр для подсчета конкретной реакции
-     * @returns Promise<number>
      */
     async getReactionCount(messageId: string, emoji?: string) {
         const query = this.reactionRepository.createQueryBuilder('reaction')
@@ -421,10 +368,6 @@ export class MessageService {
 
     /**
      * Проверить, отреагировал ли пользователь на сообщение
-     * @param messageId - идентификатор сообщения
-     * @param userId - идентификатор пользователя
-     * @param emoji - опциональный параметр для проверки конкретной реакции
-     * @returns Promise<boolean>
      */
     async hasUserReacted(messageId: string, userId: number, emoji?: string) {
         const query = this.reactionRepository.createQueryBuilder('reaction')
@@ -441,10 +384,6 @@ export class MessageService {
 
     /**
      * Создать временное сообщение с автоматическим удалением
-     * @param createMessageDto - DTO с данными для создания сообщения
-     * @param expirationTime - время жизни сообщения в секундах
-     * @param params - параметры запроса
-     * @returns Promise<MessageEntity>
      */
     async createTemporaryMessage(createMessageDto: CreateMessageDto, expirationTime: number, params: RequestParams) {
         const message = await this.create({ createMessageDto, media: [], voices: [], videos: [] }, params)

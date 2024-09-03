@@ -19,6 +19,7 @@ import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { ProfileModule } from '@services/profile/profile/profile.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
 import { MessageModule } from '@services/messages/message/message.module'
+import { CommentModule } from '@services/comments/comment/comment.module'
 
 
 
@@ -88,6 +89,13 @@ async function bootstrap() {
             url: 'messages',
             name: 'Сообщения',
             description: 'API операций с сообщениями',
+            version: '1.0'
+          },
+          {
+            module: CommentModule,
+            url: 'comments',
+            name: 'Комментарии',
+            description: 'API операций с комментариями',
             version: '1.0'
           },
         ]

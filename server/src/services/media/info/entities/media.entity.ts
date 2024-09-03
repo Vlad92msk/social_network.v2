@@ -74,7 +74,7 @@ export class MediaEntity implements MediaItem {
     tags: Tag[]
 
     @ApiProperty({ description: 'Комментарии к данному медиа', type: () => [CommentEntity] })
-    @OneToMany(() => CommentEntity, comment => comment.mediaRef, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    @OneToMany(() => CommentEntity, comment => comment.media, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
     comments: CommentEntity[]
 
     @ApiProperty({ description: 'Сообщения, к которым добавлен медиа-файл', type: () => [MessageEntity] })

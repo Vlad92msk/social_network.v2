@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable
 import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
 import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { ApiProperty } from '@nestjs/swagger'
-import { ReactionEntity } from "@shared/entity/reaction.entity";
+import { ReactionEntity } from '@shared/entity/reaction.entity'
 
 @Entity({ name: 'messages', comment: 'Сообщения, которыми пользователи могут обмениваться в диалоге' })
 export class MessageEntity extends PublicationEntity {
@@ -48,6 +48,7 @@ export class MessageEntity extends PublicationEntity {
     @Column({ type: 'boolean', default: false, comment: 'Флаг, показывающий, было ли сообщение отредактировано' })
     is_edited: boolean
 
+    @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity] })
     @OneToMany(() => ReactionEntity, reaction => reaction.message)
     reactions: ReactionEntity[]
 

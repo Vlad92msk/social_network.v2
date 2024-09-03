@@ -3,6 +3,7 @@ import { PublicationEntity, PublicationType } from '@shared/entity/publication.e
 import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { Tag } from '@services/tags/entity'
 import { ApiProperty } from '@nestjs/swagger'
+import { CommentEntity } from '@services/comments/comment/entities/comment.entity'
 
 export enum PostVisibility {
     PUBLIC = 'public',
@@ -54,6 +55,10 @@ export class PostEntity extends PublicationEntity {
     @ApiProperty({ description: 'Посты, которые являются ответами на данное сообщение', type: () => [PostEntity] })
     @OneToMany(() => PostEntity, message => message.forwarded_post)
     forwarded_to: PostEntity[]
+
+    @ApiProperty({ description: 'Комментарии к данному посту', type: () => [CommentEntity] })
+    @OneToMany(() => CommentEntity, comment => comment.post, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    comments: CommentEntity[]
 
     @ApiProperty({ description: 'Голосовые вложения', type: () => [MediaEntity] })
     @OneToMany(type => MediaEntity, publication => publication.voicesRef)
