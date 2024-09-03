@@ -16,6 +16,7 @@ import { setupSwagger } from '../swagger.config'
 import { PostModule } from '@services/posts/post/post.module'
 import { TagModule } from '@services/tags/tags.module'
 import { UserInfoModule } from "@services/users/user-info/user-info.module";
+import { ProfileModule } from "@services/profile/profile/profile.module";
 
 
 
@@ -70,6 +71,15 @@ async function bootstrap() {
             title: 'Инф о пользователе API',
             description: 'API операций с gолзователями',
             tag: 'Инф о пользователе',
+            version: '1.0'
+          },
+          {
+            module: ProfileModule,
+            url: 'profile',
+            name: 'Инф о профиле',
+            title: 'Инф о профиле API',
+            description: 'API операций с профилями',
+            tag: 'Профиль',
             version: '1.0'
           },
         ]

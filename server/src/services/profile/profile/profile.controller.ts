@@ -4,7 +4,9 @@ import { UserProfileInfo } from './entities/profileInfo.entity'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { Response } from 'express'
 import { RequestParams } from 'src/shared/decorators'
+import { ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
+@ApiTags('Профиль')
 @Controller('api/profile')
 export class ProfileController {
     constructor(private profileService: ProfileService) {}
@@ -18,15 +20,15 @@ export class ProfileController {
         })
     }
 
-    /**
-     * Создать/получить профиль по email
-     */
     @Post()
+    @ApiOperation({ summary: 'Создать/получить профиль по email' })
+    @ApiBody({ type: CreateProfileDto })
+    @ApiResponse({ status: 200, description: 'Профиль успешно создан/получен', type: UserProfileInfo })
     @UsePipes(new ValidationPipe())
     async getProfileInfo(
         @Body() createProfileDto: CreateProfileDto,
         @Res({ passthrough: true }) response: Response
-    ): Promise<UserProfileInfo>{
+    ){
         const profile = await this.profileService.getProfileInfo(createProfileDto.email)
 
         response.cookie('profile_id', profile.id, { httpOnly: true })
@@ -35,18 +37,17 @@ export class ProfileController {
         return profile
     }
 
-    /**
-     * Получить все профили
-     */
     @Get()
-    async getProfiles(): Promise<UserProfileInfo[]>{
+    @ApiOperation({ summary: 'Получить все профили' })
+    @ApiResponse({ status: 200, description: 'Список всех профилей', type: [UserProfileInfo] })
+    async getProfiles() {
         return await this.profileService.getProfiles()
     }
 
-    /**
-     * Удалить профиль
-     */
     @Delete()
+    @ApiOperation({ summary: 'Удалить профиль' })
+    @ApiCookieAuth()
+    @ApiResponse({ status: 200, description: 'Профиль успешно удален' })
     @UsePipes(new ValidationPipe())
     async removeProfile(
         @RequestParams() params: RequestParams,
