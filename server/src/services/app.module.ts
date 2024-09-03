@@ -10,6 +10,7 @@ import { TagModule } from '@services/tags/tags.module'
 import { MessageModule } from '@services/messages/message/message.module'
 import { CommentModule } from '@services/comments/comment/comment.module'
 import { PostModule } from '@services/posts/post/post.module'
+import { ScheduleModule } from '@nestjs/schedule'
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PostModule } from '@services/posts/post/post.module'
       isGlobal: true,
       envFilePath: '../.env',
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: baseOrmConfig,
     }),

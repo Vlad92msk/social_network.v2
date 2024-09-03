@@ -18,6 +18,7 @@ import { TagModule } from '@services/tags/tags.module'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { ProfileModule } from '@services/profile/profile/profile.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
+import { MessageModule } from '@services/messages/message/message.module'
 
 
 
@@ -80,6 +81,13 @@ async function bootstrap() {
             url: 'media',
             name: 'Медиа',
             description: 'API операций с медиа',
+            version: '1.0'
+          },
+          {
+            module: MessageModule,
+            url: 'messages',
+            name: 'Сообщения',
+            description: 'API операций с сообщениями',
             version: '1.0'
           },
         ]

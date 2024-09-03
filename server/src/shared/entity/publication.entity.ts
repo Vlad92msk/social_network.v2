@@ -5,7 +5,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinColumn
+    JoinColumn, OneToMany
 } from 'typeorm'
 import { UserInfo } from '@services/users/user-info/entities'
 import { ApiProperty } from '@nestjs/swagger'

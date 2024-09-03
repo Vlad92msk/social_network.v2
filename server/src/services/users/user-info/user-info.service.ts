@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UserInfo } from './entities/user.entity'
@@ -132,5 +132,18 @@ export class UserInfoService {
         }
 
         return await this.userInfoRepository.save(findUser)
+    }
+
+    async getUserReactions(userId: number) {
+        const user = await this.userInfoRepository.findOne({
+            where: { id: userId },
+            relations: ['reactions', 'reactions.message'],
+        })
+
+        if (!user) {
+            throw new NotFoundException(`Пользователь с ID "${userId}" не найден`)
+        }
+
+        return user.reactions
     }
 }

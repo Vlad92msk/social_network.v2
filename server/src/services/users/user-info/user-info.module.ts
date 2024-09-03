@@ -8,10 +8,11 @@ import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { UserAbout, UserInfo } from './entities'
+import { ReactionEntity } from '@shared/entity/reaction.entity'
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([UserInfo, UserAbout]),
+        TypeOrmModule.forFeature([UserInfo, UserAbout, ReactionEntity]),
         forwardRef(() => MediaInfoModule)
     ],
     providers: [UserInfoService],
