@@ -32,5 +32,4 @@ export class CreateMessageDto extends IntersectionType(
     @IsOptional()
     @IsBoolean()
     is_forwarded?: boolean
-
 }

@@ -1,8 +1,9 @@
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, JoinTable, OneToOne } from 'typeorm'
 import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
 import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { ApiProperty } from '@nestjs/swagger'
 import { ReactionEntity } from '@shared/entity/reaction.entity'
+import { DialogEntity } from '@services/messages/dialog/entities/dialog.entity'
 
 @Entity({ name: 'messages', comment: 'Сообщения, которыми пользователи могут обмениваться в диалоге' })
 export class MessageEntity extends PublicationEntity {
@@ -59,6 +60,14 @@ export class MessageEntity extends PublicationEntity {
     @ApiProperty({ description: 'Видео сообщения', type: () => [MediaEntity] })
     @OneToMany(type => MediaEntity, publication => publication.videosRef)
     videos: MediaEntity[]
+
+    @ApiProperty({ description: 'Диалог которому принадлежит сообщение', type: () => DialogEntity })
+    @ManyToOne(() => DialogEntity, dialog => dialog.messages, { onDelete: 'CASCADE' })
+    dialog: DialogEntity
+
+    @ApiProperty({ description: 'Диалог, в котором это сообщение является последним', type: () => DialogEntity })
+    @OneToOne(() => DialogEntity, dialog => dialog.last_message, { lazy: true })
+    last_message_in_dialog: Promise<DialogEntity>
 
     @ApiProperty({ description: 'Файлы, приложенные к сообщению', type: () => [MediaEntity] })
     @ManyToMany(() => MediaEntity, (media) => media.messagesRef, { onDelete: 'CASCADE' })

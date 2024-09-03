@@ -20,6 +20,7 @@ import { ProfileModule } from '@services/profile/profile/profile.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
 import { MessageModule } from '@services/messages/message/message.module'
 import { CommentModule } from '@services/comments/comment/comment.module'
+import { DialogModule } from '@services/messages/dialog/dialog.module'
 
 
 
@@ -96,6 +97,13 @@ async function bootstrap() {
             url: 'comments',
             name: 'Комментарии',
             description: 'API операций с комментариями',
+            version: '1.0'
+          },
+            {
+            module: DialogModule,
+            url: 'dialogs',
+            name: 'Диалоги',
+            description: 'API операций с диалогами (чатами)',
             version: '1.0'
           },
         ]

@@ -11,6 +11,7 @@ import { MessageModule } from '@services/messages/message/message.module'
 import { CommentModule } from '@services/comments/comment/comment.module'
 import { PostModule } from '@services/posts/post/post.module'
 import { ScheduleModule } from '@nestjs/schedule'
+import { DialogModule } from '@services/messages/dialog/dialog.module'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ScheduleModule } from '@nestjs/schedule'
     MessageModule,
     CommentModule,
     PostModule,
+    DialogModule,
   ],
 })
 export class AppModule {
