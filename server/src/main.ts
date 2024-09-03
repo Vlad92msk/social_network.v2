@@ -17,6 +17,7 @@ import { PostModule } from '@services/posts/post/post.module'
 import { TagModule } from '@services/tags/tags.module'
 import { UserInfoModule } from "@services/users/user-info/user-info.module";
 import { ProfileModule } from "@services/profile/profile/profile.module";
+import { MediaInfoModule } from "@services/media/info/media-info.module";
 
 
 
@@ -72,6 +73,13 @@ async function bootstrap() {
             url: 'tags',
             name: 'Теги',
             description: 'API операций с тегами',
+            version: '1.0'
+          },
+          {
+            module: MediaInfoModule,
+            url: 'media',
+            name: 'Медиа',
+            description: 'API операций с медиа',
             version: '1.0'
           },
         ]

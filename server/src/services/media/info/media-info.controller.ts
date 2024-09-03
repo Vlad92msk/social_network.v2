@@ -20,7 +20,10 @@ import { ConfigEnum } from '@config/config.enum'
 import { GetMediaDto } from './dto/get-media.dto'
 import { RequestParams } from 'src/shared/decorators'
 import { createPaginationHeaders } from 'src/shared/utils'
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { MediaEntity } from "@services/media/info/entities/media.entity";
 
+@ApiTags('Медиа')
 @Controller('api/media/info')
 export class MediaInfoController {
     private readonly maxStorage: number
@@ -33,10 +36,24 @@ export class MediaInfoController {
         this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
     }
 
-    /**
-     * Загружает файлы в систему
-     */
     @Post('upload')
+    @ApiOperation({ summary: 'Загрузить файлы' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                files: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        format: 'binary',
+                    },
+                },
+            },
+        },
+    })
+    @ApiResponse({ status: 201, description: 'Файлы успешно загружены', type: [MediaEntity] })
     @UseInterceptors(FilesInterceptor('files'))
     async uploadFiles(
         @UploadedFiles(
@@ -60,11 +77,11 @@ export class MediaInfoController {
         return this.mediaInfoService.uploadFiles(files, params.user_info_id)
     }
 
-    /**
-     * Скачивает файл
-     * Не тестировал
-     */
     @Get(':id')
+    @ApiOperation({ summary: 'Скачать файл' })
+    @ApiParam({ name: 'id', description: 'ID файла' })
+    @ApiResponse({ status: 200, description: 'Файл успешно скачан' })
+    @ApiResponse({ status: 404, description: 'Файл не найден' })
     async downLoadFile(
         @Param('id') id: string,
         @Res() res: Response
@@ -87,10 +104,10 @@ export class MediaInfoController {
         }
     }
 
-    /**
-     * Получить список файлов
-     */
     @Get()
+    @ApiOperation({ summary: 'Получить список файлов' })
+    @ApiQuery({ type: GetMediaDto })
+    @ApiResponse({ status: 200, description: 'Список файлов', type: [MediaEntity] })
     async getFiles(
         @Query() query: GetMediaDto,
         @RequestParams() params: RequestParams,
@@ -102,10 +119,11 @@ export class MediaInfoController {
         return data
     }
 
-    /**
-     * Удалить файл
-     */
     @Delete(':id')
+    @ApiOperation({ summary: 'Удалить файл' })
+    @ApiParam({ name: 'id', description: 'ID файла' })
+    @ApiResponse({ status: 200, description: 'Файл успешно удален' })
+    @ApiResponse({ status: 404, description: 'Файл не найден' })
     async deleteFile(@Param('id') id: string) {
         try {
             return await this.mediaInfoService.deleteFile(id)
