@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { UserAboutType } from '../../_interfaces'
-import { UserAbout } from "@services/users/user-info/entities";
+import { UserAbout } from '@services/users/user-info/entities'
 
 export class UserInfoDto {
     @ApiProperty({ description: 'ID пользователя' })

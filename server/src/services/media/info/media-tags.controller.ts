@@ -1,8 +1,8 @@
 import { Controller, Post, Delete, Get, Param, Body } from '@nestjs/common'
 import { MediaTagService } from '@services/media/info/media-tag.service'
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { MediaEntity } from "@services/media/info/entities/media.entity";
-import { Tag } from "@services/tags/entity";
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { MediaEntity } from '@services/media/info/entities/media.entity'
+import { Tag } from '@services/tags/entity'
 
 @ApiTags('Теги медиа')
 @Controller('api/media/tags')

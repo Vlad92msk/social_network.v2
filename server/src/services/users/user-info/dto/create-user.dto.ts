@@ -1,6 +1,6 @@
 import { IsObject, IsOptional, IsString } from 'class-validator'
 import { UserAboutType, UserInfoType } from '../../_interfaces'
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger'
 
 export class CreateUserDto implements Partial<UserInfoType> {
     @ApiProperty({

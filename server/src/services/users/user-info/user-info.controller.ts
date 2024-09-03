@@ -17,8 +17,8 @@ import { UpdateUserDto } from './dto/update-users.dto'
 import { Response } from 'express'
 import { createPaginationHeaders } from '@shared/utils'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { UserInfoDto } from "@services/users/user-info/dto/user-info.dto";
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { UserInfoDto } from '@services/users/user-info/dto/user-info.dto'
 
 @ApiTags('Инф о пользователе')
 @Controller('api/users/user-info')

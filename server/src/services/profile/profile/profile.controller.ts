@@ -4,7 +4,7 @@ import { UserProfileInfo } from './entities/profileInfo.entity'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { Response } from 'express'
 import { RequestParams } from 'src/shared/decorators'
-import { ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 @ApiTags('Профиль')
 @Controller('api/profile')

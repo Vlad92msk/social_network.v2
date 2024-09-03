@@ -15,9 +15,9 @@ import { ValidationPipe } from '@nestjs/common'
 import { setupSwagger } from '../swagger.config'
 import { PostModule } from '@services/posts/post/post.module'
 import { TagModule } from '@services/tags/tags.module'
-import { UserInfoModule } from "@services/users/user-info/user-info.module";
-import { ProfileModule } from "@services/profile/profile/profile.module";
-import { MediaInfoModule } from "@services/media/info/media-info.module";
+import { UserInfoModule } from '@services/users/user-info/user-info.module'
+import { ProfileModule } from '@services/profile/profile/profile.module'
+import { MediaInfoModule } from '@services/media/info/media-info.module'
 
 
 

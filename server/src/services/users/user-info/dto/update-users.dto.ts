@@ -4,7 +4,7 @@ import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
 import { UserInfo } from '../entities'
 import { UpdateUserAboutDto } from './update-user-about.dto'
 import { TransformToObject } from '@shared/decorators'
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger'
 
 export class UpdateUserDto extends IntersectionType(
     PickType(PartialType(UserInfo, { skipNullProperties: true }), ['name', 'public_id']),

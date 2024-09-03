@@ -1,7 +1,7 @@
 import { IntersectionType, OmitType, PartialType } from '@nestjs/mapped-types'
 import { UserAbout } from '../entities'
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger'
+import { IsOptional, IsString } from 'class-validator'
 
 
 export class UpdateUserAboutDto extends IntersectionType(
@@ -10,20 +10,20 @@ export class UpdateUserAboutDto extends IntersectionType(
     @ApiProperty({ description: 'Место учебы', required: false })
     @IsOptional()
     @IsString()
-    study: string;
+    study: string
 
     @ApiProperty({ description: 'Место работы', required: false })
     @IsOptional()
     @IsString()
-    working: string;
+    working: string
 
     @ApiProperty({ description: 'Должность', required: false })
     @IsOptional()
     @IsString()
-    position: string;
+    position: string
 
     @ApiProperty({ description: 'Описание', required: false })
     @IsOptional()
     @IsString()
-    description: string;
+    description: string
 }

@@ -20,8 +20,8 @@ import { ConfigEnum } from '@config/config.enum'
 import { GetMediaDto } from './dto/get-media.dto'
 import { RequestParams } from 'src/shared/decorators'
 import { createPaginationHeaders } from 'src/shared/utils'
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { MediaEntity } from "@services/media/info/entities/media.entity";
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { MediaEntity } from '@services/media/info/entities/media.entity'
 
 @ApiTags('Медиа')
 @Controller('api/media/info')

@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm'
 import { UserAboutType } from '@src/services/users/_interfaces'
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger'
 
 @Entity({ comment: 'Общая информация о пользователе' })
 export class UserAbout implements UserAboutType {

@@ -12,7 +12,7 @@ import { UserAbout } from './user-about.entity'
 import { UserAboutType, UserInfoType } from '../../_interfaces'
 import { MediaEntity } from '@src/services/media/info/entities/media.entity'
 import { MediaItem } from '@src/services/media/info/interfaces/media-item'
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger'
 
 @Entity({ comment: 'Профиль пользователя' })
 export class UserInfo implements UserInfoType {
