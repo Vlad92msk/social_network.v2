@@ -27,6 +27,7 @@ import { CommentEntity } from './entities/comment.entity'
 import { createPaginationHeaders } from '@shared/utils'
 import { RequestParams } from '@shared/decorators'
 import { Response } from 'express'
+import { CommentResponseDto } from './dto/comment-response.dto'
 
 @ApiTags('Комментарии')
 @Controller('comments')
@@ -39,6 +40,56 @@ export class CommentController {
     @ApiBadRequestResponse({ description: 'Переданы неверные данные' })
     create(@Body() createCommentDto: CreateCommentDto) {
         return this.commentService.create(createCommentDto)
+    }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Обновить комментарий по ID' })
+    @ApiOkResponse({ description: 'Комментарий успешно обновлен', type: CommentEntity })
+    @ApiNotFoundResponse({ description: 'Комментарий не найден' })
+    @ApiBadRequestResponse({ description: 'Переданы неверные данные' })
+    async update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
+        return await this.commentService.update(id, updateCommentDto)
+    }
+
+    @Get('post/:postId')
+    @ApiOperation({ summary: 'Получить корневые комментарии к посту' })
+    @ApiResponse({ status: 200, description: 'Список корневых комментариев к посту с общим количеством', type: CommentResponseDto })
+    async findCommentsByPost(
+        @Param('postId') postId: string,
+        @Query() query: FindCommentDto,
+        @RequestParams() params: RequestParams,
+        @Res({ passthrough: true }) response: Response
+    ) {
+        const { data, paginationInfo, totalComments } = await this.commentService.findCommentsByEntity('post', postId, query, params)
+        response.set(createPaginationHeaders(paginationInfo))
+        return { data, total: paginationInfo.total, totalComments }
+    }
+
+    @Get('media/:mediaId')
+    @ApiOperation({ summary: 'Получить комментарии к медиа' })
+    @ApiResponse({ status: 200, description: 'Список корневых комментариев к медиа с общим количеством', type: CommentResponseDto })
+    async findCommentsByMedia(
+        @Param('mediaId') mediaId: string,
+        @Query() query: FindCommentDto,
+        @RequestParams() params: RequestParams,
+        @Res({ passthrough: true }) response: Response
+    ) {
+        const { data, paginationInfo, totalComments } = await this.commentService.findCommentsByEntity('media', mediaId, query, params)
+        response.set(createPaginationHeaders(paginationInfo))
+        return { data, total: paginationInfo.total, totalComments }
+    }
+
+    @Get(':id/children')
+    @ApiOperation({ summary: 'Получить дочерние комментарии' })
+    @ApiResponse({ status: 200, description: 'Список дочерних комментариев', type: [CommentEntity] })
+    async getChildComments(
+        @Param('id') id: string,
+        @Query() query: FindCommentDto,
+        @Res({ passthrough: true }) response: Response
+    ) {
+        const { data, paginationInfo } = await this.commentService.getChildComments(id, query)
+        response.set(createPaginationHeaders(paginationInfo))
+        return data
     }
 
     @Get()
@@ -64,15 +115,6 @@ export class CommentController {
         return this.commentService.findOne(id)
     }
 
-    @Patch(':id')
-    @ApiOperation({ summary: 'Обновить комментарий по ID' })
-    @ApiOkResponse({ description: 'Комментарий успешно обновлен', type: CommentEntity })
-    @ApiNotFoundResponse({ description: 'Комментарий не найден' })
-    @ApiBadRequestResponse({ description: 'Переданы неверные данные' })
-    async update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
-        return await this.commentService.update(id, updateCommentDto)
-    }
-
     @Delete(':id')
     @ApiOperation({ summary: 'Удалить комментарий по ID' })
     @ApiNoContentResponse({ description: 'Комментарий успешно удален' })
@@ -80,6 +122,17 @@ export class CommentController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('id') id: string) {
         return await this.commentService.remove(id)
+    }
+
+    @Patch(':id/pin')
+    @ApiOperation({ summary: 'Закрепить/открепить комментарий' })
+    @ApiOkResponse({ description: 'Комментарий успешно закреплен/откреплен', type: CommentEntity })
+    @ApiNotFoundResponse({ description: 'Комментарий не найден' })
+    async pinComment(
+        @Param('id') id: string,
+        @Body('action') action: 'pin' | 'unpin'
+    ) {
+        return await this.commentService.pinComment(id, action)
     }
 
     @Get('post/:postId/pinned')
