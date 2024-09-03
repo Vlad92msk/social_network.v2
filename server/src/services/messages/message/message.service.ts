@@ -407,4 +407,11 @@ export class MessageService {
             await this.remove(message.id)
         }
     }
+
+    async findLastMessageForDialog(dialogId: string) {
+        return this.messageRepository.findOne({
+            where: { dialog: { id: dialogId } },
+            order: { date_created: 'DESC' }
+        });
+    }
 }
