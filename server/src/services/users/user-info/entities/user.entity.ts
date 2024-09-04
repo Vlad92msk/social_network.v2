@@ -9,7 +9,7 @@ import {
 } from 'typeorm'
 import { v4 as uuidv4 } from 'uuid'
 import { UserAbout } from './user-about.entity'
-import { UserAboutType, UserInfoType } from '../../_interfaces'
+import { UserAboutType, UserInfoType, UserStatus } from '../../_interfaces'
 import { MediaEntity } from '@src/services/media/info/entities/media.entity'
 import { MediaItem } from '@src/services/media/info/interfaces/media-item'
 import { ApiProperty } from '@nestjs/swagger'
@@ -33,9 +33,9 @@ export class UserInfo implements UserInfoType {
     @Column({ nullable: true, type: 'varchar', length: 200, comment: 'Фото профиля' })
     profile_image: string
 
-    @ApiProperty({ description: 'Статус пользователя', enum: ['online', 'offline'] })
-    @Column({ type: 'enum', enum: ['online', 'offline'], default: 'offline' })
-    status: 'online' | 'offline'
+    @ApiProperty({ description: 'Статус пользователя', enum: UserStatus })
+    @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Offline })
+    status: UserStatus
 
     //__________________
     // Связи

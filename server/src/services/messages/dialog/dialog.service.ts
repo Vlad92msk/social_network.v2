@@ -11,9 +11,11 @@ import { MediaInfoService } from '@services/media/info/media-info.service'
 import { RequestParams } from '@shared/decorators'
 import { createPaginationQueryOptions, createPaginationResponse } from '@shared/utils'
 import { DialogShortDto } from '@services/messages/dialog/dto/dialog-short.dto'
-import { DialogGateway } from '@services/messages/dialog/dialog.gateway'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { MessageEntity } from '@services/messages/message/entity/message.entity'
 import { SortDirection } from '@shared/types'
+import { UserStatus } from '@services/users/_interfaces'
+import { DialogEvents } from './types'
 
 @Injectable()
 export class DialogService {
@@ -30,8 +32,7 @@ export class DialogService {
         @Inject(forwardRef(() => MediaInfoService))
         private mediaInfoService: MediaInfoService,
 
-        @Inject(forwardRef(() => DialogGateway))
-        private dialogGateway: DialogGateway,
+        private eventEmitter: EventEmitter2,
     ) {}
 
     /**
@@ -255,6 +256,7 @@ export class DialogService {
         if (!dialog.participants.some(participant => participant.id === userId)) {
             dialog.participants.push(user)
             await this.dialogRepository.save(dialog)
+            this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
         }
 
         return dialog
@@ -272,6 +274,7 @@ export class DialogService {
 
         dialog.participants = dialog.participants.filter(participant => participant.id !== userId)
         await this.dialogRepository.save(dialog)
+        this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
 
         return dialog
     }
@@ -290,6 +293,7 @@ export class DialogService {
         if (!dialog.admins.some(admin => admin.id === userId)) {
             dialog.admins.push(user)
             await this.dialogRepository.save(dialog)
+            this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
         }
 
         return dialog
@@ -311,6 +315,7 @@ export class DialogService {
 
         dialog.admins = dialog.admins.filter(admin => admin.id !== userId)
         await this.dialogRepository.save(dialog)
+        this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
 
         return dialog
     }
@@ -329,6 +334,7 @@ export class DialogService {
         if (!dialog.fixed_messages.some(fixedMessage => fixedMessage.id === messageId)) {
             dialog.fixed_messages.push(message)
             await this.dialogRepository.save(dialog)
+            this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
         }
 
         return dialog
@@ -388,9 +394,11 @@ export class DialogService {
 
         // Обновляем last_message, если оно изменилось
         const lastMessage = await this.messageService.findLastMessageForDialog(dialogId)
+
         if (lastMessage) {
             updatedDialog.last_message = Promise.resolve(lastMessage)
             await this.dialogRepository.save(updatedDialog)
+            this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort: await this.findOneShort(dialogId) })
         }
 
         return updatedDialog
@@ -399,6 +407,7 @@ export class DialogService {
 
     private async mapToDialogShortDto(dialog: DialogEntity): Promise<DialogShortDto> {
         const lastMessage = await dialog.last_message
+
         return {
             id: dialog.id,
             title: dialog.title,
@@ -450,7 +459,6 @@ export class DialogService {
 
         return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)))
     }
-
     async updateDialogImage(dialogId: string, file: Express.Multer.File, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
 
@@ -462,8 +470,7 @@ export class DialogService {
         dialog.image = uploadedFile.meta.src
 
         const updatedDialog = await this.dialogRepository.save(dialog)
-        // Отправляем обновление всем подключенным клиентам
-        this.dialogGateway.sendDialogUpdate(dialogId, 'dialogUpdated', updatedDialog)
+        this.eventEmitter.emit(DialogEvents.DIALOG_IMAGE_UPDATED, { dialogId, updatedDialog })
 
         return updatedDialog
     }
@@ -474,7 +481,7 @@ export class DialogService {
         await this.dialogRepository.save(dialog)
 
         const updatedDialogShort = await this.findOneShort(dialogId)
-        this.dialogGateway.sendDialogUpdate(dialogId, 'dialogShortUpdated', updatedDialogShort)
+        this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
     }
 
     /**
@@ -511,7 +518,7 @@ export class DialogService {
     /**
      * Обновить статус пользователя в диалоге
      */
-    async updateUserStatus(dialogId: string, userId: number, status: 'online' | 'offline') {
+    async updateUserStatus(dialogId: string, userId: number, status: UserStatus) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
             relations: ['participants']

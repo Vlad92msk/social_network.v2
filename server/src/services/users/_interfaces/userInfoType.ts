@@ -15,3 +15,8 @@ export interface UserInfoType {
     /** Общая информация о пользователе */
     about_info: UserAboutType
 }
+
+export enum UserStatus {
+    Online = 'online',
+    Offline = 'offline',
+}

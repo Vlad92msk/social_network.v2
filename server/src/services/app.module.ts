@@ -12,6 +12,7 @@ import { CommentModule } from '@services/comments/comment/comment.module'
 import { PostModule } from '@services/posts/post/post.module'
 import { ScheduleModule } from '@nestjs/schedule'
 import { DialogModule } from '@services/messages/dialog/dialog.module'
+import { EventEmitterModule } from "@nestjs/event-emitter";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DialogModule } from '@services/messages/dialog/dialog.module'
       envFilePath: '../.env',
     }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: baseOrmConfig,
     }),

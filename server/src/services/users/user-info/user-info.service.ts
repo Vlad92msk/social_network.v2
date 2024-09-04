@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { createPaginationResponse, createPaginationQueryOptions } from '@shared/utils'
 import { pick, forIn, omit, pickBy, isEmpty, values, size } from 'lodash'
 import { MediaInfoService } from '@services/media/info/media-info.service'
+import { UserStatus } from '@services/users/_interfaces'
 
 type UpdateUserInfo = UpdateUserDto & { profileImage?: Express.Multer.File, bannerImage?: Express.Multer.File }
 
@@ -150,7 +151,7 @@ export class UserInfoService {
     /**
      * Обновить статус пользователя
      */
-    async updateUserStatus(userId: number, status: 'online' | 'offline') {
+    async updateUserStatus(userId: number, status: UserStatus) {
         const user = await this.userInfoRepository.findOne({ where: { id: userId } })
         if (!user) {
             throw new NotFoundException(`Пользователь с ID "${userId}" не найден`)
