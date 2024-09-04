@@ -1,11 +1,11 @@
-import { Controller, Get, Query, Param, UseInterceptors, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { Response } from 'express';
-import { DialogService } from './dialog.service';
-import { DialogShortDto } from './dto/dialog-short.dto';
-import { FindDialogDto } from './dto/find-dialog.dto';
-import { RequestParams } from '@shared/decorators';
-import { createPaginationHeaders } from '@shared/utils';
+import { Controller, Get, Query, Param, UseInterceptors, Res } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { Response } from 'express'
+import { DialogService } from './dialog.service'
+import { DialogShortDto } from './dto/dialog-short.dto'
+import { FindDialogDto } from './dto/find-dialog.dto'
+import { RequestParams } from '@shared/decorators'
+import { createPaginationHeaders } from '@shared/utils'
 
 @ApiTags('Краткие диалоги')
 @Controller('api/dialogs-short')
@@ -20,9 +20,9 @@ export class DialogShortController {
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ): Promise<DialogShortDto[]> {
-        const { data, paginationInfo } = await this.dialogService.findAllShort(query, params);
-        response.set(createPaginationHeaders(paginationInfo));
-        return data;
+        const { data, paginationInfo } = await this.dialogService.findAllShort(query, params)
+        response.set(createPaginationHeaders(paginationInfo))
+        return data
     }
 
     @Get(':id')
@@ -30,7 +30,7 @@ export class DialogShortController {
     @ApiParam({ name: 'id', description: 'ID краткого диалога' })
     @ApiResponse({ status: 200, description: 'Краткий диалог', type: DialogShortDto })
     findOne(@Param('id') id: string) {
-        return this.dialogService.findOneShort(id);
+        return this.dialogService.findOneShort(id)
     }
 
     @Get('by-user/:userId')
@@ -38,6 +38,6 @@ export class DialogShortController {
     @ApiParam({ name: 'userId', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Список кратких диалогов пользователя', type: [DialogShortDto] })
     findByUser(@Param('userId') userId: number) {
-        return this.dialogService.findShortByUser(userId);
+        return this.dialogService.findShortByUser(userId)
     }
 }

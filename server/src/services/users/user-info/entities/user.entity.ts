@@ -33,6 +33,9 @@ export class UserInfo implements UserInfoType {
     @Column({ nullable: true, type: 'varchar', length: 200, comment: 'Фото профиля' })
     profile_image: string
 
+    @ApiProperty({ description: 'Статус пользователя', enum: ['online', 'offline'] })
+    @Column({ type: 'enum', enum: ['online', 'offline'], default: 'offline' })
+    status: 'online' | 'offline'
 
     //__________________
     // Связи

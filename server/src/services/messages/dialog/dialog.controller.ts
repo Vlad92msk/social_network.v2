@@ -250,7 +250,7 @@ export class DialogController {
         @RequestParams() params: RequestParams,
     ) {
         if (!files.image || files.image.length === 0) {
-            throw new BadRequestException('Изображение не предоставлено');
+            throw new BadRequestException('Изображение не предоставлено')
         }
 
         // Проверяем квоту
@@ -261,7 +261,7 @@ export class DialogController {
                 this.maxStorage
             )
         }
-        return this.dialogService.updateDialogImage(id, files.image[0], params);
+        return this.dialogService.updateDialogImage(id, files.image[0], params)
     }
 
     @Patch(':id/options')

@@ -412,6 +412,6 @@ export class MessageService {
         return this.messageRepository.findOne({
             where: { dialog: { id: dialogId } },
             order: { date_created: 'DESC' }
-        });
+        })
     }
 }

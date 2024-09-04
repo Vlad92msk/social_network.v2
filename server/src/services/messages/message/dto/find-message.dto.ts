@@ -9,6 +9,11 @@ export class FindMessageDto extends IntersectionType(
     PartialType(PickType(MessageEntity, ['text', 'type', 'id', 'is_forwarded', 'forward_count', 'date_created'])),
     PaginationAndSortingDto<MessageEntity>
 ) {
+    @ApiPropertyOptional({ description: 'ID диалога' })
+    @IsOptional()
+    @IsString()
+    dialog_id?: string
+
     @ApiPropertyOptional({ description: 'Значение тега' })
     @IsOptional()
     @IsString()

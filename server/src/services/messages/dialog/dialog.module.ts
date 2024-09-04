@@ -7,7 +7,8 @@ import { MessageModule } from '../message/message.module'
 import { ConfigModule } from '@nestjs/config'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
-import { DialogShortController } from "@services/messages/dialog/dialog-short.controller";
+import { DialogShortController } from '@services/messages/dialog/dialog-short.controller'
+import { DialogGateway } from '@services/messages/dialog/dialog.gateway'
 
 @Module({
     imports: [
@@ -17,7 +18,7 @@ import { DialogShortController } from "@services/messages/dialog/dialog-short.co
         forwardRef(() => MediaInfoModule),
         ConfigModule,
     ],
-    providers: [DialogService],
+    providers: [DialogService, DialogGateway],
     controllers: [DialogController, DialogShortController],
     exports: [DialogService],
 })

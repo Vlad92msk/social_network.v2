@@ -146,4 +146,17 @@ export class UserInfoService {
 
         return user.reactions
     }
+
+    /**
+     * Обновить статус пользователя
+     */
+    async updateUserStatus(userId: number, status: 'online' | 'offline') {
+        const user = await this.userInfoRepository.findOne({ where: { id: userId } })
+        if (!user) {
+            throw new NotFoundException(`Пользователь с ID "${userId}" не найден`)
+        }
+
+        user.status = status
+        return await this.userInfoRepository.save(user)
+    }
 }

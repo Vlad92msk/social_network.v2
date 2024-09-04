@@ -10,7 +10,10 @@ import { MessageService } from '@services/messages/message/message.service'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { RequestParams } from '@shared/decorators'
 import { createPaginationQueryOptions, createPaginationResponse } from '@shared/utils'
-import { DialogShortDto } from "@services/messages/dialog/dto/dialog-short.dto";
+import { DialogShortDto } from '@services/messages/dialog/dto/dialog-short.dto'
+import { DialogGateway } from '@services/messages/dialog/dialog.gateway'
+import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { SortDirection } from '@shared/types'
 
 @Injectable()
 export class DialogService {
@@ -25,7 +28,10 @@ export class DialogService {
         private messageService: MessageService,
 
         @Inject(forwardRef(() => MediaInfoService))
-        private mediaInfoService: MediaInfoService
+        private mediaInfoService: MediaInfoService,
+
+        @Inject(forwardRef(() => DialogGateway))
+        private dialogGateway: DialogGateway,
     ) {}
 
     /**
@@ -67,13 +73,6 @@ export class DialogService {
         })
     }
 
-    /**
-     * Получение участников диалога
-     */
-    async getDialogParticipants(id: string) {
-        const dialog = await this.findOne(id)
-        return dialog.participants
-    }
 
     /**
      * Получение администраторов диалога
@@ -146,42 +145,42 @@ export class DialogService {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
             relations: ['admins', 'participants']
-        });
+        })
 
         if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${id}" не найден`);
+            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
         }
 
         if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
-            throw new BadRequestException('У вас нет прав для обновления этого диалога');
+            throw new BadRequestException('У вас нет прав для обновления этого диалога')
         }
 
         // Обновляем поля диалога
-        Object.assign(dialog, updateDialogDto);
+        Object.assign(dialog, updateDialogDto)
 
         if (updateDialogDto.participants) {
             const newParticipants = await Promise.all(
                 updateDialogDto.participants.map(id => this.userInfoService.getUsersById(id))
-            );
-            dialog.participants = newParticipants;
+            )
+            dialog.participants = newParticipants
         }
 
         if (image) {
-            const [uploadedFile] = await this.mediaInfoService.uploadFiles([image], params.user_info_id);
-            dialog.image = uploadedFile.meta.src;
+            const [uploadedFile] = await this.mediaInfoService.uploadFiles([image], params.user_info_id)
+            dialog.image = uploadedFile.meta.src
         }
 
         // Сохраняем обновленный диалог
-        const updatedDialog = await this.dialogRepository.save(dialog);
+        const updatedDialog = await this.dialogRepository.save(dialog)
 
         // Получаем последнее сообщение
-        const lastMessage = await this.messageService.findLastMessageForDialog(id);
+        const lastMessage = await this.messageService.findLastMessageForDialog(id)
 
         // Возвращаем обновленный диалог с last_message в виде Promise
         return {
             ...updatedDialog,
             last_message: Promise.resolve(lastMessage)
-        };
+        }
     }
 
     /**
@@ -213,20 +212,20 @@ export class DialogService {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
             relations: ['participants', 'admins', 'messages']
-        });
+        })
 
         if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${id}" не найден`);
+            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
         }
 
         // Получаем последнее сообщение
-        const lastMessage = await this.messageService.findLastMessageForDialog(id);
+        const lastMessage = await this.messageService.findLastMessageForDialog(id)
 
         // Возвращаем диалог с last_message в виде Promise
         return {
             ...dialog,
             last_message: Promise.resolve(lastMessage)
-        };
+        }
     }
 
     /**
@@ -351,18 +350,6 @@ export class DialogService {
         return dialog
     }
 
-    async updateDialogImage(dialogId: string, file: Express.Multer.File, params: RequestParams) {
-        const dialog = await this.findOne(dialogId)
-
-        if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
-            throw new BadRequestException('У вас нет прав для обновления изображения этого диалога')
-        }
-
-        const [uploadedFile] = await this.mediaInfoService.uploadFiles([file], params.user_info_id)
-        dialog.image = uploadedFile.meta.src
-
-        return this.dialogRepository.save(dialog)
-    }
 
     /**
      * Получить количество непрочитанных сообщений в диалоге
@@ -381,37 +368,37 @@ export class DialogService {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
             relations: ['messages', 'messages.author']
-        });
+        })
 
         if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${dialogId}" не найден`);
+            throw new NotFoundException(`Диалог с ID "${dialogId}" не найден`)
         }
 
         const messagesToMark = dialog.messages_not_read.filter(messageId =>
             dialog.messages.find(message => message.id === messageId && message.author.id !== userId)
-        );
+        )
 
         for (const messageId of messagesToMark) {
-            await this.messageService.markAsRead(messageId);
+            await this.messageService.markAsRead(messageId)
         }
 
-        dialog.messages_not_read = dialog.messages_not_read.filter(messageId => !messagesToMark.includes(messageId));
+        dialog.messages_not_read = dialog.messages_not_read.filter(messageId => !messagesToMark.includes(messageId))
 
-        const updatedDialog = await this.dialogRepository.save(dialog);
+        const updatedDialog = await this.dialogRepository.save(dialog)
 
         // Обновляем last_message, если оно изменилось
-        const lastMessage = await this.messageService.findLastMessageForDialog(dialogId);
+        const lastMessage = await this.messageService.findLastMessageForDialog(dialogId)
         if (lastMessage) {
-            updatedDialog.last_message = Promise.resolve(lastMessage);
-            await this.dialogRepository.save(updatedDialog);
+            updatedDialog.last_message = Promise.resolve(lastMessage)
+            await this.dialogRepository.save(updatedDialog)
         }
 
-        return updatedDialog;
+        return updatedDialog
     }
 
 
     private async mapToDialogShortDto(dialog: DialogEntity): Promise<DialogShortDto> {
-        const lastMessage = await dialog.last_message;
+        const lastMessage = await dialog.last_message
         return {
             id: dialog.id,
             title: dialog.title,
@@ -419,7 +406,7 @@ export class DialogService {
             type: dialog.type,
             last_message: lastMessage,
             unread_count: dialog.messages_not_read.length,
-        };
+        }
     }
 
     async findAllShort(query: FindDialogDto, params: RequestParams) {
@@ -428,39 +415,120 @@ export class DialogService {
             options: {
                 relations: ['last_message'],
             }
-        });
+        })
 
         if (query.participant_id) {
             queryOptions.where = {
                 ...queryOptions.where,
                 participants: { id: query.participant_id },
-            };
+            }
         }
 
-        const [dialogs, total] = await this.dialogRepository.findAndCount(queryOptions);
-        const shortDialogs = await Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)));
-        return createPaginationResponse({ data: shortDialogs, total, query });
+        const [dialogs, total] = await this.dialogRepository.findAndCount(queryOptions)
+        const shortDialogs = await Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)))
+        return createPaginationResponse({ data: shortDialogs, total, query })
     }
 
     async findOneShort(id: string): Promise<DialogShortDto> {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
             relations: ['last_message'],
-        });
+        })
 
         if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${id}" не найден`);
+            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
         }
 
-        return this.mapToDialogShortDto(dialog);
+        return this.mapToDialogShortDto(dialog)
     }
 
     async findShortByUser(userId: number): Promise<DialogShortDto[]> {
         const dialogs = await this.dialogRepository.find({
             where: { participants: { id: userId } },
             relations: ['last_message'],
-        });
+        })
 
-        return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)));
+        return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)))
+    }
+
+    async updateDialogImage(dialogId: string, file: Express.Multer.File, params: RequestParams) {
+        const dialog = await this.findOne(dialogId)
+
+        if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
+            throw new BadRequestException('У вас нет прав для обновления изображения этого диалога')
+        }
+
+        const [uploadedFile] = await this.mediaInfoService.uploadFiles([file], params.user_info_id)
+        dialog.image = uploadedFile.meta.src
+
+        const updatedDialog = await this.dialogRepository.save(dialog)
+        // Отправляем обновление всем подключенным клиентам
+        this.dialogGateway.sendDialogUpdate(dialogId, 'dialogUpdated', updatedDialog)
+
+        return updatedDialog
+    }
+
+    async updateLastMessage(dialogId: string, message: MessageEntity) {
+        const dialog = await this.dialogRepository.findOne({ where: { id: dialogId } })
+        dialog.last_message = Promise.resolve(message)
+        await this.dialogRepository.save(dialog)
+
+        const updatedDialogShort = await this.findOneShort(dialogId)
+        this.dialogGateway.sendDialogUpdate(dialogId, 'dialogShortUpdated', updatedDialogShort)
+    }
+
+    /**
+     * Получить сообщения диалога
+     */
+    async getDialogMessages(dialogId: string, per_page: number = 20, page: number = 0, params: RequestParams) {
+        const dialog = await this.dialogRepository.findOne({
+            where: { id: dialogId },
+        })
+
+        if (!dialog) {
+            throw new NotFoundException(`Диалог с ID "${dialogId}" не найден`)
+        }
+
+        const messages = await this.messageService.findAll({
+            dialog_id: dialogId,
+            per_page,
+            page,
+            sort_by: 'date_created',
+            sort_direction: SortDirection.DESC
+        }, params)
+
+        return messages
+    }
+
+    /**
+     * Получение участников диалога
+     */
+    async getDialogParticipants(id: string) {
+        const dialog = await this.findOne(id)
+        return dialog.participants
+    }
+
+    /**
+     * Обновить статус пользователя в диалоге
+     */
+    async updateUserStatus(dialogId: string, userId: number, status: 'online' | 'offline') {
+        const dialog = await this.dialogRepository.findOne({
+            where: { id: dialogId },
+            relations: ['participants']
+        })
+
+        if (!dialog) {
+            throw new NotFoundException(`Диалог с ID "${dialogId}" не найден`)
+        }
+
+        const participant = dialog.participants.find(p => p.id === userId)
+        if (!participant) {
+            throw new NotFoundException(`Пользователь с ID "${userId}" не найден в диалоге`)
+        }
+
+        // Обновляем статус пользователя
+        await this.userInfoService.updateUserStatus(userId, status)
+
+        return dialog
     }
 }
