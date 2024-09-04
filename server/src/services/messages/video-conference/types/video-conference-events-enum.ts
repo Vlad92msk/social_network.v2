@@ -1,4 +1,4 @@
-export enum DialogEvents {
+export enum VideoConferenceEvents {
     /** Присоединение к видеоконференции */
     JOIN_CONFERENCE = 'join_conference',
 
@@ -30,5 +30,29 @@ export enum DialogEvents {
     SET_PREFERRED_LAYERS = 'setPreferredLayers',
 
     /** Уведомление о новом производителе медиапотока */
-    NEW_PRODUCER = 'newProducer'
+    NEW_PRODUCER = 'newProducer',
+
+    /** Начало демонстрации экрана */
+    START_SCREEN_SHARE = 'start_screen_share',
+
+    /** Уведомление о начале демонстрации экрана */
+    SCREEN_SHARE_STARTED = 'screen_share_started',
+
+    /** Остановка демонстрации экрана */
+    STOP_SCREEN_SHARE = 'stop_screen_share',
+
+    /** Уведомление об остановке демонстрации экрана */
+    SCREEN_SHARE_STOPPED = 'screen_share_stopped',
+
+    /** Установка качества видео */
+    SET_VIDEO_QUALITY = 'set_video_quality',
+
+    /** Уведомление об изменении качества видео */
+    VIDEO_QUALITY_CHANGED = 'video_quality_changed',
+
+    /** Начало конференции */
+    CONFERENCE_STARTED = 'conference_started',
+
+    /** Завершение конференции */
+    CONFERENCE_ENDED = 'conference_ended'
 }

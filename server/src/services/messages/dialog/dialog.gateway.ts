@@ -19,6 +19,7 @@ import { ClientToServerEvents, ServerToClientEvents, DialogEvents, Authenticated
 import { OnEvent } from '@nestjs/event-emitter'
 import { DialogEntity } from '@services/messages/dialog/entities/dialog.entity'
 import { DialogShortDto } from '@services/messages/dialog/dto/dialog-short.dto'
+import { VideoConferenceEvents } from "@services/messages/video-conference/types";
 
 
 @Injectable()
@@ -224,6 +225,24 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @OnEvent(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED)
     handleDialogLastMessageUpdated(payload: { dialogId: string, updatedDialogShort: DialogShortDto }) {
         this.sendDialogUpdate(payload.dialogId, DialogEvents.DIALOG_SHORT_UPDATED, payload.updatedDialogShort)
+    }
+
+    @OnEvent(VideoConferenceEvents.CONFERENCE_STARTED)
+    handleVideoConferenceStarted(payload: { dialogId: string, initiatorId: number }) {
+        // Оповещаем всех участников диалога о начале видео-конференции
+        this.server.to(payload.dialogId).emit(DialogEvents.VIDEO_CONFERENCE_STARTED, {
+            dialogId: payload.dialogId,
+            initiatorId: payload.initiatorId
+        });
+    }
+
+    @OnEvent(VideoConferenceEvents.CONFERENCE_ENDED)
+    handleVideoConferenceEnded(payload: { dialogId: string, initiatorId: number }) {
+        // Оповещаем всех участников диалога о завершении видео-конференции
+        this.server.to(payload.dialogId).emit(DialogEvents.VIDEO_CONFERENCE_ENDED, {
+            dialogId: payload.dialogId,
+            initiatorId: payload.initiatorId
+        });
     }
 
     /**

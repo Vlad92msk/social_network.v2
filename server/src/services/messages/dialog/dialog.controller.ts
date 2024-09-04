@@ -311,4 +311,12 @@ export class DialogController {
     ) {
         return this.dialogService.leaveDialog(id, params.user_info_id)
     }
+
+    @Post(':id/video-conference')
+    @ApiOperation({ summary: 'Запустить видео-конференцию' })
+    @ApiParam({ name: 'id', description: 'ID диалога' })
+    @ApiResponse({ status: 200, description: 'Ссылка на комнату', type: String })
+    async createVideoConference(@Param('id') id: string, @RequestParams() req: RequestParams) {
+        return this.dialogService.createVideoConference(id, req.user_info_id);
+    }
 }

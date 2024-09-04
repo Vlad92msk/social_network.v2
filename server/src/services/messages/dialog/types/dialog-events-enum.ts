@@ -36,5 +36,11 @@ export enum DialogEvents {
     DIALOG_IMAGE_UPDATED = 'dialog_image_updated',
 
     /** Пользователь печатает */
-    DIALOG_LAST_MESSAGE_UPDATED = 'dialog_last_message_updated'
+    DIALOG_LAST_MESSAGE_UPDATED = 'dialog_last_message_updated',
+
+    /** Начало конференции */
+    VIDEO_CONFERENCE_STARTED = 'video_conference_started',
+
+    /** Конец конференции */
+    VIDEO_CONFERENCE_ENDED = 'video_conference_ended',
 }

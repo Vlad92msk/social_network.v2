@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import { ConfigEnum } from '@config/config.enum'
 import * as mediasoup from 'mediasoup'
 import { types as mediasoupTypes } from 'mediasoup'
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class VideoConferenceService {
@@ -21,7 +22,8 @@ export class VideoConferenceService {
     constructor(
         @Inject(forwardRef(() => DialogService))
         private dialogService: DialogService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private eventEmitter: EventEmitter2
     ) {
         // Получаем хост и порт из конфигурации
         this.host = this.configService.get(`${ConfigEnum.MAIN}.host`)
@@ -128,6 +130,9 @@ export class VideoConferenceService {
 
         // Сохраняем транспорт пользователя
         room.transports.set(userId.toString(), transport)
+
+        // Оповещаем других участников о присоединении нового пользователя
+        this.eventEmitter.emit('conference.userJoined', { dialogId, userId })
         return transport
     }
 
@@ -146,6 +151,8 @@ export class VideoConferenceService {
             // Удаляем комнату из хранилища
             this.rooms.delete(dialogId)
         }
+        // Оповещаем всех участников о завершении конференции
+        this.eventEmitter.emit('conference.ended', { dialogId })
     }
 
     /**
@@ -322,6 +329,34 @@ export class VideoConferenceService {
         await consumer.resume()
     }
 
+    async createScreenShareProducer(dialogId: string, userId: number, rtpParameters: mediasoupTypes.RtpParameters): Promise<mediasoupTypes.Producer> {
+        const producer = await this.createProducer(dialogId, userId, rtpParameters, 'video');
+        producer.appData.screenShare = true;
+
+        // Оповещаем участников о начале демонстрации экрана
+        this.eventEmitter.emit('conference.screenShareStarted', { dialogId, userId, producerId: producer.id });
+
+        return producer;
+    }
+
+    async stopScreenShare(dialogId: string, userId: number, producerId: string): Promise<void> {
+        const room = this.rooms.get(dialogId);
+        if (!room) {
+            throw new BadRequestException('Конференция не найдена');
+        }
+
+        const producer = room.producers.get(producerId);
+        if (!producer || !producer.appData.screenShare) {
+            throw new BadRequestException('Демонстрация экрана не найдена');
+        }
+
+        producer.close();
+        room.producers.delete(producerId);
+
+        // Оповещаем участников о завершении демонстрации экрана
+        this.eventEmitter.emit('conference.screenShareStopped', { dialogId, userId, producerId });
+    }
+
     /**
      * Установка предпочтительных слоев для SVC видео.
      * @param dialogId ID диалога (конференции)
@@ -361,7 +396,8 @@ export class VideoConferenceService {
             }
         }
 
-        console.log(`Set preferred layers to spatial: ${spatialLayer}, temporal: ${temporalLayer} for producer ${producerId}`)
+        // Оповещаем об изменении качества видео
+        this.eventEmitter.emit('conference.videoQualityChanged', { dialogId, producerId, spatialLayer, temporalLayer });
     }
 
     /**

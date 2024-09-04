@@ -17,6 +17,7 @@ import { SortDirection } from '@shared/types'
 import { UserStatus } from '@services/users/_interfaces'
 import { DialogEvents } from './types'
 import { VideoConferenceService } from '@services/messages/video-conference/video-conference.service'
+import { VideoConferenceEvents } from "@services/messages/video-conference/types";
 
 @Injectable()
 export class DialogService {
@@ -544,24 +545,56 @@ export class DialogService {
     }
 
     async createVideoConference(dialogId: string, userId: number) {
-        const dialog = await this.findOne(dialogId)
-        if (!dialog.admins.some(admin => admin.id === userId)) {
-            throw new BadRequestException('У вас нет прав для создания видеоконференции в этом диалоге')
+        const dialog = await this.findOne(dialogId);
+        if (!dialog.participants.some(participant => participant.id === userId)) {
+            throw new BadRequestException('Вы не являетесь участником этого диалога');
         }
-        const link = await this.videoConferenceService.createConference(dialogId)
-        dialog.video_conference_link = link
-        dialog.is_video_conference_active = true
-        await this.dialogRepository.save(dialog)
-        return link
+
+        if (dialog.is_video_conference_active) {
+            return dialog.video_conference_link;
+        }
+
+        const link = await this.videoConferenceService.createConference(dialogId);
+        dialog.video_conference_link = link;
+        dialog.is_video_conference_active = true;
+        await this.dialogRepository.save(dialog);
+
+        // Оповещаем всех участников диалога о начале видео-конференции
+        this.eventEmitter.emit(VideoConferenceEvents.CONFERENCE_STARTED, { dialogId, initiatorId: userId });
+
+        return link;
     }
 
     async endVideoConference(dialogId: string, userId: number) {
-        const dialog = await this.findOne(dialogId)
-        if (!dialog.admins.some(admin => admin.id === userId)) {
-            throw new BadRequestException('У вас нет прав для завершения видеоконференции в этом диалоге')
+        const dialog = await this.findOne(dialogId);
+        if (!dialog.participants.some(participant => participant.id === userId)) {
+            throw new BadRequestException('Вы не являетесь участником этого диалога');
         }
-        await this.videoConferenceService.endConference(dialogId)
-        dialog.is_video_conference_active = false
-        await this.dialogRepository.save(dialog)
+
+        if (!dialog.is_video_conference_active) {
+            throw new BadRequestException('Видео-конференция не активна');
+        }
+
+        await this.videoConferenceService.endConference(dialogId);
+        dialog.is_video_conference_active = false;
+        dialog.video_conference_link = null;
+        await this.dialogRepository.save(dialog);
+
+        // Оповещаем всех участников диалога о завершении видео-конференции
+        this.eventEmitter.emit(VideoConferenceEvents.CONFERENCE_ENDED, { dialogId, initiatorId: userId });
+    }
+
+    async checkAndCloseInactiveConferences() {
+        const activeDialogs = await this.dialogRepository.find({
+            where: { is_video_conference_active: true },
+            relations: ['participants']
+        });
+
+        for (const dialog of activeDialogs) {
+            const participants = await this.videoConferenceService.getParticipants(dialog.id);
+            if (participants.length === 0) {
+                await this.endVideoConference(dialog.id, dialog.participants[0].id);
+            }
+        }
     }
 }

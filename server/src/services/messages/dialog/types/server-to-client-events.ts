@@ -13,5 +13,7 @@ export interface ServerToClientEvents {
     [DialogEvents.DIALOG_SHORT_UPDATED]: (data: DialogShortDto) => void
     [DialogEvents.DIALOG_UPDATED]: (data: DialogEntity) => void
     [DialogEvents.USER_TYPING]: (data: { userId: number; isTyping: boolean }) => void
+    [DialogEvents.VIDEO_CONFERENCE_STARTED]: (data: { dialogId: string, initiatorId: number }) => void
+    [DialogEvents.VIDEO_CONFERENCE_ENDED]: (data: { dialogId: string, initiatorId: number }) => void
     error: (data: { message: string; error: string }) => void
 }
