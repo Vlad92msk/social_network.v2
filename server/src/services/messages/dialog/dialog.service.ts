@@ -10,6 +10,7 @@ import { MessageService } from '@services/messages/message/message.service'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { RequestParams } from '@shared/decorators'
 import { createPaginationQueryOptions, createPaginationResponse } from '@shared/utils'
+import { DialogShortDto } from "@services/messages/dialog/dto/dialog-short.dto";
 
 @Injectable()
 export class DialogService {
@@ -27,8 +28,9 @@ export class DialogService {
         private mediaInfoService: MediaInfoService
     ) {}
 
-
-
+    /**
+     * Получение всех медиафайлов диалога
+     */
     async getAllMediaForDialog(id: string) {
         const dialog = await this.findOne(id)
         const allMedia = []
@@ -41,6 +43,9 @@ export class DialogService {
         return allMedia
     }
 
+    /**
+     * Обновление настроек диалога
+     */
     async updateDialogOptions(id: string, options: { hide_me?: boolean; notify?: boolean }, userId: number) {
         const dialog = await this.findOne(id)
 
@@ -52,6 +57,9 @@ export class DialogService {
         return this.dialogRepository.save(dialog)
     }
 
+    /**
+     * Получение диалогов по участнику
+     */
     async getDialogsByParticipant(userId: number) {
         return this.dialogRepository.find({
             where: { participants: { id: userId } },
@@ -59,16 +67,25 @@ export class DialogService {
         })
     }
 
+    /**
+     * Получение участников диалога
+     */
     async getDialogParticipants(id: string) {
         const dialog = await this.findOne(id)
         return dialog.participants
     }
 
+    /**
+     * Получение администраторов диалога
+     */
     async getDialogAdmins(id: string) {
         const dialog = await this.findOne(id)
         return dialog.admins
     }
 
+    /**
+     * Покинуть диалог
+     */
     async leaveDialog(id: string, userId: number) {
         const dialog = await this.findOne(id)
 
@@ -96,6 +113,9 @@ export class DialogService {
         return { message: 'Вы успешно покинули диалог' }
     }
 
+    /**
+     * Создать диалог
+     */
     async create({ createDialogDto, image }: { createDialogDto: CreateDialogDto, image: Express.Multer.File }, params: RequestParams) {
         const creator = await this.userInfoService.getUsersById(params.user_info_id)
         const participants = await Promise.all(
@@ -119,6 +139,9 @@ export class DialogService {
         return savedDialog
     }
 
+    /**
+     * Обновить диалог
+     */
     async update(id: string, { updateDialogDto, image }: { updateDialogDto: UpdateDialogDto, image: Express.Multer.File }, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
@@ -161,6 +184,9 @@ export class DialogService {
         };
     }
 
+    /**
+     * Найти все диалоги
+     */
     async findAll(query: FindDialogDto, params: RequestParams) {
         const queryOptions = createPaginationQueryOptions<DialogEntity>({
             query,
@@ -180,6 +206,9 @@ export class DialogService {
         return createPaginationResponse({ data: dialogs, total, query })
     }
 
+    /**
+     * Найти диалог по ID
+     */
     async findOne(id: string) {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
@@ -200,7 +229,9 @@ export class DialogService {
         };
     }
 
-
+    /**
+     * Удалить диалог
+     */
     async remove(id: string, params: RequestParams) {
         const dialog = await this.findOne(id)
 
@@ -211,6 +242,9 @@ export class DialogService {
         await this.dialogRepository.remove(dialog)
     }
 
+    /**
+     * Добавить участника в диалог
+     */
     async addParticipant(dialogId: string, userId: number, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
         const user = await this.userInfoService.getUsersById(userId)
@@ -227,6 +261,9 @@ export class DialogService {
         return dialog
     }
 
+    /**
+     * Удалить участника из диалога
+     */
     async removeParticipant(dialogId: string, userId: number, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
 
@@ -240,6 +277,9 @@ export class DialogService {
         return dialog
     }
 
+    /**
+     * Добавить администратора в диалог
+     */
     async addAdmin(dialogId: string, userId: number, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
         const user = await this.userInfoService.getUsersById(userId)
@@ -256,6 +296,9 @@ export class DialogService {
         return dialog
     }
 
+    /**
+     * Удалить администратора из диалога
+     */
     async removeAdmin(dialogId: string, userId: number, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
 
@@ -273,6 +316,9 @@ export class DialogService {
         return dialog
     }
 
+    /**
+     * Закрепить сообщение в диалоге
+     */
     async addFixedMessage(dialogId: string, messageId: string, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
         const message = await this.messageService.findOne(messageId)
@@ -289,6 +335,9 @@ export class DialogService {
         return dialog
     }
 
+    /**
+     * Открепить сообщение в диалоге
+     */
     async removeFixedMessage(dialogId: string, messageId: string, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
 
@@ -315,6 +364,9 @@ export class DialogService {
         return this.dialogRepository.save(dialog)
     }
 
+    /**
+     * Получить количество непрочитанных сообщений в диалоге
+     */
     async getUnreadMessagesCount(dialogId: string, userId: number) {
         const dialog = await this.findOne(dialogId)
         return dialog.messages_not_read.filter(messageId =>
@@ -322,6 +374,9 @@ export class DialogService {
         ).length
     }
 
+    /**
+     * Отметить все сообщения в диалоге как прочитанные
+     */
     async markMessagesAsRead(dialogId: string, userId: number) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
@@ -352,5 +407,60 @@ export class DialogService {
         }
 
         return updatedDialog;
+    }
+
+
+    private async mapToDialogShortDto(dialog: DialogEntity): Promise<DialogShortDto> {
+        const lastMessage = await dialog.last_message;
+        return {
+            id: dialog.id,
+            title: dialog.title,
+            image: dialog.image,
+            type: dialog.type,
+            last_message: lastMessage,
+            unread_count: dialog.messages_not_read.length,
+        };
+    }
+
+    async findAllShort(query: FindDialogDto, params: RequestParams) {
+        const queryOptions = createPaginationQueryOptions<DialogEntity>({
+            query,
+            options: {
+                relations: ['last_message'],
+            }
+        });
+
+        if (query.participant_id) {
+            queryOptions.where = {
+                ...queryOptions.where,
+                participants: { id: query.participant_id },
+            };
+        }
+
+        const [dialogs, total] = await this.dialogRepository.findAndCount(queryOptions);
+        const shortDialogs = await Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)));
+        return createPaginationResponse({ data: shortDialogs, total, query });
+    }
+
+    async findOneShort(id: string): Promise<DialogShortDto> {
+        const dialog = await this.dialogRepository.findOne({
+            where: { id },
+            relations: ['last_message'],
+        });
+
+        if (!dialog) {
+            throw new NotFoundException(`Диалог с ID "${id}" не найден`);
+        }
+
+        return this.mapToDialogShortDto(dialog);
+    }
+
+    async findShortByUser(userId: number): Promise<DialogShortDto[]> {
+        const dialogs = await this.dialogRepository.find({
+            where: { participants: { id: userId } },
+            relations: ['last_message'],
+        });
+
+        return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)));
     }
 }

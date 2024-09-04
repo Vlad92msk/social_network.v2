@@ -7,6 +7,7 @@ import { MessageModule } from '../message/message.module'
 import { ConfigModule } from '@nestjs/config'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
+import { DialogShortController } from "@services/messages/dialog/dialog-short.controller";
 
 @Module({
     imports: [
@@ -17,7 +18,7 @@ import { MediaInfoModule } from '@services/media/info/media-info.module'
         ConfigModule,
     ],
     providers: [DialogService],
-    controllers: [DialogController],
+    controllers: [DialogController, DialogShortController],
     exports: [DialogService],
 })
 export class DialogModule {}

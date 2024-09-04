@@ -9,10 +9,10 @@ import {
     UseInterceptors,
     UploadedFiles,
     Query,
-    Res
+    Res, BadRequestException
 } from '@nestjs/common'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger'
 import { Response } from 'express'
 import { DialogService } from './dialog.service'
 import { CreateDialogDto } from './dto/create-dialog.dto'
@@ -117,79 +117,79 @@ export class DialogController {
         return this.dialogService.remove(id, params)
     }
 
-    @Post(':id/participants/:userId')
+    @Post(':id/participants/:user_id')
     @ApiOperation({ summary: 'Добавить участника в диалог' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiParam({ name: 'userId', description: 'ID пользователя' })
+    @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Участник успешно добавлен', type: DialogEntity })
     addParticipant(
         @Param('id') id: string,
-        @Param('userId') userId: number,
+        @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
         return this.dialogService.addParticipant(id, userId, params)
     }
 
-    @Delete(':id/participants/:userId')
+    @Delete(':id/participants/:user_id')
     @ApiOperation({ summary: 'Удалить участника из диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiParam({ name: 'userId', description: 'ID пользователя' })
+    @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Участник успешно удален', type: DialogEntity })
     removeParticipant(
         @Param('id') id: string,
-        @Param('userId') userId: number,
+        @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
         return this.dialogService.removeParticipant(id, userId, params)
     }
 
-    @Post(':id/admins/:userId')
+    @Post(':id/admins/:user_id')
     @ApiOperation({ summary: 'Добавить администратора в диалог' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiParam({ name: 'userId', description: 'ID пользователя' })
+    @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Администратор успешно добавлен', type: DialogEntity })
     addAdmin(
         @Param('id') id: string,
-        @Param('userId') userId: number,
+        @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
         return this.dialogService.addAdmin(id, userId, params)
     }
 
-    @Delete(':id/admins/:userId')
+    @Delete(':id/admins/:user_id')
     @ApiOperation({ summary: 'Удалить администратора из диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiParam({ name: 'userId', description: 'ID пользователя' })
+    @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Администратор успешно удален', type: DialogEntity })
     removeAdmin(
         @Param('id') id: string,
-        @Param('userId') userId: number,
+        @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
         return this.dialogService.removeAdmin(id, userId, params)
     }
 
-    @Post(':id/fixed-messages/:messageId')
+    @Post(':id/fixed-messages/:message_id')
     @ApiOperation({ summary: 'Закрепить сообщение в диалоге' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiParam({ name: 'messageId', description: 'ID сообщения' })
+    @ApiParam({ name: 'message_id', description: 'ID сообщения' })
     @ApiResponse({ status: 200, description: 'Сообщение успешно закреплено', type: DialogEntity })
     addFixedMessage(
         @Param('id') id: string,
-        @Param('messageId') messageId: string,
+        @Param('message_id') messageId: string,
         @RequestParams() params: RequestParams,
     ) {
         return this.dialogService.addFixedMessage(id, messageId, params)
     }
 
-    @Delete(':id/fixed-messages/:messageId')
+    @Delete(':id/fixed-messages/:message_id')
     @ApiOperation({ summary: 'Открепить сообщение в диалоге' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiParam({ name: 'messageId', description: 'ID сообщения' })
+    @ApiParam({ name: 'message_id', description: 'ID сообщения' })
     @ApiResponse({ status: 200, description: 'Сообщение успешно откреплено', type: DialogEntity })
     removeFixedMessage(
         @Param('id') id: string,
-        @Param('messageId') messageId: string,
+        @Param('message_id') messageId: string,
         @RequestParams() params: RequestParams,
     ) {
         return this.dialogService.removeFixedMessage(id, messageId, params)
@@ -225,6 +225,45 @@ export class DialogController {
         return this.dialogService.getAllMediaForDialog(id)
     }
 
+    @Patch(':id/image')
+    @ApiOperation({ summary: 'Обновить изображение диалога' })
+    @ApiParam({ name: 'id', description: 'ID диалога' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                image: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })
+    @ApiResponse({ status: 200, description: 'Изображение диалога обновлено', type: DialogEntity })
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'image', maxCount: 1 }
+    ]))
+    async updateDialogImage(
+        @Param('id') id: string,
+        @UploadedFiles() files: { image?: Express.Multer.File[] },
+        @RequestParams() params: RequestParams,
+    ) {
+        if (!files.image || files.image.length === 0) {
+            throw new BadRequestException('Изображение не предоставлено');
+        }
+
+        // Проверяем квоту
+        if (files?.image) {
+            await this.mediaInfoService.checkStorageLimit(
+                params.user_info_id,
+                files.image,
+                this.maxStorage
+            )
+        }
+        return this.dialogService.updateDialogImage(id, files.image[0], params);
+    }
+
     @Patch(':id/options')
     @ApiOperation({ summary: 'Обновление настроек диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
@@ -238,11 +277,11 @@ export class DialogController {
         return this.dialogService.updateDialogOptions(id, options, params.user_info_id)
     }
 
-    @Get('by-participant/:userId')
+    @Get('by-participant/:user_id')
     @ApiOperation({ summary: 'Получение диалогов по участнику' })
-    @ApiParam({ name: 'userId', description: 'ID участника' })
+    @ApiParam({ name: 'user_id', description: 'ID участника' })
     @ApiResponse({ status: 200, description: 'Список диалогов', type: [DialogEntity] })
-    async getDialogsByParticipant(@Param('userId') userId: number) {
+    async getDialogsByParticipant(@Param('user_id') userId: number) {
         return this.dialogService.getDialogsByParticipant(userId)
     }
 
