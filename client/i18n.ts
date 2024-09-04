@@ -6,6 +6,6 @@ export default getRequestConfig(async ({locale}) => {
   if (!LOCALES.includes(locale as any)) notFound();
   return {
     messages: (await import(`./translations/${locale}.json`)).default
-    // messages: translations[locale]
+    // messenger: translations[locale]
   };
 });

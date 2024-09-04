@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { UserInfo } from '@services/users/user-info/entities'
 import { ApiProperty } from '@nestjs/swagger'
 import { CommentEntity } from '@services/comments/comment/entities/comment.entity'

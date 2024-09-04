@@ -7,13 +7,13 @@ import { ProfileModule } from '@src/services/profile/profile/profile.module'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { MediaInfoModule } from '@src/services/media/info/media-info.module'
 import { TagModule } from '@services/tags/tags.module'
-import { MessageModule } from '@services/messages/message/message.module'
+import { MessageModule } from '@services/messenger/message/message.module'
 import { CommentModule } from '@services/comments/comment/comment.module'
 import { PostModule } from '@services/posts/post/post.module'
 import { ScheduleModule } from '@nestjs/schedule'
-import { DialogModule } from '@services/messages/dialog/dialog.module'
+import { DialogModule } from '@services/messenger/dialog/dialog.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
-import { VideoConferenceModule } from '@services/messages/video-conference/video-conference.module'
+import { VideoConferenceModule } from '@services/messenger/video-conference/video-conference.module'
 
 @Module({
   imports: [

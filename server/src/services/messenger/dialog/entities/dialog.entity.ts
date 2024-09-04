@@ -10,7 +10,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger'
 import { UserInfo } from '@services/users/user-info/entities'
 import { MediaEntity } from '@services/media/info/entities/media.entity'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 
 @Entity({ name: 'dialogs', comment: 'Диалоги (чаты)' })
 export class DialogEntity {

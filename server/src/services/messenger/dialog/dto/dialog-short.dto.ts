@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 
 export class DialogShortDto {
     @ApiProperty({ description: 'Уникальный идентификатор диалога' })

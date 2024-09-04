@@ -1,10 +1,10 @@
-import { DialogEvents } from '@services/messages/dialog/types/dialog-events-enum'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { DialogEvents } from '@services/messenger/dialog/types/dialog-events-enum'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { UserStatus } from '@services/users/_interfaces'
 import { PaginationResponse } from '@shared/utils'
 import { UserInfo } from '@services/users/user-info/entities'
-import { DialogShortDto } from '@services/messages/dialog/dto/dialog-short.dto'
-import { DialogEntity } from '@services/messages/dialog/entities/dialog.entity'
+import { DialogShortDto } from '@services/messenger/dialog/dto/dialog-short.dto'
+import { DialogEntity } from '@services/messenger/dialog/entities/dialog.entity'
 
 export interface ServerToClientEvents {
     [DialogEvents.NEW_MESSAGE]: (message: MessageEntity) => void

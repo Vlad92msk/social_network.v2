@@ -203,7 +203,7 @@ interface CreateMessageResponse extends Message {}
 /**
  * @summary Создание сообщения
  * @description Каждое сообщение всегда должно относиться к тому диалогу в котором оно создано
- * @request POST:/api/messages
+ * @request POST:/api/messenger
  * @response `200` `Message`  - созданное сообщение
  */
 type CreateMessage = (data: CreateMessageInput, requestParams: RequestParams) => Promise<CreateMessageResponse>
@@ -217,7 +217,7 @@ interface GetMessagesInput extends Pagination {
 interface GetMessagesResponse extends Message {}
 /**
  * @summary Получить массив сообщений
- * @request GET:/api/messages
+ * @request GET:/api/messenger
  * @response `200` `GetMessagesResponse[]`  - массив сообщений в данном диалоге
  */
 type GetMessages = (query: GetMessagesInput, requestParams: RequestParams) => Promise<GetMessagesResponse[]>
@@ -229,7 +229,7 @@ interface GetMessageByIdInput extends Pagination {
 interface GetMessagesResponse extends Message {}
 /**
  * @summary Получить сообщение по ID
- * @request GET:/api/messages/{dialog_id}/{message_id}
+ * @request GET:/api/messenger/{dialog_id}/{message_id}
  * @response `200` `GetMessagesResponse`  - сообщение в данном диалоге
  */
 type GetMessageById = (query: GetMessageByIdInput, requestParams: RequestParams) => Promise<GetMessagesResponse>
@@ -243,14 +243,14 @@ interface UpdateMessageResponse extends Message {}
 interface UpdateMessageData extends Pick<Message, 'media' | 'text' | 'voices' |'videos'> {}
 /**
  * @summary Редактировать сообщение
- * @request PUT:/api/messages/{dialog_id}/{message_id}
+ * @request PUT:/api/messenger/{dialog_id}/{message_id}
  * @response `200` `GetMessagesResponse`  - обновленное сообщение
  */
 type UpdateMessage = (query: UpdateMessageInput, data: UpdateMessageData, requestParams: RequestParams) => Promise<UpdateMessageResponse>
 
 /**
  * @summary Удалить сообщение
- * @request DELETE:/api/messages/{dialog_id}/{message_id}
+ * @request DELETE:/api/messenger/{dialog_id}/{message_id}
  * @response `200` `void`  - OK
  */
 type DeleteMessage = (dialog_id: string, message_id: string, requestParams: RequestParams) => Promise<void>

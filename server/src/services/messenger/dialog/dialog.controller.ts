@@ -169,7 +169,7 @@ export class DialogController {
         return this.dialogService.removeAdmin(id, userId, params)
     }
 
-    @Post(':id/fixed-messages/:message_id')
+    @Post(':id/fixed-messenger/:message_id')
     @ApiOperation({ summary: 'Закрепить сообщение в диалоге' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'message_id', description: 'ID сообщения' })
@@ -182,7 +182,7 @@ export class DialogController {
         return this.dialogService.addFixedMessage(id, messageId, params)
     }
 
-    @Delete(':id/fixed-messages/:message_id')
+    @Delete(':id/fixed-messenger/:message_id')
     @ApiOperation({ summary: 'Открепить сообщение в диалоге' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'message_id', description: 'ID сообщения' })

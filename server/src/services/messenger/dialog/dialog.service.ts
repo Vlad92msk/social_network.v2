@@ -6,18 +6,18 @@ import { CreateDialogDto } from './dto/create-dialog.dto'
 import { UpdateDialogDto } from './dto/update-dialog.dto'
 import { FindDialogDto } from './dto/find-dialog.dto'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
-import { MessageService } from '@services/messages/message/message.service'
+import { MessageService } from '@services/messenger/message/message.service'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { RequestParams } from '@shared/decorators'
 import { createPaginationQueryOptions, createPaginationResponse } from '@shared/utils'
-import { DialogShortDto } from '@services/messages/dialog/dto/dialog-short.dto'
+import { DialogShortDto } from '@services/messenger/dialog/dto/dialog-short.dto'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { SortDirection } from '@shared/types'
 import { UserStatus } from '@services/users/_interfaces'
 import { DialogEvents } from './types'
-import { VideoConferenceService } from '@services/messages/video-conference/video-conference.service'
-import { VideoConferenceEvents } from "@services/messages/video-conference/types";
+import { VideoConferenceService } from '@services/messenger/video-conference/video-conference.service'
+import { VideoConferenceEvents } from "@services/messenger/video-conference/types";
 
 @Injectable()
 export class DialogService {
@@ -378,7 +378,7 @@ export class DialogService {
     async markMessagesAsRead(dialogId: string, userId: number) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
-            relations: ['messages', 'messages.author']
+            relations: ['messages', 'messenger.author']
         })
 
         if (!dialog) {

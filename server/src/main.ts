@@ -18,9 +18,9 @@ import { TagModule } from '@services/tags/tags.module'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { ProfileModule } from '@services/profile/profile/profile.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
-import { MessageModule } from '@services/messages/message/message.module'
+import { MessageModule } from '@services/messenger/message/message.module'
 import { CommentModule } from '@services/comments/comment/comment.module'
-import { DialogModule } from '@services/messages/dialog/dialog.module'
+import { DialogModule } from '@services/messenger/dialog/dialog.module'
 
 
 

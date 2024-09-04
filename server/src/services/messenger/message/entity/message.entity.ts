@@ -3,7 +3,7 @@ import { PublicationEntity, PublicationType } from '@shared/entity/publication.e
 import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { ApiProperty } from '@nestjs/swagger'
 import { ReactionEntity } from '@shared/entity/reaction.entity'
-import { DialogEntity } from '@services/messages/dialog/entities/dialog.entity'
+import { DialogEntity } from '@services/messenger/dialog/entities/dialog.entity'
 
 @Entity({ name: 'messages', comment: 'Сообщения, которыми пользователи могут обмениваться в диалоге' })
 export class MessageEntity extends PublicationEntity {

@@ -41,12 +41,12 @@ export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], []
   setOpenedDialogIds: (ids) => set((state) => ({ ...state, openedDialogIds: ids })),
   onRemoveMessage: (msgId) => {
     const prev = get().selectedDialog
-    const result = lodashSet(prev, 'apiData.messages', prev.apiData?.messages?.filter(({ id }) => id !== msgId))
+    const result = lodashSet(prev, 'apiData.messenger', prev.apiData?.messages?.filter(({ id }) => id !== msgId))
     set((state) => ({ ...state, selectedDialog: result }))
   },
   onUpdateMessage: ({ id, ...rest }) => {
     const prev = get().selectedDialog
-    const result = lodashSet(prev, 'apiData.messages', prev.apiData?.messages?.map((msg) => {
+    const result = lodashSet(prev, 'apiData.messenger', prev.apiData?.messages?.map((msg) => {
       if (msg.id === id) {
         return { ...msg, ...rest }
       }
@@ -63,8 +63,8 @@ export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], []
       forwardMessageId: 'profile-message-1',
       dateCreated: new Date(),
     }
-    const msgsPrev: Message[] = lodashGet(prev, 'apiData.messages', [])
-    const result = lodashSet(prev, 'apiData.messages', [...msgsPrev, newMessage])
+    const msgsPrev: Message[] = lodashGet(prev, 'apiData.messenger', [])
+    const result = lodashSet(prev, 'apiData.messenger', [...msgsPrev, newMessage])
     set((state) => ({
       ...state,
       selectedDialog: result,

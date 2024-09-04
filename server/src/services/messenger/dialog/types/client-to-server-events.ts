@@ -1,5 +1,5 @@
-import { DialogEvents } from '@services/messages/dialog/types/dialog-events-enum'
-import { CreateMessageDto } from '@services/messages/message/dto/create-message.dto'
+import { DialogEvents } from '@services/messenger/dialog/types/dialog-events-enum'
+import { CreateMessageDto } from '@services/messenger/message/dto/create-message.dto'
 
 export interface ClientToServerEvents {
     [DialogEvents.JOIN_DIALOG]: (data: { dialogId: string; per_page?: number; page?: number }) => void

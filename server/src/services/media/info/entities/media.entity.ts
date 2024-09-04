@@ -16,7 +16,7 @@ import { MediaMetadata } from '../../metadata/entities/media-metadata.entity'
 import { UserInfo } from '@services/users/user-info/entities'
 import { Tag } from '@src/services/tags/entity'
 import { CommentEntity } from '@services/comments/comment/entities/comment.entity'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { ApiProperty } from '@nestjs/swagger'
 
 @Entity({ name: 'media', comment: 'Общая информация о файле, который пользователь загружает в систему' })

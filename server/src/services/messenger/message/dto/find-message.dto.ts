@@ -2,7 +2,7 @@ import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
 import { IsDate, IsIn, IsNumber, IsOptional, IsString } from 'class-validator'
 import { PaginationAndSortingDto } from '@shared/dto'
 import { ApiPropertyOptional } from '@nestjs/swagger'
-import { MessageEntity } from '@services/messages/message/entity/message.entity'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { Type } from 'class-transformer'
 
 export class FindMessageDto extends IntersectionType(

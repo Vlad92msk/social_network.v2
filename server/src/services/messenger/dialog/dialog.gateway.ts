@@ -17,9 +17,9 @@ import { WebsocketDevMiddleware } from './middleware/websocket-dev.middleware'
 import { UserStatus } from '@services/users/_interfaces'
 import { ClientToServerEvents, ServerToClientEvents, DialogEvents, AuthenticatedSocket } from './types'
 import { OnEvent } from '@nestjs/event-emitter'
-import { DialogEntity } from '@services/messages/dialog/entities/dialog.entity'
-import { DialogShortDto } from '@services/messages/dialog/dto/dialog-short.dto'
-import { VideoConferenceEvents } from "@services/messages/video-conference/types";
+import { DialogEntity } from '@services/messenger/dialog/entities/dialog.entity'
+import { DialogShortDto } from '@services/messenger/dialog/dto/dialog-short.dto'
+import { VideoConferenceEvents } from "@services/messenger/video-conference/types";
 
 
 @Injectable()
