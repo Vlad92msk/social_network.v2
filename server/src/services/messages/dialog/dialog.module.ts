@@ -9,6 +9,7 @@ import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
 import { DialogShortController } from '@services/messages/dialog/dialog-short.controller'
 import { DialogGateway } from '@services/messages/dialog/dialog.gateway'
+import { VideoConferenceModule } from '@services/messages/video-conference/video-conference.module'
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { DialogGateway } from '@services/messages/dialog/dialog.gateway'
         forwardRef(() => UserInfoModule),
         forwardRef(() => MessageModule),
         forwardRef(() => MediaInfoModule),
+        forwardRef(() => VideoConferenceModule),
         ConfigModule,
     ],
     providers: [DialogService, DialogGateway],

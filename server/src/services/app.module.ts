@@ -12,7 +12,8 @@ import { CommentModule } from '@services/comments/comment/comment.module'
 import { PostModule } from '@services/posts/post/post.module'
 import { ScheduleModule } from '@nestjs/schedule'
 import { DialogModule } from '@services/messages/dialog/dialog.module'
-import { EventEmitterModule } from "@nestjs/event-emitter";
+import { EventEmitterModule } from '@nestjs/event-emitter'
+import { VideoConferenceModule } from '@services/messages/video-conference/video-conference.module'
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
     CommentModule,
     PostModule,
     DialogModule,
+    VideoConferenceModule,
   ],
 })
 export class AppModule {

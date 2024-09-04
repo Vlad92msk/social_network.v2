@@ -16,6 +16,7 @@ import { MessageEntity } from '@services/messages/message/entity/message.entity'
 import { SortDirection } from '@shared/types'
 import { UserStatus } from '@services/users/_interfaces'
 import { DialogEvents } from './types'
+import { VideoConferenceService } from '@services/messages/video-conference/video-conference.service'
 
 @Injectable()
 export class DialogService {
@@ -31,6 +32,9 @@ export class DialogService {
 
         @Inject(forwardRef(() => MediaInfoService))
         private mediaInfoService: MediaInfoService,
+
+        @Inject(forwardRef(() => VideoConferenceService))
+        private videoConferenceService: VideoConferenceService,
 
         private eventEmitter: EventEmitter2,
     ) {}
@@ -537,5 +541,27 @@ export class DialogService {
         await this.userInfoService.updateUserStatus(userId, status)
 
         return dialog
+    }
+
+    async createVideoConference(dialogId: string, userId: number) {
+        const dialog = await this.findOne(dialogId)
+        if (!dialog.admins.some(admin => admin.id === userId)) {
+            throw new BadRequestException('У вас нет прав для создания видеоконференции в этом диалоге')
+        }
+        const link = await this.videoConferenceService.createConference(dialogId)
+        dialog.video_conference_link = link
+        dialog.is_video_conference_active = true
+        await this.dialogRepository.save(dialog)
+        return link
+    }
+
+    async endVideoConference(dialogId: string, userId: number) {
+        const dialog = await this.findOne(dialogId)
+        if (!dialog.admins.some(admin => admin.id === userId)) {
+            throw new BadRequestException('У вас нет прав для завершения видеоконференции в этом диалоге')
+        }
+        await this.videoConferenceService.endConference(dialogId)
+        dialog.is_video_conference_active = false
+        await this.dialogRepository.save(dialog)
     }
 }

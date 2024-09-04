@@ -90,6 +90,14 @@ export class DialogEntity {
     @Column({ type: 'enum', enum: ['private', 'public'] })
     type: 'private' | 'public'
 
+    @ApiProperty({ description: 'Ссылка на видео-конференцию' })
+    @Column({ nullable: true })
+    video_conference_link: string
+
+    @ApiProperty({ description: 'Активна ли видео-конференция' })
+    @Column({ default: false })
+    is_video_conference_active: boolean
+
     @ApiProperty({ description: 'Участники диалога' })
     @ManyToMany(() => UserInfo)
     @JoinTable({
@@ -98,7 +106,6 @@ export class DialogEntity {
         inverseJoinColumn: { name: 'user_id', referencedColumnName: 'id' },
     })
     participants: UserInfo[]
-
 
     @ApiProperty({ description: 'ID непрочитанных сообщений' })
     @Column('simple-array')
