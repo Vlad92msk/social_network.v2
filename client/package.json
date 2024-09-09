@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-apis": "npx @rtk-query/codegen-openapi openapi-config.ts"
   },
   "dependencies": {
     "@bem-react/classname": "1.6.0",
@@ -16,6 +17,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@floating-ui/react": "^0.26.19",
+    "@reduxjs/toolkit": "^2.2.7",
     "babel-plugin-react-compiler": "^0.0.0-experimental-696af53-20240625",
     "clsx": "2.0.0",
     "date-fns": "3.6.0",
@@ -29,9 +31,12 @@
     "react": "19.0.0-rc-df5f2736-20240712",
     "react-dom": "19.0.0-rc-df5f2736-20240712",
     "react-inlinesvg": "^4.1.0",
+    "redux-observable": "^3.0.0-rc.2",
+    "rxjs": "^7.8.1",
     "zustand": "4.5.4"
   },
   "devDependencies": {
+    "@rtk-query/codegen-openapi": "^1.2.0",
     "@types/lodash": "^4.17.7",
     "@types/negotiator": "^0.6.3",
     "@types/node": "20.14.10",
@@ -46,7 +51,9 @@
     "eslint-plugin-simple-import-sort": "10.0.0",
     "sass": "1.74.1",
     "sass-loader": "13.3.2",
-    "typescript": "5.5.3"
+    "ts-node": "^10.9.2",
+    "typescript": "5.5.3",
+    "yaml": "^2.5.0"
   },
   "overrides": {
     "@types/react": "npm:types-react@rc",

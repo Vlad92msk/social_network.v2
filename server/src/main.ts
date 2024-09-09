@@ -48,7 +48,11 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'development') {
     swaggerConsile = setupSwagger(
         app,
-        { host, port },
+        {
+            directory: String(config.get(`${ConfigEnum.MAIN}.swaggerDir`)),
+            host,
+            port,
+        },
         [
           {
             module: PostModule,

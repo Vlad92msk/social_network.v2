@@ -7,5 +7,6 @@ export default registerAs(ConfigEnum.MAIN, () => ({
   host: process.env.API_HOST,
   port: process.env.API_PORT,
   uploadDir: path.join(__dirname, '..', '..', '..', '..', 'uploads'),
+  swaggerDir: path.join(__dirname, '..', '..', '..', '..', 'swagger'),
   maxUserStorage: 1024 * 1024 * 1024, // 1GB
 }))

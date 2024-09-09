@@ -8,7 +8,7 @@
     если хотите поддержать более старые версии.
     На данный момент стандарт ES6, с небольшими оговорками, поддерживается 97.29% браузеров.
     Так что для frontend приложений ситуация аналогичная.*/
-    "target": "ES6",
+    "target": "es6",
     "plugins": [
       {
         "transform": "typescript-react-loadable-plugin",
@@ -28,7 +28,7 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "esnext",
+    "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,

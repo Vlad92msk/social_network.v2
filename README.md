@@ -22,6 +22,15 @@
 📦social_network
  ┣ 📁database
  ┣ 📁pgadmin
+ ┣ 📁swagger (автогенерация методов из контроллеров)
+ ┃  ┣ 📁comments
+ ┃  ┃    ┣ 📄api-client-comments.ts
+ ┃  ┃    ┣ 📄interfaces-comments.ts
+ ┃  ┃    ┗ 📄swagger-comments.yaml
+ ┃  ┣📁user-info
+ ┃  ┣📁messages
+ ┃  ┣📁posts
+ ┃  ┗...
  ┃
  ┣ 📁client
  ┃  ┣ 📁node_modules
@@ -102,12 +111,6 @@
  ┃  ┣📁node_modules
  ┃  ┣📄.dockerignore
  ┃  ┣📄package.json
- ┃  ┣📁swagger-yaml(автосгенерированные yaml-файлы)
- ┃  ┃  ┣📁posts
- ┃  ┃  ┃   ┗swagger-posts.yaml
- ┃  ┃  ┣📁tags
- ┃  ┃  ┃   ┗swagger-tags.yaml
- ┃  ┃  ┗...
  ┃  ┃
  ┃  ┣📁src
  ┃  ┃  ┣📁config

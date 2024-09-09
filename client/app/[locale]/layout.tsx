@@ -1,6 +1,7 @@
 import { Locale } from '@middlewares/variables'
 import { Session } from '@providers/session/Session'
 import { ThemeService } from '@providers/theme'
+import { Redux } from "@providers/redux";
 import { Body } from '@ui/components/Body'
 import { Html } from '@ui/components/Html'
 import '@ui/styles/_index.scss'
@@ -26,6 +27,7 @@ export default async function RootLayout(props: RootLayoutProps) {
   const messages = await getMessages()
 console.log('1_______')
   return (
+      <Redux>
     <ThemeService contextProps={{ theme: 'default' }}>
       <NextIntlClientProvider messages={messages}>
         <Html locale={params.locale}>
@@ -37,6 +39,7 @@ console.log('1_______')
         </Html>
       </NextIntlClientProvider>
     </ThemeService>
+      </Redux>
   )
 }
 
