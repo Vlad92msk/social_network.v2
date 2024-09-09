@@ -7,7 +7,7 @@
 ![Backend](https://img.shields.io/badge/backend-Nestjs-e0224e.svg)
 ![ORM](https://img.shields.io/badge/ORM-TypeOrm-fb0902.svg)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-336791.svg)
-![API](https://img.shields.io/badge/api-GraphQL-e535ab.svg)
+![API](https://img.shields.io/badge/api-REST-e535ab.svg)
 
 [//]: # (![Testing]&#40;https://img.shields.io/badge/testing-Jest-954058.svg&#41;)
 
