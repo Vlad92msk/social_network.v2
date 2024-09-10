@@ -15,7 +15,7 @@ export class DialogShortController {
     @Get()
     @ApiOperation({ summary: 'Получить список кратких диалогов' })
     @ApiResponse({ status: 200, description: 'Список кратких диалогов', type: [DialogShortDto] })
-    async findAll(
+    async findAllShortDialogs(
         @Query() query: FindDialogDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
@@ -29,7 +29,7 @@ export class DialogShortController {
     @ApiOperation({ summary: 'Получить краткий диалог по ID' })
     @ApiParam({ name: 'id', description: 'ID краткого диалога' })
     @ApiResponse({ status: 200, description: 'Краткий диалог', type: DialogShortDto })
-    findOne(@Param('id') id: string) {
+    findOneShortDialog(@Param('id') id: string) {
         return this.dialogService.findOneShort(id)
     }
 
@@ -37,7 +37,7 @@ export class DialogShortController {
     @ApiOperation({ summary: 'Получить краткие диалоги пользователя' })
     @ApiParam({ name: 'userId', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Список кратких диалогов пользователя', type: [DialogShortDto] })
-    findByUser(@Param('userId') userId: number) {
+    findByUserShortDialog(@Param('userId') userId: number) {
         return this.dialogService.findShortByUser(userId)
     }
 }
