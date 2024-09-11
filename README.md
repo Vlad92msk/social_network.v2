@@ -56,6 +56,16 @@
  ┃  ┃  ┃  ┗ 📁page.tsx
  ┃  ┃  ┃ 
  ┃  ┃  ┣ 📁_configs
+ ┃  ┃  ┣ 📁_store (RTK)
+ ┃  ┃  ┃  ┣ 📁api
+ ┃  ┃  ┃  ┃ ┣ 📁createdApi (перенесенные вручную результаты генерации из generated - пока что так - потом подумаю как можно сделать чтобы использовать только генерацию)
+ ┃  ┃  ┃  ┃ ┗ 📁instance (инстансы классов для АПИ типа export const commentsApiInstance = new CommentsApi() и т.д)
+ ┃  ┃  ┃  ┃ 
+ ┃  ┃  ┃  ┣ 📁generated (сгенерированные файлы типа export const commentsApi = createApi({...}))
+ ┃  ┃  ┃  ┣ 📁rxUtils (утилиты для эффектов в redux-observable)
+ ┃  ┃  ┃  ┣ 📁utils (обычне утилиты для эффектов но которые врятли еще где-то будут использоваться)
+ ┃  ┃  ┃  ┗ ...
+ ┃  ┃  ┃
  ┃  ┃  ┣ 📁_services
  ┃  ┃  ┣ 📁_utils
  ┃  ┃  ┣ 📁api

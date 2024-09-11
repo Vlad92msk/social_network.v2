@@ -131,7 +131,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
     // Относительные импорты для rxjs с добавлением ObservedValueOf
     apiClientContent += `import { Observable, from, ObservedValueOf, of } from "../../server/node_modules/rxjs";\n`;
-    apiClientContent += `import { map, catchError } from "../../server/node_modules/rxjs/operators";\n\n`;
+    apiClientContent += `import { map, catchError, mergeMap } from "../../server/node_modules/rxjs/operators";\n\n`;
 
     // Импорт интерфейсов
     apiClientContent += `import { ${Object.keys(document.components.schemas).join(', ')} } from "./interfaces-${moduleName}";\n\n`;

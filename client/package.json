@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next eslint  --fix",
     "generate-apis": "ts-node generate-api.ts"
   },
   "dependencies": {
