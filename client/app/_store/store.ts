@@ -1,12 +1,20 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { rootReducer } from "./reducer";
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { tagsApi, tagsApiInstance } from "./generated";
+import { tagsApiInstance, messagesApiInstance, dialogsApiInstance, postsApiInstance, commentsApiInstance, mediaApiInstance, userInfoApiInstance, profileApiInstance } from "./api/instanse";
+import { tagsApi, commentsApi, messagesApi, dialogsApi, mediaApi, postsApi, profileApi, userInfoApi } from "./api/createdApi";
 import { createEpicMiddleware } from 'redux-observable';
 import { rootEffect } from './effects';
 
 export const ApiService = {
     tags: tagsApiInstance,
+    comments: commentsApiInstance,
+    messages: messagesApiInstance,
+    dialogs: dialogsApiInstance,
+    media: mediaApiInstance,
+    posts: postsApiInstance,
+    profile: profileApiInstance,
+    userInfo: userInfoApiInstance,
 };
 
 export type ApiServiceType = typeof ApiService;
@@ -21,6 +29,13 @@ export const makeStore = () => {
         reducer: {
             ...rootReducer,
             [tagsApi.reducerPath]: tagsApi.reducer,
+            [commentsApi.reducerPath]: commentsApi.reducer,
+            [messagesApi.reducerPath]: messagesApi.reducer,
+            [dialogsApi.reducerPath]: dialogsApi.reducer,
+            [mediaApi.reducerPath]: mediaApi.reducer,
+            [postsApi.reducerPath]: postsApi.reducer,
+            [profileApi.reducerPath]: profileApi.reducer,
+            [userInfoApi.reducerPath]: userInfoApi.reducer,
         },
         middleware: (getDefaultMiddleware) =>
             getDefaultMiddleware().concat(
@@ -36,9 +51,7 @@ export const makeStore = () => {
 
 setupListeners(makeStore().dispatch)
 
-// Infer the type of makeStore
 export type AppStore = ReturnType<typeof makeStore>
-// Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<AppStore['getState']>
 export type AppDispatch = AppStore['dispatch']
 
