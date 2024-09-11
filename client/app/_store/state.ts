@@ -1,5 +1,5 @@
 import { CounterState } from "./messagesReducer";
 
-export interface RootState {
-    counter: CounterState
-}
+// export interface RootState {
+//     counter: CounterState
+// }

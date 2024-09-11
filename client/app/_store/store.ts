@@ -3,7 +3,7 @@ import { rootReducer } from "./reducer";
 import { setupListeners } from '@reduxjs/toolkit/query'
 import { tagsApiInstance, messagesApiInstance, dialogsApiInstance, postsApiInstance, commentsApiInstance, mediaApiInstance, userInfoApiInstance, profileApiInstance } from "./api/instanse";
 import { tagsApi, commentsApi, messagesApi, dialogsApi, mediaApi, postsApi, profileApi, userInfoApi } from "./api/createdApi";
-import { createEpicMiddleware } from 'redux-observable';
+import { createEpicMiddleware, StateObservable } from 'redux-observable';
 import { rootEffect } from './effects';
 
 export const ApiService = {
