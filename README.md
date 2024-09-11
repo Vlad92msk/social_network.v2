@@ -286,6 +286,8 @@ STOP:
 ```
 docker-compose -f docker-compose.yml down
 ```
+Пока что Докер не использую.
+Для разработки использую Makefile -> start-dev
 
 Currently, I'm working on the client side. 
 I'll work on the server side later. 
