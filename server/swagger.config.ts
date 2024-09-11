@@ -133,7 +133,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     apiClientContent += `import { Observable, from, ObservedValueOf } from "../../server/node_modules/rxjs";\n`;
     apiClientContent += `import { map } from "../../server/node_modules/rxjs/operators";\n\n`;
 
-    // Импорт интерфейсов из файла интерфейсов
+    // Импорт интерфейсов
     apiClientContent += `import { ${Object.keys(document.components.schemas).join(', ')} } from "./interfaces-${moduleName}";\n\n`;
 
     // Определение интерфейса HttpResponse
@@ -145,16 +145,18 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     // Определение типа ObservedValuePromise
     apiClientContent += `type ObservedValuePromise<T, E> = Observable<ObservedValueOf<Promise<HttpResponse<T, E>>>>;\n\n`;
 
+    // Начало класса API
     apiClientContent += `export class ${capitalizeFirstLetter(moduleName)}Api {\n`;
-    apiClientContent += `  private baseUrl: string;\n`;
+    apiClientContent += `  private baseUrl = \`http://${process.env.API_HOST}:${process.env.API_PORT}\`;\n`;
     apiClientContent += `  private defaultConfig: RequestInit;\n\n`;
-    apiClientContent += `  constructor(config: { baseUrl: string } & RequestInit) {\n`;
-    apiClientContent += `    const { baseUrl, ...restConfig } = config;\n`;
-    apiClientContent += `    this.baseUrl = baseUrl;\n`;
+    apiClientContent += `  constructor(config?: { baseUrl?: string } & RequestInit) {\n`;
+    apiClientContent += `    const { baseUrl, ...restConfig } = config || {};\n`;
+    apiClientContent += `    if(baseUrl) { this.baseUrl = baseUrl };\n`;
+    // apiClientContent += `    this.baseUrl = baseUrl;\n`;
     apiClientContent += `    this.defaultConfig = { headers: { 'Content-Type': 'application/json' }, ...restConfig };\n`;
     apiClientContent += `  }\n\n`;
 
-    // Обновленная утилита для оборачивания методов в ObservedValuePromise
+    // Метод wrapInObservable
     apiClientContent += `  private wrapInObservable<T, E>(promise: Promise<T>): ObservedValuePromise<T, E> {\n`;
     apiClientContent += `    return from(promise).pipe(\n`;
     apiClientContent += `      map(response => {\n`;
@@ -170,6 +172,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     apiClientContent += `    ) as ObservedValuePromise<T, E>;\n`;
     apiClientContent += `  }\n\n`;
 
+    // Генерация методов API
     for (const [path, methods] of Object.entries(document.paths)) {
         for (const [method, operation] of Object.entries(methods)) {
             const operationId = operation.operationId?.split('_').pop() || `${method}${path.replace(/\//g, '_')}`;
@@ -197,7 +200,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             // Определение типа параметров
             let paramsType = '';
             if (parameters.length > 0 || requestBody) {
-                let paramsList = parameters.map(p => `${p.name}${p.required ? '' : '?'}: ${getTypeFromSchema(p.schema)}`);
+                let paramsList = [...new Set(parameters.map(p => `${p.name}${p.required ? '' : '?'}: ${getTypeFromSchema(p.schema)}`))];
                 if (requestBody) {
                     const contentType = Object.keys(requestBody.content || {})[0];
                     if (contentType && requestBody.content[contentType].schema) {
@@ -209,10 +212,10 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
                 paramsType = `{ ${paramsList.join(', ')} }`;
             }
 
-            // Основной метод API
+            // Основной метод API (оставляем без изменений)
             apiClientContent += `  ${operationId}(`;
             if (paramsType) {
-                apiClientContent += `params: ${paramsType}, `;
+                apiClientContent += `params?: ${paramsType}, `;
             }
             apiClientContent += `requestParams?: RequestInit): Promise<${responseType}> {\n`;
             apiClientContent += `    const init = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
@@ -222,26 +225,30 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             apiClientContent += `    });\n`;
             apiClientContent += `  }\n\n`;
 
-            // Метод, возвращающий ObservedValuePromise
+            // Метод Observable (оставляем без изменений)
             apiClientContent += `  ${operationId}Observable(`;
             if (paramsType) {
-                apiClientContent += `params: ${paramsType}, `;
+                apiClientContent += `params?: ${paramsType}, `;
             }
             apiClientContent += `requestParams?: RequestInit): ObservedValuePromise<${responseType}, any> {\n`;
             apiClientContent += `    return this.wrapInObservable(this.${operationId}(${paramsType ? 'params, ' : ''}requestParams));\n`;
             apiClientContent += `  }\n\n`;
 
-            // Вспомогательный метод Init
+            // Вспомогательный метод Init (вносим изменения здесь)
             apiClientContent += `  ${operationId}Init(`;
             if (paramsType) {
-                apiClientContent += `params: ${paramsType}, `;
+                apiClientContent += `params?: ${paramsType}, `;
             }
             apiClientContent += `requestParams?: RequestInit): { url: string } & RequestInit {\n`;
-            apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params.')}\`, this.baseUrl);\n`;
+            apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
 
-            // Добавление query-параметров
+            // Добавление query-параметров без дубликатов (оставляем без изменений)
+            const addedParams = new Set();
             parameters.filter(p => p.in === 'query').forEach(p => {
-                apiClientContent += `    if (params?.${p.name} !== undefined) url.searchParams.append('${p.name}', params.${p.name}.toString());\n`;
+                if (!addedParams.has(p.name)) {
+                    apiClientContent += `    if (params?.${p.name} !== undefined) url.searchParams.append('${p.name}', params.${p.name}.toString());\n`;
+                    addedParams.add(p.name);
+                }
             });
 
             apiClientContent += `    const init: RequestInit = {\n`;
@@ -251,7 +258,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
                 apiClientContent += `      body: params?.body ? JSON.stringify(params.body) : undefined,\n`;
             }
             apiClientContent += `      ...requestParams,\n`;
-            apiClientContent += `      headers: { ...this.defaultConfig.headers, ...requestParams?.headers },\n`;
+            apiClientContent += `      headers: { ...this.defaultConfig?.headers, ...requestParams?.headers },\n`;
             apiClientContent += `    };\n`;
             apiClientContent += `    return { ...init, url: url.toString() };\n`;
             apiClientContent += `  }\n\n`;

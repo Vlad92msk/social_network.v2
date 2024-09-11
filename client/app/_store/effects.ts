@@ -1,21 +1,21 @@
 import { Action } from 'redux';
 import { Observable } from 'rxjs';
 import { StateObservable } from 'redux-observable';
-import { ApiService } from './store';
+import { ApiService, ApiServiceType } from './store';
 import { RootState } from './store';
-import { combineEpics as combineEffects, Epic } from 'redux-observable';
+import { combineEpics, Epic } from 'redux-observable';
+import { tagsEffects } from "./tag.effect";
 
 export type StoreObservable = StateObservable<RootState>;
 
 export type Effect = (
     action$: Observable<Action>,
     store$: StoreObservable,
-    api: ApiService,
+    api: ApiServiceType,
 ) => Observable<Action>;
 
+
 // Здесь вы можете импортировать и комбинировать все ваши эффекты
-export const rootEffect = combineEffects(
-    // messagesEffects,
-    // usersEffects,
-    // tagsEffects,
+export const rootEffect = combineEpics(
+    tagsEffects
 );

@@ -25,7 +25,7 @@ interface RootLayoutProps {
 export default async function RootLayout(props: RootLayoutProps) {
   const { children, params } = props
   const messages = await getMessages()
-console.log('1_______')
+
   return (
       <Redux>
     <ThemeService contextProps={{ theme: 'default' }}>

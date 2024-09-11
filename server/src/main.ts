@@ -63,7 +63,7 @@ async function bootstrap() {
           },
           {
             module: UserInfoModule,
-            url: 'user-info',
+            url: 'userInfo',
             name: 'Пользователи',
             description: 'API операций с gолзователями',
             version: '1.0'

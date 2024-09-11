@@ -1,27 +1,44 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { rootReducer } from "./reducer";
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { enhancedApi as postsApi } from './generated/postsApi'
-import { enhancedApi as profileApi } from './generated/profileApi'
-import { enhancedApi as userInfoApi } from './generated/user-infoApi'
-const apis = [postsApi, profileApi, userInfoApi] as const;
+import { tagsApi, tagsApiInstance } from "./generated";
+import { createEpicMiddleware } from 'redux-observable';
+import { rootEffect } from './effects';
 
-export const store = configureStore({
-    reducer: {
-        ...rootReducer,
-        ...Object.fromEntries(
-            apis.map(api => [api.reducerPath, api.reducer])
-        ),
-    },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(
-            ...apis.map(api => api.middleware)
-        ),
-})
+export const ApiService = {
+    tags: tagsApiInstance,
+};
 
-setupListeners(store.dispatch)
+export type ApiServiceType = typeof ApiService;
 
+const effectMiddleware = createEpicMiddleware<any, any, any, ApiServiceType>({
+    dependencies: ApiService,
+});
+
+
+export const makeStore = () => {
+    const store = configureStore({
+        reducer: {
+            ...rootReducer,
+            [tagsApi.reducerPath]: tagsApi.reducer,
+        },
+        middleware: (getDefaultMiddleware) =>
+            getDefaultMiddleware().concat(
+                tagsApi.middleware,
+                effectMiddleware
+            ),
+    });
+
+    effectMiddleware.run(rootEffect);
+
+    return store;
+}
+
+setupListeners(makeStore().dispatch)
+
+// Infer the type of makeStore
+export type AppStore = ReturnType<typeof makeStore>
 // Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof store.getState>
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof store.dispatch
+export type RootState = ReturnType<AppStore['getState']>
+export type AppDispatch = AppStore['dispatch']
+
