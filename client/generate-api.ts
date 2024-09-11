@@ -9,47 +9,40 @@ const SWAGGER_DIR = path.join(__dirname, '../swagger');
 
 // Шаблон для генерации файлов API
 const API_TEMPLATE = (apiName: string, className: string, methodNames: string[]) => `
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { ${className} } from '../../../../swagger/${apiName}/api-client-${apiName}';
-
-const ${apiName}ApiInstance = new ${className}();
-
-export const ${apiName}Api = createApi({
-  reducerPath: '${apiName}',
-  baseQuery: fetchBaseQuery({
-    // baseUrl: '',
-    // prepareHeaders: (headers, { getState }) => {
-    //   // @ts-ignore
-    //   const token = (getState()).auth.token;
-    //   if (token) {
-    //     headers.set('authorization', \`Bearer \${token}\`);
-    //   }
-    //   return headers;
-    // },
-  }),
-  endpoints: (builder) => ({
-    ${methodNames.map(methodName => {
-        const baseMethodName = methodName.replace('Init', '');
-        return `    ${baseMethodName}: builder.${baseMethodName.startsWith('get') || baseMethodName.startsWith('find') ? 'query' : 'mutation'}<
-          ReturnType<typeof ${apiName}ApiInstance.${baseMethodName}>,
-          Parameters<typeof ${apiName}ApiInstance.${methodName}>[0]
-        >({
-          // query: ${apiName}ApiInstance.${methodName},
-          query: (params) => {
-              const {url, ...rest} = ${apiName}ApiInstance.${methodName}(params)
-              return ({ url, ...rest })
-          },
-        }),`;
-    }).join('\n')}
-  }),
-});
-
-export const {
-${methodNames.map(methodName => {
-    const baseMethodName = methodName.replace('Init', '');
-    return `  use${baseMethodName.charAt(0).toUpperCase() + baseMethodName.slice(1)}${baseMethodName.startsWith('get') || baseMethodName.startsWith('find') ? 'Query' : 'Mutation'},`;
-}).join('\n')}
-} = ${apiName}Api;
+    import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+    import { ${className} } from '../../../../swagger/${apiName}/api-client-${apiName}';
+    
+    const ${apiName}ApiInstance = new ${className}();
+    
+    export const ${apiName}Api = createApi({
+      reducerPath: '${apiName}RTK',
+      baseQuery: fetchBaseQuery({
+        // baseUrl: '',
+        // prepareHeaders: (headers, { getState }) => {
+        //   // @ts-ignore
+        //   const token = (getState()).auth.token;
+        //   if (token) {
+        //     headers.set('authorization', \`Bearer \${token}\`);
+        //   }
+        //   return headers;
+        // },
+      }),
+      endpoints: (builder) => ({
+        ${methodNames.map(methodName => {
+            const baseMethodName = methodName.replace('Init', '');
+            return `    ${baseMethodName}: builder.${baseMethodName.startsWith('get') || baseMethodName.startsWith('find') ? 'query' : 'mutation'}<
+              ReturnType<typeof ${apiName}ApiInstance.${baseMethodName}>,
+              Parameters<typeof ${apiName}ApiInstance.${methodName}>[0]
+            >({
+              // query: ${apiName}ApiInstance.${methodName},
+              query: (params) => {
+                  const {url, ...rest} = ${apiName}ApiInstance.${methodName}(params)
+                  return ({ url, ...rest })
+              },
+            }),`;
+        }).join('\n')}
+      }),
+    });
 `;
 
 function generateApiFile(apiName: string) {

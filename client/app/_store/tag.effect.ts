@@ -6,9 +6,13 @@ import { Effect } from './effects';
 const exampleEpic: Effect = (action$, state$, { tags }) => action$.pipe(
     ofType('SOME_ACTION'),
     switchMap(action =>
-        tags.findTagsObservable().pipe(
+// @ts-ignore
+        tags.findTagsObservable({entity_type: 1}).pipe(
             map(response => ({ type: 'SOME_SUCCESS_ACTION', payload: response.data })),
-            catchError(error => of({ type: 'SOME_ERROR_ACTION', payload: error }))
+            catchError(error => {
+                console.log('__eeee____', error.data)
+                return of({type: 'SOME_ERROR_ACTION', payload: error});
+            })
         )
     )
 );

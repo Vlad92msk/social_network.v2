@@ -130,8 +130,8 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     let apiClientContent = '';
 
     // Относительные импорты для rxjs с добавлением ObservedValueOf
-    apiClientContent += `import { Observable, from, ObservedValueOf } from "../../server/node_modules/rxjs";\n`;
-    apiClientContent += `import { map } from "../../server/node_modules/rxjs/operators";\n\n`;
+    apiClientContent += `import { Observable, from, ObservedValueOf, of } from "../../server/node_modules/rxjs";\n`;
+    apiClientContent += `import { map, catchError } from "../../server/node_modules/rxjs/operators";\n\n`;
 
     // Импорт интерфейсов
     apiClientContent += `import { ${Object.keys(document.components.schemas).join(', ')} } from "./interfaces-${moduleName}";\n\n`;
@@ -159,15 +159,23 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     // Метод wrapInObservable
     apiClientContent += `  private wrapInObservable<T, E>(promise: Promise<T>): ObservedValuePromise<T, E> {\n`;
     apiClientContent += `    return from(promise).pipe(\n`;
-    apiClientContent += `      map(response => {\n`;
+    apiClientContent += `      mergeMap(async response => {\n`;
     apiClientContent += `        if (response instanceof Response) {\n`;
-    apiClientContent += `          return response.json().then(data => ({\n`;
+    apiClientContent += `          const data = await response.json();\n`;
+    apiClientContent += `          if (!response.ok) {\n`;
+    apiClientContent += `            throw { response, data };\n`;
+    apiClientContent += `          }\n`;
+    apiClientContent += `          return {\n`;
     apiClientContent += `            ...response,\n`;
     apiClientContent += `            data,\n`;
-    apiClientContent += `            error: response.ok ? undefined : data\n`;
-    apiClientContent += `          }));\n`;
+    apiClientContent += `            error: undefined\n`;
+    apiClientContent += `          };\n`;
     apiClientContent += `        }\n`;
     apiClientContent += `        return response;\n`;
+    apiClientContent += `      }),\n`;
+    apiClientContent += `      catchError(error => {\n`;
+    apiClientContent += `        console.error('Error in API call:', error);\n`;
+    apiClientContent += `        throw error; // Re-throw the error so it can be caught in the epic\n`;
     apiClientContent += `      })\n`;
     apiClientContent += `    ) as ObservedValuePromise<T, E>;\n`;
     apiClientContent += `  }\n\n`;
@@ -219,13 +227,14 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             }
             apiClientContent += `requestParams?: RequestInit): Promise<${responseType}> {\n`;
             apiClientContent += `    const init = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
-            apiClientContent += `    return fetch(init.url, init).then(response => {\n`;
-            apiClientContent += `      if (!response.ok) throw new Error(\`HTTP error! status: \${response.status}\`);\n`;
-            apiClientContent += `      return response.json();\n`;
+            apiClientContent += `    return fetch(init.url, init).then(async response => {\n`;
+            apiClientContent += `      const data = await response.json();\n`;
+            apiClientContent += `      if (!response.ok) throw { response, data };\n`;
+            apiClientContent += `      return data;\n`;
             apiClientContent += `    });\n`;
             apiClientContent += `  }\n\n`;
 
-            // Метод Observable (оставляем без изменений)
+            // Метод Observable
             apiClientContent += `  ${operationId}Observable(`;
             if (paramsType) {
                 apiClientContent += `params?: ${paramsType}, `;
