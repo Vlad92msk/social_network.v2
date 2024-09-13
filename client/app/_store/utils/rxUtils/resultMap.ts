@@ -1,6 +1,7 @@
 import { Observable, OperatorFunction, pipe } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { FlatResponse, flatResponse, getResponse, GetResponse } from '../other'
+import { catchErrorApi, ResultMapError } from './catchErrorApi'
 
 interface ResultMapUtils {
   getResponse: GetResponse;
@@ -8,16 +9,6 @@ interface ResultMapUtils {
 }
 
 type SuccessFunction<T> = (value: T, util: ResultMapUtils) => Observable<any>;
-
-// type ErrorsArray = (Action | ActionCreator<PayloadApiError> | ReturnType<ActionCreator>)[];
-
-// type ErrorsFunctionArray = (error: PayloadApiError) => ErrorsArray;
-
-/**
- * errors - может быть массив экшенов
- * errors - может быть функцией, которая возвращает массив экшенов
- */
-// export type ResultMapError = ErrorsArray | ErrorsFunctionArray;
 
 /**
  * Утилита обрабатывающая success и errors
@@ -29,9 +20,9 @@ export const resultMap = <T>({
   errors,
 }: {
   success: SuccessFunction<T>;
-  errors: any[];
+  errors: ResultMapError;
 }): OperatorFunction<T, any> =>
   pipe(
     switchMap((value) => success(value, { getResponse, flatResponse })),
-    // catchError(errors),
+    catchErrorApi(errors),
   );

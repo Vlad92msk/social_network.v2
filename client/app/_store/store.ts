@@ -2,14 +2,14 @@ import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import logger from 'redux-logger'
 import { createEpicMiddleware } from 'redux-observable'
-import { commentsApiInstance } from './api/comments'
-import { dialogsApiInstance } from './api/dialogs'
-import { mediaApiInstance } from './api/media'
-import { messagesApiInstance } from './api/messages'
-import { postsApiInstance } from './api/posts'
-import { profileApiInstance } from './api/profile'
+import { commentsApiInstance, commentsApi } from './api/comments'
+import { dialogsApiInstance, dialogsApi } from './api/dialogs'
+import { mediaApiInstance, mediaApi } from './api/media'
+import { messagesApiInstance, messagesApi } from './api/messages'
+import { postsApiInstance, postsApi } from './api/posts'
+import { profileApiInstance, profileApi } from './api/profile'
 import { tagsApi, tagsApiInstance } from './api/tags'
-import { userInfoApiInstance } from './api/userInfo'
+import { userInfoApiInstance, userInfoApi } from './api/userInfo'
 import { rootEffect } from './root.effects'
 import { RootReducer, rootReducer } from './root.reducer'
 
@@ -24,7 +24,7 @@ export const ApiService = {
   userInfo: userInfoApiInstance,
 }
 
-export type ApiServiceType = typeof ApiService;
+export type ApiServiceType = typeof ApiService
 
 const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
   dependencies: ApiService,
@@ -35,6 +35,13 @@ export const makeStore = () => {
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(
       tagsApi.middleware,
+      commentsApi.middleware,
+      dialogsApi.middleware,
+      mediaApi.middleware,
+      messagesApi.middleware,
+      postsApi.middleware,
+      profileApi.middleware,
+      userInfoApi.middleware,
       effectMiddleware,
       logger,
     ),

@@ -129,21 +129,28 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
     let apiClientContent = '';
 
-    // Относительные импорты для rxjs с добавлением ObservedValueOf
-    apiClientContent += `import { Observable, from, ObservedValueOf, of } from "../../server/node_modules/rxjs";\n`;
-    apiClientContent += `import { map, catchError, mergeMap } from "../../server/node_modules/rxjs/operators";\n\n`;
+    // Импорты
+    apiClientContent += `import { Observable, from } from "../../server/node_modules/rxjs";\n`;
+    apiClientContent += `import { map, catchError } from "../../server/node_modules/rxjs/operators";\n\n`;
 
     // Импорт интерфейсов
     apiClientContent += `import { ${Object.keys(document.components.schemas).join(', ')} } from "./interfaces-${moduleName}";\n\n`;
 
-    // Определение интерфейса HttpResponse
-    apiClientContent += `interface HttpResponse<D extends unknown, E extends unknown = unknown> extends Response {\n`;
-    apiClientContent += `  data: D;\n`;
-    apiClientContent += `  error: E;\n`;
-    apiClientContent += `}\n\n`;
+    // Добавляем определение типа DefaultError
+    apiClientContent += `export type DefaultError = {\n`;
+    apiClientContent += `  code?: number;\n`;
+    apiClientContent += `  message?: string;\n`;
+    apiClientContent += `  description?: string;\n`;
+    apiClientContent += `};\n\n`;
 
-    // Определение типа ObservedValuePromise
-    apiClientContent += `type ObservedValuePromise<T, E> = Observable<ObservedValueOf<Promise<HttpResponse<T, E>>>>;\n\n`;
+    // Обновляем определение интерфейса ApiResponse
+    apiClientContent += `interface ApiResponse<T> {\n`;
+    apiClientContent += `  data: T | undefined;\n`;
+    apiClientContent += `  status: number;\n`;
+    apiClientContent += `  headers: Headers;\n`;
+    apiClientContent += `  url: string;\n`;
+    apiClientContent += `  error?: DefaultError;\n`;
+    apiClientContent += `}\n\n`;
 
     // Начало класса API
     apiClientContent += `export class ${capitalizeFirstLetter(moduleName)}Api {\n`;
@@ -152,32 +159,52 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     apiClientContent += `  constructor(config?: { baseUrl?: string } & RequestInit) {\n`;
     apiClientContent += `    const { baseUrl, ...restConfig } = config || {};\n`;
     apiClientContent += `    if(baseUrl) { this.baseUrl = baseUrl };\n`;
-    // apiClientContent += `    this.baseUrl = baseUrl;\n`;
     apiClientContent += `    this.defaultConfig = { headers: { 'Content-Type': 'application/json' }, ...restConfig };\n`;
     apiClientContent += `  }\n\n`;
 
+    // Метод handleResponse
+    apiClientContent += `  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {\n`;
+    apiClientContent += `    const result: ApiResponse<T> = {\n`;
+    apiClientContent += `      status: response.status,\n`;
+    apiClientContent += `      headers: response.headers,\n`;
+    apiClientContent += `      url: response.url,\n`;
+    apiClientContent += `      data: undefined\n`;
+    apiClientContent += `    };\n\n`;
+    apiClientContent += `    try {\n`;
+    apiClientContent += `      const data = await response.json();\n`;
+    apiClientContent += `      if (!response.ok) {\n`;
+    apiClientContent += `        result.error = {\n`;
+    apiClientContent += `          code: response.status,\n`;
+    apiClientContent += `          message: data.message || response.statusText,\n`;
+    apiClientContent += `          description: data.error || 'Неизвестная ошибка',\n`;
+    apiClientContent += `        };\n`;
+    apiClientContent += `      } else {\n`;
+    apiClientContent += `        result.data = data;\n`;
+    apiClientContent += `      }\n`;
+    apiClientContent += `    } catch (error) {\n`;
+    apiClientContent += `      result.error = {\n`;
+    apiClientContent += `        code: response.status,\n`;
+    apiClientContent += `        message: 'Ошибка парсинга ответа',\n`;
+    apiClientContent += `        description: error?.toString() || 'Неизвестная ошибка',\n`;
+    apiClientContent += `      };\n`;
+    apiClientContent += `    }\n`;
+    apiClientContent += `    return result;\n`;
+    apiClientContent += `  }\n\n`;
+
     // Метод wrapInObservable
-    apiClientContent += `  private wrapInObservable<T, E>(promise: Promise<T>): ObservedValuePromise<T, E> {\n`;
+    apiClientContent += `  private wrapInObservable<T>(promise: Promise<ApiResponse<T>>): Observable<T> {\n`;
     apiClientContent += `    return from(promise).pipe(\n`;
-    apiClientContent += `      mergeMap(async response => {\n`;
-    apiClientContent += `        if (response instanceof Response) {\n`;
-    apiClientContent += `          const data = await response.json();\n`;
-    apiClientContent += `          if (!response.ok) {\n`;
-    apiClientContent += `            throw { response, data };\n`;
-    apiClientContent += `          }\n`;
-    apiClientContent += `          return {\n`;
-    apiClientContent += `            ...response,\n`;
-    apiClientContent += `            data,\n`;
-    apiClientContent += `            error: undefined\n`;
-    apiClientContent += `          };\n`;
+    apiClientContent += `      map(response => {\n`;
+    apiClientContent += `        if (response.error) {\n`;
+    apiClientContent += `          throw response.error;\n`;
     apiClientContent += `        }\n`;
-    apiClientContent += `        return response;\n`;
+    apiClientContent += `        return response.data as T;\n`;
     apiClientContent += `      }),\n`;
-    apiClientContent += `      catchError(error => {\n`;
-    apiClientContent += `        console.error('Error in API call:', error);\n`;
-    apiClientContent += `        throw error; // Re-throw the error so it can be caught in the epic\n`;
+    apiClientContent += `      catchError((error: DefaultError) => {\n`;
+    apiClientContent += `        console.error('Ошибка вызова метода:', error);\n`;
+    apiClientContent += `        throw error;\n`;
     apiClientContent += `      })\n`;
-    apiClientContent += `    ) as ObservedValuePromise<T, E>;\n`;
+    apiClientContent += `    );\n`;
     apiClientContent += `  }\n\n`;
 
     // Генерация методов API
@@ -189,20 +216,16 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             const responseSchema = operation.responses?.['200']?.content?.['application/json']?.schema;
             const responseType = responseSchema ? getTypeFromSchema(responseSchema) : 'any';
 
-            // JSDoc комментарий
+
+            // JSDoc комментарий для основного метода
             apiClientContent += `  /**\n`;
-            apiClientContent += `   * ${operation.summary || 'No description'}\n`;
+            apiClientContent += `   * ${operation.summary || 'Нет описания'}\n`;
             apiClientContent += `   *\n`;
             apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
             apiClientContent += `   * @name ${operationId}\n`;
             apiClientContent += `   * @request ${method.toUpperCase()}:${path}\n`;
-            if (requestBody) {
-                const contentType = Object.keys(requestBody.content || {})[0];
-                if (contentType) {
-                    apiClientContent += `   * @requestContentType ${contentType}\n`;
-                }
-            }
             apiClientContent += `   * @response \`200\` \`${responseType}\` OK\n`;
+            apiClientContent += `   * @throws {DefaultError} Когда сервер отвечает статусом не 200 \n`;
             apiClientContent += `   */\n`;
 
             // Определение типа параметров
@@ -220,45 +243,48 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
                 paramsType = `{ ${paramsList.join(', ')} }`;
             }
 
-            // Основной метод API (оставляем без изменений)
+            // Основной метод API
             apiClientContent += `  ${operationId}(`;
             if (paramsType) {
                 apiClientContent += `params?: ${paramsType}, `;
             }
-            apiClientContent += `requestParams?: RequestInit): Promise<${responseType}> {\n`;
-            apiClientContent += `    const init = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
-            apiClientContent += `    return fetch(init.url, init).then(async response => {\n`;
-            apiClientContent += `      const data = await response.json();\n`;
-            apiClientContent += `      if (!response.ok) throw { response, data };\n`;
-            apiClientContent += `      return data;\n`;
-            apiClientContent += `    });\n`;
+            apiClientContent += `requestParams?: RequestInit): Promise<ApiResponse<${responseType}>> {\n`;
+            apiClientContent += `    const {url, ...rest} = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
+            apiClientContent += `    return fetch(url, rest).then(response => this.handleResponse<${responseType}>(response));\n`;
             apiClientContent += `  }\n\n`;
+
+            // JSDoc комментарий для Observable метода
+            apiClientContent += `  /**\n`;
+            apiClientContent += `   * Observable version of ${operationId}\n`;
+            apiClientContent += `   * @see ${operationId} for more details\n`;
+            apiClientContent += `   * @throws {DefaultError} Когда сервер отвечает статусом не 200\n`;
+            apiClientContent += `   */\n`;
 
             // Метод Observable
             apiClientContent += `  ${operationId}Observable(`;
             if (paramsType) {
                 apiClientContent += `params?: ${paramsType}, `;
             }
-            apiClientContent += `requestParams?: RequestInit): ObservedValuePromise<${responseType}, any> {\n`;
+            apiClientContent += `requestParams?: RequestInit): Observable<${responseType}> {\n`;
             apiClientContent += `    return this.wrapInObservable(this.${operationId}(${paramsType ? 'params, ' : ''}requestParams));\n`;
             apiClientContent += `  }\n\n`;
 
-            // Вспомогательный метод Init (вносим изменения здесь)
-            apiClientContent += `  ${operationId}Init(`;
+            // Вспомогательный метод Init
+            apiClientContent += `  private ${operationId}Init(`;
             if (paramsType) {
                 apiClientContent += `params?: ${paramsType}, `;
             }
             apiClientContent += `requestParams?: RequestInit): { url: string } & RequestInit {\n`;
             apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
 
-            // Добавление query-параметров без дубликатов (оставляем без изменений)
-            const addedParams = new Set();
-            parameters.filter(p => p.in === 'query').forEach(p => {
-                if (!addedParams.has(p.name)) {
-                    apiClientContent += `    if (params?.${p.name} !== undefined) url.searchParams.append('${p.name}', params.${p.name}.toString());\n`;
-                    addedParams.add(p.name);
-                }
-            });
+            // Добавление query-параметров
+            apiClientContent += `    if (params) {\n`;
+            apiClientContent += `      Object.entries(params).forEach(([key, value]) => {\n`;
+            apiClientContent += `        if (value !== undefined) {\n`;
+            apiClientContent += `          url.searchParams.append(key, value.toString());\n`;
+            apiClientContent += `        }\n`;
+            apiClientContent += `      });\n`;
+            apiClientContent += `    }\n`;
 
             apiClientContent += `    const init: RequestInit = {\n`;
             apiClientContent += `      method: '${method.toUpperCase()}',\n`;
@@ -286,7 +312,6 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
     console.log(`Завершение генерации API-клиента для модуля ${moduleName}`);
 }
-
 
 export function setupSwagger(app: INestApplication, config: YamlGenerationConfig, docs: Docs[]) {
     console.log(`Swagger документация доступна:`);
