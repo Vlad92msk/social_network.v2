@@ -1,19 +1,18 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { commentsApiInstance } from "../instanse";
-
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { commentsApiInstance } from './comments.instance'
 
 export const commentsApi = createApi({
-  reducerPath: 'comments',
+  reducerPath: 'API_comments',
   baseQuery: fetchBaseQuery(),
   endpoints: (builder) => ({
-        create: builder.mutation<
+    create: builder.mutation<
           ReturnType<typeof commentsApiInstance.create>,
           Parameters<typeof commentsApiInstance.createInit>[0]
         >({
           // query: commentsApiInstance.createInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.createInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.createInit(params)
+            return ({ url, ...rest })
           },
         }),
     findAll: builder.query<
@@ -22,8 +21,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.findAllInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.findAllInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.findAllInit(params)
+            return ({ url, ...rest })
           },
         }),
     update: builder.mutation<
@@ -32,8 +31,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.updateInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.updateInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.updateInit(params)
+            return ({ url, ...rest })
           },
         }),
     findOne: builder.query<
@@ -42,8 +41,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.findOneInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.findOneInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.findOneInit(params)
+            return ({ url, ...rest })
           },
         }),
     remove: builder.mutation<
@@ -52,8 +51,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.removeInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.removeInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.removeInit(params)
+            return ({ url, ...rest })
           },
         }),
     findCommentsByPost: builder.query<
@@ -62,8 +61,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.findCommentsByPostInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.findCommentsByPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.findCommentsByPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     findCommentsByMedia: builder.query<
@@ -72,8 +71,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.findCommentsByMediaInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.findCommentsByMediaInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.findCommentsByMediaInit(params)
+            return ({ url, ...rest })
           },
         }),
     getChildComments: builder.query<
@@ -82,8 +81,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.getChildCommentsInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.getChildCommentsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.getChildCommentsInit(params)
+            return ({ url, ...rest })
           },
         }),
     pinComment: builder.mutation<
@@ -92,8 +91,8 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.pinCommentInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.pinCommentInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.pinCommentInit(params)
+            return ({ url, ...rest })
           },
         }),
     findPinnedComments: builder.query<
@@ -102,9 +101,9 @@ export const commentsApi = createApi({
         >({
           // query: commentsApiInstance.findPinnedCommentsInit,
           query: (params) => {
-              const {url, ...rest} = commentsApiInstance.findPinnedCommentsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = commentsApiInstance.findPinnedCommentsInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})

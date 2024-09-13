@@ -24,8 +24,8 @@
  ┣ 📁pgadmin
  ┣ 📁swagger (автогенерация методов из контроллеров)
  ┃  ┣ 📁comments
- ┃  ┃    ┣ 📄api-client-comments.ts
- ┃  ┃    ┣ 📄interfaces-comments.ts
+ ┃  ┃    ┣ 📄api-client-comments.instance.ts
+ ┃  ┃    ┣ 📄interfaces-comments.instance.ts
  ┃  ┃    ┗ 📄swagger-comments.yaml
  ┃  ┣📁user-info
  ┃  ┣📁messages
@@ -178,7 +178,7 @@
  ┃  ┃  ┃   ┃    ┃
  ┃  ┃  ┃   ┃    ┣📁interfaces
  ┃  ┃  ┃   ┃    ┃  ┣ profileInfo.ts 
- ┃  ┃  ┃   ┃    ┃  ┣ userInfo.ts 
+ ┃  ┃  ┃   ┃    ┃  ┣ userInfo.instance.ts 
  ┃  ┃  ┃   ┃    ┃  ┗ ...
  ┃  ┃  ┃   ┃    ┃
  ┃  ┃  ┃   ┃    ┣📁args

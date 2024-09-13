@@ -1,6 +1,6 @@
-import { ofType as ofTypePac } from 'redux-observable';
-import { OperatorFunction } from 'rxjs';
-import { ActionCreatorWithOptionalPayload } from "@reduxjs/toolkit";
+import { ActionCreatorWithOptionalPayload } from '@reduxjs/toolkit'
+import { ofType as ofTypePac } from 'redux-observable'
+import { OperatorFunction } from 'rxjs'
 
 export type ActionCreator<P = any> = ActionCreatorWithOptionalPayload<P>;
 
@@ -11,4 +11,4 @@ export type ActionCreator<P = any> = ActionCreatorWithOptionalPayload<P>;
 declare type FnOfType = <P extends ReturnType<A>, A extends ActionCreator = ActionCreator>(
   ...actions: [A, ...(A | ActionCreator)[]]
 ) => OperatorFunction<A, P>;
-export const ofTypeEffect = ofTypePac as FnOfType;
+export const ofTypeEffect = ofTypePac as FnOfType

@@ -1,8 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { mediaApiInstance } from "../instanse";
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { mediaApiInstance } from './media.instance'
 
 export const mediaApi = createApi({
-  reducerPath: 'media',
+  reducerPath: 'API_media',
   baseQuery: fetchBaseQuery({
     // baseUrl: '',
     // prepareHeaders: (headers, { getState }) => {
@@ -15,14 +15,14 @@ export const mediaApi = createApi({
     // },
   }),
   endpoints: (builder) => ({
-        uploadFiles: builder.mutation<
+    uploadFiles: builder.mutation<
           ReturnType<typeof mediaApiInstance.uploadFiles>,
           Parameters<typeof mediaApiInstance.uploadFilesInit>[0]
         >({
           // query: mediaApiInstance.uploadFilesInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.uploadFilesInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.uploadFilesInit(params)
+            return ({ url, ...rest })
           },
         }),
     downLoadFile: builder.mutation<
@@ -31,8 +31,8 @@ export const mediaApi = createApi({
         >({
           // query: mediaApiInstance.downLoadFileInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.downLoadFileInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.downLoadFileInit(params)
+            return ({ url, ...rest })
           },
         }),
     deleteFile: builder.mutation<
@@ -41,8 +41,8 @@ export const mediaApi = createApi({
         >({
           // query: mediaApiInstance.deleteFileInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.deleteFileInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.deleteFileInit(params)
+            return ({ url, ...rest })
           },
         }),
     getFiles: builder.query<
@@ -51,8 +51,8 @@ export const mediaApi = createApi({
         >({
           // query: mediaApiInstance.getFilesInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.getFilesInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.getFilesInit(params)
+            return ({ url, ...rest })
           },
         }),
     addTagsToMedia: builder.mutation<
@@ -61,8 +61,8 @@ export const mediaApi = createApi({
         >({
           // query: mediaApiInstance.addTagsToMediaInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.addTagsToMediaInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.addTagsToMediaInit(params)
+            return ({ url, ...rest })
           },
         }),
     removeTagsFromMedia: builder.mutation<
@@ -71,8 +71,8 @@ export const mediaApi = createApi({
         >({
           // query: mediaApiInstance.removeTagsFromMediaInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.removeTagsFromMediaInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.removeTagsFromMediaInit(params)
+            return ({ url, ...rest })
           },
         }),
     getMediaTags: builder.query<
@@ -81,9 +81,9 @@ export const mediaApi = createApi({
         >({
           // query: mediaApiInstance.getMediaTagsInit,
           query: (params) => {
-              const {url, ...rest} = mediaApiInstance.getMediaTagsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = mediaApiInstance.getMediaTagsInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})

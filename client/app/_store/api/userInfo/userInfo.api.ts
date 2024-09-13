@@ -1,9 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { userInfoApiInstance } from "../instanse";
-
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { userInfoApiInstance } from './userInfo.instance'
 
 export const userInfoApi = createApi({
-  reducerPath: 'userInfo',
+  reducerPath: 'API_userInfo',
   baseQuery: fetchBaseQuery({
     // baseUrl: '',
     // prepareHeaders: (headers, { getState }) => {
@@ -16,14 +15,14 @@ export const userInfoApi = createApi({
     // },
   }),
   endpoints: (builder) => ({
-        getUsers: builder.query<
+    getUsers: builder.query<
           ReturnType<typeof userInfoApiInstance.getUsers>,
           Parameters<typeof userInfoApiInstance.getUsersInit>[0]
         >({
           // query: userInfoApiInstance.getUsersInit,
           query: (params) => {
-              const {url, ...rest} = userInfoApiInstance.getUsersInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = userInfoApiInstance.getUsersInit(params)
+            return ({ url, ...rest })
           },
         }),
     updateUser: builder.mutation<
@@ -32,8 +31,8 @@ export const userInfoApi = createApi({
         >({
           // query: userInfoApiInstance.updateUserInit,
           query: (params) => {
-              const {url, ...rest} = userInfoApiInstance.updateUserInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = userInfoApiInstance.updateUserInit(params)
+            return ({ url, ...rest })
           },
         }),
     getUserById: builder.query<
@@ -42,9 +41,9 @@ export const userInfoApi = createApi({
         >({
           // query: userInfoApiInstance.getUserByIdInit,
           query: (params) => {
-              const {url, ...rest} = userInfoApiInstance.getUserByIdInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = userInfoApiInstance.getUserByIdInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})

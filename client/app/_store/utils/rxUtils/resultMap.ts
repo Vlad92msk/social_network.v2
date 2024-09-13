@@ -1,8 +1,7 @@
-import { Action } from 'redux';
-import { Observable, OperatorFunction, pipe } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
-import { FlatResponse, GetResponse, getResponse, flatResponse } from '../utils';
-import { ActionCreator } from "./ofType";
+import { Observable, OperatorFunction, pipe } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { FlatResponse, flatResponse, getResponse, GetResponse } from '../other'
+
 interface ResultMapUtils {
   getResponse: GetResponse;
   flatResponse: FlatResponse;

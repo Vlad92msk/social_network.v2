@@ -1,10 +1,9 @@
-import { Action } from 'redux';
-import { Observable, of, OperatorFunction, pipe } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
-import { ChunkRequestConsistent, chunkRequestConsistent, ChunkRequestParallel, chunkRequestParallel } from '../utils';
-import { makeStore } from "../store";
-import { ActionCreator } from "./ofType";
-
+import { Action } from 'redux'
+import { Observable, of, OperatorFunction, pipe } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
+import { ActionCreator } from './ofType'
+import { makeStore } from '../../store'
+import { ChunkRequestConsistent, chunkRequestConsistent, ChunkRequestParallel, chunkRequestParallel } from '../other'
 
 export interface ValidateConfig {
   skipAction:
@@ -38,9 +37,9 @@ export interface ApiCallAllProps {
 export function getRequestVariables<T>(): OperatorFunction<T, { pipeData: T; mainData: ApiCallAllProps }> {
   return pipe(
     map((pipeData) => {
-        const store = makeStore()
+      const store = makeStore()
 
-      const state = store.getState();
+      const state = store.getState()
 
       const mainData = {
         /**
@@ -51,10 +50,10 @@ export function getRequestVariables<T>(): OperatorFunction<T, { pipeData: T; mai
          * Авторизационные/системные параметры которые могут понадобиться в запросах
          */
         authOptions: {},
-      };
-      return { pipeData, mainData };
+      }
+      return { pipeData, mainData }
     }),
-  );
+  )
 }
 
 /**
@@ -73,41 +72,40 @@ export function validateMap<T>({
   return pipe(
     getRequestVariables(),
     switchMap(({ pipeData, mainData }) => {
-      const { requestParams, authOptions } = mainData;
+      const { requestParams, authOptions } = mainData
 
       /**
        * Функция вызова API-метода
        */
-      const callApi = () =>
-        apiCall(
-          pipeData,
-          { requestParams, authOptions },
-          {
-            chunkRequest: chunkRequestParallel,
-            chunkRequestConsistent,
-          },
-        );
+      const callApi = () => apiCall(
+        pipeData,
+        { requestParams, authOptions },
+        {
+          chunkRequest: chunkRequestParallel,
+          chunkRequestConsistent,
+        },
+      )
 
       /**
        * Если валидацию не используем - сразу вызвваем запрос
        */
-      if (!validator) return callApi();
+      if (!validator) return callApi()
 
-      const validateConfig = validator(pipeData, mainData);
-      const { conditions, skipAction } = validateConfig;
-      const conditionMet = conditions.every(Boolean);
+      const validateConfig = validator(pipeData, mainData)
+      const { conditions, skipAction } = validateConfig
+      const conditionMet = conditions.every(Boolean)
 
       /**
        * Если валидация не пройдена - вызываем экшн сброса
        */
       if (!conditionMet) {
         if (Array.isArray(skipAction)) {
-          return of(...skipAction?.filter(Boolean).map((action) => (typeof action === 'function' ? action() : action)));
+          return of(...skipAction?.filter(Boolean).map((action) => (typeof action === 'function' ? action() : action)))
         }
-        return of(typeof skipAction === 'function' ? skipAction() : skipAction);
+        return of(typeof skipAction === 'function' ? skipAction() : skipAction)
       }
 
-      return callApi();
+      return callApi()
     }),
-  );
+  )
 }

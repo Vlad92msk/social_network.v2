@@ -1,57 +1,52 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { rootReducer } from "./reducer";
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { tagsApiInstance, messagesApiInstance, dialogsApiInstance, postsApiInstance, commentsApiInstance, mediaApiInstance, userInfoApiInstance, profileApiInstance } from "./api/instanse";
-import { tagsApi, commentsApi, messagesApi, dialogsApi, mediaApi, postsApi, profileApi, userInfoApi } from "./api/createdApi";
-import { createEpicMiddleware, StateObservable } from 'redux-observable';
-import { rootEffect } from './effects';
+import logger from 'redux-logger'
+import { createEpicMiddleware } from 'redux-observable'
+import { commentsApiInstance } from './api/comments'
+import { dialogsApiInstance } from './api/dialogs'
+import { mediaApiInstance } from './api/media'
+import { messagesApiInstance } from './api/messages'
+import { postsApiInstance } from './api/posts'
+import { profileApiInstance } from './api/profile'
+import { tagsApi, tagsApiInstance } from './api/tags'
+import { userInfoApiInstance } from './api/userInfo'
+import { rootEffect } from './root.effects'
+import { RootReducer, rootReducer } from './root.reducer'
 
 export const ApiService = {
-    tags: tagsApiInstance,
-    comments: commentsApiInstance,
-    messages: messagesApiInstance,
-    dialogs: dialogsApiInstance,
-    media: mediaApiInstance,
-    posts: postsApiInstance,
-    profile: profileApiInstance,
-    userInfo: userInfoApiInstance,
-};
+  tags: tagsApiInstance,
+  comments: commentsApiInstance,
+  messages: messagesApiInstance,
+  dialogs: dialogsApiInstance,
+  media: mediaApiInstance,
+  posts: postsApiInstance,
+  profile: profileApiInstance,
+  userInfo: userInfoApiInstance,
+}
 
 export type ApiServiceType = typeof ApiService;
 
-const effectMiddleware = createEpicMiddleware<any, any, any, ApiServiceType>({
-    dependencies: ApiService,
-});
-
+const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
+  dependencies: ApiService,
+})
 
 export const makeStore = () => {
-    const store = configureStore({
-        reducer: {
-            ...rootReducer,
-            [tagsApi.reducerPath]: tagsApi.reducer,
-            [commentsApi.reducerPath]: commentsApi.reducer,
-            [messagesApi.reducerPath]: messagesApi.reducer,
-            [dialogsApi.reducerPath]: dialogsApi.reducer,
-            [mediaApi.reducerPath]: mediaApi.reducer,
-            [postsApi.reducerPath]: postsApi.reducer,
-            [profileApi.reducerPath]: profileApi.reducer,
-            [userInfoApi.reducerPath]: userInfoApi.reducer,
-        },
-        middleware: (getDefaultMiddleware) =>
-            getDefaultMiddleware().concat(
-                tagsApi.middleware,
-                effectMiddleware
-            ),
-    });
+  const store = configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(
+      tagsApi.middleware,
+      effectMiddleware,
+      logger,
+    ),
+  })
 
-    effectMiddleware.run(rootEffect);
+  effectMiddleware.run(rootEffect)
 
-    return store;
+  return store
 }
 
 setupListeners(makeStore().dispatch)
 
 export type AppStore = ReturnType<typeof makeStore>
-export type RootState = ReturnType<AppStore['getState']>
+export type RootStore = ReturnType<AppStore['getState']>
 export type AppDispatch = AppStore['dispatch']
-

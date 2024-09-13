@@ -1,9 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { profileApiInstance } from "../instanse";
-
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { profileApiInstance } from './profile.instance'
 
 export const profileApi = createApi({
-  reducerPath: 'profile',
+  reducerPath: 'API_profile',
   baseQuery: fetchBaseQuery({
     // baseUrl: '',
     // prepareHeaders: (headers, { getState }) => {
@@ -16,15 +15,15 @@ export const profileApi = createApi({
     // },
   }),
   endpoints: (builder) => ({
-        getProfileInfo: builder.query<
+    getProfileInfo: builder.query<
           ReturnType<typeof profileApiInstance.getProfileInfo>,
           Parameters<typeof profileApiInstance.getProfileInfoInit>[0]
         >({
           // query: profileApiInstance.getProfileInfoInit,
           query: (params) => {
-              const {url, ...rest} = profileApiInstance.getProfileInfoInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = profileApiInstance.getProfileInfoInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})

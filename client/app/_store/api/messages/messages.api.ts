@@ -1,9 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { messagesApiInstance } from "../instanse";
-
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { messagesApiInstance } from './messages.instance'
 
 export const messagesApi = createApi({
-  reducerPath: 'messages',
+  reducerPath: 'API_messages',
   baseQuery: fetchBaseQuery({
     // baseUrl: '',
     // prepareHeaders: (headers, { getState }) => {
@@ -16,14 +15,14 @@ export const messagesApi = createApi({
     // },
   }),
   endpoints: (builder) => ({
-        create: builder.mutation<
+    create: builder.mutation<
           ReturnType<typeof messagesApiInstance.create>,
           Parameters<typeof messagesApiInstance.createInit>[0]
         >({
           // query: messagesApiInstance.createInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.createInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.createInit(params)
+            return ({ url, ...rest })
           },
         }),
     findAll: builder.query<
@@ -32,8 +31,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.findAllInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.findAllInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.findAllInit(params)
+            return ({ url, ...rest })
           },
         }),
     findOne: builder.query<
@@ -42,8 +41,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.findOneInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.findOneInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.findOneInit(params)
+            return ({ url, ...rest })
           },
         }),
     update: builder.mutation<
@@ -52,8 +51,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.updateInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.updateInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.updateInit(params)
+            return ({ url, ...rest })
           },
         }),
     remove: builder.mutation<
@@ -62,8 +61,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.removeInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.removeInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.removeInit(params)
+            return ({ url, ...rest })
           },
         }),
     markAsDelivered: builder.mutation<
@@ -72,8 +71,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.markAsDeliveredInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.markAsDeliveredInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.markAsDeliveredInit(params)
+            return ({ url, ...rest })
           },
         }),
     markAsRead: builder.mutation<
@@ -82,8 +81,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.markAsReadInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.markAsReadInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.markAsReadInit(params)
+            return ({ url, ...rest })
           },
         }),
     forwardMessage: builder.mutation<
@@ -92,8 +91,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.forwardMessageInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.forwardMessageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.forwardMessageInit(params)
+            return ({ url, ...rest })
           },
         }),
     replyToMessage: builder.mutation<
@@ -102,8 +101,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.replyToMessageInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.replyToMessageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.replyToMessageInit(params)
+            return ({ url, ...rest })
           },
         }),
     getAllMediaForMessage: builder.query<
@@ -112,8 +111,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.getAllMediaForMessageInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.getAllMediaForMessageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.getAllMediaForMessageInit(params)
+            return ({ url, ...rest })
           },
         }),
     getReplyChain: builder.query<
@@ -122,8 +121,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.getReplyChainInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.getReplyChainInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.getReplyChainInit(params)
+            return ({ url, ...rest })
           },
         }),
     addReaction: builder.mutation<
@@ -132,8 +131,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.addReactionInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.addReactionInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.addReactionInit(params)
+            return ({ url, ...rest })
           },
         }),
     getReactions: builder.query<
@@ -142,8 +141,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.getReactionsInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.getReactionsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.getReactionsInit(params)
+            return ({ url, ...rest })
           },
         }),
     removeReaction: builder.mutation<
@@ -152,8 +151,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.removeReactionInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.removeReactionInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.removeReactionInit(params)
+            return ({ url, ...rest })
           },
         }),
     fullTextSearch: builder.mutation<
@@ -162,8 +161,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.fullTextSearchInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.fullTextSearchInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.fullTextSearchInit(params)
+            return ({ url, ...rest })
           },
         }),
     getReactionCount: builder.query<
@@ -172,8 +171,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.getReactionCountInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.getReactionCountInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.getReactionCountInit(params)
+            return ({ url, ...rest })
           },
         }),
     hasUserReacted: builder.mutation<
@@ -182,8 +181,8 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.hasUserReactedInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.hasUserReactedInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.hasUserReactedInit(params)
+            return ({ url, ...rest })
           },
         }),
     createTemporaryMessage: builder.mutation<
@@ -192,9 +191,9 @@ export const messagesApi = createApi({
         >({
           // query: messagesApiInstance.createTemporaryMessageInit,
           query: (params) => {
-              const {url, ...rest} = messagesApiInstance.createTemporaryMessageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = messagesApiInstance.createTemporaryMessageInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})

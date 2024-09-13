@@ -1,9 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { postsApiInstance } from "../instanse";
-
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { postsApiInstance } from './posts.instance'
 
 export const postsApi = createApi({
-  reducerPath: 'posts',
+  reducerPath: 'API_posts',
   baseQuery: fetchBaseQuery({
     // baseUrl: '',
     // prepareHeaders: (headers, { getState }) => {
@@ -16,14 +15,14 @@ export const postsApi = createApi({
     // },
   }),
   endpoints: (builder) => ({
-        create: builder.mutation<
+    create: builder.mutation<
           ReturnType<typeof postsApiInstance.create>,
           Parameters<typeof postsApiInstance.createInit>[0]
         >({
           // query: postsApiInstance.createInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.createInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.createInit(params)
+            return ({ url, ...rest })
           },
         }),
     findAll: builder.query<
@@ -32,8 +31,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.findAllInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.findAllInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.findAllInit(params)
+            return ({ url, ...rest })
           },
         }),
     findOne: builder.query<
@@ -42,8 +41,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.findOneInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.findOneInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.findOneInit(params)
+            return ({ url, ...rest })
           },
         }),
     update: builder.mutation<
@@ -52,8 +51,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.updateInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.updateInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.updateInit(params)
+            return ({ url, ...rest })
           },
         }),
     remove: builder.mutation<
@@ -62,8 +61,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.removeInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.removeInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.removeInit(params)
+            return ({ url, ...rest })
           },
         }),
     createRepost: builder.mutation<
@@ -72,8 +71,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.createRepostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.createRepostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.createRepostInit(params)
+            return ({ url, ...rest })
           },
         }),
     createReply: builder.mutation<
@@ -82,8 +81,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.createReplyInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.createReplyInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.createReplyInit(params)
+            return ({ url, ...rest })
           },
         }),
     togglePinPost: builder.mutation<
@@ -92,8 +91,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.togglePinPostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.togglePinPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.togglePinPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     updatePostVisibility: builder.mutation<
@@ -102,8 +101,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.updatePostVisibilityInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.updatePostVisibilityInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.updatePostVisibilityInit(params)
+            return ({ url, ...rest })
           },
         }),
     createForwardedPost: builder.mutation<
@@ -112,8 +111,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.createForwardedPostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.createForwardedPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.createForwardedPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     getAllMediaForPost: builder.query<
@@ -122,8 +121,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getAllMediaForPostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getAllMediaForPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getAllMediaForPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     updatePostLocation: builder.mutation<
@@ -132,8 +131,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.updatePostLocationInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.updatePostLocationInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.updatePostLocationInit(params)
+            return ({ url, ...rest })
           },
         }),
     getPostsByLocation: builder.query<
@@ -142,8 +141,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getPostsByLocationInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getPostsByLocationInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getPostsByLocationInit(params)
+            return ({ url, ...rest })
           },
         }),
     getRepostsOfPost: builder.query<
@@ -152,8 +151,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getRepostsOfPostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getRepostsOfPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getRepostsOfPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     getRepliesOfPost: builder.query<
@@ -162,8 +161,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getRepliesOfPostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getRepliesOfPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getRepliesOfPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     getForwardsOfPost: builder.query<
@@ -172,8 +171,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getForwardsOfPostInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getForwardsOfPostInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getForwardsOfPostInit(params)
+            return ({ url, ...rest })
           },
         }),
     getAllRelatedPosts: builder.query<
@@ -182,8 +181,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getAllRelatedPostsInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getAllRelatedPostsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getAllRelatedPostsInit(params)
+            return ({ url, ...rest })
           },
         }),
     getReplyChain: builder.query<
@@ -192,8 +191,8 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.getReplyChainInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.getReplyChainInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.getReplyChainInit(params)
+            return ({ url, ...rest })
           },
         }),
     incrementViewCount: builder.mutation<
@@ -202,9 +201,9 @@ export const postsApi = createApi({
         >({
           // query: postsApiInstance.incrementViewCountInit,
           query: (params) => {
-              const {url, ...rest} = postsApiInstance.incrementViewCountInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = postsApiInstance.incrementViewCountInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})

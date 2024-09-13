@@ -1,5 +1,5 @@
 import { hasIn } from 'lodash';
-import { ResponseApiService } from "../effects";
+import { ResponseApiService } from "../../root.effects";
 
 /**
  * Справа - ключ как называется в ОТВЕТЕ

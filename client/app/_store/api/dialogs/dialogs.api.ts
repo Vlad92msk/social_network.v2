@@ -1,9 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { dialogsApiInstance } from "../instanse";
-
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { dialogsApiInstance } from './dialogs.instance'
 
 export const dialogsApi = createApi({
-  reducerPath: 'dialogs',
+  reducerPath: 'API_dialogs',
   baseQuery: fetchBaseQuery({
     // baseUrl: '',
     // prepareHeaders: (headers, { getState }) => {
@@ -16,14 +15,14 @@ export const dialogsApi = createApi({
     // },
   }),
   endpoints: (builder) => ({
-        create: builder.mutation<
+    create: builder.mutation<
           ReturnType<typeof dialogsApiInstance.create>,
           Parameters<typeof dialogsApiInstance.createInit>[0]
         >({
           // query: dialogsApiInstance.createInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.createInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.createInit(params)
+            return ({ url, ...rest })
           },
         }),
     findAll: builder.query<
@@ -32,8 +31,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.findAllInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.findAllInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.findAllInit(params)
+            return ({ url, ...rest })
           },
         }),
     findOne: builder.query<
@@ -42,8 +41,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.findOneInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.findOneInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.findOneInit(params)
+            return ({ url, ...rest })
           },
         }),
     update: builder.mutation<
@@ -52,8 +51,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.updateInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.updateInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.updateInit(params)
+            return ({ url, ...rest })
           },
         }),
     remove: builder.mutation<
@@ -62,8 +61,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.removeInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.removeInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.removeInit(params)
+            return ({ url, ...rest })
           },
         }),
     addParticipant: builder.mutation<
@@ -72,8 +71,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.addParticipantInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.addParticipantInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.addParticipantInit(params)
+            return ({ url, ...rest })
           },
         }),
     removeParticipant: builder.mutation<
@@ -82,8 +81,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.removeParticipantInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.removeParticipantInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.removeParticipantInit(params)
+            return ({ url, ...rest })
           },
         }),
     addAdmin: builder.mutation<
@@ -92,8 +91,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.addAdminInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.addAdminInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.addAdminInit(params)
+            return ({ url, ...rest })
           },
         }),
     removeAdmin: builder.mutation<
@@ -102,8 +101,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.removeAdminInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.removeAdminInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.removeAdminInit(params)
+            return ({ url, ...rest })
           },
         }),
     addFixedMessage: builder.mutation<
@@ -112,8 +111,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.addFixedMessageInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.addFixedMessageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.addFixedMessageInit(params)
+            return ({ url, ...rest })
           },
         }),
     removeFixedMessage: builder.mutation<
@@ -122,8 +121,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.removeFixedMessageInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.removeFixedMessageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.removeFixedMessageInit(params)
+            return ({ url, ...rest })
           },
         }),
     getUnreadMessagesCount: builder.query<
@@ -132,8 +131,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.getUnreadMessagesCountInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.getUnreadMessagesCountInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.getUnreadMessagesCountInit(params)
+            return ({ url, ...rest })
           },
         }),
     markMessagesAsRead: builder.mutation<
@@ -142,8 +141,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.markMessagesAsReadInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.markMessagesAsReadInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.markMessagesAsReadInit(params)
+            return ({ url, ...rest })
           },
         }),
     getAllMediaForDialog: builder.query<
@@ -152,8 +151,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.getAllMediaForDialogInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.getAllMediaForDialogInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.getAllMediaForDialogInit(params)
+            return ({ url, ...rest })
           },
         }),
     updateDialogImage: builder.mutation<
@@ -162,8 +161,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.updateDialogImageInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.updateDialogImageInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.updateDialogImageInit(params)
+            return ({ url, ...rest })
           },
         }),
     updateDialogOptions: builder.mutation<
@@ -172,8 +171,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.updateDialogOptionsInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.updateDialogOptionsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.updateDialogOptionsInit(params)
+            return ({ url, ...rest })
           },
         }),
     getDialogsByParticipant: builder.query<
@@ -182,8 +181,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.getDialogsByParticipantInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.getDialogsByParticipantInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.getDialogsByParticipantInit(params)
+            return ({ url, ...rest })
           },
         }),
     getDialogParticipants: builder.query<
@@ -192,8 +191,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.getDialogParticipantsInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.getDialogParticipantsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.getDialogParticipantsInit(params)
+            return ({ url, ...rest })
           },
         }),
     getDialogAdmins: builder.query<
@@ -202,8 +201,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.getDialogAdminsInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.getDialogAdminsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.getDialogAdminsInit(params)
+            return ({ url, ...rest })
           },
         }),
     leaveDialog: builder.mutation<
@@ -212,8 +211,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.leaveDialogInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.leaveDialogInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.leaveDialogInit(params)
+            return ({ url, ...rest })
           },
         }),
     createVideoConference: builder.mutation<
@@ -222,8 +221,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.createVideoConferenceInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.createVideoConferenceInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.createVideoConferenceInit(params)
+            return ({ url, ...rest })
           },
         }),
     findAllShortDialogs: builder.query<
@@ -232,8 +231,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.findAllShortDialogsInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.findAllShortDialogsInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.findAllShortDialogsInit(params)
+            return ({ url, ...rest })
           },
         }),
     findOneShortDialog: builder.query<
@@ -242,8 +241,8 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.findOneShortDialogInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.findOneShortDialogInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.findOneShortDialogInit(params)
+            return ({ url, ...rest })
           },
         }),
     findByUserShortDialog: builder.query<
@@ -252,9 +251,9 @@ export const dialogsApi = createApi({
         >({
           // query: dialogsApiInstance.findByUserShortDialogInit,
           query: (params) => {
-              const {url, ...rest} = dialogsApiInstance.findByUserShortDialogInit(params)
-              return ({ url, ...rest })
+            const { url, ...rest } = dialogsApiInstance.findByUserShortDialogInit(params)
+            return ({ url, ...rest })
           },
         }),
   }),
-});
+})
