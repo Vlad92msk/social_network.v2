@@ -74,7 +74,7 @@ function generateInterfacesFile(document: any, config: YamlGenerationConfig, mod
             if (schema.properties) {
                 // @ts-ignore
                 for (const [propName, propSchema] of Object.entries(schema.properties)) {
-                    const type = getTypeFromSchema(propSchema);
+                    const type = getTypeFromSchema(propSchema, document.components.schemas);
                     // @ts-ignore
                     interfacesContent += `  ${propName}${propSchema.required ? '' : '?'}: ${type};\n`;
                 }
@@ -94,12 +94,33 @@ function generateInterfacesFile(document: any, config: YamlGenerationConfig, mod
     console.log(`Завершение генерации интерфейсов для модуля ${moduleName}`);
 }
 
-function getTypeFromSchema(schema: any): string {
+function getTypeFromSchema(schema: any, componentsSchemas: Record<string, any>): string {
     if (schema.$ref) {
-        return schema.$ref.split('/').pop();
+        const refType = schema.$ref.split('/').pop();
+        if (componentsSchemas[refType]) {
+            return refType;
+        }
+        console.warn(`Warning: Schema ${refType} not found in components.schemas`);
+        return 'any';
     }
+
+    if (schema.allOf) {
+        // Handle allOf by combining all schemas
+        const combinedTypes = schema.allOf.map(s => getTypeFromSchema(s, componentsSchemas));
+        return combinedTypes.join(' & ');
+    }
+
+    if (schema.oneOf) {
+        // Handle oneOf as a union type
+        const unionTypes = schema.oneOf.map(s => getTypeFromSchema(s, componentsSchemas));
+        return unionTypes.join(' | ');
+    }
+
     switch (schema.type) {
         case 'string':
+            if (schema.enum) {
+                return schema.enum.map(e => `'${e}'`).join(' | ');
+            }
             return 'string';
         case 'integer':
         case 'number':
@@ -107,10 +128,19 @@ function getTypeFromSchema(schema: any): string {
         case 'boolean':
             return 'boolean';
         case 'array':
-            return `${getTypeFromSchema(schema.items)}[]`;
+            return `Array<${getTypeFromSchema(schema.items, componentsSchemas)}>`;
         case 'object':
+            if (schema.properties) {
+                const props = Object.entries(schema.properties).map(([key, value]) =>
+                  `${key}${schema.required?.includes(key) ? '' : '?'}: ${getTypeFromSchema(value, componentsSchemas)}`
+                ).join('; ');
+                return `{ ${props} }`;
+            }
             return 'Record<string, any>';
         default:
+            if (schema.type) {
+                console.warn(`Unknown type: ${schema.type}`);
+            }
             return 'any';
     }
 }
@@ -154,11 +184,11 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
     // Начало класса API
     apiClientContent += `export class ${capitalizeFirstLetter(moduleName)}Api {\n`;
-    apiClientContent += `  private baseUrl = \`http://${process.env.API_HOST}:${process.env.API_PORT}\`;\n`;
+    apiClientContent += `  private baseUrl: string;\n`;
     apiClientContent += `  private defaultConfig: RequestInit;\n\n`;
     apiClientContent += `  constructor(config?: { baseUrl?: string } & RequestInit) {\n`;
     apiClientContent += `    const { baseUrl, ...restConfig } = config || {};\n`;
-    apiClientContent += `    if(baseUrl) { this.baseUrl = baseUrl };\n`;
+    apiClientContent += `    this.baseUrl = baseUrl || \`http://\${process.env.API_HOST}:\${process.env.API_PORT}\`;\n`;
     apiClientContent += `    this.defaultConfig = { headers: { 'Content-Type': 'application/json' }, ...restConfig };\n`;
     apiClientContent += `  }\n\n`;
 
@@ -185,7 +215,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
     apiClientContent += `      result.error = {\n`;
     apiClientContent += `        code: response.status,\n`;
     apiClientContent += `        message: 'Ошибка парсинга ответа',\n`;
-    apiClientContent += `        description: error?.toString() || 'Неизвестная ошибка',\n`;
+    apiClientContent += `        description: error instanceof Error ? error.message : 'Неизвестная ошибка',\n`;
     apiClientContent += `      };\n`;
     apiClientContent += `    }\n`;
     apiClientContent += `    return result;\n`;
@@ -214,8 +244,24 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             const parameters = operation.parameters || [];
             const requestBody = operation.requestBody;
             const responseSchema = operation.responses?.['200']?.content?.['application/json']?.schema;
-            const responseType = responseSchema ? getTypeFromSchema(responseSchema) : 'any';
+            const responseType = responseSchema ? getTypeFromSchema(responseSchema, document.components.schemas) : 'any';
 
+            // Определение типа параметров
+            let paramsType = '';
+            if (parameters.length > 0 || requestBody) {
+                const paramsList = [
+                    ...new Set(parameters.map(p => `${p.name}${p.required ? '' : '?'}: ${getTypeFromSchema(p.schema, document.components.schemas)}`))
+                ];
+                if (requestBody) {
+                    const contentType = Object.keys(requestBody.content || {})[0];
+                    if (contentType && requestBody.content[contentType].schema) {
+                        paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)}`);
+                    } else {
+                        paramsList.push(`body: any`);
+                    }
+                }
+                paramsType = `{ ${paramsList.join(', ')} }`;
+            }
 
             // JSDoc комментарий для основного метода
             apiClientContent += `  /**\n`;
@@ -228,34 +274,18 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             apiClientContent += `   * @throws {DefaultError} Когда сервер отвечает статусом не 200 \n`;
             apiClientContent += `   */\n`;
 
-            // Определение типа параметров
-            let paramsType = '';
-            if (parameters.length > 0 || requestBody) {
-                let paramsList = [...new Set(parameters.map(p => `${p.name}${p.required ? '' : '?'}: ${getTypeFromSchema(p.schema)}`))];
-                if (requestBody) {
-                    const contentType = Object.keys(requestBody.content || {})[0];
-                    if (contentType && requestBody.content[contentType].schema) {
-                        paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema)}`);
-                    } else {
-                        paramsList.push(`body: any`);
-                    }
-                }
-                paramsType = `{ ${paramsList.join(', ')} }`;
-            }
-
             // Основной метод API
             apiClientContent += `  ${operationId}(`;
             if (paramsType) {
                 apiClientContent += `params?: ${paramsType}, `;
             }
             apiClientContent += `requestParams?: RequestInit): Promise<ApiResponse<${responseType}>> {\n`;
-            apiClientContent += `    const {url, ...rest} = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
-            apiClientContent += `    return fetch(url, rest).then(response => this.handleResponse<${responseType}>(response));\n`;
+            apiClientContent += `    const {url, init} = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
+            apiClientContent += `    return fetch(url, init).then(response => this.handleResponse<${responseType}>(response));\n`;
             apiClientContent += `  }\n\n`;
 
             // JSDoc комментарий для Observable метода
             apiClientContent += `  /**\n`;
-            apiClientContent += `   * Observable version of ${operationId}\n`;
             apiClientContent += `   * @see ${operationId} for more details\n`;
             apiClientContent += `   * @throws {DefaultError} Когда сервер отвечает статусом не 200\n`;
             apiClientContent += `   */\n`;
@@ -270,21 +300,21 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             apiClientContent += `  }\n\n`;
 
             // Вспомогательный метод Init
-            apiClientContent += `  private ${operationId}Init(`;
+            apiClientContent += `  ${operationId}Init(`;
             if (paramsType) {
                 apiClientContent += `params?: ${paramsType}, `;
             }
-            apiClientContent += `requestParams?: RequestInit): { url: string } & RequestInit {\n`;
+            apiClientContent += `requestParams?: RequestInit): { url: string, init: RequestInit } {\n`;
             apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
 
             // Добавление query-параметров
-            apiClientContent += `    if (params) {\n`;
-            apiClientContent += `      Object.entries(params).forEach(([key, value]) => {\n`;
-            apiClientContent += `        if (value !== undefined) {\n`;
-            apiClientContent += `          url.searchParams.append(key, value.toString());\n`;
-            apiClientContent += `        }\n`;
-            apiClientContent += `      });\n`;
-            apiClientContent += `    }\n`;
+            if (parameters.length > 0) {
+                apiClientContent += `    if (params) {\n`;
+                apiClientContent += `      ${parameters.filter(p => p.in === 'query').map(p =>
+                  `if (params.${p.name} !== undefined) url.searchParams.append('${p.name}', params.${p.name}.toString());`
+                ).join('\n      ')}\n`;
+                apiClientContent += `    }\n`;
+            }
 
             apiClientContent += `    const init: RequestInit = {\n`;
             apiClientContent += `      method: '${method.toUpperCase()}',\n`;
@@ -295,11 +325,10 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
             apiClientContent += `      ...requestParams,\n`;
             apiClientContent += `      headers: { ...this.defaultConfig?.headers, ...requestParams?.headers },\n`;
             apiClientContent += `    };\n`;
-            apiClientContent += `    return { ...init, url: url.toString() };\n`;
+            apiClientContent += `    return { url: url.toString(), init };\n`;
             apiClientContent += `  }\n\n`;
         }
     }
-
     apiClientContent += `}\n`;
 
     try {

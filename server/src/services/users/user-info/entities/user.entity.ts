@@ -43,11 +43,11 @@ export class UserInfo implements UserInfoType {
     @ApiProperty({ description: 'Общая информация о пользователе', type: () => UserAbout })
     @OneToOne(type => UserAbout, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    about_info: UserAboutType
+    about_info: UserAbout
 
     @ApiProperty({ description: 'Связанные медиа элементы', type: [MediaEntity] })
     @ManyToMany(() => MediaEntity, media => media.tagged_users)
-    medias_check: MediaItem[]
+    medias_check: MediaEntity[]
 
     @ApiProperty({ description: 'Реакции пользователя', type: [ReactionEntity] })
     @OneToMany(() => ReactionEntity, reaction => reaction.user)

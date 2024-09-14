@@ -37,7 +37,7 @@
   &-SubmitActions {
     display: flex;
     gap: rem(5);
-    place-content: end;
+    place-content: flex-end;
   }
 
   &-SubmitButton {

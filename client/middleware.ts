@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authMiddleware } from '@middlewares/authMiddleware'
 import { intlMiddleware } from '@middlewares/intlMiddleware'
+import { profileApiInstance } from './apiInstance'
+import { CookieType } from './app/types/cookie'
 import { auth } from './auth'
 
 export default auth(async (request: NextRequest) => {
@@ -19,11 +21,37 @@ export default auth(async (request: NextRequest) => {
     // Применяем authMiddleware, передавая сессию
     const authResponse = await authMiddleware(request, session)
 
+    let userPublicId
+
+    if (session) {
+      // Преобразуем expires в maxAge
+      const expiresDate = new Date(session.expires)
+      const maxAge = Math.floor((expiresDate.getTime() - Date.now()) / 1000) // конвертируем в секунды
+
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      const profile = await profileApiInstance.getProfileInfo({ body: { email: session?.user?.email } }).then((response) => response.data)
+      userPublicId = profile?.user_info?.public_id
+
+      // Добавляем cookie
+      response.cookies.set(CookieType.PROFILE_ID, String(profile?.id), {
+        maxAge,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      })
+
+      response.cookies.set(CookieType.USER_INFO_ID, String(profile?.user_info?.id), {
+        maxAge,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      })
+    }
 
     if (authResponse) return authResponse
-
     const { 1: locale, 2: uuid } = request.nextUrl.pathname.split('/')
-
 
     /**
      * Если в URL нет UUID пользователя - устанавливаем его из авторизации
@@ -31,19 +59,16 @@ export default auth(async (request: NextRequest) => {
      * чтобы можно было проверять UUID в базе и есть он есть - редиректить на него
      * если нет - то на страницу текщего пользователя
      */
-    if (!uuid) {
-      // @ts-ignore
-      const userId = session?.user?.userInfo?.uuid
+    if (uuid === 'undefined' || uuid !== userPublicId) {
+      const userId = userPublicId
       if (userId) {
         // Если uuid отсутствует в URL, но есть в сессии, перенаправляем на URL с uuid
         return NextResponse.redirect(new URL(`/${locale}/${userId}/profile`, request.url))
-      } else {
-        // Если uuid нет ни в URL, ни в сессии, возможно, стоит перенаправить на страницу входа или домашнюю страницу
-        console.log('UUID не найден ни в URL, ни в сессии')
-        // Пример: return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
       }
+      // Если uuid нет ни в URL, ни в сессии, возможно, стоит перенаправить на страницу входа или домашнюю страницу
+      console.log('UUID не найден ни в URL, ни в сессии')
+      // Пример: return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
     }
-
 
     return response
   } catch (error) {

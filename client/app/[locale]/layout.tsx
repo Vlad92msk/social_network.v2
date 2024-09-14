@@ -1,7 +1,7 @@
 import { Locale } from '@middlewares/variables'
+import { ReduxProvider } from '@providers/redux'
 import { Session } from '@providers/session/Session'
 import { ThemeService } from '@providers/theme'
-import { Redux } from "@providers/redux";
 import { Body } from '@ui/components/Body'
 import { Html } from '@ui/components/Html'
 import '@ui/styles/_index.scss'
@@ -26,20 +26,31 @@ export default async function RootLayout(props: RootLayoutProps) {
   const { children, params } = props
   const messages = await getMessages()
 
+  // const d = await profileApiInstance.getProfiles().then(response => response.data)
+  // const d2 = await profileApiInstance.getProfileInfo({body:{email: 'fvsasus@gmail.com'}}).then(response => response.data)
+  // const d1 = await userInfoApiInstance.getUsers().then(response => response.data)
+  // console.log('d', d)
+  // console.log('d1', d1)
+  // console.log('d2', d2)
+
   return (
-      <Redux>
-    <ThemeService contextProps={{ theme: 'default' }}>
-      <NextIntlClientProvider messages={messages}>
-        <Html locale={params.locale}>
-          <Session>
-            <Body>
-              {children}
-            </Body>
-          </Session>
-        </Html>
-      </NextIntlClientProvider>
-    </ThemeService>
-      </Redux>
+    <ReduxProvider>
+      <ThemeService contextProps={{ theme: 'default' }}>
+        <NextIntlClientProvider messages={messages}>
+          <Html locale={params.locale}>
+            <Session>
+              <Body>
+                <div>
+                  {/* {JSON.stringify(d)} */}
+                  {/* {JSON.stringify(d1)} */}
+                </div>
+                {children}
+              </Body>
+            </Session>
+          </Html>
+        </NextIntlClientProvider>
+      </ThemeService>
+    </ReduxProvider>
   )
 }
 

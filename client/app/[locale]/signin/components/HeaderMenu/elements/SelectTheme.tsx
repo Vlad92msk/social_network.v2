@@ -1,5 +1,3 @@
-'use client'
-
 import { ChangeEventHandler } from 'react'
 import { useThemeServiceUpdate } from '@providers/theme'
 import { DEFAULT_THEME, Theme, THEMES } from '@providers/theme/context/initialState'

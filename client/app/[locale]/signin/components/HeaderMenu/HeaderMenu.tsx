@@ -1,3 +1,5 @@
+'use client'
+
 import { cn } from './cn'
 import { ButtonExit, SelectLocale, SelectTheme } from './elements'
 

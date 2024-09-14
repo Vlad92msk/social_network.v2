@@ -1,6 +1,5 @@
 const { PHASE_DEVELOPMENT_SERVER: dev, PHASE_PRODUCTION_BUILD: prod } = require('next/constants')
 const createNextIntlPlugin = require('next-intl/plugin');
-
 const withNextIntl = createNextIntlPlugin();
 
 /**
@@ -13,12 +12,14 @@ const baseConfig= {
 
         return config;
     },
-    env: {APPLE_ID: 'APPLE_ID',
+    env: {
+        APPLE_ID: 'APPLE_ID',
         APPLE_SECRET: 'APPLE_SECRET',
         GOOGLE_ID: '232906585557-9k9ckn13pgdvovf4p2fn73amkqe25m7a.apps.googleusercontent.com',
         GOOGLE_SECRET: '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',
         NEXTAUTH_SECRET: 'ptnvr',
-        NEXTAUTH_URL: 'http://localhost:3000' // ??????
+        NEXTAUTH_URL: 'http://localhost:3000',
+        DB_URL: 'http://localhost:3001'
     },
     images: {
         // Указываем домены с которых можно получать картинок с внешних сервисов

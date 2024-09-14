@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { dialogsApiInstance } from './dialogs.instance'
+import { dialogsApiInstance } from '../../../apiInstance/dialogs.instance'
 
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',

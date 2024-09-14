@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { commentsApiInstance } from './comments.instance'
+import { commentsApiInstance } from '../../../apiInstance'
 
 export const commentsApi = createApi({
   reducerPath: 'API_comments',

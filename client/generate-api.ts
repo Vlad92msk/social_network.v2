@@ -10,9 +10,7 @@ const SWAGGER_DIR = path.join(__dirname, '../swagger')
 // Шаблон для генерации файлов API
 const API_TEMPLATE = (apiName: string, className: string, methodNames: string[]) => `
     import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-    import { ${className} } from '../../../../swagger/${apiName}/api-client-${apiName}';
-    
-    const ${apiName}ApiInstance = new ${className}();
+    import { ${apiName}ApiInstance } from '../../../apiInstance';
     
     export const ${apiName}Api = createApi({
       reducerPath: 'API_${apiName}',

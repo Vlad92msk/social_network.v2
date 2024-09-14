@@ -1,14 +1,8 @@
 import { combineReducers } from 'redux'
-import { commentsApi } from './api/comments'
-import { dialogsApi } from './api/dialogs'
-import { mediaApi } from './api/media'
-import { messagesApi } from './api/messages'
-import { postsApi } from './api/posts'
-import { profileApi } from './api/profile'
-import { tagsApi } from './api/tags'
-import { userInfoApi } from './api/userInfo'
+import {
+  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
+} from './api'
 import { counterReducer } from './messagesReducer'
-
 
 export const rootReducer = combineReducers({
   counter: counterReducer,

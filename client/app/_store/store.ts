@@ -2,16 +2,21 @@ import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import logger from 'redux-logger'
 import { createEpicMiddleware } from 'redux-observable'
-import { commentsApiInstance, commentsApi } from './api/comments'
-import { dialogsApiInstance, dialogsApi } from './api/dialogs'
-import { mediaApiInstance, mediaApi } from './api/media'
-import { messagesApiInstance, messagesApi } from './api/messages'
-import { postsApiInstance, postsApi } from './api/posts'
-import { profileApiInstance, profileApi } from './api/profile'
-import { tagsApi, tagsApiInstance } from './api/tags'
-import { userInfoApiInstance, userInfoApi } from './api/userInfo'
+import {
+  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
+} from './api'
 import { rootEffect } from './root.effects'
 import { RootReducer, rootReducer } from './root.reducer'
+import {
+  commentsApiInstance,
+  dialogsApiInstance,
+  mediaApiInstance,
+  messagesApiInstance,
+  postsApiInstance,
+  profileApiInstance,
+  tagsApiInstance,
+  userInfoApiInstance,
+} from '../../apiInstance'
 
 export const ApiService = {
   tags: tagsApiInstance,
@@ -26,11 +31,11 @@ export const ApiService = {
 
 export type ApiServiceType = typeof ApiService
 
-const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
-  dependencies: ApiService,
-})
-
 export const makeStore = () => {
+  const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
+    dependencies: ApiService,
+  })
+
   const store = configureStore({
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(

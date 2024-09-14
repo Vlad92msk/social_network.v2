@@ -20,13 +20,13 @@ export class UserProfileInfo implements ProfileInfoType {
     @Column({ type: 'enum', nullable: false, enum: ProfileType, default: ProfileType.USER })
     type: ProfileType
 
-    @ApiProperty({ description: 'Информация о пользователе', type: () => UserInfo })
+    @ApiProperty({ description: 'Информация о пользователе', type: UserInfo })
     @OneToOne(type => UserInfo, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_info_id', referencedColumnName: 'id' })
-    user_info: UserInfoType
+    user_info: UserInfo
 
     @ApiProperty({ description: 'Настройки профиля', type: () => Settings })
     @OneToOne(type => Settings, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'settings_id', referencedColumnName: 'id' })
-    settings: ProfileSettings
+    settings: Settings
 }

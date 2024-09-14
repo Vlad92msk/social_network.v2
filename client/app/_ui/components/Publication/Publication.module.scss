@@ -254,7 +254,7 @@ $padding: rem(6);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      align-items: end;
+      align-items: flex-end;
     }
     &MediaOtherItem {
       width: fit-content;
@@ -306,7 +306,7 @@ $padding: rem(6);
     grid-area: date-read;
     display: flex;
     align-items: center;
-    justify-content: end;
+    justify-content: flex-end;
     padding-left: $padding;
     padding-right: $padding;
 
@@ -323,7 +323,7 @@ $padding: rem(6);
     grid-area: date-created;
     display: flex;
     align-items: center;
-    justify-content: end;
+    justify-content: flex-end;
     padding-left: $padding;
     padding-right: $padding;
   }

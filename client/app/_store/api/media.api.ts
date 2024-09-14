@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { mediaApiInstance } from './media.instance'
+import { mediaApiInstance } from '../../../apiInstance/media.instance'
 
 export const mediaApi = createApi({
   reducerPath: 'API_media',

@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { profileApiInstance } from './profile.instance'
+import { profileApiInstance } from '../../../apiInstance/profile.instance'
 
 export const profileApi = createApi({
   reducerPath: 'API_profile',

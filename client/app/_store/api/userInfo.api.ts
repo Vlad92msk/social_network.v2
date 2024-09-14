@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { userInfoApiInstance } from './userInfo.instance'
+import { userInfoApiInstance } from '../../../apiInstance/userInfo.instance'
 
 export const userInfoApi = createApi({
   reducerPath: 'API_userInfo',
