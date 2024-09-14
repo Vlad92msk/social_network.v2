@@ -35,7 +35,7 @@ export default auth(async (request: NextRequest) => {
       userPublicId = profile?.user_info?.public_id
 
       // Добавляем cookie
-      response.cookies.set(CookieType.PROFILE_ID, String(profile?.id), {
+      response.cookies.set(CookieType.USER_PROFILE_ID, String(profile?.id), {
         maxAge,
         path: '/',
         secure: process.env.NODE_ENV === 'production',

@@ -1,6 +1,6 @@
 export enum CookieType {
   NEXT_LOCALE= 'NEXT_LOCALE',
-  PROFILE_ID= 'profile_id',
+  USER_PROFILE_ID= 'profile_id',
   USER_INFO_ID= 'user_info_id',
   USER_PROFILE= 'user',
   NEXT_SESSION_TOKEN = 'next-auth.session-token',

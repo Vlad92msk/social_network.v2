@@ -1,18 +1,21 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { CookieType } from '../../types/cookie'
 import { postsApiInstance } from '../../../apiInstance/posts.instance'
 
 export const postsApi = createApi({
   reducerPath: 'API_posts',
   baseQuery: fetchBaseQuery({
-    // baseUrl: '',
-    // prepareHeaders: (headers, { getState }) => {
-    //   // @ts-ignore
-    //   const token = (getState()).auth.token;
-    //   if (token) {
-    //     headers.set('authorization', `Bearer ${token}`);
-    //   }
-    //   return headers;
-    // },
+    prepareHeaders: (headers, { getState }) => {
+      const state = getState()
+      // @ts-ignore
+      const profileId = state.profile.id
+      // @ts-ignore
+      const userInfoId = state.profile.user_info.id
+
+      headers.set(CookieType.USER_PROFILE_ID, String(profileId));
+      headers.set(CookieType.USER_INFO_ID, String(userInfoId));
+      return headers;
+    },
   }),
   endpoints: (builder) => ({
     create: builder.mutation<

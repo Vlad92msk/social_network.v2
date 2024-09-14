@@ -1,15 +1,25 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { CookieType } from '../../types/cookie'
 import { commentsApiInstance } from '../../../apiInstance'
 
 export const commentsApi = createApi({
   reducerPath: 'API_comments',
-  baseQuery: fetchBaseQuery(),
+  baseQuery: fetchBaseQuery({
+    prepareHeaders: (headers, { getState }) => {
+      const state = getState() as Record<string, any>
+      const profileId = state.profile.id
+      const userInfoId = state.profile.user_info.id
+
+      headers.set(CookieType.USER_PROFILE_ID, String(profileId));
+      headers.set(CookieType.USER_INFO_ID, String(userInfoId));
+      return headers;
+    },
+  }),
   endpoints: (builder) => ({
     create: builder.mutation<
           ReturnType<typeof commentsApiInstance.create>,
           Parameters<typeof commentsApiInstance.createInit>[0]
         >({
-          // query: commentsApiInstance.createInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.createInit(params)
             return ({ url, ...rest })
@@ -19,7 +29,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.findAll>,
           Parameters<typeof commentsApiInstance.findAllInit>[0]
         >({
-          // query: commentsApiInstance.findAllInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.findAllInit(params)
             return ({ url, ...rest })
@@ -29,7 +38,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.update>,
           Parameters<typeof commentsApiInstance.updateInit>[0]
         >({
-          // query: commentsApiInstance.updateInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.updateInit(params)
             return ({ url, ...rest })
@@ -39,7 +47,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.findOne>,
           Parameters<typeof commentsApiInstance.findOneInit>[0]
         >({
-          // query: commentsApiInstance.findOneInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.findOneInit(params)
             return ({ url, ...rest })
@@ -49,7 +56,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.remove>,
           Parameters<typeof commentsApiInstance.removeInit>[0]
         >({
-          // query: commentsApiInstance.removeInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.removeInit(params)
             return ({ url, ...rest })
@@ -59,7 +65,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.findCommentsByPost>,
           Parameters<typeof commentsApiInstance.findCommentsByPostInit>[0]
         >({
-          // query: commentsApiInstance.findCommentsByPostInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.findCommentsByPostInit(params)
             return ({ url, ...rest })
@@ -69,7 +74,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.findCommentsByMedia>,
           Parameters<typeof commentsApiInstance.findCommentsByMediaInit>[0]
         >({
-          // query: commentsApiInstance.findCommentsByMediaInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.findCommentsByMediaInit(params)
             return ({ url, ...rest })
@@ -79,7 +83,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.getChildComments>,
           Parameters<typeof commentsApiInstance.getChildCommentsInit>[0]
         >({
-          // query: commentsApiInstance.getChildCommentsInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.getChildCommentsInit(params)
             return ({ url, ...rest })
@@ -89,7 +92,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.pinComment>,
           Parameters<typeof commentsApiInstance.pinCommentInit>[0]
         >({
-          // query: commentsApiInstance.pinCommentInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.pinCommentInit(params)
             return ({ url, ...rest })
@@ -99,7 +101,6 @@ export const commentsApi = createApi({
           ReturnType<typeof commentsApiInstance.findPinnedComments>,
           Parameters<typeof commentsApiInstance.findPinnedCommentsInit>[0]
         >({
-          // query: commentsApiInstance.findPinnedCommentsInit,
           query: (params) => {
             const { url, ...rest } = commentsApiInstance.findPinnedCommentsInit(params)
             return ({ url, ...rest })

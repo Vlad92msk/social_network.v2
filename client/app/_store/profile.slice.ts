@@ -3,6 +3,7 @@ import { sliceBuilder } from './utils/other'
 
 export interface ProfileSliceState {
     profile: UserProfileInfo | null
+    dlewmdl: number
 }
 
 
@@ -11,6 +12,7 @@ export const { actions: ProfileSliceActions, reducer: profileReducer } = sliceBu
   ({ createSlice, setStateAnyObject }) => {
     const initialState: ProfileSliceState = {
       profile: null,
+      dlewmdl: 1
     }
 
     return createSlice({
@@ -22,4 +24,3 @@ export const { actions: ProfileSliceActions, reducer: profileReducer } = sliceBu
     })
   },
 )
-

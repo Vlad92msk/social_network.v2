@@ -11,36 +11,41 @@ const SWAGGER_DIR = path.join(__dirname, '../swagger')
 const API_TEMPLATE = (apiName: string, className: string, methodNames: string[]) => `
     import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
     import { ${apiName}ApiInstance } from '../../../apiInstance';
+    import { CookieType } from '../../types/cookie';
     
     export const ${apiName}Api = createApi({
       reducerPath: 'API_${apiName}',
       baseQuery: fetchBaseQuery({
-        // baseUrl: '',
-        // prepareHeaders: (headers, { getState }) => {
-        //   // @ts-ignore
-        //   const token = (getState()).auth.token;
-        //   if (token) {
-        //     headers.set('authorization', \`Bearer \${token}\`);
-        //   }
-        //   return headers;
-        // },
+        prepareHeaders: (headers, { getState }) => {
+          const state = getState() as Record<string, any>;
+          const profileId = state.profile?.id;
+          const userInfoId = state.profile?.user_info?.id;
+    
+          if (profileId) {
+            headers.set(CookieType.USER_PROFILE_ID, String(profileId));
+          }
+          if (userInfoId) {
+            headers.set(CookieType.USER_INFO_ID, String(userInfoId));
+          }
+          return headers;
+        },
       }),
       endpoints: (builder) => ({
         ${methodNames.map((methodName) => {
-    const baseMethodName = methodName.replace('Init', '')
-    return `    ${baseMethodName}: builder.${baseMethodName.startsWith('get') || baseMethodName.startsWith('find') ? 'query' : 'mutation'}<
-              ReturnType<typeof ${apiName}ApiInstance.${baseMethodName}>,
-              Parameters<typeof ${apiName}ApiInstance.${methodName}>[0]
-            >({
-              // query: ${apiName}ApiInstance.${methodName},
-              query: (params) => {
+          const baseMethodName = methodName.replace('Init', '')
+          return `        
+              ${baseMethodName}: builder.${baseMethodName.startsWith('get') || baseMethodName.startsWith('find') ? 'query' : 'mutation'}<
+                ReturnType<typeof ${apiName}ApiInstance.${baseMethodName}>,
+                Parameters<typeof ${apiName}ApiInstance.${methodName}>[0]
+              >({
+                query: (params) => {
                   const {url, ...rest} = ${apiName}ApiInstance.${methodName}(params)
                   return ({ url, ...rest })
-              },
-            }),`
-  }).join('\n')}
-  }),
-});
+                },
+              }),`
+        }).join('\n')}
+      }),
+    });
 `
 
 function generateApiFile(apiName: string) {
