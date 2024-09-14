@@ -14,15 +14,15 @@ export const useProfile = () => {
 
   const [profile, setProfile] = useState<UserProfile>({ profile: undefined, session })
 
-  useEffect(() => {
-    const userEmail = session.data?.user?.email
-
-    if (session.status === 'authenticated' && userEmail) {
-      getProfileQuery(userEmail as string).then(
-        (profile) => setProfile({ session, profile }),
-      )
-    }
-  }, [session])
+  // useEffect(() => {
+  //   const userEmail = session.data?.user?.email
+  //
+  //   if (session.status === 'authenticated' && userEmail) {
+  //     getProfileQuery(userEmail as string).then(
+  //       (profile) => setProfile({ session, profile }),
+  //     )
+  //   }
+  // }, [session])
 
   return profile
 }

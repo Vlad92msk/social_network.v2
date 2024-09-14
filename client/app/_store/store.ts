@@ -31,13 +31,14 @@ export const ApiService = {
 
 export type ApiServiceType = typeof ApiService
 
-export const makeStore = () => {
+export const makeStore = (preloadedState?: Partial<RootReducer>) => {
   const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
     dependencies: ApiService,
   })
 
   const store = configureStore({
     reducer: rootReducer,
+    preloadedState,
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(
       tagsApi.middleware,
       commentsApi.middleware,

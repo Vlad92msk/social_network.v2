@@ -2,10 +2,10 @@ import { combineReducers } from 'redux'
 import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
 } from './api'
-import { counterReducer } from './messagesReducer'
+import { profileReducer } from './profile.slice'
 
 export const rootReducer = combineReducers({
-  counter: counterReducer,
+  profile: profileReducer,
   [tagsApi.reducerPath]: tagsApi.reducer,
   [commentsApi.reducerPath]: commentsApi.reducer,
   [messagesApi.reducerPath]: messagesApi.reducer,
