@@ -23,42 +23,64 @@ const extractAndFormatType = (type: string) => {
 
 // Шаблон для генерации файлов API
 const API_TEMPLATE = (apiName: string, className: string, methods: Array<{ name: string, type: string, returnType: string }>, imports: string[]) => `
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { CookieType } from '../../app/types/cookie';
-import { RootState } from '../store'
-import { ${apiName}ApiInstance } from '../../store/instance';
-import { ${imports.join(', ')} } from '../../../swagger/${apiName}/interfaces-${apiName}';
+import { RootState, store } from '../store'
+import { ${apiName}ApiInstance } from '../../store/instance'
+import { ${imports.join(', ')} } from '../../../swagger/${apiName}/interfaces-${apiName}'
+import { SerializedError } from '@reduxjs/toolkit'
+// Тип для результатов запросов
+type QueryResult<T> = {
+  data?: T
+  error?: SerializedError
+  endpointName: string
+  fulfilledTimeStamp?: number
+  isError: boolean
+  isLoading: boolean
+  isSuccess: boolean
+  isUninitialized: boolean
+  requestId: string
+  startedTimeStamp?: number
+  status: 'pending' | 'fulfilled' | 'rejected'
+}
 
 export const ${apiName}Api = createApi({
   reducerPath: 'API_${apiName}',
   baseQuery: fetchBaseQuery({
     prepareHeaders: (headers, { getState }) => {
-      const state = getState() as RootState;
-      const profileId = state.profile?.profile?.id;
-      const userInfoId = state.profile?.profile?.user_info?.id;
+      const state = getState() as RootState
+      const profileId = state.profile?.profile?.id
+      const userInfoId = state.profile?.profile?.user_info?.id
 
       if (profileId) {
-        headers.set(CookieType.USER_PROFILE_ID, String(profileId));
+        headers.set(CookieType.USER_PROFILE_ID, String(profileId))
       }
       if (userInfoId) {
-        headers.set(CookieType.USER_INFO_ID, String(userInfoId));
+        headers.set(CookieType.USER_INFO_ID, String(userInfoId))
       }
-      return headers;
+      return headers
     },
   }),
   endpoints: (builder) => ({
     ${methods.map(({ name, type, returnType }) => `
-    ${name}: builder.${type}<
-      ${returnType},
-      Parameters<typeof ${apiName}ApiInstance.${name}>[0]
-    >({
+    ${name}: builder.${type}<${returnType}, Parameters<typeof ${apiName}ApiInstance.${name}>[0]>({
       query: (params) => {
-        const { url, init } = ${apiName}ApiInstance.${name}Init(params);
-        return { url, ...init };
+        const { url, init } = ${apiName}ApiInstance.${name}Init(params)
+        return { url, ...init }
       },
     }),`).join('\n')}
   }),
-});
+})
+
+// Типизированные функции-обертки в объекте
+export const ${className}Api = {
+  ${methods.map(({ name, returnType }) => `
+  ${name}: (props: Parameters<typeof ${apiName}ApiInstance.${name}>[0]): Promise<QueryResult<${returnType}>> =>
+    store.dispatch(${apiName}Api.endpoints.${name}.initiate(props))`).join(',\n')}
+};
+
+// Экспорт типов для использования в других частях приложения
+export type ${className}ApiType = typeof ${className}Api
 `
 
 function generateApiFile(apiName: string) {

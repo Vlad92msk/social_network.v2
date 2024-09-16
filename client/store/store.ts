@@ -6,8 +6,6 @@ import { createEpicMiddleware } from 'redux-observable'
 import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
 } from './api'
-import { rootEffect } from './root.effects'
-import { rootInitialState, RootReducer, rootReducer } from './root.reducer'
 import {
   commentsApiInstance,
   dialogsApiInstance,
@@ -18,6 +16,8 @@ import {
   tagsApiInstance,
   userInfoApiInstance,
 } from './instance'
+import { rootEffect } from './root.effects'
+import { rootInitialState, RootReducer, rootReducer } from './root.reducer'
 
 export const ApiService = {
   tags: tagsApiInstance,
@@ -32,9 +32,8 @@ export const ApiService = {
 
 export type ApiServiceType = typeof ApiService
 
-
 export const makeStore = (preloadedState?: Partial<RootReducer>) => {
-  const mergedPreloadedState = preloadedState ? merge({}, rootInitialState, preloadedState) : undefined;
+  const mergedPreloadedState = preloadedState ? merge({}, rootInitialState, preloadedState) : undefined
 
   const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
     dependencies: ApiService,
