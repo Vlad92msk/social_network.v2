@@ -7,18 +7,20 @@ import { cn } from '../cn'
 interface BannerProps {
   contacts?: UserInfo[]
   onClickUser?: (id: string) => void
+  bunner_image?: string
+  image?: string
 }
 
 export function Banner(props: BannerProps) {
-  const { contacts, onClickUser } = props
+  const { contacts, onClickUser, image, bunner_image } = props
 
   return (
     <div className={cn('Banner')}>
       <div className={cn('BannerBck')}>
-        <Image alt="bunner" src="base/bunner" width={400} height={200} />
+        <Image alt="bunner" src={bunner_image} width={400} height={200} />
       </div>
       <div className={cn('MyPhoto')}>
-        <Image alt="bunner" src="base/me" width={70} height={70} />
+        <Image alt="bunner" src={image} width={70} height={70} />
       </div>
       <ContactsList
         contacts={contacts}

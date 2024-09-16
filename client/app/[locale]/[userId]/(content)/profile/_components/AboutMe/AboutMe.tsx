@@ -48,11 +48,7 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
   const {
     banner, university, company, information, position, name, onSubmit,
   } = props
-  const dispatch = useDispatch()
-  // @ts-ignore
-  const ddd = useSelector(ProfileSelectors.selectProfile)
-  // const { profile } = useProfile()
-console.log('ddd', ddd)
+  const { profile } = useProfile()
   const handleClickFriend = (id: string) => {
     console.log(`Переходим к пользователю ${id}`)
   }
@@ -62,9 +58,8 @@ console.log('ddd', ddd)
 
   return (
     <div className={cn()}>
-      <button onClick={()=> dispatch({type: 'FETCH_TAGS'})}>test</button>
       <ButtonEdit onSubmit={onSubmit} />
-      {/* <Banner contacts={profile?.userInfo.contacts} onClickUser={handleClickFriend} /> */}
+      <Banner contacts={[]} image={profile?.user_info.profile_image} bunner_image={profile?.user_info.about_info.banner_image} onClickUser={handleClickFriend} />
       <Name name={name} />
       <Univercity university={university} />
       <Position position={position} />

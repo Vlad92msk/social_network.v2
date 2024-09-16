@@ -30,6 +30,12 @@ const baseConfig= {
                 port: '',
                 // pathname: '/account123/**',
             },
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                port: '3001',
+                // pathname: '/account123/**',
+            },
         ]
     },
     output: 'standalone',

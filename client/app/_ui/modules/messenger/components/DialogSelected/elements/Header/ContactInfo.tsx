@@ -31,7 +31,8 @@ export function ContactInfo(props: ContactInfoProps) {
 
     switch (type) {
       case SelectDialogType.PRIVATE: {
-        const [participant] = participants.filter(({ id }) => id !== profile?.userInfo.id)
+        // @ts-ignore
+        const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
 
         return ({
           img: <Image src={participant.profileImage} alt="contact" width={50} height={50} />,

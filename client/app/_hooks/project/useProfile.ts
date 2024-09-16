@@ -1,28 +1,30 @@
 import { useSession } from 'next-auth/react'
 import { SessionContextValue } from 'next-auth/src/react'
 import { useEffect, useState } from 'react'
-import { ProfileType } from '@api/profiles/types/profile.type'
-import { getProfileQuery } from '../../api/profiles/queries'
+import { useSelector } from 'react-redux'
+import { UserProfileInfo } from '../../../../swagger/profile/interfaces-profile'
+import { ProfileSelectors } from '../../../store/profile.slice'
 
 interface UserProfile {
   session: SessionContextValue
-  profile?: ProfileType
+  profile?: UserProfileInfo
 }
 
 export const useProfile = () => {
   const session = useSession()
 
   const [profile, setProfile] = useState<UserProfile>({ profile: undefined, session })
+  const ddd = useSelector(ProfileSelectors.selectProfile)
 
-  // useEffect(() => {
-  //   const userEmail = session.data?.user?.email
-  //
-  //   if (session.status === 'authenticated' && userEmail) {
-  //     getProfileQuery(userEmail as string).then(
-  //       (profile) => setProfile({ session, profile }),
-  //     )
-  //   }
-  // }, [session])
+  console.log('ddd', ddd)
+
+  useEffect(() => {
+    const userEmail = session.data?.user?.email
+
+    if (session.status === 'authenticated' && userEmail) {
+      setProfile({ session, profile: ddd.profile })
+    }
+  }, [session])
 
   return profile
 }

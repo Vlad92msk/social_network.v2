@@ -47,7 +47,7 @@ export function Image(props: ImageCommonProps) {
       ))}
        {/* @ts-ignore */}
       <NextImage
-        src={!src ? blurDataURL : src.includes('https://') ? src : `/images/${src}.webp`}
+        src={!src ? blurDataURL : src.includes('http://') ? src : `/images/${src}.webp`}
         sizes={createSizeString(mediaBreakpoints, sizes)}
         placeholder={placeholder}
         blurDataURL={blurDataURL}

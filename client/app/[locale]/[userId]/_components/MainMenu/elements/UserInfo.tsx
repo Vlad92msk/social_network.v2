@@ -14,8 +14,8 @@ export function UserInfo(props: UserInfoProps) {
   const { setStatus } = props
   const { session, profile } = useProfile()
 
-  const userImg = profile?.userInfo.profileImage || session.data?.user?.image
-  const userName = profile?.userInfo.name || session.data?.user?.name
+  const userImg = profile?.user_info.profile_image || session.data?.user?.image
+  const userName = profile?.user_info.name || session.data?.user?.name
 
   return (
     <div className={cn('UserInfo')}>

@@ -19,7 +19,7 @@ export function Message(props: MessageProps) {
   const handleRemoveMsg = useMessageStore((store) => store.onRemoveMessage)
   const handleUpdateMsg = useMessageStore((store) => store.onUpdateMessage)
 
-  const from = profile?.userInfo.id === author?.id ? 'me' : 'other'
+  const from = profile?.user_info.id === author?.id ? 'me' : 'other'
   return (
     <div
       id={`dialog-message-${id}`}

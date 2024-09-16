@@ -4,16 +4,14 @@ import { RootReducer } from './root.reducer'
 import { sliceBuilder } from './utils/other'
 
 export interface ProfileSliceState {
-    profile: UserProfileInfo | null
-  a?: string
+    profile?: UserProfileInfo
 }
 
 export const profileInitialState: ProfileSliceState = {
-  profile: null,
-  a: '34'
+  profile: undefined,
 }
 
-export const { actions: ProfileSliceActions, reducer: profileReducer, selectors: ProfileSelectors } = sliceBuilder(
+export const { actions: ProfileSliceActions, reducer: profileReducer } = sliceBuilder(
   ({ createSlice, setStateAnyObject }) => {
 
     const slice = createSlice({
@@ -24,16 +22,17 @@ export const { actions: ProfileSliceActions, reducer: profileReducer, selectors:
       },
     })
 
-    const selectSelf = (state: RootReducer) => state.profile
-    const selectSelf1 = (state: RootReducer) => state.API_tags.queries
 
-    const selectors = {
-      selectProfile: createSelector(
-        [selectSelf, selectSelf1],
-        (profileState, d) => profileState
-      ),
-    }
-
-    return ({ ...slice, selectors })
+    return slice
   },
 )
+
+const selectSelf = (state: RootReducer) => state.profile
+const selectSelf1 = (state: RootReducer) => state.API_tags.queries
+
+export const ProfileSelectors = {
+  selectProfile: createSelector(
+    [selectSelf],
+    (profileState) => profileState
+  ),
+}
