@@ -1,4 +1,4 @@
-import { PostsApi } from "../../swagger/posts/api-client-posts";
+import { PostsApi } from "../../../swagger/posts/api-client-posts";
 
 
 export const postsApiInstance = new PostsApi({

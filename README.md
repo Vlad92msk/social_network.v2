@@ -9,7 +9,6 @@
 ![Database](https://img.shields.io/badge/database-PostgreSQL-336791.svg)
 ![API](https://img.shields.io/badge/api-REST-e535ab.svg)
 
-[//]: # (![Testing]&#40;https://img.shields.io/badge/testing-Jest-954058.svg&#41;)
 
 > This is my educational **Fullstack Web App** where I practice my skills and explore new technologies!
 
@@ -46,6 +45,15 @@
  ┃  
  ┣ 📁client
  ┃  ┣ 📁node_modules
+ ┃  ┃  ┣ 📁store (RTK)
+ ┃  ┃  ┃  ┣ 📁api
+ ┃  ┃  ┃  ┃ ┣ 📁createdApi (перенесенные вручную результаты генерации из generated - пока что так - потом подумаю как можно сделать чтобы использовать только генерацию)
+ ┃  ┃  ┃  ┃ ┗ 📁instance (инстансы классов для АПИ типа export const commentsApiInstance = new CommentsApi() и т.д)
+ ┃  ┃  ┃  ┃ 
+ ┃  ┃  ┃  ┣ 📁generated (сгенерированные файлы типа export const commentsApi = createApi({...}))
+ ┃  ┃  ┃  ┣ 📁rxUtils (утилиты для эффектов в redux-observable)
+ ┃  ┃  ┃  ┣ 📁utils (обычне утилиты для эффектов но которые врятли еще где-то будут использоваться)
+ ┃  ┃  ┃  ┗ ... 
  ┃  ┣ 📁app
  ┃  ┃  ┣ 📁[locale]
  ┃  ┃  ┃  ┣ 📁components
@@ -56,15 +64,6 @@
  ┃  ┃  ┃  ┗ 📁page.tsx
  ┃  ┃  ┃ 
  ┃  ┃  ┣ 📁_configs
- ┃  ┃  ┣ 📁_store (RTK)
- ┃  ┃  ┃  ┣ 📁api
- ┃  ┃  ┃  ┃ ┣ 📁createdApi (перенесенные вручную результаты генерации из generated - пока что так - потом подумаю как можно сделать чтобы использовать только генерацию)
- ┃  ┃  ┃  ┃ ┗ 📁instance (инстансы классов для АПИ типа export const commentsApiInstance = new CommentsApi() и т.д)
- ┃  ┃  ┃  ┃ 
- ┃  ┃  ┃  ┣ 📁generated (сгенерированные файлы типа export const commentsApi = createApi({...}))
- ┃  ┃  ┃  ┣ 📁rxUtils (утилиты для эффектов в redux-observable)
- ┃  ┃  ┃  ┣ 📁utils (обычне утилиты для эффектов но которые врятли еще где-то будут использоваться)
- ┃  ┃  ┃  ┗ ...
  ┃  ┃  ┃
  ┃  ┃  ┣ 📁_services
  ┃  ┃  ┣ 📁_utils

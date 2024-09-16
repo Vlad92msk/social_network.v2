@@ -31,7 +31,7 @@ export default async function RootLayout(props: RootLayoutProps) {
   const USER_PROFILE = cookieStore.get(CookieType.USER_PROFILE)?.value
 
   return (
-    <ReduxProvider profile={USER_PROFILE && JSON.parse(USER_PROFILE)}>
+    <ReduxProvider profile={{ profile: USER_PROFILE && JSON.parse(USER_PROFILE) }}>
       <ThemeService contextProps={{ theme: 'default' }}>
         <NextIntlClientProvider messages={messages}>
           <Html locale={params.locale}>

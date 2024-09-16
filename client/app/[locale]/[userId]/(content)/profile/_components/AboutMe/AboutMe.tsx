@@ -4,9 +4,9 @@ import { useProfile } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { createZustandContext } from '@utils/client'
-import { useDispatch } from 'react-redux'
-import { tagsApi } from '../../../../../../_store/api'
-import { ProfileSliceActions } from '../../../../../../_store/profile.slice'
+import { useDispatch, useSelector } from 'react-redux'
+import { tagsApi } from '../../../../../../../store/api'
+import { ProfileSelectors, ProfileSliceActions } from '../../../../../../../store/profile.slice'
 import { cn } from './cn'
 import {
   Banner, ButtonEdit, Company, Information, Name, Position, Univercity,
@@ -49,24 +49,22 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
     banner, university, company, information, position, name, onSubmit,
   } = props
   const dispatch = useDispatch()
-  const { profile } = useProfile()
-
+  // @ts-ignore
+  const ddd = useSelector(ProfileSelectors.selectProfile)
+  // const { profile } = useProfile()
+console.log('ddd', ddd)
   const handleClickFriend = (id: string) => {
     console.log(`Переходим к пользователю ${id}`)
   }
 
-  const data = tagsApi.useFindTagsQuery(undefined)
-  console.log('useFindTagsQuery', data)
+  // const {data} = tagsApi.useFindTagsQuery(undefined)
+  // console.log('useFindTagsQuery',data.)
 
   return (
     <div className={cn()}>
-      <Button
-        onClick={() => dispatch(ProfileSliceActions.setGroupId(100))}
-      >
-        <Icon name="git" />
-      </Button>
+      <button onClick={()=> dispatch({type: 'FETCH_TAGS'})}>test</button>
       <ButtonEdit onSubmit={onSubmit} />
-      <Banner contacts={profile?.userInfo.contacts} onClickUser={handleClickFriend} />
+      {/* <Banner contacts={profile?.userInfo.contacts} onClickUser={handleClickFriend} /> */}
       <Name name={name} />
       <Univercity university={university} />
       <Position position={position} />

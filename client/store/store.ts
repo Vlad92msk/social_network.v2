@@ -1,12 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
+import { merge } from 'lodash'
 import logger from 'redux-logger'
 import { createEpicMiddleware } from 'redux-observable'
 import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
 } from './api'
 import { rootEffect } from './root.effects'
-import { RootReducer, rootReducer } from './root.reducer'
+import { rootInitialState, RootReducer, rootReducer } from './root.reducer'
 import {
   commentsApiInstance,
   dialogsApiInstance,
@@ -16,7 +17,7 @@ import {
   profileApiInstance,
   tagsApiInstance,
   userInfoApiInstance,
-} from '../../apiInstance'
+} from './instance'
 
 export const ApiService = {
   tags: tagsApiInstance,
@@ -31,14 +32,17 @@ export const ApiService = {
 
 export type ApiServiceType = typeof ApiService
 
+
 export const makeStore = (preloadedState?: Partial<RootReducer>) => {
+  const mergedPreloadedState = preloadedState ? merge({}, rootInitialState, preloadedState) : undefined;
+
   const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
     dependencies: ApiService,
   })
 
   const store = configureStore({
     reducer: rootReducer,
-    preloadedState,
+    preloadedState: mergedPreloadedState,
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(
       tagsApi.middleware,
       commentsApi.middleware,
@@ -58,8 +62,9 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
   return store
 }
 
-setupListeners(makeStore().dispatch)
+export const store = makeStore()
+setupListeners(store.dispatch)
 
 export type AppStore = ReturnType<typeof makeStore>
-export type RootStore = ReturnType<AppStore['getState']>
+export type RootState = ReturnType<AppStore['getState']>
 export type AppDispatch = AppStore['dispatch']

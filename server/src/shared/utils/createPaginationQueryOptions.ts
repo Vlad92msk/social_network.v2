@@ -1,5 +1,5 @@
 import { assign, isEmpty } from 'lodash'
-import { FindOneOptions } from 'typeorm/find-options/FindOneOptions'
+import { FindOneOptions } from 'typeorm'
 
 
 interface CreatePaginationQueryOptions<Entity> {

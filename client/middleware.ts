@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authMiddleware } from '@middlewares/authMiddleware'
 import { intlMiddleware } from '@middlewares/intlMiddleware'
-import { profileApiInstance } from './apiInstance'
+import { profileApiInstance } from './store/instance'
 import { CookieType } from './app/types/cookie'
 import { auth } from './auth'
 
@@ -28,10 +28,8 @@ export default auth(async (request: NextRequest) => {
       const expiresDate = new Date(session.expires)
       const maxAge = Math.floor((expiresDate.getTime() - Date.now()) / 1000) // конвертируем в секунды
 
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      const profile = await profileApiInstance.getProfileInfo({ body: { email: session?.user?.email } }).then((response) => response.data)
+      // @ts-ignore
+      const profile = await profileApiInstance.getProfileInfo({ body: { email: session?.user?.email } }).then((response) => response)
       userPublicId = profile?.user_info?.public_id
 
       // Добавляем cookie

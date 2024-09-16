@@ -46,7 +46,7 @@ async function bootstrap() {
 
   // Настройка Swagger только в режиме разработки
   if (process.env.NODE_ENV === 'development') {
-    swaggerConsile = setupSwagger(
+    swaggerConsile = await setupSwagger(
         app,
         {
             directory: String(config.get(`${ConfigEnum.MAIN}.swaggerDir`)),

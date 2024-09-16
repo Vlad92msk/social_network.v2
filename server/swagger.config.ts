@@ -4,368 +4,372 @@ import * as YAML from 'yaml';
 import * as fs from 'fs';
 import * as path from 'path';
 
+
 interface YamlGenerationConfig {
-    host: string;
-    port: number;
-    directory: string;
+  host: string;
+  port: number;
+  directory: string;
 }
 
 interface Docs {
-    module: any,
-    url: string,
-    name: string,
-    description?: string,
-    version: string
+  module: any;
+  url: string;
+  name: string;
+  description?: string;
+  version: string;
 }
 
-function generateYamlFiles(document: any, config: YamlGenerationConfig, moduleName: string) {
-    console.log(`Начало генерации YAML файлов для модуля ${moduleName}`);
+function generateYamlFile(document: any, config: YamlGenerationConfig, moduleName: string) {
+  console.log(`Начало генерации YAML файла для модуля ${moduleName}`);
 
-    const outputDir = path.join(config.directory, moduleName);
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-    }
+  const outputDir = path.join(config.directory, moduleName);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
 
-    const tags = document.tags;
-    const paths = document.paths;
+  const swaggerDoc = {
+    openapi: document.openapi,
+    info: document.info,
+    servers: [{
+      url: `http://${config.host}:${config.port}`,
+      description: 'API сервер'
+    }],
+    tags: document.tags,
+    paths: document.paths,
+    components: document.components
+  };
 
-    if (tags.length === 0) {
-        console.log('Предупреждение: в документе нет тегов');
-    }
-
-    const controllerDoc = {
-        openapi: document.openapi,
-        info: document.info,
-        servers: [{
-            url: `http://${config.host}:${config.port}`,
-            description: 'API сервер'
-        }],
-        tags: tags,
-        paths: paths,
-        components: document.components
-    };
-
-    try {
-        const yamlDoc = YAML.stringify(controllerDoc);
-        const filePath = path.join(outputDir, `swagger-${moduleName}.yaml`);
-        fs.writeFileSync(filePath, yamlDoc, 'utf8');
-        console.log(`Создан файл: ${filePath}`);
-    } catch (error) {
-        console.error(`Ошибка при создании файла для ${moduleName}:`, error);
-    }
-
-    console.log(`Завершение генерации YAML файлов для модуля ${moduleName}`);
+  try {
+    const yamlDoc = YAML.stringify(swaggerDoc);
+    const filePath = path.join(outputDir, `swagger-${moduleName}.yaml`);
+    fs.writeFileSync(filePath, yamlDoc, 'utf8');
+    console.log(`Создан файл: ${filePath}`);
+    return filePath;
+  } catch (error) {
+    console.error(`Ошибка при создании файла для ${moduleName}:`, error);
+    return null;
+  }
 }
 
-function generateInterfacesFile(document: any, config: YamlGenerationConfig, moduleName: string) {
-    console.log(`Начало генерации интерфейсов для модуля ${moduleName}`);
 
-    const outputDir = path.join(config.directory, moduleName);
+function generateInterfacesFile(document: any, config: YamlGenerationConfig, moduleName: string): void {
+  console.log(`Начало генерации интерфейсов для модуля ${moduleName}`);
+
+  const outputDir = path.join(config.directory, moduleName);
+
+  // Попытка создать директорию, если её нет
+  try {
     if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
+      fs.mkdirSync(outputDir, { recursive: true });
     }
+  } catch (error) {
+    console.error(`Ошибка при создании директории ${outputDir}:`, error);
+    return;
+  }
 
-    let interfacesContent = '';
+  let interfacesContent = '';
 
-    if (document.components && document.components.schemas) {
-        for (const [name, schema] of Object.entries(document.components.schemas)) {
-            interfacesContent += `export interface ${name} {\n`;
-            // @ts-ignore
-            if (schema.properties) {
-                // @ts-ignore
-                for (const [propName, propSchema] of Object.entries(schema.properties)) {
-                    const type = getTypeFromSchema(propSchema, document.components.schemas);
-                    // @ts-ignore
-                    interfacesContent += `  ${propName}${propSchema.required ? '' : '?'}: ${type};\n`;
-                }
-            }
-            interfacesContent += '}\n\n';
+  if (document.components && document.components.schemas) {
+    for (const [name, schema] of Object.entries(document.components.schemas)) {
+      interfacesContent += `export interface ${name} {\n`;
+
+      // @ts-ignore
+      const requiredProps = schema.required || []; // Список обязательных свойств
+
+      // @ts-ignore
+      if (schema.properties) {
+        // @ts-ignore
+        for (const [propName, propSchema] of Object.entries(schema.properties)) {
+          const type = getTypeFromSchema(propSchema, document.components.schemas);
+          interfacesContent += `  ${propName}${requiredProps.includes(propName) ? '' : '?'}: ${type};\n`;
         }
+      }
+      interfacesContent += '}\n\n';
     }
+  } else {
+    console.warn(`Warning: Нет схем в components для модуля ${moduleName}`);
+  }
 
-    try {
-        const filePath = path.join(outputDir, `interfaces-${moduleName}.ts`);
-        fs.writeFileSync(filePath, interfacesContent, 'utf8');
-        console.log(`Создан файл интерфейсов: ${filePath}`);
-    } catch (error) {
-        console.error(`Ошибка при создании файла интерфейсов для ${moduleName}:`, error);
-    }
+  // Попытка записать файл интерфейсов
+  try {
+    const filePath = path.join(outputDir, `interfaces-${moduleName}.ts`);
+    fs.writeFileSync(filePath, interfacesContent, 'utf8');
+    console.log(`Создан файл интерфейсов: ${filePath}`);
+  } catch (error) {
+    console.error(`Ошибка при создании файла интерфейсов для ${moduleName}:`, error);
+  }
 
-    console.log(`Завершение генерации интерфейсов для модуля ${moduleName}`);
+  console.log(`Завершение генерации интерфейсов для модуля ${moduleName}`);
 }
 
 function getTypeFromSchema(schema: any, componentsSchemas: Record<string, any>): string {
-    if (schema.$ref) {
-        const refType = schema.$ref.split('/').pop();
-        if (componentsSchemas[refType]) {
-            return refType;
-        }
-        console.warn(`Warning: Schema ${refType} not found in components.schemas`);
-        return 'any';
+  if (schema.$ref) {
+    const refType = schema.$ref.split('/').pop();
+    if (componentsSchemas[refType]) {
+      return refType!;
     }
+    console.warn(`Warning: Schema ${refType} not found in components.schemas`);
+    return 'any';
+  }
 
-    if (schema.allOf) {
-        // Handle allOf by combining all schemas
-        const combinedTypes = schema.allOf.map(s => getTypeFromSchema(s, componentsSchemas));
-        return combinedTypes.join(' & ');
-    }
+  if (schema.allOf) {
+    // Объединение всех схем через allOf
+    const combinedTypes = schema.allOf.map((s: any) => getTypeFromSchema(s, componentsSchemas));
+    return combinedTypes.join(' & ');
+  }
 
-    if (schema.oneOf) {
-        // Handle oneOf as a union type
-        const unionTypes = schema.oneOf.map(s => getTypeFromSchema(s, componentsSchemas));
-        return unionTypes.join(' | ');
-    }
+  if (schema.oneOf) {
+    // Один из вариантов через oneOf (union type)
+    const unionTypes = schema.oneOf.map((s: any) => getTypeFromSchema(s, componentsSchemas));
+    return unionTypes.join(' | ');
+  }
 
-    switch (schema.type) {
-        case 'string':
-            if (schema.enum) {
-                return schema.enum.map(e => `'${e}'`).join(' | ');
-            }
-            return 'string';
-        case 'integer':
-        case 'number':
-            return 'number';
-        case 'boolean':
-            return 'boolean';
-        case 'array':
-            return `Array<${getTypeFromSchema(schema.items, componentsSchemas)}>`;
-        case 'object':
-            if (schema.properties) {
-                const props = Object.entries(schema.properties).map(([key, value]) =>
-                  `${key}${schema.required?.includes(key) ? '' : '?'}: ${getTypeFromSchema(value, componentsSchemas)}`
-                ).join('; ');
-                return `{ ${props} }`;
-            }
-            return 'Record<string, any>';
-        default:
-            if (schema.type) {
-                console.warn(`Unknown type: ${schema.type}`);
-            }
-            return 'any';
-    }
+  if (schema.anyOf) {
+    // Один из вариантов через anyOf (union type)
+    const unionTypes = schema.anyOf.map((s: any) => getTypeFromSchema(s, componentsSchemas));
+    return unionTypes.join(' | ');
+  }
+
+  // Определение типа на основе схемы
+  switch (schema.type) {
+    case 'string':
+      if (schema.enum) {
+        return schema.enum.map((e: string) => `'${e}'`).join(' | ');
+      }
+      return 'string';
+    case 'integer':
+    case 'number':
+      return 'number';
+    case 'boolean':
+      return 'boolean';
+    case 'array':
+      return `${getTypeFromSchema(schema.items, componentsSchemas)}[]`;
+    case 'object':
+      if (schema.properties) {
+        const props = Object.entries(schema.properties)
+          .map(([key, value]) =>
+            `${key}${schema.required?.includes(key) ? '' : '?'}: ${getTypeFromSchema(value, componentsSchemas)}`
+          )
+          .join('; ');
+        return `{ ${props} }`;
+      }
+      return 'object';
+    default:
+      if (schema.type) {
+        console.warn(`Неизвестный тип: ${schema.type}`);
+      }
+      return 'any';
+  }
 }
+
 
 function capitalizeFirstLetter(string: string): string {
-    return string.charAt(0).toUpperCase() + string.slice(1);
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+// =======
+
 
 function generateApiClientFile(document: any, config: YamlGenerationConfig, moduleName: string) {
-    console.log(`Начало генерации API-клиента для модуля ${moduleName}`);
+  console.log(`Начало генерации API-клиента для модуля ${moduleName}`);
 
-    const outputDir = path.join(config.directory, moduleName);
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-    }
+  const outputDir = path.join(config.directory, moduleName);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
 
-    let apiClientContent = '';
+  let apiClientContent = '';
 
-    // Импорты
-    apiClientContent += `import { Observable, from } from "../../server/node_modules/rxjs";\n`;
-    apiClientContent += `import { map, catchError } from "../../server/node_modules/rxjs/operators";\n\n`;
+  // Импорт интерфейсов
+  apiClientContent += `import { ${Object.keys(document.components.schemas).join(', ')} } from "./interfaces-${moduleName}";\n\n`;
 
-    // Импорт интерфейсов
-    apiClientContent += `import { ${Object.keys(document.components.schemas).join(', ')} } from "./interfaces-${moduleName}";\n\n`;
+  // Добавляем интерфейс ExtendedApiResponse
+  apiClientContent += `interface ExtendedApiResponse<T> {\n`;
+  apiClientContent += `  data: T;\n`;
+  apiClientContent += `  status: number;\n`;
+  apiClientContent += `  statusText: string;\n`;
+  apiClientContent += `  headers: Headers;\n`;
+  apiClientContent += `  url: string;\n`;
+  apiClientContent += `}\n\n`;
 
-    // Добавляем определение типа DefaultError
-    apiClientContent += `export type DefaultError = {\n`;
-    apiClientContent += `  code?: number;\n`;
-    apiClientContent += `  message?: string;\n`;
-    apiClientContent += `  description?: string;\n`;
-    apiClientContent += `};\n\n`;
+  // Начало класса API
+  apiClientContent += `export class ${capitalizeFirstLetter(moduleName)}Api {\n`;
+  apiClientContent += `  private baseUrl: string;\n`;
+  apiClientContent += `  private defaultConfig: RequestInit;\n\n`;
+  apiClientContent += `  constructor(config?: { baseUrl?: string } & RequestInit) {\n`;
+  apiClientContent += `    const { baseUrl, ...restConfig } = config || {};\n`;
+  apiClientContent += `    this.baseUrl = baseUrl || \`http://\${process.env.API_HOST}:\${process.env.API_PORT}\`;\n`;
+  apiClientContent += `    this.defaultConfig = { headers: { 'Content-Type': 'application/json' }, ...restConfig };\n`;
+  apiClientContent += `  }\n\n`;
 
-    // Обновляем определение интерфейса ApiResponse
-    apiClientContent += `interface ApiResponse<T> {\n`;
-    apiClientContent += `  data: T | undefined;\n`;
-    apiClientContent += `  status: number;\n`;
-    apiClientContent += `  headers: Headers;\n`;
-    apiClientContent += `  url: string;\n`;
-    apiClientContent += `  error?: DefaultError;\n`;
-    apiClientContent += `}\n\n`;
-
-    // Начало класса API
-    apiClientContent += `export class ${capitalizeFirstLetter(moduleName)}Api {\n`;
-    apiClientContent += `  private baseUrl: string;\n`;
-    apiClientContent += `  private defaultConfig: RequestInit;\n\n`;
-    apiClientContent += `  constructor(config?: { baseUrl?: string } & RequestInit) {\n`;
-    apiClientContent += `    const { baseUrl, ...restConfig } = config || {};\n`;
-    apiClientContent += `    this.baseUrl = baseUrl || \`http://\${process.env.API_HOST}:\${process.env.API_PORT}\`;\n`;
-    apiClientContent += `    this.defaultConfig = { headers: { 'Content-Type': 'application/json' }, ...restConfig };\n`;
-    apiClientContent += `  }\n\n`;
-
-    // Метод handleResponse
-    apiClientContent += `  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {\n`;
-    apiClientContent += `    const result: ApiResponse<T> = {\n`;
-    apiClientContent += `      status: response.status,\n`;
-    apiClientContent += `      headers: response.headers,\n`;
-    apiClientContent += `      url: response.url,\n`;
-    apiClientContent += `      data: undefined\n`;
-    apiClientContent += `    };\n\n`;
-    apiClientContent += `    try {\n`;
-    apiClientContent += `      const data = await response.json();\n`;
-    apiClientContent += `      if (!response.ok) {\n`;
-    apiClientContent += `        result.error = {\n`;
-    apiClientContent += `          code: response.status,\n`;
-    apiClientContent += `          message: data.message || response.statusText,\n`;
-    apiClientContent += `          description: data.error || 'Неизвестная ошибка',\n`;
-    apiClientContent += `        };\n`;
-    apiClientContent += `      } else {\n`;
-    apiClientContent += `        result.data = data;\n`;
-    apiClientContent += `      }\n`;
-    apiClientContent += `    } catch (error) {\n`;
-    apiClientContent += `      result.error = {\n`;
-    apiClientContent += `        code: response.status,\n`;
-    apiClientContent += `        message: 'Ошибка парсинга ответа',\n`;
-    apiClientContent += `        description: error instanceof Error ? error.message : 'Неизвестная ошибка',\n`;
-    apiClientContent += `      };\n`;
-    apiClientContent += `    }\n`;
-    apiClientContent += `    return result;\n`;
-    apiClientContent += `  }\n\n`;
-
-    // Метод wrapInObservable
-    apiClientContent += `  private wrapInObservable<T>(promise: Promise<ApiResponse<T>>): Observable<T> {\n`;
-    apiClientContent += `    return from(promise).pipe(\n`;
-    apiClientContent += `      map(response => {\n`;
-    apiClientContent += `        if (response.error) {\n`;
-    apiClientContent += `          throw response.error;\n`;
-    apiClientContent += `        }\n`;
-    apiClientContent += `        return response.data as T;\n`;
-    apiClientContent += `      }),\n`;
-    apiClientContent += `      catchError((error: DefaultError) => {\n`;
-    apiClientContent += `        console.error('Ошибка вызова метода:', error);\n`;
-    apiClientContent += `        throw error;\n`;
-    apiClientContent += `      })\n`;
-    apiClientContent += `    );\n`;
-    apiClientContent += `  }\n\n`;
-
-    // Генерация методов API
-    for (const [path, methods] of Object.entries(document.paths)) {
-        for (const [method, operation] of Object.entries(methods)) {
-            const operationId = operation.operationId?.split('_').pop() || `${method}${path.replace(/\//g, '_')}`;
-            const parameters = operation.parameters || [];
-            const requestBody = operation.requestBody;
-            const responseSchema = operation.responses?.['200']?.content?.['application/json']?.schema;
-            const responseType = responseSchema ? getTypeFromSchema(responseSchema, document.components.schemas) : 'any';
-
-            // Определение типа параметров
-            let paramsType = '';
-            if (parameters.length > 0 || requestBody) {
-                const paramsList = [
-                    ...new Set(parameters.map(p => `${p.name}${p.required ? '' : '?'}: ${getTypeFromSchema(p.schema, document.components.schemas)}`))
-                ];
-                if (requestBody) {
-                    const contentType = Object.keys(requestBody.content || {})[0];
-                    if (contentType && requestBody.content[contentType].schema) {
-                        paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)}`);
-                    } else {
-                        paramsList.push(`body: any`);
-                    }
-                }
-                paramsType = `{ ${paramsList.join(', ')} }`;
+  for (const [path, methods] of Object.entries(document.paths)) {
+    for (const [method, operation] of Object.entries(methods)) {
+      const operationId = operation.operationId?.split('_').pop() || `${method}${path.replace(/\//g, '_')}`;
+      const parameters = operation.parameters || [];
+      const requestBody = operation.requestBody;
+      let responseType = 'any';
+      if (operation.responses) {
+        for (const [statusCode, response] of Object.entries(operation.responses)) {
+          if (statusCode.startsWith('2')) { // Проверяем все успешные коды ответов
+            // @ts-ignore
+            const schema = response.content?.['application/json']?.schema;
+            if (schema) {
+              responseType = getTypeFromSchema(schema, document.components.schemas);
+              break; // Используем первый найденный успешный ответ
             }
-
-            // JSDoc комментарий для основного метода
-            apiClientContent += `  /**\n`;
-            apiClientContent += `   * ${operation.summary || 'Нет описания'}\n`;
-            apiClientContent += `   *\n`;
-            apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
-            apiClientContent += `   * @name ${operationId}\n`;
-            apiClientContent += `   * @request ${method.toUpperCase()}:${path}\n`;
-            apiClientContent += `   * @response \`200\` \`${responseType}\` OK\n`;
-            apiClientContent += `   * @throws {DefaultError} Когда сервер отвечает статусом не 200 \n`;
-            apiClientContent += `   */\n`;
-
-            // Основной метод API
-            apiClientContent += `  ${operationId}(`;
-            if (paramsType) {
-                apiClientContent += `params?: ${paramsType}, `;
-            }
-            apiClientContent += `requestParams?: RequestInit): Promise<ApiResponse<${responseType}>> {\n`;
-            apiClientContent += `    const {url, init} = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
-            apiClientContent += `    return fetch(url, init).then(response => this.handleResponse<${responseType}>(response));\n`;
-            apiClientContent += `  }\n\n`;
-
-            // JSDoc комментарий для Observable метода
-            apiClientContent += `  /**\n`;
-            apiClientContent += `   * @see ${operationId} for more details\n`;
-            apiClientContent += `   * @throws {DefaultError} Когда сервер отвечает статусом не 200\n`;
-            apiClientContent += `   */\n`;
-
-            // Метод Observable
-            apiClientContent += `  ${operationId}Observable(`;
-            if (paramsType) {
-                apiClientContent += `params?: ${paramsType}, `;
-            }
-            apiClientContent += `requestParams?: RequestInit): Observable<${responseType}> {\n`;
-            apiClientContent += `    return this.wrapInObservable(this.${operationId}(${paramsType ? 'params, ' : ''}requestParams));\n`;
-            apiClientContent += `  }\n\n`;
-
-            // Вспомогательный метод Init
-            apiClientContent += `  ${operationId}Init(`;
-            if (paramsType) {
-                apiClientContent += `params?: ${paramsType}, `;
-            }
-            apiClientContent += `requestParams?: RequestInit): { url: string, init: RequestInit } {\n`;
-            apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
-
-            // Добавление query-параметров
-            if (parameters.length > 0) {
-                apiClientContent += `    if (params) {\n`;
-                apiClientContent += `      ${parameters.filter(p => p.in === 'query').map(p =>
-                  `if (params.${p.name} !== undefined) url.searchParams.append('${p.name}', params.${p.name}.toString());`
-                ).join('\n      ')}\n`;
-                apiClientContent += `    }\n`;
-            }
-
-            apiClientContent += `    const init: RequestInit = {\n`;
-            apiClientContent += `      method: '${method.toUpperCase()}',\n`;
-            apiClientContent += `      ...this.defaultConfig,\n`;
-            if (requestBody) {
-                apiClientContent += `      body: params?.body ? JSON.stringify(params.body) : undefined,\n`;
-            }
-            apiClientContent += `      ...requestParams,\n`;
-            apiClientContent += `      headers: { ...this.defaultConfig?.headers, ...requestParams?.headers },\n`;
-            apiClientContent += `    };\n`;
-            apiClientContent += `    return { url: url.toString(), init };\n`;
-            apiClientContent += `  }\n\n`;
+          }
         }
-    }
-    apiClientContent += `}\n`;
+      }
+      // Определение типа параметров
+      let paramsType = '';
+      if (parameters.length > 0 || requestBody) {
+        const paramsList = [
+          ...new Set(parameters.map(p => `${p.name}${p.required ? '' : '?'}: ${getTypeFromSchema(p.schema, document.components.schemas)}`))
+        ];
+        if (requestBody) {
+          const contentType = Object.keys(requestBody.content || {})[0];
+          if (contentType && requestBody.content[contentType].schema) {
+            paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)}`);
+          } else {
+            paramsList.push(`body: any`);
+          }
+        }
+        paramsType = `{ ${paramsList.join(', ')} }`;
+      }
 
-    try {
-        const filePath = path.join(outputDir, `api-client-${moduleName}.ts`);
-        fs.writeFileSync(filePath, apiClientContent, 'utf8');
-        console.log(`Создан файл API-клиента: ${filePath}`);
-    } catch (error) {
-        console.error(`Ошибка при создании файла API-клиента для ${moduleName}:`, error);
-    }
+      // JSDoc комментарий для метода Init
+      apiClientContent += `  /**\n`;
+      apiClientContent += `   * Инициализация запроса для ${operation.summary || operationId}\n`;
+      apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
+      apiClientContent += `   * @name ${operationId}Init\n`;
+      apiClientContent += `   */\n`;
 
-    console.log(`Завершение генерации API-клиента для модуля ${moduleName}`);
+      // Метод Init
+      apiClientContent += `  ${operationId}Init(`;
+      if (paramsType) {
+        apiClientContent += `params?: ${paramsType}, `;
+      }
+      apiClientContent += `requestParams?: RequestInit): { url: string, init: RequestInit } {\n`;
+      apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
+
+      // Добавление query-параметров
+      if (parameters.length > 0) {
+        apiClientContent += `    if (params) {\n`;
+        apiClientContent += `      ${parameters.filter(p => p.in === 'query').map(p =>
+          `if (params.${p.name} !== undefined) url.searchParams.append('${p.name}', params.${p.name}.toString());`
+        ).join('\n      ')}\n`;
+        apiClientContent += `    }\n`;
+      }
+
+      apiClientContent += `    const init: RequestInit = {\n`;
+      apiClientContent += `      method: '${method.toUpperCase()}',\n`;
+      apiClientContent += `      ...this.defaultConfig,\n`;
+      if (requestBody) {
+        apiClientContent += `      body: params?.body ? JSON.stringify(params.body) : undefined,\n`;
+      }
+      apiClientContent += `      ...requestParams,\n`;
+      apiClientContent += `      headers: { ...this.defaultConfig?.headers, ...requestParams?.headers },\n`;
+      apiClientContent += `    };\n`;
+      apiClientContent += `    return { url: url.toString(), init };\n`;
+      apiClientContent += `  }\n\n`;
+
+      // JSDoc комментарий для основного метода
+      apiClientContent += `  /**\n`;
+      apiClientContent += `   * ${operation.summary || 'Нет описания'}\n`;
+      apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
+      apiClientContent += `   * @name ${operationId}\n`;
+      apiClientContent += `   * @request ${method.toUpperCase()}:${path}\n`;
+      apiClientContent += `   * @response \`200\` \`${responseType}\` OK\n`;
+      apiClientContent += `   */\n`;
+
+      // Основной метод API
+      apiClientContent += `  async ${operationId}(`;
+      if (paramsType) {
+        apiClientContent += `params?: ${paramsType}, `;
+      }
+      apiClientContent += `requestParams?: RequestInit): Promise<${responseType}> {\n`;
+      apiClientContent += `    const { url, init } = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
+      apiClientContent += `    const response = await fetch(url, init);\n`;
+      apiClientContent += `    if (!response.ok) {\n`;
+      apiClientContent += `      throw new Error(\`HTTP error! status: \${response.status}\`);\n`;
+      apiClientContent += `    }\n`;
+      apiClientContent += `    return await response.json();\n`;
+      apiClientContent += `  }\n\n`;
+
+      // JSDoc комментарий для расширенного метода
+      apiClientContent += `  /**\n`;
+      apiClientContent += `   * ${operation.summary || 'Нет описания'} (с расширенным ответом)\n`;
+      apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
+      apiClientContent += `   * @name ${operationId}Extended\n`;
+      apiClientContent += `   * @request ${method.toUpperCase()}:${path}\n`;
+      apiClientContent += `   * @response \`200\` \`ExtendedApiResponse<${responseType}>\` OK\n`;
+      apiClientContent += `   */\n`;
+
+      // Расширенный метод API
+      apiClientContent += `  async ${operationId}Extended(`;
+      if (paramsType) {
+        apiClientContent += `params?: ${paramsType}, `;
+      }
+      apiClientContent += `requestParams?: RequestInit): Promise<ExtendedApiResponse<${responseType}>> {\n`;
+      apiClientContent += `    const { url, init } = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
+      apiClientContent += `    const response = await fetch(url, init);\n`;
+      apiClientContent += `    const data = await response.json();\n`;
+      apiClientContent += `    const result: ExtendedApiResponse<${responseType}> = {\n`;
+      apiClientContent += `      data,\n`;
+      apiClientContent += `      status: response.status,\n`;
+      apiClientContent += `      statusText: response.statusText,\n`;
+      apiClientContent += `      headers: response.headers,\n`;
+      apiClientContent += `      url: response.url\n`;
+      apiClientContent += `    };\n`;
+      apiClientContent += `    if (!response.ok) {\n`;
+      apiClientContent += `      throw result;\n`;
+      apiClientContent += `    }\n`;
+      apiClientContent += `    return result;\n`;
+      apiClientContent += `  }\n\n`;
+    }
+  }
+  apiClientContent += `}\n`;
+
+  try {
+    const filePath = path.join(outputDir, `api-client-${moduleName}.ts`);
+    fs.writeFileSync(filePath, apiClientContent, 'utf8');
+    console.log(`Создан файл API-клиента: ${filePath}`);
+  } catch (error) {
+    console.error(`Ошибка при создании файла API-клиента для ${moduleName}:`, error);
+  }
+
+  console.log(`Завершение генерации API-клиента для модуля ${moduleName}`);
 }
 
-export function setupSwagger(app: INestApplication, config: YamlGenerationConfig, docs: Docs[]) {
-    console.log(`Swagger документация доступна:`);
-    const result = []
 
-    docs.forEach(doc => {
-        const options = new DocumentBuilder()
-            .setTitle(doc.name)
-            .setDescription(doc.description)
-            .setVersion(doc.version)
-            .addTag(doc.url)
-            .build();
 
-        const document = SwaggerModule.createDocument(app, options, {
-            include: [doc.module],
-        });
+export async function setupSwagger(app: INestApplication, config: YamlGenerationConfig, docs: Docs[]) {
+  console.log('Начало настройки Swagger');
+  const result = [];
 
-        const url = `docs/${doc.url}`
-        SwaggerModule.setup(url, app, document);
-        generateYamlFiles(document, config, doc.url);
-        generateInterfacesFile(document, config, doc.url);
-        generateApiClientFile(document, config, doc.url);
+  for (const doc of docs) {
+    const options = new DocumentBuilder()
+      .setTitle(doc.name)
+      .setDescription(doc.description)
+      .setVersion(doc.version)
+      .addTag(doc.url)
+      .build();
 
-        result.push(`${doc.name}: http://${config.host}:${config.port}/${url}`)
+    const document = SwaggerModule.createDocument(app, options, {
+      include: [doc.module],
     });
 
-    return result;
+    const url = `docs/${doc.url}`;
+    SwaggerModule.setup(url, app, document);
+
+    const yamlFilePath = generateYamlFile(document, config, doc.url);
+    if (yamlFilePath) {
+        generateInterfacesFile(document, config, doc.url);
+      generateApiClientFile(document, config, doc.url);
+        result.push(`${doc.name}: http://${config.host}:${config.port}/${url}`);
+    }
+  }
+
+  console.log('Swagger настройка завершена');
+  return result;
 }

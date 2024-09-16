@@ -2,11 +2,11 @@
 
 import { PropsWithChildren, useRef } from 'react'
 import { Provider } from 'react-redux'
-import { RootReducer } from '../../_store/root.reducer'
-import { AppStore, makeStore } from '../../_store/store'
+import { RootReducer } from '../../../store/root.reducer'
+import { AppStore, makeStore } from '../../../store/store'
 
 export function ReduxProvider(props: PropsWithChildren<Partial<RootReducer>>) {
-  const {children, ...preloadedState} = props
+  const { children, ...preloadedState } = props
   const storeRef = useRef<AppStore>(null)
 
   if (!storeRef.current) {

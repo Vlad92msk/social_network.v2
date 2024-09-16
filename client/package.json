@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next eslint  --fix",
-    "generate-apis": "ts-node generate-api.ts"
+    "generate-apis": "ts-node generate-api-slices.ts"
   },
   "dependencies": {
     "@bem-react/classname": "1.6.0",
@@ -29,6 +29,7 @@
     "next-auth": "^5.0.0-beta.20",
     "next-intl": "^3.17.2",
     "normalize.css": "8.0.1",
+    "openapi-types": "^12.1.3",
     "react": "19.0.0-rc-df5f2736-20240712",
     "react-dom": "19.0.0-rc-df5f2736-20240712",
     "react-inlinesvg": "^4.1.0",
