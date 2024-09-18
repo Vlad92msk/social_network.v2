@@ -46,12 +46,6 @@ export default auth(async (request: NextRequest) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
       })
-      response.cookies.set(CookieType.USER_PROFILE, JSON.stringify(profile), {
-        maxAge,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      })
     }
 
     if (authResponse) return authResponse

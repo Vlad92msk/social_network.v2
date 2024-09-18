@@ -13,7 +13,7 @@ export function Univercity(props: UnivercityProps) {
   const { university } = props
 
   const [getValue, setValue, isChangeActive, updateCtx] = useUpdateContextField(university, 'university')
-
+console.log('getValue', getValue)
   return (
     <div className={cn('Univercity')}>
       {isChangeActive ? (

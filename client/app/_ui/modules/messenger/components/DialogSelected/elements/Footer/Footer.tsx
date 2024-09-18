@@ -15,8 +15,7 @@ export function Footer(props: FooterProps) {
       className={cn('CreateMessage')}
       onSubmit={(data) => {
         console.log('Publication', data)
-        // @ts-ignore
-        handleSubmit(data, profile?.userInfo!)
+        handleSubmit(data, profile?.profile?.user_info!)
       }}
     />
   )

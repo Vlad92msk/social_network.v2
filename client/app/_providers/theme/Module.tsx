@@ -13,4 +13,4 @@ export const {
   initialState,
 })
 
-export const ThemeService = contextWrapper<PropsWithChildren, ThemeServiceContext>(({ children }) => children)
+export const ThemeProvider = contextWrapper<PropsWithChildren, ThemeServiceContext>(({ children }) => children)

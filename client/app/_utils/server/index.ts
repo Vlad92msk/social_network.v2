@@ -1,3 +1,1 @@
-export * from './getServerCookie'
-export * from './getServerTranslate'
-export * from './getServerLocale'
+export * from './getServerProfile'

@@ -1,15 +1,13 @@
 import { Locale } from '@middlewares/variables'
 import { ReduxProvider } from '@providers/redux'
-import { Session } from '@providers/session/Session'
-import { ThemeService } from '@providers/theme'
-import { CookieType } from '../types/cookie'
+import { SessionProvider } from '@providers/session/SessionProvider'
+import { ThemeProvider } from '@providers/theme'
 import { Body } from '@ui/components/Body'
 import { Html } from '@ui/components/Html'
 import '@ui/styles/_index.scss'
+import { getServerProfile } from '@utils/server'
 import { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
-import { cookies } from 'next/headers'
-
 import { getMessages, getTranslations } from 'next-intl/server'
 
 export async function generateMetadata({ params: { locale } }) {
@@ -20,29 +18,29 @@ export async function generateMetadata({ params: { locale } }) {
 
   return meta
 }
+
 interface RootLayoutProps {
-  children: React.ReactNode;
-  params: {locale: Locale};
+  children: React.ReactNode
+  params: { locale: Locale }
 }
 export default async function RootLayout(props: RootLayoutProps) {
   const { children, params } = props
   const messages = await getMessages()
-  const cookieStore = cookies()
-  const USER_PROFILE = cookieStore.get(CookieType.USER_PROFILE)?.value
+  const profile = await getServerProfile()
 
   return (
-    <ReduxProvider profile={{ profile: USER_PROFILE && JSON.parse(USER_PROFILE) }}>
-      <ThemeService contextProps={{ theme: 'default' }}>
+    <ReduxProvider profile={{ profile }}>
+      <ThemeProvider contextProps={{ theme: 'default' }}>
         <NextIntlClientProvider messages={messages}>
           <Html locale={params.locale}>
-            <Session>
+            <SessionProvider>
               <Body>
                 {children}
               </Body>
-            </Session>
+            </SessionProvider>
           </Html>
         </NextIntlClientProvider>
-      </ThemeService>
+      </ThemeProvider>
     </ReduxProvider>
   )
 }

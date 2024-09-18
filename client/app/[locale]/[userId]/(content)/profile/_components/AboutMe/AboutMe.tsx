@@ -1,12 +1,8 @@
 'use client'
 
 import { useProfile } from '@hooks'
-import { Button } from '@ui/common/Button'
-import { Icon } from '@ui/common/Icon'
+import { Spinner } from '@ui/common/Spinner'
 import { createZustandContext } from '@utils/client'
-import { useDispatch, useSelector } from 'react-redux'
-import { tagsApi } from '../../../../../../../store/api'
-import { ProfileSelectors, ProfileSliceActions } from '../../../../../../../store/profile.slice'
 import { cn } from './cn'
 import {
   Banner, ButtonEdit, Company, Information, Name, Position, Univercity,
@@ -40,31 +36,34 @@ export const {
   useZustandDispatch: useAboutMeCtxUpdate,
 } = createZustandContext(initialState)
 
-export interface AboutMeProps extends AboutMeContextChangeState {
-  onSubmit?: (data?: AboutMeContextChangeState) => void
+export interface AboutMeProps {
 }
 
 export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((props) => {
-  const {
-    banner, university, company, information, position, name, onSubmit,
-  } = props
-  const { profile } = useProfile()
+  const { profile, isLoading } = useProfile()
   const handleClickFriend = (id: string) => {
     console.log(`Переходим к пользователю ${id}`)
   }
 
-  // const {data} = tagsApi.useFindTagsQuery(undefined)
-  // console.log('useFindTagsQuery',data.)
+  const handleSubmit = (data?: AboutMeContextChangeState) => {
+    console.log('Сохраняем', data)
+  }
 
+  if (isLoading) return <Spinner />
   return (
     <div className={cn()}>
-      <ButtonEdit onSubmit={onSubmit} />
-      <Banner contacts={[]} image={profile?.user_info.profile_image} bunner_image={profile?.user_info.about_info.banner_image} onClickUser={handleClickFriend} />
-      <Name name={name} />
-      <Univercity university={university} />
-      <Position position={position} />
-      <Company company={company} />
-      <Information information={information} />
+      <ButtonEdit onSubmit={handleSubmit} />
+      <Banner
+        contacts={[]}
+        image={profile?.user_info?.profile_image}
+        bunner_image={profile?.user_info?.about_info.banner_image}
+        onClickUser={handleClickFriend}
+      />
+      <Name name={profile?.user_info?.name} />
+      <Univercity university={profile?.user_info.about_info.study} />
+      <Position position={profile?.user_info.about_info.position} />
+      <Company company={profile?.user_info.about_info.position} />
+      <Information information="" />
     </div>
   )
 })
