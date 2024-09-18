@@ -12,17 +12,13 @@ export const profileInitialState: ProfileSliceState = {
 }
 
 export const { actions: ProfileSliceActions, reducer: profileReducer } = sliceBuilder(
-  ({ createSlice, setStateAnyObject }) => {
-    const slice = createSlice({
-      name: '[PROFILE]',
-      initialState: profileInitialState,
-      reducers: {
-        setProfile: setStateAnyObject<ProfileSliceState, UserProfileInfo>('profile'),
-      },
-    })
-
-    return slice
-  },
+  ({ createSlice, setStateAnyObject }) => createSlice({
+    name: '[PROFILE]',
+    initialState: profileInitialState,
+    reducers: {
+      setProfile: setStateAnyObject<ProfileSliceState, UserProfileInfo>('profile'),
+    },
+  }),
 )
 
 const selectSelf = (state: RootReducer) => state.profile

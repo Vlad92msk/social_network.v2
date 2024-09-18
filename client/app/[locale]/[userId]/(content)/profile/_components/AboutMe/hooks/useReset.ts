@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { setImmutable } from '@utils/others'
 import { useAboutMeCtxSelect, useAboutMeCtxUpdate } from '../AboutMe'
 
@@ -8,8 +8,9 @@ export const useReset = <Value>(path: string, initialValue: Value, cb: (init: Va
 
   useEffect(() => {
     if (status === 'reset') {
-      cb?.(initialValue)
+      cb(initialValue)
       updateCtx((ctx) => setImmutable(ctx, `changeState.${path}`, initialValue))
+      updateCtx((ctx) => ({ ...ctx, status: 'view' }))
     }
   }, [updateCtx, status, cb, initialValue, path])
 }

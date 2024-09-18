@@ -22,25 +22,25 @@ export function Banner(props: BannerProps) {
       <div className={cn('MyPhoto')}>
         <Image alt="bunner" src={image} width={70} height={70} />
       </div>
-      <ContactsList
-        contacts={contacts}
-        onClickUser={onClickUser}
-        renderContacts={(visible) => (
-          visible.map(({ id, name, profileImage }, index) => (
-            <Button
-              key={id}
-              className={cn('ContactItemBox')}
-              onClick={() => onClickUser?.(id)}
-              style={{
-                zIndex: 3 - (index + 1),
-                transform: `translateX(${10 * (3 - (index + 1))}px)`,
-              }}
-            >
-              <Image src={profileImage} width={40} height={40} alt={name || id} />
-            </Button>
-          ))
-        )}
-      />
+      {/* <ContactsList */}
+      {/*   contacts={contacts} */}
+      {/*   onClickUser={onClickUser} */}
+      {/*   renderContacts={(visible) => ( */}
+      {/*     visible.map(({ id, name, profileImage }, index) => ( */}
+      {/*       <Button */}
+      {/*         key={id} */}
+      {/*         className={cn('ContactItemBox')} */}
+      {/*         onClick={() => onClickUser?.(id)} */}
+      {/*         style={{ */}
+      {/*           zIndex: 3 - (index + 1), */}
+      {/*           transform: `translateX(${10 * (3 - (index + 1))}px)`, */}
+      {/*         }} */}
+      {/*       > */}
+      {/*         <Image src={profileImage} width={40} height={40} alt={name || id} /> */}
+      {/*       </Button> */}
+      {/*     )) */}
+      {/*   )} */}
+      {/* /> */}
     </div>
   )
 }

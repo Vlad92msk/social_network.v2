@@ -1,11 +1,11 @@
 import { size } from 'lodash'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
-import { AboutMeProps, useAboutMeCtxSelect, useAboutMeCtxUpdate } from '../AboutMe'
+import { AboutMeContextChangeState, useAboutMeCtxSelect, useAboutMeCtxUpdate } from '../AboutMe'
 import { cn } from '../cn'
 
 interface ButtonEditProps {
-  onSubmit: AboutMeProps['onSubmit']
+  onSubmit: (data?: AboutMeContextChangeState) => void
 }
 
 export function ButtonEdit(props: ButtonEditProps) {

@@ -11,6 +11,7 @@ export interface RequestParams {
 export const RequestParams = createParamDecorator(
     (data: unknown, ctx: ExecutionContext): RequestParams => {
         const request = ctx.switchToHttp().getRequest()
+
         return {
             profile_id: Number(request.cookies['profile_id']),
             user_info_id: Number(request.cookies['user_info_id']),

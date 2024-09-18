@@ -5,15 +5,14 @@ import { setImmutable } from '@utils/others'
 import { cn } from '../cn'
 import { useUpdateContextField } from '../hooks'
 
-interface UnivercityProps {
+interface UniversityProps {
   university?: string
 }
 
-export function Univercity(props: UnivercityProps) {
+export function Univercity(props: UniversityProps) {
   const { university } = props
-
   const [getValue, setValue, isChangeActive, updateCtx] = useUpdateContextField(university, 'university')
-console.log('getValue', getValue)
+  // console.log('getValue', getValue)
   return (
     <div className={cn('Univercity')}>
       {isChangeActive ? (

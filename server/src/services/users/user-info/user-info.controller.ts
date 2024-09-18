@@ -68,22 +68,28 @@ export class UserInfoController {
         { name: 'banner_image', maxCount: 1 }
     ]))
     async updateUser(
-        @RequestParams() params: RequestParams,
-        @Body() data: UpdateUserDto,
-        @UploadedFiles() files: {
-            profile_image?: Express.Multer.File,
-            banner_image?: Express.Multer.File
-        }
+      @RequestParams() params: RequestParams,
+      @Body() data: UpdateUserDto,
+      @UploadedFiles() files?: {
+          profile_image?: Express.Multer.File[],
+          banner_image?: Express.Multer.File[]
+      }
     ) {
-
         try {
-            const profileImage = files.profile_image?.[0]
-            const bannerImage = files.banner_image?.[0]
+            const profileImage = files?.profile_image && files.profile_image[0]
+            const bannerImage = files?.banner_image && files.banner_image[0]
 
-            const user = await this.userService.updateUserInfo({ ...data, profileImage, bannerImage }, params)
+            const userData = {
+                ...data,
+                ...(profileImage && { profileImage }),
+                ...(bannerImage && { bannerImage })
+            }
+
+            const user = await this.userService.updateUserInfo(userData, params)
             return user
         } catch (error) {
-            throw new BadRequestException(error.message)
+            console.error('Error in updateUser:', error)
+            throw new BadRequestException(`Ошибка при обновлении информации о пользователе: ${error.message}`)
         }
     }
 }

@@ -69,6 +69,8 @@
     background: var(--Color-Bcg--variant-4--theme-default);
     border-radius: $border-radius--small;
     padding: $paddings--small;
+    white-space: pre-wrap;
+    word-wrap: break-word; /* Добавляем для переноса длинных слов */
   }
 
   &-BannerBck {

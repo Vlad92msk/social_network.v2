@@ -30,12 +30,20 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }))
   app.use(cookieParser())
-  app.enableCors()
 
   const config = await app.get(ConfigService)
-  const port = Number(config.get(`${ConfigEnum.MAIN}.port`))
-  const host = String(config.get(`${ConfigEnum.MAIN}.host`))
   const uploadPath = String(config.get(`${ConfigEnum.MAIN}.uploadDir`))
+
+  const server_port = Number(config.get(`${ConfigEnum.MAIN}.port`))
+  const server_host = String(config.get(`${ConfigEnum.MAIN}.host`))
+
+  const client_port = Number(config.get(`${ConfigEnum.MAIN}.client_port`))
+  const client_host = String(config.get(`${ConfigEnum.MAIN}.client_host`))
+
+  app.enableCors({
+    origin: `http://${client_host}:${client_port}`, // URL фронтенд-приложения
+    credentials: true,
+  })
 
   // Настройка статической директории для uploads
   app.useStaticAssets(uploadPath, {
@@ -50,8 +58,8 @@ async function bootstrap() {
         app,
         {
             directory: String(config.get(`${ConfigEnum.MAIN}.swaggerDir`)),
-            host,
-            port,
+            host: server_host,
+            port: server_port,
         },
         [
           {
@@ -114,8 +122,8 @@ async function bootstrap() {
     )
   }
 
-  await app.listen(port, async () => {
-    console.log(`Сервер доступен - http://${host}:${port}`)
+  await app.listen(server_port, async () => {
+    console.log(`Сервер доступен - http://${server_host}:${server_port}`)
     console.group('swagger')
     swaggerConsile.forEach((s) => console.log(s))
     console.groupEnd()
