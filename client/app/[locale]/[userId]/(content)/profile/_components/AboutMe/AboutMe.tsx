@@ -1,17 +1,16 @@
 'use client'
 
-import { isNil, omitBy, pick } from 'lodash'
-import { useProfile } from '@hooks'
+import { AddedFile, useProfile } from '@hooks'
+import { QueryStatus } from '@reduxjs/toolkit/query'
 import { Spinner } from '@ui/common/Spinner'
 import { createZustandContext } from '@utils/client'
 import { DeepPartial } from '@utils/tsUtils'
-import { cn } from './cn'
-import {
-  Banner, ButtonEdit, Company, Information, Name, Position, Univercity,
-} from './elements'
+import { isNil, omitBy, pick, size } from 'lodash'
+import { useEffect, useState } from 'react'
 import { UserInfoDto } from '../../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { userInfoApi } from '../../../../../../../store/api'
-
+import { cn } from './cn'
+import { Banner, ButtonEdit, Company, Information, Name, Position, Univercity, } from './elements'
 
 // Поля, которые могут быть отредактированы
 export interface AboutMeContextChangeState {
@@ -21,6 +20,8 @@ export interface AboutMeContextChangeState {
   company?: string
   banner?: string
   name?: string
+  bannerUploadFile?: AddedFile
+  imageUploadFile?: AddedFile
 }
 
 interface PublicationContextState {
@@ -46,34 +47,44 @@ export interface AboutMeProps {
 
 export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((props) => {
   const { profile, isLoading } = useProfile()
-
-  const [updateUser] = userInfoApi.useUpdateUserMutation()
   const handleClickFriend = (id: string) => {
     console.log(`Переходим к пользователю ${id}`)
   }
 
+
+  const [updateUser, { data: updatedData, isSuccess }] = userInfoApi.useUpdateUserMutation()
+  const [userInfo, setUserInfo] = useState(profile?.user_info)
+  useEffect(() => {
+    if (isSuccess && updatedData) {
+      // @ts-ignore
+      setUserInfo(updatedData)
+    }
+  }, [isSuccess, updatedData])
+
   const handleSubmit = (data?: AboutMeContextChangeState) => {
-    if (!data) return
+    if (!data) return;
 
-    const directFields = pick(data, ['name'])
-    const aboutInfoFields = pick(data, ['university', 'company', 'position', 'information'])
+    const formData = new FormData();
+    if (data.name) formData.append('name', data.name);
+    if (data.university) formData.append('about_info[study]', data.university);
+    if (data.company) formData.append('about_info[working]', data.company);
+    if (data.position) formData.append('about_info[position]', data.position);
+    if (data.information) formData.append('about_info[description]', data.information);
 
-    const result: DeepPartial<UserInfoDto> = {
-      ...directFields,
-      about_info: {
-        study: aboutInfoFields.university,
-        working: aboutInfoFields.company,
-        position: aboutInfoFields.position,
-        description: aboutInfoFields.information,
-      },
+    if (data.imageUploadFile && data.imageUploadFile.blob instanceof File) {
+      formData.append('profile_image', data.imageUploadFile.blob, data.imageUploadFile.name);
+    } else {
+      console.warn('imageUploadFile is not valid:', data.imageUploadFile);
     }
 
-    const cleanResult = omitBy(result, isNil) as UserInfoDto
+    if (data.bannerUploadFile) {
+      formData.append('banner_image', data.bannerUploadFile, data.bannerUploadFile.name);
+    }
 
     updateUser({
-      body: cleanResult,
-    })
-  }
+      body: formData,
+    });
+  };
 
   if (isLoading) return <Spinner />
   return (
@@ -85,11 +96,11 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
         bunner_image={profile?.user_info?.about_info.banner_image}
         onClickUser={handleClickFriend}
       />
-      <Name name={profile?.user_info?.name} />
-      <Univercity university={profile?.user_info.about_info.study} />
-      <Position position={profile?.user_info.about_info.position} />
-      <Company company={profile?.user_info.about_info.position} />
-      <Information information={profile?.user_info.about_info.description} />
+      <Name name={userInfo?.name} />
+      <Univercity university={userInfo?.about_info.study} />
+      <Position position={userInfo?.about_info.position} />
+      <Company company={userInfo?.about_info.position} />
+      <Information information={userInfo?.about_info.description} />
     </div>
   )
 })

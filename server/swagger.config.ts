@@ -210,17 +210,17 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
       let responseType = 'any';
       if (operation.responses) {
         for (const [statusCode, response] of Object.entries(operation.responses)) {
-          if (statusCode.startsWith('2')) { // Проверяем все успешные коды ответов
+          if (statusCode.startsWith('2')) {
             // @ts-ignore
             const schema = response.content?.['application/json']?.schema;
             if (schema) {
               responseType = getTypeFromSchema(schema, document.components.schemas);
-              break; // Используем первый найденный успешный ответ
+              break;
             }
           }
         }
       }
-      // Определение типа параметров
+
       let paramsType = '';
       if (parameters.length > 0 || requestBody) {
         const paramsList = [
@@ -229,22 +229,20 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
         if (requestBody) {
           const contentType = Object.keys(requestBody.content || {})[0];
           if (contentType && requestBody.content[contentType].schema) {
-            paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)}`);
+            paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)} | FormData`);
           } else {
-            paramsList.push(`body: any`);
+            paramsList.push(`body: any | FormData`);
           }
         }
         paramsType = `{ ${paramsList.join(', ')} }`;
       }
 
-      // JSDoc комментарий для метода Init
       apiClientContent += `  /**\n`;
       apiClientContent += `   * Инициализация запроса для ${operation.summary || operationId}\n`;
       apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
       apiClientContent += `   * @name ${operationId}Init\n`;
       apiClientContent += `   */\n`;
 
-      // Метод Init
       apiClientContent += `  ${operationId}Init(`;
       if (paramsType) {
         apiClientContent += `params?: ${paramsType}, `;
@@ -252,7 +250,6 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
       apiClientContent += `requestParams?: RequestInit): { url: string, init: RequestInit } {\n`;
       apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
 
-      // Добавление query-параметров
       if (parameters.length > 0) {
         apiClientContent += `    if (params) {\n`;
         apiClientContent += `      ${parameters.filter(p => p.in === 'query').map(p =>
@@ -261,19 +258,29 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
         apiClientContent += `    }\n`;
       }
 
+      apiClientContent += `    let body: string | FormData | undefined;\n`;
+      apiClientContent += `    let headers = { ...this.defaultConfig?.headers, ...requestParams?.headers };\n`;
+
+      if (requestBody) {
+        apiClientContent += `    if (params?.body instanceof FormData) {\n`;
+        apiClientContent += `      body = params.body;\n`;
+        apiClientContent += `      delete headers['Content-Type'];\n`;
+        apiClientContent += `    } else if (params?.body) {\n`;
+        apiClientContent += `      body = JSON.stringify(params.body);\n`;
+        apiClientContent += `      headers['Content-Type'] = 'application/json';\n`;
+        apiClientContent += `    }\n`;
+      }
+
       apiClientContent += `    const init: RequestInit = {\n`;
       apiClientContent += `      method: '${method.toUpperCase()}',\n`;
       apiClientContent += `      ...this.defaultConfig,\n`;
-      if (requestBody) {
-        apiClientContent += `      body: params?.body ? JSON.stringify(params.body) : undefined,\n`;
-      }
+      apiClientContent += `      body,\n`;
       apiClientContent += `      ...requestParams,\n`;
-      apiClientContent += `      headers: { ...this.defaultConfig?.headers, ...requestParams?.headers },\n`;
+      apiClientContent += `      headers,\n`;
       apiClientContent += `    };\n`;
       apiClientContent += `    return { url: url.toString(), init };\n`;
       apiClientContent += `  }\n\n`;
 
-      // JSDoc комментарий для основного метода
       apiClientContent += `  /**\n`;
       apiClientContent += `   * ${operation.summary || 'Нет описания'}\n`;
       apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
@@ -282,7 +289,6 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
       apiClientContent += `   * @response \`200\` \`${responseType}\` OK\n`;
       apiClientContent += `   */\n`;
 
-      // Основной метод API
       apiClientContent += `  async ${operationId}(`;
       if (paramsType) {
         apiClientContent += `params?: ${paramsType}, `;
@@ -296,7 +302,6 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
       apiClientContent += `    return await response.json();\n`;
       apiClientContent += `  }\n\n`;
 
-      // JSDoc комментарий для расширенного метода
       apiClientContent += `  /**\n`;
       apiClientContent += `   * ${operation.summary || 'Нет описания'} (с расширенным ответом)\n`;
       apiClientContent += `   * @tags ${operation.tags?.join(', ') || ''}\n`;
@@ -305,7 +310,6 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
       apiClientContent += `   * @response \`200\` \`ExtendedApiResponse<${responseType}>\` OK\n`;
       apiClientContent += `   */\n`;
 
-      // Расширенный метод API
       apiClientContent += `  async ${operationId}Extended(`;
       if (paramsType) {
         apiClientContent += `params?: ${paramsType}, `;

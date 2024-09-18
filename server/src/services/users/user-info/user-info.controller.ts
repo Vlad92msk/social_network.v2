@@ -73,23 +73,23 @@ export class UserInfoController {
       @UploadedFiles() files?: {
           profile_image?: Express.Multer.File[],
           banner_image?: Express.Multer.File[]
-      }
+      },
     ) {
         try {
-            const profileImage = files?.profile_image && files.profile_image[0]
-            const bannerImage = files?.banner_image && files.banner_image[0]
+            const profileImage = files?.profile_image && files.profile_image[0];
+            const bannerImage = files?.banner_image && files.banner_image[0];
 
             const userData = {
                 ...data,
                 ...(profileImage && { profileImage }),
                 ...(bannerImage && { bannerImage })
-            }
+            };
 
-            const user = await this.userService.updateUserInfo(userData, params)
-            return user
+            const user = await this.userService.updateUserInfo(userData, params);
+            return user;
         } catch (error) {
-            console.error('Error in updateUser:', error)
-            throw new BadRequestException(`Ошибка при обновлении информации о пользователе: ${error.message}`)
+            console.error('Error in updateUser:', error);
+            throw new BadRequestException(`Ошибка при обновлении информации о пользователе: ${error.message}`);
         }
     }
 }

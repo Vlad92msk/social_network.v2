@@ -129,6 +129,7 @@ export type MaterialAttachProps = {
     FILE_FORMAT_IMAGE |
     FILE_FORMAT_TEXT |
     FILE_FORMAT_VIDEO)[]
+  getFiles?: (files) => void
 }
 
 type MaterialAttach = [
@@ -143,13 +144,13 @@ export const useMaterialsAttach = (props: MaterialAttachProps | undefined): Mate
   const handleAddFiles = useCallback((fileInputRef: React.ChangeEvent<HTMLInputElement>) => {
     // Сначала очищаем список добавленных файлов.
     setAddedFiles([])
-    console.log('fileInputRef', fileInputRef)
+
     // Если не предоставлен fileInputRef, просто возвращаемся.
     if (!fileInputRef) return
 
     // Извлекаем файлы из события изменения ввода.
     const currentFiles = fileInputRef.target?.files
-console.log('currentFiles', currentFiles)
+
     // Если файлы отсутствуют, просто возвращаемся.
     if (!currentFiles) return
 
@@ -192,6 +193,7 @@ console.log('currentFiles', currentFiles)
 
     // Обновляем состояние с новым списком файлов только один раз
     setAddedFiles(newFiles)
+    props?.getFiles?.(newFiles)
   }, [props])
 
   return [addedFiles, handleAddFiles, setAddedFiles]
