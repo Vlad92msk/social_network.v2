@@ -79,6 +79,16 @@
     width: 100%;
     border-radius: $paddings--super-small;
     overflow: hidden;
+    opacity: 1;
+    transition: opacity .5s;
+
+    &--active {
+      &:hover {
+        opacity: 0.5;
+        transition: opacity .5s;
+        cursor: pointer;
+      }
+    }
   }
   &-MyPhoto {
     position: absolute;
@@ -89,6 +99,14 @@
     border-radius: 50%;
     overflow: hidden;
     border: rem(3) solid var(--Color-Border--variant-2--theme-default);
+
+    &--active {
+      &:hover {
+        opacity: 0.5;
+        transition: opacity .5s;
+        cursor: pointer;
+      }
+    }
   }
 
   &-ContactsList {

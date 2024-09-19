@@ -1,12 +1,14 @@
 'use client'
 
+import { useEffect } from 'react'
 import { AddedFile, useProfile } from '@hooks'
 import { Spinner } from '@ui/common/Spinner'
 import { createZustandContext } from '@utils/client'
-import { useEffect } from 'react'
-import { userInfoApi } from '../../../../../../../store/api'
 import { cn } from './cn'
-import { Banner, ButtonEdit, Company, Information, Name, Position, Univercity, } from './elements'
+import {
+  Banner, ButtonEdit, Company, Information, Name, Position, Univercity,
+} from './elements'
+import { userInfoApi } from '../../../../../../../store/api'
 
 // Поля, которые могут быть отредактированы
 export interface AboutMeContextChangeState {
@@ -42,42 +44,42 @@ export interface AboutMeProps {
 }
 
 export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((props) => {
+  const aboutMeUpdate = useAboutMeCtxUpdate()
+
   const { profile, isLoading } = useProfile()
   const handleClickFriend = (id: string) => {
     console.log(`Переходим к пользователю ${id}`)
   }
 
   const [updateUser, { isError }] = userInfoApi.useUpdateUserMutation()
-  const aboutMeUpdate = useAboutMeCtxUpdate()
   useEffect(() => {
-    if (isError){
+    if (isError) {
       aboutMeUpdate(() => ({ isChangeActive: false, status: 'reset', changeState: {} }))
     }
-  }, [isError])
-
+  }, [aboutMeUpdate, isError])
 
   const handleSubmit = (data?: AboutMeContextChangeState) => {
-    if (!data) return;
+    if (!data) return
 
-    const formData = new FormData();
-    if (data.name) formData.append('name', data.name);
-    if (data.university) formData.append('about_info[study]', data.university);
-    if (data.company) formData.append('about_info[working]', data.company);
-    if (data.position) formData.append('about_info[position]', data.position);
-    if (data.information) formData.append('about_info[description]', data.information);
+    const formData = new FormData()
+    if (data.name) formData.append('name', data.name)
+    if (data.university) formData.append('about_info[study]', data.university)
+    if (data.company) formData.append('about_info[working]', data.company)
+    if (data.position) formData.append('about_info[position]', data.position)
+    if (data.information) formData.append('about_info[description]', data.information)
 
     if (data.imageUploadFile && data.imageUploadFile.blob instanceof File) {
-      formData.append('profile_image', data.imageUploadFile.blob, data.imageUploadFile.name);
+      formData.append('profile_image', data.imageUploadFile.blob, data.imageUploadFile.name)
     }
 
-    if (data.bannerUploadFile) {
-      formData.append('banner_image', data.bannerUploadFile, data.bannerUploadFile.name);
+    if (data.bannerUploadFile && data.bannerUploadFile.blob instanceof File) {
+      formData.append('banner_image', data.bannerUploadFile.blob, data.bannerUploadFile.name)
     }
 
     updateUser({
       body: formData,
-    });
-  };
+    })
+  }
 
   if (isLoading) return <Spinner />
   return (

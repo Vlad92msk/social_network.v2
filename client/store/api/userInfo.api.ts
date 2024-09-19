@@ -52,21 +52,57 @@ export const userInfoApi = createApi({
     updateUser: builder.mutation<UserInfo, Parameters<typeof userInfoApiInstance.updateUser>[0]>({
       query: (params) => {
         const { url, init } = userInfoApiInstance.updateUserInit(params)
-        return { url: 'ddd', ...init }
+        return { url, ...init }
       },
       invalidatesTags: ['User', 'Users'],
       // Функция которая вызывается после того как вызывался метод
-      async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
-        try {
-          const { data } = await queryFulfilled
-          // Вызываем action после успешного выполнения mutation
-          dispatch(ProfileSliceActions.setUserInfo(data))
-        } catch (error) {
-          const initial = (getState() as RootState).profile.profile?.user_info
-          // @ts-ignore
-          dispatch(ProfileSliceActions.setUserInfo(initial))
+      // @ts-ignore
+      async onQueryStarted({ body }, { dispatch, queryFulfilled, getState }) {
+        const previousUserInfo = (getState() as RootState).profile.profile?.user_info
+
+        // Создаем предполагаемое новое состояние на основе FormData
+        const optimisticUpdate = { ...previousUserInfo }
+        for (const [key, value] of body.entries()) {
+          if (typeof value === 'string') {
+            optimisticUpdate[key] = value
+          }
         }
-      }
+
+        // Оптимистично обновляем состояние в слайсе профиля
+        // @ts-ignore
+        dispatch(ProfileSliceActions.setUserInfo(optimisticUpdate))
+
+        // Оптимистично обновляем кэш getUserById
+        const patchResult = dispatch(
+        // @ts-ignore
+          userInfoApi.util.updateQueryData('getUserById', previousUserInfo.id, (draft) => {
+            Object.assign(draft, optimisticUpdate)
+          })
+        )
+
+        try {
+          // Ожидаем завершения запроса
+          const { data } = await queryFulfilled
+
+          // Обновляем состояние в слайсе профиля данными с сервера
+          dispatch(ProfileSliceActions.setUserInfo(data))
+
+          // Обновляем кэш getUserById данными с сервера
+          dispatch(
+          // @ts-ignore
+            userInfoApi.util.updateQueryData('getUserById', previousUserInfo.id, (draft) => {
+              Object.assign(draft, data)
+            })
+          )
+        } catch (error) {
+          // В случае ошибки откатываем изменения в слайсе профиля
+          // @ts-ignore
+          dispatch(ProfileSliceActions.setUserInfo(previousUserInfo))
+
+          // Откатываем изменения в кэше getUserById
+          patchResult.undo()
+        }
+      },
     }),
 
     getUserById: builder.query<UserInfoDto, Parameters<typeof userInfoApiInstance.getUserById>[0]>({
