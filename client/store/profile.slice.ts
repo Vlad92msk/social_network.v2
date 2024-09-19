@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit'
 import { RootReducer } from './root.reducer'
 import { sliceBuilder } from './utils/other'
-import { UserProfileInfo } from '../../swagger/profile/interfaces-profile'
+import { UserInfo, UserProfileInfo } from '../../swagger/profile/interfaces-profile'
 
 export interface ProfileSliceState {
     profile?: UserProfileInfo
@@ -17,6 +17,7 @@ export const { actions: ProfileSliceActions, reducer: profileReducer } = sliceBu
     initialState: profileInitialState,
     reducers: {
       setProfile: setStateAnyObject<ProfileSliceState, UserProfileInfo>('profile'),
+      setUserInfo: setStateAnyObject<ProfileSliceState, UserInfo>('profile.user_info'),
     },
   }),
 )

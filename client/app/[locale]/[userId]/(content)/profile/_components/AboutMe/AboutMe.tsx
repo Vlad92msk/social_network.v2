@@ -1,13 +1,9 @@
 'use client'
 
 import { AddedFile, useProfile } from '@hooks'
-import { QueryStatus } from '@reduxjs/toolkit/query'
 import { Spinner } from '@ui/common/Spinner'
 import { createZustandContext } from '@utils/client'
-import { DeepPartial } from '@utils/tsUtils'
-import { isNil, omitBy, pick, size } from 'lodash'
-import { useEffect, useState } from 'react'
-import { UserInfoDto } from '../../../../../../../../swagger/userInfo/interfaces-userInfo'
+import { useEffect } from 'react'
 import { userInfoApi } from '../../../../../../../store/api'
 import { cn } from './cn'
 import { Banner, ButtonEdit, Company, Information, Name, Position, Univercity, } from './elements'
@@ -51,15 +47,14 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
     console.log(`Переходим к пользователю ${id}`)
   }
 
-
-  const [updateUser, { data: updatedData, isSuccess }] = userInfoApi.useUpdateUserMutation()
-  const [userInfo, setUserInfo] = useState(profile?.user_info)
+  const [updateUser, { isError }] = userInfoApi.useUpdateUserMutation()
+  const aboutMeUpdate = useAboutMeCtxUpdate()
   useEffect(() => {
-    if (isSuccess && updatedData) {
-      // @ts-ignore
-      setUserInfo(updatedData)
+    if (isError){
+      aboutMeUpdate(() => ({ isChangeActive: false, status: 'reset', changeState: {} }))
     }
-  }, [isSuccess, updatedData])
+  }, [isError])
+
 
   const handleSubmit = (data?: AboutMeContextChangeState) => {
     if (!data) return;
@@ -73,8 +68,6 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
 
     if (data.imageUploadFile && data.imageUploadFile.blob instanceof File) {
       formData.append('profile_image', data.imageUploadFile.blob, data.imageUploadFile.name);
-    } else {
-      console.warn('imageUploadFile is not valid:', data.imageUploadFile);
     }
 
     if (data.bannerUploadFile) {
@@ -96,11 +89,11 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
         bunner_image={profile?.user_info?.about_info.banner_image}
         onClickUser={handleClickFriend}
       />
-      <Name name={userInfo?.name} />
-      <Univercity university={userInfo?.about_info.study} />
-      <Position position={userInfo?.about_info.position} />
-      <Company company={userInfo?.about_info.position} />
-      <Information information={userInfo?.about_info.description} />
+      <Name name={profile?.user_info?.name} />
+      <Univercity university={profile?.user_info?.about_info.study} />
+      <Position position={profile?.user_info?.about_info.position} />
+      <Company company={profile?.user_info?.about_info.position} />
+      <Information information={profile?.user_info?.about_info.description} />
     </div>
   )
 })

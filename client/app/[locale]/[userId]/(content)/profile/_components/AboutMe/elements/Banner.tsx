@@ -36,6 +36,7 @@ export function Banner(props: BannerProps) {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleAddFiles(event)
+    event.target.value = '' // Очищаем значение input
   }
 
   return (

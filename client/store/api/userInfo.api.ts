@@ -1,8 +1,9 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { UserInfoDto } from '../../../swagger/userInfo/interfaces-userInfo'
+import { UserInfo, UserInfoDto } from '../../../swagger/userInfo/interfaces-userInfo'
 import { CookieType } from '../../app/types/cookie'
 import { userInfoApiInstance } from '../instance'
+import { ProfileSliceActions } from '../profile.slice'
 import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
@@ -48,12 +49,24 @@ export const userInfoApi = createApi({
       providesTags: ['Users'],
     }),
 
-    updateUser: builder.mutation<UserInfoDto, Parameters<typeof userInfoApiInstance.updateUser>[0]>({
+    updateUser: builder.mutation<UserInfo, Parameters<typeof userInfoApiInstance.updateUser>[0]>({
       query: (params) => {
         const { url, init } = userInfoApiInstance.updateUserInit(params)
-        return { url, ...init }
+        return { url: 'ddd', ...init }
       },
       invalidatesTags: ['User', 'Users'],
+      // Функция которая вызывается после того как вызывался метод
+      async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
+        try {
+          const { data } = await queryFulfilled
+          // Вызываем action после успешного выполнения mutation
+          dispatch(ProfileSliceActions.setUserInfo(data))
+        } catch (error) {
+          const initial = (getState() as RootState).profile.profile?.user_info
+          // @ts-ignore
+          dispatch(ProfileSliceActions.setUserInfo(initial))
+        }
+      }
     }),
 
     getUserById: builder.query<UserInfoDto, Parameters<typeof userInfoApiInstance.getUserById>[0]>({

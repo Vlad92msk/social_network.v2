@@ -77,7 +77,7 @@ export class UserInfoService {
         if (!findUser) throw new Error('Пользователь не найден')
 
         const uploadImages = pick(data, ['profileImage', 'bannerImage'])
-console.log('uploadImages', uploadImages)
+
         // Загружаем изображения если они есть
         if (size(uploadImages)) {
             const filesToUpload = pickBy(uploadImages, (file) => !isEmpty(file))

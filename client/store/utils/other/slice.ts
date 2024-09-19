@@ -90,14 +90,13 @@ export function setState<S, P>(
  */
 function setStateAnyObject<S, ChangeObj>(
   key: keyof S | string,
-): CaseReducer<S, PayloadAction<(current: Draft<ChangeObj>, state: Draft<S>) => ChangeObj>> {
+): CaseReducer<S, PayloadAction<ChangeObj>> {
   return (state, action) => {
     const { payload } = action
-
-    const newState = payload(get(state, key), state) as Draft<S>
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    return setImmutable(state, String(key), newState || state[String(key)]) as Draft<S>
+    const currentValue = get(state, key)
+    const newState = typeof payload === 'function' ? payload(currentValue, state) : payload
+    // @ts-ignore
+    return setImmutable(state, String(key), newState || currentValue) as Draft<S>
   }
 }
 

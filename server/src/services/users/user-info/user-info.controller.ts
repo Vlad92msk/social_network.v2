@@ -10,6 +10,7 @@ import {
     UploadedFiles,
     UseInterceptors
 } from '@nestjs/common'
+import { UserInfo } from '@services/users/user-info/entities'
 import { UserInfoService } from './user-info.service'
 import { RequestParams } from 'src/shared/decorators'
 import { GetUsersDto } from './dto/get-users.dto'
@@ -62,7 +63,7 @@ export class UserInfoController {
     @ApiOperation({ summary: 'Обновить информацию о пользователе' })
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: UpdateUserDto, description: 'Данные для обновления пользователя' })
-    @ApiResponse({ status: 200, description: 'Возвращает обновленную информацию о пользователе', type: UserInfoDto })
+    @ApiResponse({ status: 200, description: 'Возвращает обновленную информацию о пользователе', type: UserInfo })
     @UseInterceptors(FileFieldsInterceptor([
         { name: 'profile_image', maxCount: 1 },
         { name: 'banner_image', maxCount: 1 }
