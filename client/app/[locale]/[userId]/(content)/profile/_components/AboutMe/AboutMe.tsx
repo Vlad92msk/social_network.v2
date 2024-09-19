@@ -94,7 +94,7 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
       <Name name={profile?.user_info?.name} />
       <Univercity university={profile?.user_info?.about_info.study} />
       <Position position={profile?.user_info?.about_info.position} />
-      <Company company={profile?.user_info?.about_info.position} />
+      <Company company={profile?.user_info?.about_info.working} />
       <Information information={profile?.user_info?.about_info.description} />
     </div>
   )

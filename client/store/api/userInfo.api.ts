@@ -68,10 +68,6 @@ export const userInfoApi = createApi({
           }
         }
 
-        // Оптимистично обновляем состояние в слайсе профиля
-        // @ts-ignore
-        dispatch(ProfileSliceActions.setUserInfo(optimisticUpdate))
-
         // Оптимистично обновляем кэш getUserById
         const patchResult = dispatch(
         // @ts-ignore
@@ -84,9 +80,6 @@ export const userInfoApi = createApi({
           // Ожидаем завершения запроса
           const { data } = await queryFulfilled
 
-          // Обновляем состояние в слайсе профиля данными с сервера
-          dispatch(ProfileSliceActions.setUserInfo(data))
-
           // Обновляем кэш getUserById данными с сервера
           dispatch(
           // @ts-ignore
@@ -95,10 +88,6 @@ export const userInfoApi = createApi({
             })
           )
         } catch (error) {
-          // В случае ошибки откатываем изменения в слайсе профиля
-          // @ts-ignore
-          dispatch(ProfileSliceActions.setUserInfo(previousUserInfo))
-
           // Откатываем изменения в кэше getUserById
           patchResult.undo()
         }
