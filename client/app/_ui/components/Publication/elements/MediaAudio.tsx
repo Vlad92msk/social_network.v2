@@ -1,45 +1,51 @@
-import { useState } from 'react'
-import { setImmutable } from '@utils/others'
+import { uniq } from 'lodash'
+import { MediaEntity } from '../../../../../../swagger/media/interfaces-media'
+import { useCallback, useState } from 'react'
 import { MediaElement } from './MediaElement'
 import { cn } from '../cn'
 import { useReset } from '../hooks'
 import { usePublicationCtxUpdate } from '../Publication'
 
-interface Audio {
-  type: string
-  src: string
-  name: string
-}
 
 interface MediaAudioProps {
-  audios: Audio[]
+  data: MediaEntity[]
 }
 
 export function MediaAudio(props: MediaAudioProps) {
-  const { audios } = props
+  const { data } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
 
-  const [usingData, setUsingData] = useState(audios)
+  const [usingData, setUsingData] = useState(data)
 
-  const handleRemove = (data) => {
+  const handleRemove = useCallback((removeMedia: MediaEntity) => {
     setUsingData((prev) => {
-      const result = prev.filter((i) => i.src !== data.src)
-      handleSetChangeActive((ctx) => setImmutable(ctx, 'changeState.media.audio', result))
+      const result = prev.filter((i) => i.id !== removeMedia.id)
+      handleSetChangeActive((ctx) => ({
+        ...ctx,
+        changeState: {
+          media: {
+            ...(ctx.changeState?.media || {}),
+            audio: result,
+          },
+          removeMediaIds: uniq([...(ctx.changeState?.removeMediaIds || []), removeMedia.id]),
+        },
+      }))
       return result
     })
-  }
-  useReset('media.audio', audios, setUsingData)
+  }, [handleSetChangeActive])
+
+  useReset('media.audio', data, setUsingData)
 
   if (!usingData) return null
   return (
     <div className={cn('MediaContainerAudioList')}>
       {usingData.map((item) => (
         <MediaElement
-          key={item.src}
+          key={item.id}
           data={item}
           element={(data) => (
-            <audio key={data.src} controls>
-              <source src={data.src} type={data.type} />
+            <audio key={data.meta.src} controls>
+              <source src={data.meta.src} type={data.meta.mimeType} />
               Your browser does not support the audio element.
             </audio>
           )}

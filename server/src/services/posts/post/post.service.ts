@@ -189,7 +189,7 @@ export class PostsService {
         })
 
         // Возвращаем посты вместе с их медиа и метаданными
-        return createPaginationResponse({ data: posts, total, query })
+        return createPaginationResponse({ data: posts || [], total, query })
     }
 
 

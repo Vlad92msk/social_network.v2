@@ -1,5 +1,5 @@
 // @ts-ignore
-import { FILE_FORMAT_AUDIO, FILE_FORMAT_IMAGE, FILE_FORMAT_TEXT, FILE_FORMAT_VIDEO } from '@types/fileFormats'
+import { FILE_FORMAT_AUDIO, FILE_FORMAT_IMAGE, FILE_FORMAT_TEXT, FILE_FORMAT_VIDEO, FILE_FORMAT_APP } from '@types/fileFormats'
 import { FileUpLoad } from '@ui/common/FileUpLoad'
 import { setImmutable } from '@utils/others'
 import { cn } from '../cn'
@@ -28,6 +28,7 @@ export function ButtonAttachment(props: ButtonAttachmentProps) {
           FILE_FORMAT_VIDEO.MPEG,
           FILE_FORMAT_AUDIO.MP4A,
           FILE_FORMAT_TEXT.TXT,
+          FILE_FORMAT_APP.XLSX,
         ],
       }}
       onApplyWithGroup={(files) => {

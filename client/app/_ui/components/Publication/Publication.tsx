@@ -41,6 +41,7 @@ export interface PublicationContextChangeState {
   media?: any
   text?: string
   emojis?: PublicationEmojis
+  removeMediaIds?: string[]
 }
 
 /**

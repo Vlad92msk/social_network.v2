@@ -1,56 +1,66 @@
-import { useState } from 'react'
+import { uniq } from 'lodash'
+import { useCallback, useMemo, useState } from 'react'
 import { useBooleanState } from '@hooks'
-import { setImmutable } from '@utils/others'
 import { Modal } from 'app/_ui/common/Modal'
 import { Text } from 'app/_ui/common/Text'
 import { MediaElement } from './MediaElement'
+import { MediaEntity } from '../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 import { useReset } from '../hooks'
 import { usePublicationCtxUpdate } from '../Publication'
 
-interface MediaImagesProps <Data extends Record<'src' | 'type' | 'name', any>[]> {
-  data?: Data
+interface MediaImagesProps {
+  data?: MediaEntity[]
   type: 'image' | 'video'
 }
 
-export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]>(props: MediaImagesProps<Data>) {
+export function MediaContent(props: MediaImagesProps) {
   const { data = [], type } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
 
-  // @ts-ignore
-  const [usingData, setUsingData] = useState<Data>(data)
+  const [usingData, setUsingData] = useState<MediaEntity[]>(data)
   const { current = [], other = [] } = Object.groupBy(usingData, (item, indx) => (indx <= 3 ? 'current' : 'other'))
   const [open, handleOpen, handleClose] = useBooleanState(false)
 
-  const handleRemove = (data: Data[0]) => {
-    // @ts-ignore
+  const handleRemove = useCallback((removeMedia: MediaEntity) => {
     setUsingData((prev) => {
-      const result = prev.filter((i) => i.src !== data.src)
-      handleSetChangeActive((ctx) => setImmutable(ctx, `changeState.media.${type}`, result))
+      const result = prev.filter((i) => i.id !== removeMedia.id)
+      handleSetChangeActive((ctx) => ({
+        ...ctx,
+        changeState: {
+          media: {
+            ...(ctx.changeState?.media || {}),
+            [type]: result,
+          },
+          removeMediaIds: uniq([...(ctx.changeState?.removeMediaIds || []), removeMedia.id]),
+        },
+      }))
       return result
     })
-  }
+  }, [handleSetChangeActive, type])
 
-  // @ts-ignore
-  useReset<Data>(`media.${type}`, data, setUsingData)
+  useReset<MediaEntity[]>(`media.${type}`, data, setUsingData)
 
-  const element = () => {
+  const element = useMemo(() => {
     switch (type) {
       case 'video':
-        return function (data: Data[0]) {
+        // eslint-disable-next-line react/no-unstable-nested-components
+        return function ({ meta }: MediaEntity) {
           return (
             <video controls>
-              <source src={data.src} type={data.type} />
+              <source src={meta.src} type={meta.mimeType} />
               Your browser does not support the video element.
             </video>
           )
         }
       case 'image':
-        return function (data: Data[0]) {
-          return <img src={data.src} alt={data.name} style={{ maxHeight: 'inherit' }} />
+        // eslint-disable-next-line react/no-unstable-nested-components
+        return function ({ meta }: MediaEntity) {
+          return <img src={meta.src} alt={meta.name} style={{ maxHeight: 'inherit' }} />
         }
+      default: return () => <></>
     }
-  }
+  }, [type])
 
   if (current.length === 0) return null
   return (
@@ -58,9 +68,9 @@ export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]
       <div className={cn('MediaContainerImgFirstCurrentList')}>
         {current.map((img) => (
           <MediaElement
-            key={img.src}
+            key={img.meta.src}
             data={img}
-            element={element()}
+            element={element}
             onRemove={handleRemove}
           />
         ))}
@@ -73,9 +83,9 @@ export function MediaContent<Data extends Record<'src' | 'type' | 'name', any>[]
       <Modal isOpen={open} contentClassName={cn('MediaContainerOtherImgContent')} onClose={handleClose}>
         {other.map((img) => (
           <MediaElement
-            key={img.src}
+            key={img.meta.src}
             data={img}
-            element={element()}
+            element={element}
             onRemove={handleRemove}
           />
         ))}

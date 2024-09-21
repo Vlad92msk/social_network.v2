@@ -1,16 +1,13 @@
 'use client'
 
 import { subMinutes } from 'date-fns'
-import { useBooleanState, useProfile } from '@hooks'
+import { get, groupBy } from 'lodash'
+import { useMemo } from 'react'
+import { useBooleanState } from '@hooks'
 import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
-import { PostEntity } from '../../../../../../../swagger/posts/interfaces-posts'
 import { cn } from './cn'
-import { PublicationDTO } from '../../../../../types/publicationDTO'
-
-export interface PostItemType extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos' | 'commentsIds'>{
-  id: string
-}
+import { PostEntity } from '../../../../../../../swagger/posts/interfaces-posts'
 
 interface PostsListProps {
   post: PostEntity
@@ -18,13 +15,14 @@ interface PostsListProps {
 
 export function PostItem(props: PostsListProps) {
   const { post } = props
-
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
+
+  const gropedMediaByType = useMemo(() => groupBy(post.media, 'meta.type'), [post.media])
 
   return (
     <div className={cn()}>
       <Publication
-        // contextProps={{ dateChanged, id }}
+        contextProps={{ id: post.id }}
         className={cn('PostItem')}
         authorPosition="right"
         dateRead={new Date()}
@@ -36,26 +34,18 @@ export function PostItem(props: PostsListProps) {
       >
         <Publication.ChangeContainer
           onSubmit={(result) => {
-            console.log('result', result)
+            console.log('onSubmit', result)
             // handleUpdateMsg({ id, ...result, dateChanged: new Date() })
           }}
           onRemove={(result) => {
-            console.log('result', result)
+            console.log('onRemove', result)
           }}
         />
         <Publication.MediaContainer
-          // text={post.media?.text}
-          // audio={[...(post.audio || []), ...(post.voices || []).map((item) => ({ ...item, src: item.url }))]}
-  // @ts-ignore
-
-          audio={[...(post.voices || []).map((item) => ({ ...item, src: item.meta.src }))]}
-  // @ts-ignore
-
-          video={[...(post.videos || []).map((item) => ({ ...item, src: item.meta.src }))]}
-          // image={post.media?.image}
-  // @ts-ignore
-
-          other={post.media}
+          audio={[...get(gropedMediaByType, 'audio', []), ...(post.voices || [])]}
+          video={[...(post.videos || [])]}
+          image={get(gropedMediaByType, 'image', [])}
+          other={get(gropedMediaByType, 'other', [])}
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
         <Publication.Commets countComments={post?.comment_count} onClick={onOpenComments} />
@@ -67,7 +57,6 @@ export function PostItem(props: PostsListProps) {
           module="post"
           id={post.id}
           onClose={onCloseComments}
-          // commentsIds={post.commentsIds}
         />
       )}
     </div>

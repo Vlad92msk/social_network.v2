@@ -57,7 +57,6 @@ export class PostsController {
         },
         @RequestParams() params: RequestParams,
     ) {
-        console.log('files__', files)
         // Проверяем квоту
         await this.mediaInfoService.checkStorageLimit(
             params.user_info_id,

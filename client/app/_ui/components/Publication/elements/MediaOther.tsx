@@ -1,35 +1,46 @@
-import { useState } from 'react'
+import { uniq } from 'lodash'
+import { useCallback, useState } from 'react'
 import { ButtonDownload } from '@ui/common/ButtonDownload'
-import { setImmutable } from '@utils/others'
+import { MediaEntity } from '../../../../../../swagger/media/interfaces-media'
 import { MediaElement } from './MediaElement'
 import { cn } from '../cn'
 import { useReset } from '../hooks'
 import { usePublicationCtxUpdate } from '../Publication'
 
 interface MediaOtherProps {
-  files: any[];
+  data: MediaEntity[];
 }
 
-export function MediaOther({ files }: MediaOtherProps) {
+export function MediaOther({ data }: MediaOtherProps) {
   const handleSetChangeActive = usePublicationCtxUpdate()
 
-  const [usingData, setUsingData] = useState(files)
+  const [usingData, setUsingData] = useState(data)
 
-  const handleRemove = (data) => {
+  const handleRemove = useCallback((removeMedia: MediaEntity) => {
     setUsingData((prev) => {
-      const result = prev.filter((i) => i.src !== data.src)
-      handleSetChangeActive((ctx) => setImmutable(ctx, 'changeState.media.other', result))
+      const result = prev.filter((i) => i.id !== removeMedia.id)
+      handleSetChangeActive((ctx) => ({
+        ...ctx,
+        changeState: {
+          media: {
+            ...(ctx.changeState?.media || {}),
+            other: result,
+          },
+          removeMediaIds: uniq([...(ctx.changeState?.removeMediaIds || []), removeMedia.id]),
+        },
+      }))
       return result
     })
-  }
-  useReset('media.other', files, setUsingData)
+  }, [handleSetChangeActive])
+
+  useReset('media.other', data, setUsingData)
 
   if (!usingData || usingData.length === 0) return null
   return (
     <div className={cn('MediaContainerMediaOther')}>
-      {usingData.map((file, index) => (
+      {usingData.map((file) => (
         <MediaElement
-          key={file.src}
+          key={file.id}
           data={file}
           element={(data) => (
             <div className={cn('MediaContainerMediaOtherItem')}>

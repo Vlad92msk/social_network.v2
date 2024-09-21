@@ -37,6 +37,7 @@ export const postsApi = createApi({
     },
     credentials: 'include',
   }),
+  tagTypes: ['Posts'],
   endpoints: (builder) => ({
 
     create: builder.mutation<PostEntity, Parameters<typeof postsApiInstance.create>[0]>({
@@ -47,6 +48,7 @@ export const postsApi = createApi({
     }),
 
     findAll: builder.query<PostEntity[], Parameters<typeof postsApiInstance.findAll>[0]>({
+      providesTags: ['Posts'],
       query: (params) => {
         const { url, init } = postsApiInstance.findAllInit(params)
         return { url, ...init }
@@ -75,6 +77,7 @@ export const postsApi = createApi({
     }),
 
     createRepost: builder.mutation<PostEntity, Parameters<typeof postsApiInstance.createRepost>[0]>({
+      invalidatesTags: ['Posts'],
       query: (params) => {
         const { url, init } = postsApiInstance.createRepostInit(params)
         return { url, ...init }

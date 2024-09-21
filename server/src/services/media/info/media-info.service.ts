@@ -83,7 +83,6 @@ export class MediaInfoService {
                 relations: ['meta'],
             })
 
-            console.log('savedMediaWithMeta', savedMediaWithMeta)
             uploadedFiles.push(savedMediaWithMeta)
         }
 

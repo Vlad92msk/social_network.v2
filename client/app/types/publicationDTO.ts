@@ -8,6 +8,7 @@ export interface FileObject {
   size: number,
   lastModified: string,
   blob: Blob
+  id: string
 }
 
 interface PublicationReactionsDTO extends EmojiClickData {
