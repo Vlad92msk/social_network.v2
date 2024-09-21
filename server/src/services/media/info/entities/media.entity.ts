@@ -1,3 +1,4 @@
+import { PostEntity } from '@services/posts/post/entities/post.entity'
 import {
     Column,
     Entity,
@@ -34,7 +35,7 @@ export class MediaEntity implements MediaItem {
     created_at: Date
 
     @ApiProperty({ description: 'Дата последнего обновления записи' })
-    @UpdateDateColumn({ nullable: true, comment: 'Дата последнего обновления записи' })
+    @UpdateDateColumn({ nullable: true, default: null, comment: 'Дата последнего обновления записи' })
     updated_at: Date
 
     @ApiProperty({ description: 'Количество просмотров' })
@@ -82,12 +83,22 @@ export class MediaEntity implements MediaItem {
     messagesRef: MessageEntity[]
 
     @ApiProperty({ description: 'Сообщение, к которому относится данный медиа-файл (аудио сообщение)', type: () => MessageEntity })
-    @ManyToOne(() => MessageEntity, message => message.voices, { cascade: true, onDelete: 'CASCADE', lazy: true })
+    @ManyToOne(() => MessageEntity, message => message.voices, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'added_voice_id' })
-    voicesRef: MessageEntity
+    voiceMessage: MessageEntity
 
     @ApiProperty({ description: 'Сообщение, к которому относится данный медиа-файл (видео сообщение)', type: () => MessageEntity })
     @ManyToOne(() => MessageEntity, message => message.videos, { cascade: true, onDelete: 'CASCADE', lazy: true })
     @JoinColumn({ name: 'added_video_id' })
-    videosRef: MessageEntity
+    videoMessage: MessageEntity
+
+    @ApiProperty({ description: 'Пост, к которому относится данный медиа-файл (аудио вложение)', type: () => PostEntity })
+    @ManyToOne(() => PostEntity, post => post.voices, { cascade: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'added_voice_post_id' }) // Исправляем имя колонки для голоса
+    voicePost: PostEntity
+
+    @ApiProperty({ description: 'Пост, к которому относится данный медиа-файл (видео вложение)', type: () => PostEntity })
+    @ManyToOne(() => PostEntity, post => post.videos, { cascade: true, onDelete: 'CASCADE', lazy: true })
+    @JoinColumn({ name: 'added_video_post_id' }) // Исправляем имя колонки для видео
+    videoPost: PostEntity
 }

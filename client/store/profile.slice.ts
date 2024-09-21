@@ -29,21 +29,21 @@ export const { actions: ProfileSliceActions, reducer: profileReducer } = sliceBu
             if (state.profile && state.profile.user_info) {
               state.profile.user_info = {
                 ...state.profile.user_info,
-                ...action.payload
-              };
+                ...action.payload,
+              }
             } else if (state.profile) {
-              state.profile.user_info = action.payload;
+              state.profile.user_info = action.payload
             }
-          }
+          },
         )
         // Реагируем на НЕ успешное выполнение мутации updateUser
         .addMatcher(
           userInfoApi.endpoints.updateUser.matchRejected,
-          (state, action) => {
+          (state) => {
             if (state.profile && state.profile.user_info) {
-              state.profile.user_info = state?.profile.user_info;
+              state.profile.user_info = state?.profile.user_info
             }
-          }
+          },
         )
     },
   }),

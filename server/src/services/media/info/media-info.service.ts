@@ -29,7 +29,7 @@ export class MediaInfoService {
     /**
      * Загружает файлы
      */
-    async uploadFiles(files: Express.Multer.File[], userId: number) {
+    async uploadFiles(files: Express.Multer.File[], userId: number, fileType?: MediaItemType) {
         const uploadedFiles: MediaEntity[] = []
 
         const user = await this.userService.getUsersById(userId)
@@ -48,14 +48,14 @@ export class MediaInfoService {
                 originalName = `${randomName}.${fileExtension}`
             }
 
-            const fileType = this.storageService.getFileType(file.mimetype)
+            const receivedFileType = this.storageService.getFileType(file.mimetype)
             let fileName = `${Date.now()}-${originalName}`.replace(' ', '_').toLowerCase().trim()
 
-            const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType)
+            const filePath = await this.storageService.uploadFile(file.buffer, fileName, userId, fileType ? fileType : receivedFileType)
             const fileUrl = this.storageService.getFileUrl(filePath)
 
             // Если это изображение, обновляем расширение файла и MIME-тип
-            if (fileType === MediaItemType.IMAGE) {
+            if (receivedFileType === MediaItemType.IMAGE) {
                 fileName = path.basename(filePath) // Получаем имя файла из пути, включая .webp расширение
                 file.mimetype = 'image/webp'
             }
@@ -66,7 +66,7 @@ export class MediaInfoService {
                 mimeType: file.mimetype,
                 size: file.size,
                 lastModified: new Date(),
-                type: fileType,
+                type: receivedFileType,
                 user_id: userId,
             })
 
@@ -76,7 +76,15 @@ export class MediaInfoService {
             })
 
             const savedMedia = await this.mediaInfoRepository.save(media)
-            uploadedFiles.push(savedMedia)
+
+            // Загружаем метаданные вместе с медиа
+            const savedMediaWithMeta = await this.mediaInfoRepository.findOne({
+                where: { id: savedMedia.id },
+                relations: ['meta'],
+            })
+
+            console.log('savedMediaWithMeta', savedMediaWithMeta)
+            uploadedFiles.push(savedMediaWithMeta)
         }
 
         return uploadedFiles

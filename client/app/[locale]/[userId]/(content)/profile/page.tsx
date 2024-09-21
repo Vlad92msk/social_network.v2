@@ -18,12 +18,10 @@ interface UserPageProps {
 export default async function ProfileContent(props: UserPageProps) {
   return (
     <PageContent className={cn()}>
-      <ProfileTab activeTab="Фото">
+      <ProfileTab activeTab="Публикации">
         <ProfileTabItem
           name="Обо мне"
-          content={(
-            <AboutMe />
-        )}
+          content={(<AboutMe />)}
         />
         <ProfileTabItem
           name="Публикации"

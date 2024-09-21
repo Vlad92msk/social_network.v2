@@ -54,11 +54,11 @@ export class MessageEntity extends PublicationEntity {
     reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Голосовые сообщения', type: () => [MediaEntity] })
-    @OneToMany(type => MediaEntity, publication => publication.voicesRef)
+    @OneToMany(type => MediaEntity, publication => publication.voiceMessage)
     voices: MediaEntity[]
 
     @ApiProperty({ description: 'Видео сообщения', type: () => [MediaEntity] })
-    @OneToMany(type => MediaEntity, publication => publication.videosRef)
+    @OneToMany(type => MediaEntity, publication => publication.videoMessage)
     videos: MediaEntity[]
 
     @ApiProperty({ description: 'Диалог которому принадлежит сообщение', type: () => DialogEntity })

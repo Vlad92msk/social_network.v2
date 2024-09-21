@@ -1,6 +1,7 @@
 import { Text } from '@ui/common/Text'
 import { createZustandContext } from '@utils/client'
 import { classNames } from '@utils/others'
+import { CreatePostDto } from '../../../../../swagger/posts/interfaces-posts'
 import { cn } from './cn'
 import {
   AddAttachmentsList, AddVideoList,

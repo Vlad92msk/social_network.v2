@@ -60,12 +60,16 @@ export class PostEntity extends PublicationEntity {
     @OneToMany(() => CommentEntity, comment => comment.post, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
     comments: CommentEntity[]
 
+    @ApiProperty({ description: 'Количество комментариев к посту', default: 0 })
+    @Column({ type: 'int', default: 0, comment: 'Количество комментариев' })
+    comment_count: number
+
     @ApiProperty({ description: 'Голосовые вложения', type: () => [MediaEntity] })
-    @OneToMany(type => MediaEntity, publication => publication.voicesRef)
+    @OneToMany(() => MediaEntity, media => media.voicePost)
     voices: MediaEntity[]
 
     @ApiProperty({ description: 'Видео вложения', type: () => [MediaEntity] })
-    @OneToMany(type => MediaEntity, publication => publication.videosRef)
+    @OneToMany(() => MediaEntity, media => media.videoPost)
     videos: MediaEntity[]
 
     @ApiProperty({ description: 'Файлы, приложенные к посту', type: () => [MediaEntity] })

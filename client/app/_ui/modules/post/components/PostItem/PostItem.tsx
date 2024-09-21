@@ -4,6 +4,7 @@ import { subMinutes } from 'date-fns'
 import { useBooleanState, useProfile } from '@hooks'
 import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
+import { PostEntity } from '../../../../../../../swagger/posts/interfaces-posts'
 import { cn } from './cn'
 import { PublicationDTO } from '../../../../../types/publicationDTO'
 
@@ -12,13 +13,12 @@ export interface PostItemType extends Pick<PublicationDTO, 'text' | 'emojis' | '
 }
 
 interface PostsListProps {
-  post: PostItemType
+  post: PostEntity
 }
 
 export function PostItem(props: PostsListProps) {
   const { post } = props
 
-  const { profile } = useProfile()
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
 
   return (
@@ -44,23 +44,30 @@ export function PostItem(props: PostsListProps) {
           }}
         />
         <Publication.MediaContainer
-          text={post.media?.text}
-          audio={[...(post.media?.audio || []), ...(post.voices || []).map((item) => ({ ...item, src: item.url }))]}
-          video={[...(post.media?.video || []), ...(post.videos || []).map((item) => ({ ...item, src: item.url }))]}
-          image={post.media?.image}
-          other={post.media?.other}
+          // text={post.media?.text}
+          // audio={[...(post.audio || []), ...(post.voices || []).map((item) => ({ ...item, src: item.url }))]}
+  // @ts-ignore
+
+          audio={[...(post.voices || []).map((item) => ({ ...item, src: item.meta.src }))]}
+  // @ts-ignore
+
+          video={[...(post.videos || []).map((item) => ({ ...item, src: item.meta.src }))]}
+          // image={post.media?.image}
+  // @ts-ignore
+
+          other={post.media}
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
-        <Publication.Commets countComments={post?.commentsIds?.length || 0} onClick={onOpenComments} />
+        <Publication.Commets countComments={post?.comment_count} onClick={onOpenComments} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
-        <Publication.DateCreated dateCreated={new Date()} />
+        <Publication.DateCreated dateCreated={new Date(post.date_created)} />
       </Publication>
       {isOpenComments && (
         <ModuleComments
           module="post"
           id={post.id}
           onClose={onCloseComments}
-          commentsIds={post.commentsIds}
+          // commentsIds={post.commentsIds}
         />
       )}
     </div>

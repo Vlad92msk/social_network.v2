@@ -1,10 +1,9 @@
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CookieType } from '../../app/types/cookie';
-import { RootState, store } from '../store'
-import { postsApiInstance } from '../../store/instance'
-import { PublicationType, UserAbout, MediaMetadata, Tag, DialogEntity, MessageEntity, ReactionEntity, CommentEntity, MediaEntity, UserInfo, PostVisibility, PostEntity, CreatePostDto, UpdatePostDto } from '../../../swagger/posts/interfaces-posts'
 import { SerializedError } from '@reduxjs/toolkit'
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { CreatePostDto, PostEntity, } from '../../../swagger/posts/interfaces-posts'
+import { CookieType } from '../../app/types/cookie'
+import { postsApiInstance } from '../instance'
+import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
   data?: T
@@ -36,9 +35,10 @@ export const postsApi = createApi({
       }
       return headers
     },
+    credentials: 'include',
   }),
   endpoints: (builder) => ({
-    
+
     create: builder.mutation<PostEntity, Parameters<typeof postsApiInstance.create>[0]>({
       query: (params) => {
         const { url, init } = postsApiInstance.createInit(params)
@@ -183,67 +183,47 @@ export const postsApi = createApi({
 
 // Типизированные функции-обертки в объекте
 export const PostsApiApi = {
-  
-  create: (props: Parameters<typeof postsApiInstance.create>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.create.initiate(props)),
+// @ts-ignore
+  create: (props: Parameters<typeof postsApiInstance.create>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.create.initiate(props)),
 
-  findAll: (props: Parameters<typeof postsApiInstance.findAll>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.findAll.initiate(props)),
+  findAll: (props: Parameters<typeof postsApiInstance.findAll>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.findAll.initiate(props)),
 
-  findOne: (props: Parameters<typeof postsApiInstance.findOne>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.findOne.initiate(props)),
+  findOne: (props: Parameters<typeof postsApiInstance.findOne>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.findOne.initiate(props)),
 
-  update: (props: Parameters<typeof postsApiInstance.update>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.update.initiate(props)),
+  update: (props: Parameters<typeof postsApiInstance.update>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.update.initiate(props)),
 
-  remove: (props: Parameters<typeof postsApiInstance.remove>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(postsApi.endpoints.remove.initiate(props)),
+  remove: (props: Parameters<typeof postsApiInstance.remove>[0]): Promise<QueryResult<any>> => store.dispatch(postsApi.endpoints.remove.initiate(props)),
 
-  createRepost: (props: Parameters<typeof postsApiInstance.createRepost>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.createRepost.initiate(props)),
+  createRepost: (props: Parameters<typeof postsApiInstance.createRepost>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.createRepost.initiate(props)),
 
-  createReply: (props: Parameters<typeof postsApiInstance.createReply>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.createReply.initiate(props)),
+  createReply: (props: Parameters<typeof postsApiInstance.createReply>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.createReply.initiate(props)),
 
-  getPinnedPosts: (props: Parameters<typeof postsApiInstance.getPinnedPosts>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getPinnedPosts.initiate(props)),
+  getPinnedPosts: (props: Parameters<typeof postsApiInstance.getPinnedPosts>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getPinnedPosts.initiate(props)),
 
-  togglePinPost: (props: Parameters<typeof postsApiInstance.togglePinPost>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.togglePinPost.initiate(props)),
+  togglePinPost: (props: Parameters<typeof postsApiInstance.togglePinPost>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.togglePinPost.initiate(props)),
 
-  updatePostVisibility: (props: Parameters<typeof postsApiInstance.updatePostVisibility>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.updatePostVisibility.initiate(props)),
+  updatePostVisibility: (props: Parameters<typeof postsApiInstance.updatePostVisibility>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.updatePostVisibility.initiate(props)),
 
-  createForwardedPost: (props: Parameters<typeof postsApiInstance.createForwardedPost>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.createForwardedPost.initiate(props)),
+  createForwardedPost: (props: Parameters<typeof postsApiInstance.createForwardedPost>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.createForwardedPost.initiate(props)),
 
-  getAllMediaForPost: (props: Parameters<typeof postsApiInstance.getAllMediaForPost>[0]): Promise<QueryResult<object[]>> =>
-    store.dispatch(postsApi.endpoints.getAllMediaForPost.initiate(props)),
+  getAllMediaForPost: (props: Parameters<typeof postsApiInstance.getAllMediaForPost>[0]): Promise<QueryResult<object[]>> => store.dispatch(postsApi.endpoints.getAllMediaForPost.initiate(props)),
 
-  updatePostLocation: (props: Parameters<typeof postsApiInstance.updatePostLocation>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.updatePostLocation.initiate(props)),
+  updatePostLocation: (props: Parameters<typeof postsApiInstance.updatePostLocation>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.updatePostLocation.initiate(props)),
 
-  getPostsByLocation: (props: Parameters<typeof postsApiInstance.getPostsByLocation>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getPostsByLocation.initiate(props)),
+  getPostsByLocation: (props: Parameters<typeof postsApiInstance.getPostsByLocation>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getPostsByLocation.initiate(props)),
 
-  getRepostsOfPost: (props: Parameters<typeof postsApiInstance.getRepostsOfPost>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getRepostsOfPost.initiate(props)),
+  getRepostsOfPost: (props: Parameters<typeof postsApiInstance.getRepostsOfPost>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getRepostsOfPost.initiate(props)),
 
-  getRepliesOfPost: (props: Parameters<typeof postsApiInstance.getRepliesOfPost>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getRepliesOfPost.initiate(props)),
+  getRepliesOfPost: (props: Parameters<typeof postsApiInstance.getRepliesOfPost>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getRepliesOfPost.initiate(props)),
 
-  getForwardsOfPost: (props: Parameters<typeof postsApiInstance.getForwardsOfPost>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getForwardsOfPost.initiate(props)),
+  getForwardsOfPost: (props: Parameters<typeof postsApiInstance.getForwardsOfPost>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getForwardsOfPost.initiate(props)),
 
-  getAllRelatedPosts: (props: Parameters<typeof postsApiInstance.getAllRelatedPosts>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getAllRelatedPosts.initiate(props)),
+  getAllRelatedPosts: (props: Parameters<typeof postsApiInstance.getAllRelatedPosts>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getAllRelatedPosts.initiate(props)),
 
-  getReplyChain: (props: Parameters<typeof postsApiInstance.getReplyChain>[0]): Promise<QueryResult<PostEntity[]>> =>
-    store.dispatch(postsApi.endpoints.getReplyChain.initiate(props)),
+  getReplyChain: (props: Parameters<typeof postsApiInstance.getReplyChain>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getReplyChain.initiate(props)),
 
-  incrementViewCount: (props: Parameters<typeof postsApiInstance.incrementViewCount>[0]): Promise<QueryResult<PostEntity>> =>
-    store.dispatch(postsApi.endpoints.incrementViewCount.initiate(props))
-};
+  incrementViewCount: (props: Parameters<typeof postsApiInstance.incrementViewCount>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.incrementViewCount.initiate(props)),
+}
 
 // Экспорт типов для использования в других частях приложения
 export type PostsApiApiType = typeof PostsApiApi

@@ -23,7 +23,7 @@ import { Response } from 'express'
 import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
 import { createPaginationHeaders } from '@shared/utils'
 import { PostEntity, PostVisibility } from '@services/posts/post/entities/post.entity'
-import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 @ApiTags('Посты')
 @Controller('api/posts')
@@ -42,6 +42,7 @@ export class PostsController {
     @Post()
     @ApiOperation({ summary: 'Создать пост' })
     @ApiResponse({ status: 200, description: 'Пост успешно создан', type: PostEntity })
+    @ApiConsumes('multipart/form-data')
     @UseInterceptors(FileFieldsInterceptor([
         { name: 'media', maxCount: 20 },
         { name: 'voices', maxCount: 5 },
@@ -56,6 +57,7 @@ export class PostsController {
         },
         @RequestParams() params: RequestParams,
     ) {
+        console.log('files__', files)
         // Проверяем квоту
         await this.mediaInfoService.checkStorageLimit(
             params.user_info_id,
@@ -63,6 +65,7 @@ export class PostsController {
             this.maxStorage
         )
 
+        // return {}
         return await this.postsService.create({
             createPostDto,
             media: files?.media,

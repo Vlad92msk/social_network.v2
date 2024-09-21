@@ -1,16 +1,17 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { LessThanOrEqual, Repository } from 'typeorm'
-import { PostEntity, PostVisibility } from './entities/post.entity'
-import { CreatePostDto } from './dto/create-post.dto'
-import { UpdatePostDto } from './dto/update-post.dto'
 import { MediaInfoService } from '@services/media/info/media-info.service'
+import { MediaItemType } from '@services/media/metadata/interfaces/mediaItemType'
+import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
 import { TagsService } from '@services/tags/tags.service'
-import { PublicationType } from '@shared/entity/publication.entity'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
-import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
+import { PublicationType } from '@shared/entity/publication.entity'
 import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from '@shared/utils'
+import { LessThanOrEqual, Repository } from 'typeorm'
+import { CreatePostDto } from './dto/create-post.dto'
+import { UpdatePostDto } from './dto/update-post.dto'
+import { PostEntity, PostVisibility } from './entities/post.entity'
 
 @Injectable()
 export class PostsService {
@@ -44,17 +45,22 @@ export class PostsService {
             location: createPostDto.location,
             pinned: createPostDto.pinned,
             visibility: createPostDto.visibility,
+            comment_count: 0,
         })
 
-        if (media) {
-            post.media = await this.mediaInfoService.uploadFiles(media, author.id)
+        if (media && media.length > 0) {
+            const uploadedMedia = await this.mediaInfoService.uploadFiles(media, author.id)
+            post.media = uploadedMedia
         }
-        if (voices) {
-            post.voices = await this.mediaInfoService.uploadFiles(voices, author.id)
+        if (voices && voices.length > 0) {
+            const uploadedVoices = await this.mediaInfoService.uploadFiles(voices, author.id, MediaItemType.VOICE)
+            post.voices = uploadedVoices
         }
-        if (videos) {
-            post.videos = await this.mediaInfoService.uploadFiles(videos, author.id)
+        if (videos && videos.length > 0) {
+            const uploadedVideos = await this.mediaInfoService.uploadFiles(videos, author.id, MediaItemType.SHORTS)
+            post.videos = uploadedVideos
         }
+
         if (createPostDto.tag_ids) {
             post.tags = await this.tagsService.findTagsByIds(createPostDto.tag_ids)
         }
@@ -114,13 +120,13 @@ export class PostsService {
 
         // Загружаем новые голосовые сообщения
         if (voices) {
-            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId)
+            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId, MediaItemType.VOICE)
             post.voices = [...(post.voices || []), ...addVoices]
         }
 
         // Загружаем новые видео-сообщения
         if (videos) {
-            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId)
+            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId, MediaItemType.SHORTS)
             post.videos = [...(post.videos || []), ...addVideos]
         }
 
@@ -146,25 +152,78 @@ export class PostsService {
     }
 
     async findAll(query: FindPostDto, params: RequestParams) {
-        const queryOptions = createPaginationQueryOptions({
+        const queryOptions = createPaginationQueryOptions<PostEntity>({
             query,
             options: {
-                relations: ['media', 'tags', 'original_post', 'reply_to', 'forwarded_post']
+                where: { author: { id: params.user_info_id } },
+                relations: [
+                    'media',          // Загружаем медиа
+                    'media.meta',     // Загружаем метаданные для каждого медиа-файла
+                    'tags',           // Теги поста
+                    'original_post',  // Оригинальный пост (если репост)
+                    'reply_to',       // Ответы
+                    'forwarded_post', // Пересланные посты
+                    'voices',         // Аудио файлы
+                    'voices.meta',    // Метаданные для аудио
+                    'videos',         // Видео файлы
+                    'videos.meta',    // Метаданные для видео
+                ]
             }
         })
 
-        const [tags, total] = await this.postRepository.findAndCount(queryOptions)
-        return createPaginationResponse({ data: tags, total, query })
+        const [posts, total] = await this.postRepository.findAndCount(queryOptions)
+
+        // Считаем кол-во комментариев для поста
+        const commentCounts = await this.postRepository
+          .createQueryBuilder('post')
+          .leftJoin('post.comments', 'comment')
+          .select('post.id', 'postId')
+          .addSelect('COUNT(comment.id)', 'commentCount')
+          .where('post.id IN (:...postIds)', { postIds: posts.map(post => post.id) })
+          .groupBy('post.id')
+          .getRawMany()
+
+        const commentCountMap = new Map(commentCounts.map(item => [item.postId, parseInt(item.commentCount)]))
+        posts.forEach(post => {
+            post.comment_count = commentCountMap.get(post.id) || 0
+        })
+
+        // Возвращаем посты вместе с их медиа и метаданными
+        return createPaginationResponse({ data: posts, total, query })
     }
+
 
     async findOne(id: string){
         const post = await this.postRepository.findOne({
             where: { id },
-            relations: ['media', 'tags', 'original_post', 'reply_to', 'forwarded_post']
+            relations: [
+                'media',          // Загружаем медиа
+                'media.meta',     // Загружаем метаданные для каждого медиа-файла
+                'tags',           // Теги поста
+                'original_post',  // Оригинальный пост (если репост)
+                'reply_to',       // Ответы
+                'forwarded_post', // Пересланные посты
+                'voices',         // Аудио файлы
+                'voices.meta',    // Метаданные для аудио
+                'videos',         // Видео файлы
+                'videos.meta',    // Метаданные для видео
+            ]
         })
         if (!post) {
-            throw new NotFoundException(`Post with ID "${id}" not found`)
+            throw new NotFoundException(`Пост с ID "${id}" не найден`)
         }
+        /**
+         * Считаем кол-во комментариев для поста
+         */
+        const { commentCount } = await this.postRepository
+          .createQueryBuilder('post')
+          .leftJoin('post.comments', 'comment')
+          .where('post.id = :id', { id })
+          .select('COUNT(comment.id)', 'commentCount')
+          .getRawOne()
+
+        post.comment_count = parseInt(commentCount) || 0
+
         return post
     }
 
@@ -176,6 +235,7 @@ export class PostsService {
                 await this.mediaInfoService.deleteFile(media.id)
             }
         }
+
         await this.postRepository.remove(post)
     }
 
@@ -337,7 +397,7 @@ export class PostsService {
     async getPostsByLocation(location: string) {
         return this.postRepository.find({
             where: { location },
-            relations: ['author', 'media', 'tags']
+            relations: ['media', 'tags', 'original_post', 'reply_to', 'forwarded_post', 'voices', 'videos']
         })
     }
 

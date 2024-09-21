@@ -12,7 +12,7 @@ export const getProfileQuery = async (profileId: string): Promise<ProfileType | 
 
     return await response.json()
   } catch (error) {
-    console.log(error)
+    console.log('getProfileQuery', error)
     // return undefined
   }
 }
