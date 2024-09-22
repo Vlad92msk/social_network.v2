@@ -1,5 +1,6 @@
 'use client'
 
+import { Text } from '@ui/common/Text'
 import { get, groupBy } from 'lodash'
 import { useMemo } from 'react'
 import { useBooleanState } from '@hooks'
@@ -17,12 +18,14 @@ export function PostItem(props: PostsListProps) {
   const { post } = props
   const [onRemove] = postsApi.useRemoveMutation()
   const [onUpdate] = postsApi.useUpdateMutation()
+  const [onPin] = postsApi.useTogglePinPostMutation()
 
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
   const gropedMediaByType = useMemo(() => groupBy(post.media, 'meta.type'), [post.media])
 
   return (
-    <div className={cn()}>
+    <div className={cn({ pinned: post.pinned })}>
+      {post.pinned && (<Text>Закреплено</Text>)}
       <Publication
         contextProps={{ id: post.id }}
         className={cn('PostItem')}
@@ -34,22 +37,30 @@ export function PostItem(props: PostsListProps) {
         }}
       >
         <Publication.ChangeContainer
+          // Обновить пост
           onSubmit={(result) => {
-            const { removeMediaIds: { video, voices, other, image, audio }, id } = result
             // console.log('onSubmit', result)
-            onUpdate({
+            const { removeMediaIds: { video, voices, other, image, audio }, id } = result
+            const updatePost: Parameters<typeof onUpdate>[0] = {
               id,
               body: {
-                text: result?.text,
                 remove_media_ids: [...image, ...audio, ...other],
                 remove_video_ids: video,
                 remove_voice_ids: voices,
               },
-            })
-            // handleUpdateMsg({ id, ..result, dateChanged: new Date() })
+            }
+            if (result?.text) {
+              updatePost.body.text = result.text
+            }
+            onUpdate(updatePost)
           }}
+          // Удалить пост
           onRemove={(id) => {
             onRemove({ id })
+          }}
+          // Закрепить пост
+          onPin={(id) => {
+            onPin({ id })
           }}
         />
         <Publication.MediaContainer

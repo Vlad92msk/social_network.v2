@@ -1,15 +1,17 @@
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
+import { Text } from '@ui/common/Text'
 import { cn } from '../cn'
 import { PublicationContextChangeState, usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
 
 interface ChangeContainerProps {
   onSubmit: (data: PublicationContextChangeState) => void
   onRemove: (id: string) => void
+  onPin?: (id: string) => void
 }
 
 export function ChangeContainer(props:ChangeContainerProps) {
-  const { onSubmit, onRemove } = props
+  const { onSubmit, onRemove, onPin } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
   const isChangeActive = usePublicationCtxSelect((ctx) => ctx.isChangeActive)
   const publicationId = usePublicationCtxSelect((ctx) => ctx.id)
@@ -21,9 +23,14 @@ export function ChangeContainer(props:ChangeContainerProps) {
         <Button onClick={() => onRemove(publicationId)}>
           <Icon name="delete" />
         </Button>
-        <Button>
-          <Icon name="edit" onClick={() => handleSetChangeActive(() => ({ isChangeActive: true }))} />
+        <Button onClick={() => handleSetChangeActive(() => ({ isChangeActive: true }))}>
+          <Icon name="edit" />
         </Button>
+        {onPin && (
+          <Button onClick={() => onPin(publicationId)}>
+            <Text fs="12">Закрепить/Открепить</Text>
+          </Button>
+        )}
       </div>
       <div className={cn('ChangeContainerSubmitActionList')}>
         <Button>

@@ -7,6 +7,7 @@ import { TagsService } from '@services/tags/tags.service'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
 import { PublicationType } from '@shared/entity/publication.entity'
+import { SortDirection } from '@shared/types'
 import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from '@shared/utils'
 import { LessThanOrEqual, Repository } from 'typeorm'
 import { CreatePostDto } from './dto/create-post.dto'
@@ -167,9 +168,15 @@ export class PostsService {
                     'voices.meta',    // Метаданные для аудио
                     'videos',         // Видео файлы
                     'videos.meta',    // Метаданные для видео
+                    'author',         // Автор
                 ]
             }
         })
+
+        // По умолчанию сортируем по дате создания (новые первыми)
+        if (!query.sort_by) {
+            queryOptions.order = { date_created: SortDirection.ASC }
+        }
 
         const [posts, total] = await this.postRepository.findAndCount(queryOptions)
 
@@ -207,6 +214,7 @@ export class PostsService {
                 'voices.meta',    // Метаданные для аудио
                 'videos',         // Видео файлы
                 'videos.meta',    // Метаданные для видео
+                'author',         // Автор
             ]
         })
         if (!post) {

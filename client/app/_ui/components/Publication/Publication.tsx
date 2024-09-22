@@ -66,6 +66,8 @@ const initialState: PublicationContextState & PublicationContextPrivateState = {
   dateChanged: undefined,
   status: 'view',
   changeState: {
+    id: '',
+    media: {},
     removeMediaIds: {
       audio: [],
       video: [],

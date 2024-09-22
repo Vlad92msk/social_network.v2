@@ -6,6 +6,10 @@
   flex-direction: column;
   gap: rem(30);
 
+  &--pinned {
+    order: 1;
+  }
+
   &-PostItem {
     //background: var(--Color-Bcg--variant-4--theme-default);
   }

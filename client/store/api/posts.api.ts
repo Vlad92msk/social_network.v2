@@ -1,6 +1,6 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { without } from 'lodash'
+import { set, without } from 'lodash'
 import { PostEntity } from '../../../swagger/posts/interfaces-posts'
 import { CookieType } from '../../app/types/cookie'
 import { postsApiInstance } from '../instance'
@@ -150,6 +150,25 @@ export const postsApi = createApi({
       query: (params) => {
         const { url, init } = postsApiInstance.togglePinPostInit(params)
         return { url, ...init }
+      },
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          postsApi.util.updateQueryData('findAll', {}, (draft) => {
+            const index = draft.findIndex((post) => post.id === id)
+            if (index !== -1) {
+              draft[index] = ({
+                ...draft[index],
+                pinned: !draft[index].pinned,
+              })
+            }
+            return draft // Возвращаем исходный массив, если пост не найден
+          }),
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
       },
     }),
 

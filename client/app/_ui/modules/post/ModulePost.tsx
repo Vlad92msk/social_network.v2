@@ -13,11 +13,11 @@ interface PostProps {
 export function ModulePost() {
   const { profile } = useProfile()
 
-  const { data, isLoading } = postsApi.useFindAllQuery(undefined)
+  const { data, isLoading } = postsApi.useFindAllQuery({})
   const [submit, { isLoading: isSubmitting }] = postsApi.useCreateMutation()
 console.log('data', data)
   const handleSubmit = (createdPost: CreatePublicationContextProps) => {
-    console.log('media', createdPost)
+    // console.log('media', createdPost)
     const formData = new FormData()
 
     formData.append('text', createdPost.text)
