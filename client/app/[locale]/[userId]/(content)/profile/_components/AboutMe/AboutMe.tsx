@@ -77,6 +77,7 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
     }
 
     updateUser({
+      // @ts-ignore
       body: formData,
     })
   }

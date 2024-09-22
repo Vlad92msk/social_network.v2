@@ -2,8 +2,7 @@
 
 import { useRef } from 'react'
 import { Button } from '@ui/common/Button'
-import { Popover, PopoverContent } from '@ui/common/Popover'
-import { Text as TextComponent } from '@ui/common/Text'
+import { Icon } from '@ui/common/Icon'
 import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
@@ -11,6 +10,7 @@ import {
   Author, ChangeContainer, Comments, DateCreated, DateRead, Emojies, MediaContainer, Response, Text,
 } from './elements'
 import { useUpdateDateRead } from './hooks'
+import { MediaEntity } from '../../../../../swagger/posts/interfaces-posts'
 
 interface PublicationComponents {
   Author?: typeof Author
@@ -30,18 +30,26 @@ type PublicationEmojis = any[]
  * То что можно передать в контекст Компонента
  */
 interface PublicationContextState {
-  id?: string
+  id: string
   isChangeActive?: boolean
   dateChanged?: Date
 }
 
+export interface MediaObject {
+  audio: string[]
+  video: string[]
+  image: string[]
+  other: string[]
+  voices: string[]
+}
+
 // Поля, которые могут быть отредактированы
 export interface PublicationContextChangeState {
-  id?: string
-  media?: any
+  id: string
+  media: Record<string, MediaEntity[]>
   text?: string
   emojis?: PublicationEmojis
-  removeMediaIds?: string[]
+  removeMediaIds: MediaObject
 }
 
 /**
@@ -49,13 +57,23 @@ export interface PublicationContextChangeState {
  */
 interface PublicationContextPrivateState {
   status?: 'view' | 'reset' | 'approve'
-  changeState?: PublicationContextChangeState
+  changeState: PublicationContextChangeState
 }
 
 const initialState: PublicationContextState & PublicationContextPrivateState = {
+  id: '',
   isChangeActive: false,
   dateChanged: undefined,
   status: 'view',
+  changeState: {
+    removeMediaIds: {
+      audio: [],
+      video: [],
+      image: [],
+      other: [],
+      voices: [],
+    },
+  },
 }
 
 export const {
@@ -68,6 +86,7 @@ export const {
 
 export interface PublicationProps extends PublicationComponents {
   className?: string
+  classNameChangeOptions?: string
   children?: React.ReactNode[]
   authorPosition?: 'left' | 'right'
   onRead?: (publicationId?: string) => void
@@ -75,7 +94,7 @@ export interface PublicationProps extends PublicationComponents {
 }
 
 function BasePublication(props: PublicationProps) {
-  const { className, authorPosition = 'right', children, onRead, dateRead } = props
+  const { className, authorPosition = 'right', children, onRead, dateRead, classNameChangeOptions } = props
   const isChangeActive = usePublicationCtxSelect((store) => store.isChangeActive)
   const handleSetChangeActive = usePublicationCtxUpdate()
 
@@ -91,32 +110,23 @@ function BasePublication(props: PublicationProps) {
   })
 
   return (
-    <Popover
-      content={(
-        <PopoverContent>
-          <Button
-            onClick={() => {
-              handleSetChangeActive((ctx) => ({ isChangeActive: !ctx.isChangeActive }))
-            }}
-          >
-            <TextComponent fs="12">Редактировать</TextComponent>
-          </Button>
-        </PopoverContent>
-    )}
-      trigger="contextMenu"
-      strategy="absolute"
-      offset={0}
-    >
-      <div ref={publicationRef} className={classNames(cn(), className)}>
-        <div className={cn('Wrapper', {
-          authorPosition,
-          isChangeActive,
-        })}
+    <div ref={publicationRef} className={classNames(cn(), className)}>
+      <div className={cn('Wrapper', {
+        authorPosition,
+        isChangeActive,
+      })}
+      >
+        <Button
+          className={classNames(cn('ChangeOptions'), classNameChangeOptions)}
+          onClick={() => {
+            handleSetChangeActive((ctx) => ({ isChangeActive: !ctx.isChangeActive }))
+          }}
         >
-          {children}
-        </div>
+          <Icon name="edit" />
+        </Button>
+        {children}
       </div>
-    </Popover>
+    </div>
   )
 }
 

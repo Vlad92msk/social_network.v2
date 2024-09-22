@@ -4,8 +4,8 @@ import { cn } from '../cn'
 import { PublicationContextChangeState, usePublicationCtxSelect, usePublicationCtxUpdate } from '../Publication'
 
 interface ChangeContainerProps {
-  onSubmit: (data?: PublicationContextChangeState) => void
-  onRemove: (id?: string) => void
+  onSubmit: (data: PublicationContextChangeState) => void
+  onRemove: (id: string) => void
 }
 
 export function ChangeContainer(props:ChangeContainerProps) {

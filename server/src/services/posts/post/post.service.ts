@@ -97,7 +97,7 @@ export class PostsService {
         updateEntityParams(
             post,
             updatePostDto,
-            ['title', 'location', 'pinned', 'visibility']
+            ['title', 'location', 'pinned', 'visibility', 'text']
         )
 
         // Если есть ID тегов которые нужно добавить

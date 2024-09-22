@@ -26,7 +26,10 @@ export function MediaOther({ data }: MediaOtherProps) {
             ...(ctx.changeState?.media || {}),
             other: result,
           },
-          removeMediaIds: uniq([...(ctx.changeState?.removeMediaIds || []), removeMedia.id]),
+          removeMediaIds: {
+            ...ctx.changeState?.removeMediaIds,
+            other: uniq([...(ctx.changeState?.removeMediaIds?.other || []), removeMedia.id]),
+          },
         },
       }))
       return result

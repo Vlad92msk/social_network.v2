@@ -9,7 +9,7 @@ interface ButtonDownloadProps {
 export function ButtonDownload(props: ButtonDownloadProps) {
   const { file } = props
   const [handleDownload, downloading] = useHandleDownloadFile()
-console.log('ButtonDownload', file)
+
   return (
     <Button
       onClick={() => handleDownload(file.meta.src, file.meta.name)}

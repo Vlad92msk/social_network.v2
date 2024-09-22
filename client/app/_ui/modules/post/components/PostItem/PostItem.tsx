@@ -1,6 +1,5 @@
 'use client'
 
-import { subMinutes } from 'date-fns'
 import { get, groupBy } from 'lodash'
 import { useMemo } from 'react'
 import { useBooleanState } from '@hooks'
@@ -8,6 +7,7 @@ import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
 import { cn } from './cn'
 import { PostEntity } from '../../../../../../../swagger/posts/interfaces-posts'
+import { postsApi } from '../../../../../../store/api'
 
 interface PostsListProps {
   post: PostEntity
@@ -15,8 +15,10 @@ interface PostsListProps {
 
 export function PostItem(props: PostsListProps) {
   const { post } = props
-  const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
+  const [onRemove] = postsApi.useRemoveMutation()
+  const [onUpdate] = postsApi.useUpdateMutation()
 
+  const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
   const gropedMediaByType = useMemo(() => groupBy(post.media, 'meta.type'), [post.media])
 
   return (
@@ -25,25 +27,35 @@ export function PostItem(props: PostsListProps) {
         contextProps={{ id: post.id }}
         className={cn('PostItem')}
         authorPosition="right"
-        dateRead={new Date()}
         onRead={(publicationId) => {
-          const newDate = subMinutes(new Date(), 1)
-          console.log('read', publicationId, newDate)
+          // const newDate = subMinutes(new Date(), 1)
+          // console.log('read', publicationId, newDate)
           // handleUpdateMsg({ id: publicationId, dateRead: newDate, dateDeliver: newDate })
         }}
       >
         <Publication.ChangeContainer
           onSubmit={(result) => {
-            console.log('onSubmit', result)
-            // handleUpdateMsg({ id, ...result, dateChanged: new Date() })
+            const { removeMediaIds: { video, voices, other, image, audio }, id } = result
+            // console.log('onSubmit', result)
+            onUpdate({
+              id,
+              body: {
+                text: result?.text,
+                remove_media_ids: [...image, ...audio, ...other],
+                remove_video_ids: video,
+                remove_voice_ids: voices,
+              },
+            })
+            // handleUpdateMsg({ id, ..result, dateChanged: new Date() })
           }}
-          onRemove={(result) => {
-            console.log('onRemove', result)
+          onRemove={(id) => {
+            onRemove({ id })
           }}
         />
         <Publication.MediaContainer
-          audio={[...get(gropedMediaByType, 'audio', []), ...(post.voices || [])]}
-          video={[...(post.videos || [])]}
+          audio={get(gropedMediaByType, 'audio')}
+          voices={post.voices || []}
+          video={post.videos || []}
           image={get(gropedMediaByType, 'image', [])}
           other={get(gropedMediaByType, 'other', [])}
         />

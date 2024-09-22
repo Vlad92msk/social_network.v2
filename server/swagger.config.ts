@@ -229,9 +229,9 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
         if (requestBody) {
           const contentType = Object.keys(requestBody.content || {})[0];
           if (contentType && requestBody.content[contentType].schema) {
-            paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)} | FormData`);
+            paramsList.push(`body: ${getTypeFromSchema(requestBody.content[contentType].schema, document.components.schemas)}`);
           } else {
-            paramsList.push(`body: any | FormData`);
+            paramsList.push(`body: any`);
           }
         }
         paramsType = `{ ${paramsList.join(', ')} }`;
@@ -245,7 +245,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
       apiClientContent += `  ${operationId}Init(`;
       if (paramsType) {
-        apiClientContent += `params?: ${paramsType}, `;
+        apiClientContent += `params: ${paramsType}, `;
       }
       apiClientContent += `requestParams?: RequestInit): { url: string, init: RequestInit } {\n`;
       apiClientContent += `    const url = new URL(\`${path.replace(/{/g, '${params?.')}\`, this.baseUrl);\n`;
@@ -258,10 +258,11 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
         apiClientContent += `    }\n`;
       }
 
-      apiClientContent += `    let body: string | FormData | undefined;\n`;
+      apiClientContent += `    let body: string | undefined | FormData;\n`;
       apiClientContent += `    let headers = { ...this.defaultConfig?.headers, ...requestParams?.headers };\n`;
 
       if (requestBody) {
+        apiClientContent += `    // @ts-ignore\n`;
         apiClientContent += `    if (params?.body instanceof FormData) {\n`;
         apiClientContent += `      body = params.body;\n`;
         apiClientContent += `      delete headers['Content-Type'];\n`;
@@ -291,7 +292,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
       apiClientContent += `  async ${operationId}(`;
       if (paramsType) {
-        apiClientContent += `params?: ${paramsType}, `;
+        apiClientContent += `params: ${paramsType}, `;
       }
       apiClientContent += `requestParams?: RequestInit): Promise<${responseType}> {\n`;
       apiClientContent += `    const { url, init } = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;
@@ -312,7 +313,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
 
       apiClientContent += `  async ${operationId}Extended(`;
       if (paramsType) {
-        apiClientContent += `params?: ${paramsType}, `;
+        apiClientContent += `params: ${paramsType}, `;
       }
       apiClientContent += `requestParams?: RequestInit): Promise<ExtendedApiResponse<${responseType}>> {\n`;
       apiClientContent += `    const { url, init } = this.${operationId}Init(${paramsType ? 'params, ' : ''}requestParams);\n`;

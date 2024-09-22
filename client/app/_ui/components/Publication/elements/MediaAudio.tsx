@@ -1,18 +1,18 @@
 import { uniq } from 'lodash'
-import { MediaEntity } from '../../../../../../swagger/media/interfaces-media'
 import { useCallback, useState } from 'react'
 import { MediaElement } from './MediaElement'
+import { MediaEntity } from '../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 import { useReset } from '../hooks'
 import { usePublicationCtxUpdate } from '../Publication'
 
-
 interface MediaAudioProps {
   data: MediaEntity[]
+  type: string
 }
 
 export function MediaAudio(props: MediaAudioProps) {
-  const { data } = props
+  const { data, type } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
 
   const [usingData, setUsingData] = useState(data)
@@ -25,14 +25,17 @@ export function MediaAudio(props: MediaAudioProps) {
         changeState: {
           media: {
             ...(ctx.changeState?.media || {}),
-            audio: result,
+            [type]: result,
           },
-          removeMediaIds: uniq([...(ctx.changeState?.removeMediaIds || []), removeMedia.id]),
+          removeMediaIds: {
+            ...ctx.changeState?.removeMediaIds,
+            [type]: uniq([...(ctx.changeState?.removeMediaIds?.[type] || []), removeMedia.id]),
+          },
         },
       }))
       return result
     })
-  }, [handleSetChangeActive])
+  }, [handleSetChangeActive, type])
 
   useReset('media.audio', data, setUsingData)
 

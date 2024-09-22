@@ -160,10 +160,8 @@ export class MediaInfoService {
      * Проверяет сколько места доступно для загрузки файлов для конкретного пользователя
      */
     async checkStorageLimit(userId: number, files: Express.Multer.File[], maxStorage: number) {
-        console.log('userId', userId)
-        console.log('files', files)
         const currentUsage = await this.metadataService.getUserStorageUsage(userId)
-        const totalUploadSize = files?.reduce((sum, file) => sum + file.size, 0)
+        const totalUploadSize = files?.filter(Boolean).reduce((sum, file) => sum + file.size, 0)
 
         const totalAfterUpload = currentUsage + totalUploadSize
 

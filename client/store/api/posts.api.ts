@@ -1,6 +1,7 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CreatePostDto, PostEntity, } from '../../../swagger/posts/interfaces-posts'
+import { without } from 'lodash'
+import { PostEntity } from '../../../swagger/posts/interfaces-posts'
 import { CookieType } from '../../app/types/cookie'
 import { postsApiInstance } from '../instance'
 import { RootState, store } from '../store'
@@ -41,9 +42,22 @@ export const postsApi = createApi({
   endpoints: (builder) => ({
 
     create: builder.mutation<PostEntity, Parameters<typeof postsApiInstance.create>[0]>({
+      // invalidatesTags: ['Posts'],
       query: (params) => {
         const { url, init } = postsApiInstance.createInit(params)
         return { url, ...init }
+      },
+      onQueryStarted: async (newPost, { dispatch, queryFulfilled }) => {
+        try {
+          const { data: createdPost } = await queryFulfilled
+          dispatch(
+            postsApi.util.updateQueryData('findAll', {}, (draft) => {
+              draft.push(createdPost)
+            }),
+          )
+        } catch {
+          // Если произошла ошибка, ничего не делаем
+        }
       },
     }),
 
@@ -67,12 +81,46 @@ export const postsApi = createApi({
         const { url, init } = postsApiInstance.updateInit(params)
         return { url, ...init }
       },
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          // Ожидаем завершения запроса
+          const { data: updatedPost } = await queryFulfilled
+
+          // Обновляем кэш с реальными данными от сервера
+          dispatch(
+            postsApi.util.updateQueryData('findAll', {}, (draft) => {
+              const index = draft.findIndex((post) => post.id === id)
+              if (index !== -1) {
+                draft[index] = updatedPost
+              }
+            }),
+          )
+        } catch {
+          // patchResult.undo()
+        }
+      },
     }),
 
-    remove: builder.mutation<any, Parameters<typeof postsApiInstance.remove>[0]>({
+    remove: builder.mutation<void, Parameters<typeof postsApiInstance.remove>[0]>({
+      // invalidatesTags: ['Posts'],
       query: (params) => {
         const { url, init } = postsApiInstance.removeInit(params)
         return { url, ...init }
+      },
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          postsApi.util.updateQueryData('findAll', {}, (draft) => {
+            const postToRemove = draft.find((post) => post.id === arg?.id)
+            if (postToRemove) return without(draft, postToRemove) as PostEntity[]
+
+            return draft // Возвращаем исходный массив, если пост не найден
+          }),
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
       },
     }),
 

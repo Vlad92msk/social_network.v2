@@ -32,7 +32,10 @@ export function MediaContent(props: MediaImagesProps) {
             ...(ctx.changeState?.media || {}),
             [type]: result,
           },
-          removeMediaIds: uniq([...(ctx.changeState?.removeMediaIds || []), removeMedia.id]),
+          removeMediaIds: {
+            ...ctx.changeState?.removeMediaIds,
+            [type]: uniq([...(ctx.changeState?.removeMediaIds[type] || []), removeMedia.id]),
+          },
         },
       }))
       return result

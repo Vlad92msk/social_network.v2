@@ -9,6 +9,14 @@ $media-container--max-height: rem(800);
 $author--max-width: rem(30);
 $padding: rem(6);
 
+@function get-grid-template($type, $is-post) {
+  $author: "author";
+  $change-container: "change-container change-container";
+
+  @if $is-post {
+    $author: "change-container";
+  }
+}
 
 
 .Publication {
@@ -18,14 +26,28 @@ $padding: rem(6);
   background: var(--Palette--LightGrey--80--opacity-1);
   border-radius: $paddings--medium;
 
+  &:hover &-ChangeOptions {
+    opacity: 1;
+    transition: .5s;
+  }
+
+  &-ChangeOptions {
+    opacity: 0;
+    transition: .5s;
+    position: absolute;
+    right: rem(-40);
+  }
+
   &-Wrapper {
     width: 100%;
     height: fit-content;
     padding: rem(10);
     display: grid;
+    position: relative;
 
     &--isChangeActive {
-      border: rem(1) dotted var(--Color-Border--variant-2--theme-default);
+      border: rem(1) dotted var(--Palette--LightViolet--100--opacity-1);
+      border-radius: $paddings--medium;
     }
 
     &--authorPosition {
@@ -114,7 +136,6 @@ $padding: rem(6);
     :is(#{$this}-Wrapper--isChangeActive) & {
       opacity: 1;
       transition: opacity .5s;
-
     }
 
      svg {

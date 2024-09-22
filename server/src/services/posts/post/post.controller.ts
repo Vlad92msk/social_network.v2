@@ -64,7 +64,6 @@ export class PostsController {
             this.maxStorage
         )
 
-        // return {}
         return await this.postsService.create({
             createPostDto,
             media: files?.media,
@@ -99,7 +98,7 @@ export class PostsController {
 
     @Patch(':id')
     @ApiOperation({ summary: 'Изменить пост по ID' })
-    @ApiParam({ name: 'id', description: 'ID поста' })
+    @ApiParam({ name: 'id', description: 'ID поста', required: true })
     @ApiResponse({ status: 200, description: 'Пост успешно обновлен', type: PostEntity })
     @UseInterceptors(FileFieldsInterceptor([
         { name: 'media', maxCount: 20 },
