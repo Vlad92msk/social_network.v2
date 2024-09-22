@@ -1,16 +1,17 @@
-import { CommentDTO } from '../../../../types/commentDTO'
 import { Image } from '@ui/common/Image'
 import { Publication } from '@ui/components/Publication'
+import { CommentWithChildCountDto } from '../../../../../../swagger/comments/interfaces-comments'
 import { cn } from '../cn'
 
-
 export interface CommentProps {
-  comment: CommentDTO
+  comment: CommentWithChildCountDto
 }
 
 export function Comment(props: CommentProps) {
   const { comment } = props
-  const { text, authorImg, authorName, dateCreated } = comment
+  const { text, date_created, author } = comment
+
+  // console.log('comment', comment)
 
   return (
     <Publication
@@ -27,9 +28,9 @@ export function Comment(props: CommentProps) {
         }}
       />
       <Publication.Text text={text} />
-      <Publication.Author authorComponent={<Image src={authorImg} height={40} width={40} alt={authorName} />} />
+      <Publication.Author authorComponent={author && <Image src={author.profile_image} height={40} width={40} alt={author.name} />} />
       <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
-      <Publication.DateCreated dateCreated={dateCreated} />
+      <Publication.DateCreated dateCreated={new Date(date_created)} />
     </Publication>
   )
 }

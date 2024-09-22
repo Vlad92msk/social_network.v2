@@ -38,8 +38,11 @@ export class CommentController {
     @ApiOperation({ summary: 'Создать комментарий' })
     @ApiCreatedResponse({ description: 'Комментарий успешно создан', type: CommentEntity })
     @ApiBadRequestResponse({ description: 'Переданы неверные данные' })
-    create(@Body() createCommentDto: CreateCommentDto) {
-        return this.commentService.create(createCommentDto)
+    create(
+      @Body() createCommentDto: CreateCommentDto,
+      @RequestParams() params: RequestParams
+    ) {
+        return this.commentService.create(createCommentDto, params)
     }
 
     @Patch(':id')
@@ -51,18 +54,20 @@ export class CommentController {
         return await this.commentService.update(id, updateCommentDto)
     }
 
-    @Get('post/:postId')
+    @Get('post/:post_id')
     @ApiOperation({ summary: 'Получить корневые комментарии к посту' })
     @ApiResponse({ status: 200, description: 'Список корневых комментариев к посту с общим количеством', type: CommentResponseDto })
     async findCommentsByPost(
-        @Param('postId') postId: string,
+        @Param('post_id') postId: string,
         @Query() query: FindCommentDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
-        const { data, paginationInfo, totalComments } = await this.commentService.findCommentsByEntity('post', postId, query, params)
+        const result = await this.commentService.findCommentsByEntity('post', postId, query, params)
+        const { data, paginationInfo } = result
+
         response.set(createPaginationHeaders(paginationInfo))
-        return { data, total: paginationInfo.total, totalComments }
+        return { data: data.data, total: paginationInfo.total, totalComments: data.totalComments }
     }
 
     @Get('media/:mediaId')
@@ -74,9 +79,11 @@ export class CommentController {
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
-        const { data, paginationInfo, totalComments } = await this.commentService.findCommentsByEntity('media', mediaId, query, params)
+        const result = await this.commentService.findCommentsByEntity('post', mediaId, query, params)
+        const { data, paginationInfo } = result
+
         response.set(createPaginationHeaders(paginationInfo))
-        return { data, total: paginationInfo.total, totalComments }
+        return { data, total: paginationInfo.total, totalComments: data }
     }
 
     @Get(':id/children')

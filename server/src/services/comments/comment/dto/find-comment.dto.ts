@@ -12,11 +12,6 @@ export class FindCommentDto extends IntersectionType(
     ])),
     PaginationAndSortingDto<CommentEntity>
 ) {
-    @ApiProperty({ description: 'ID поста', required: false })
-    @IsOptional()
-    @IsUUID()
-    post_id: string
-
     @ApiProperty({ description: 'Поисковый запрос', required: false })
     @IsOptional()
     @IsString()

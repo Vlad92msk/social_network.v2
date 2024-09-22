@@ -1,7 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, PickType, OmitType } from '@nestjs/swagger'
 import { CommentEntity } from '../entities/comment.entity'
 
-export class CommentWithChildCountDto extends CommentEntity {
+export class CommentWithChildCountDto extends OmitType(CommentEntity, ['post', 'media']) {
     @ApiProperty({ description: 'Количество дочерних комментариев' })
     child_count: number
 }

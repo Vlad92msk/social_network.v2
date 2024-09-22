@@ -39,7 +39,7 @@ export abstract class PublicationEntity {
     date_created: Date
 
     @ApiProperty({ description: 'Дата последнего обновления публикации' })
-    @UpdateDateColumn({ comment: 'Дата обновления' })
+    @UpdateDateColumn({ comment: 'Дата обновления', default: null })
     date_updated: Date
 
     @ApiProperty({ description: 'Автор публикации', type: () => UserInfo })

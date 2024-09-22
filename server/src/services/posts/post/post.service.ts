@@ -47,6 +47,7 @@ export class PostsService {
             pinned: createPostDto.pinned,
             visibility: createPostDto.visibility,
             comment_count: 0,
+            date_updated: null,
         })
 
         if (media && media.length > 0) {

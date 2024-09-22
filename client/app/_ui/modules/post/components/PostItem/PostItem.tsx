@@ -27,7 +27,7 @@ export function PostItem(props: PostsListProps) {
     <div className={cn({ pinned: post.pinned })}>
       {post.pinned && (<Text>Закреплено</Text>)}
       <Publication
-        contextProps={{ id: post.id }}
+        contextProps={{ id: post.id, dateChanged: new Date(post.date_updated) }}
         className={cn('PostItem')}
         authorPosition="right"
         onRead={(publicationId) => {
@@ -39,7 +39,6 @@ export function PostItem(props: PostsListProps) {
         <Publication.ChangeContainer
           // Обновить пост
           onSubmit={(result) => {
-            // console.log('onSubmit', result)
             const { removeMediaIds: { video, voices, other, image, audio }, id } = result
             const updatePost: Parameters<typeof onUpdate>[0] = {
               id,
@@ -64,14 +63,14 @@ export function PostItem(props: PostsListProps) {
           }}
         />
         <Publication.MediaContainer
-          audio={get(gropedMediaByType, 'audio')}
           voices={post.voices || []}
           video={post.videos || []}
+          audio={get(gropedMediaByType, 'audio')}
           image={get(gropedMediaByType, 'image', [])}
           other={get(gropedMediaByType, 'other', [])}
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
-        <Publication.Commets countComments={post?.comment_count} onClick={onOpenComments} />
+        <Publication.Commets countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
         <Publication.DateCreated dateCreated={new Date(post.date_created)} />
       </Publication>

@@ -2,20 +2,18 @@
 
 import { useProfile } from '@hooks'
 import { CreatePublication, CreatePublicationContextProps } from '@ui/components/create-publication'
-import { uniq } from 'lodash'
 import { PostItem, PostsList } from './components'
 import { postsApi } from '../../../../store/api'
 
-interface PostProps {
-  posts: any[]
-}
 
 export function ModulePost() {
   const { profile } = useProfile()
 
   const { data, isLoading } = postsApi.useFindAllQuery({})
   const [submit, { isLoading: isSubmitting }] = postsApi.useCreateMutation()
-console.log('data', data)
+
+  console.log('data', data)
+
   const handleSubmit = (createdPost: CreatePublicationContextProps) => {
     // console.log('media', createdPost)
     const formData = new FormData()

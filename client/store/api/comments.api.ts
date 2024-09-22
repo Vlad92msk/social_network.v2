@@ -22,6 +22,7 @@ type QueryResult<T> = {
 
 export const commentsApi = createApi({
   reducerPath: 'API_comments',
+  tagTypes: ['Comments'],
   baseQuery: fetchBaseQuery({
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
@@ -36,10 +37,12 @@ export const commentsApi = createApi({
       }
       return headers
     },
+    credentials: 'include',
   }),
   endpoints: (builder) => ({
-    
+
     create: builder.mutation<CommentEntity, Parameters<typeof commentsApiInstance.create>[0]>({
+      invalidatesTags: ['Comments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.createInit(params)
         return { url, ...init }
@@ -47,6 +50,7 @@ export const commentsApi = createApi({
     }),
 
     findAll: builder.query<CommentEntity[], Parameters<typeof commentsApiInstance.findAll>[0]>({
+      providesTags: ['Comments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.findAllInit(params)
         return { url, ...init }
@@ -75,6 +79,7 @@ export const commentsApi = createApi({
     }),
 
     findCommentsByPost: builder.query<CommentResponseDto, Parameters<typeof commentsApiInstance.findCommentsByPost>[0]>({
+      providesTags: ['Comments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.findCommentsByPostInit(params)
         return { url, ...init }
@@ -113,7 +118,7 @@ export const commentsApi = createApi({
 
 // Типизированные функции-обертки в объекте
 export const CommentsApiApi = {
-  
+
   create: (props: Parameters<typeof commentsApiInstance.create>[0]): Promise<QueryResult<CommentEntity>> =>
     store.dispatch(commentsApi.endpoints.create.initiate(props)),
 

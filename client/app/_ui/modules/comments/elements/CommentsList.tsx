@@ -1,10 +1,10 @@
-import { CommentDTO } from '../../../../types/commentDTO'
+import { CommentWithChildCountDto } from '../../../../../../swagger/comments/interfaces-comments'
 import { classNames } from '@utils/others'
 import { Comment } from './Comment'
 import { cn } from '../cn'
 
 interface CommentsListProps {
-    comments?: CommentDTO[]
+    comments?: CommentWithChildCountDto[]
 }
 
 export function CommentsList(props:CommentsListProps) {
