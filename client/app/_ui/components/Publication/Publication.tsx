@@ -32,7 +32,7 @@ type PublicationEmojis = any[]
 interface PublicationContextState {
   id: string
   isChangeActive?: boolean
-  dateChanged?: Date
+  dateChanged?: any
 }
 
 export interface MediaObject {

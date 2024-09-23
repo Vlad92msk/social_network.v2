@@ -70,7 +70,7 @@ export function PostItem(props: PostsListProps) {
           other={get(gropedMediaByType, 'other', [])}
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
-        <Publication.Commets countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
+        <Publication.Commets isActive={isOpenComments} countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
         <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
         <Publication.DateCreated dateCreated={new Date(post.date_created)} />
       </Publication>

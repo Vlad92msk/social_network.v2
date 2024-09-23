@@ -26,9 +26,12 @@ export function InputContainer(props: ButtonSubmitProps) {
         </Button>
         <Button
           className={cn('SubmitButton')}
+          disabled={!t.length}
           onClick={() => {
-            onSubmit(t)
-            setT('')
+            if (t.length) {
+              onSubmit(t)
+              setT('')
+            }
           }}
         >
           <Icon name="send" />

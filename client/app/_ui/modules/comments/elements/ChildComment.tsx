@@ -11,26 +11,24 @@ export interface ChildCommentProps {
 
 export function ChildComment(props: ChildCommentProps) {
   const { comment } = props
-  const { text, date_created, author } = comment
+  const { text, date_created, author, date_updated } = comment
   const [onRemoveComment] = commentsApi.useRemoveMutation()
   const [onUpdateComment] = commentsApi.useUpdateMutation()
 
   return (
     <Publication
       authorPosition="left"
-      className={cn('Comment')}
-      contextProps={{ id: comment.id }}
+      className={cn('Comment', { type: 'child' })}
+      contextProps={{ id: comment.id, dateChanged: date_updated }}
     >
       <Publication.ChangeContainer
         onSubmit={(result) => {
-          console.log('result', result)
           onUpdateComment({
             id: result.id,
             body: {
               text: result.text,
             },
           })
-          // handleUpdateMsg({ id, ...result, dateChanged: new Date() })
         }}
         onRemove={(id) => {
           onRemoveComment({ id })
@@ -41,7 +39,7 @@ export function ChildComment(props: ChildCommentProps) {
         <Publication.Author authorComponent={<Image src={author.profile_image} height={40} width={40} alt={author.name} />} />
       )}
       <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
-      <Publication.DateCreated dateCreated={new Date(date_created)} />
+      <Publication.DateCreated dateCreated={date_created} />
     </Publication>
   )
 }

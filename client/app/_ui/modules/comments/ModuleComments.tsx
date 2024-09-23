@@ -18,7 +18,7 @@ export function ModuleComments(props: CommentsProps) {
   const [onAddComment] = commentsApi.useCreateMutation()
 
   return (
-    <div className={classNames(cn(), className)}>
+    <div className={classNames(cn({ type: Boolean(parentCommentId) && 'child' }), className)}>
       <InputContainer
         onClose={onClose}
         onSubmit={(text) => {

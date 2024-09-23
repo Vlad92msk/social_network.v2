@@ -5,6 +5,11 @@
   display: flex;
   flex-direction: column;
 
+  &--type {
+    &_child {
+      width: 100%;
+    }
+  }
 
   &-CommentsList {
     @include scrollbarMini();
@@ -17,11 +22,26 @@
     gap: rem(5);
   }
 
+  &-CommentContainer {
+    display: flex;
+    flex-direction: column;
+    gap: rem(30);
+    width: 100%;
+    order: 2;
+
+    &--pinned {
+      order: 1;
+      margin-bottom: rem(20);
+      padding-bottom: rem(20);
+      border-bottom: rem(1) solid var(--Palette--LightGrey--90--opacity-1);
+    }
+  }
   &-Comment {
     display: flex;
     width: 95%;
     border-radius: $border-radius--super-small;
     background: var(--Palette--LightGrey--80--opacity-1);
+    //order: 1;
   }
 
 

@@ -322,6 +322,10 @@ $padding: rem(6);
     align-items: center;
     padding-left: $padding;
     padding-right: $padding;
+
+    &--active {
+      color: var(--Palette--LightViolet--100--opacity-1);
+    }
   }
   &-DateRead {
     grid-area: date-read;

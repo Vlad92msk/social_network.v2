@@ -11,7 +11,6 @@ interface ChildCommentsListProps {
 
 export const ChildCommentsList = React.memo((props:ChildCommentsListProps) => {
   const { id, parentCommentId } = props
-  console.log('запрашиваем дочерние комментраии к ', parentCommentId)
   const { data: comments } = commentsApi.useFindChildCommentsQuery({ parent_id: parentCommentId })
 
   if (!comments) return null

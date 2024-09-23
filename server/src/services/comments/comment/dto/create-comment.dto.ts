@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsArray } from 'class-validator'
+import { IsString, IsOptional, IsUUID, IsArray, IsNotEmpty } from 'class-validator'
 import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
 import { CommentEntity } from '../entities/comment.entity'
 import { ApiProperty } from '@nestjs/swagger'
@@ -10,6 +10,7 @@ export class CreateCommentDto extends IntersectionType(
 ) {
     @ApiProperty({ description: 'Текст комментария' })
     @IsString()
+    @IsNotEmpty({ message: 'Введите текст комментария' })
     text: string
 
     @ApiProperty({ description: 'Закрепить комментарий', required: false })

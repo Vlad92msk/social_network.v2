@@ -22,7 +22,7 @@ type QueryResult<T> = {
 
 export const commentsApi = createApi({
   reducerPath: 'API_comments',
-  tagTypes: ['Comments'],
+  tagTypes: ['Comments', 'ChildComments'],
   baseQuery: fetchBaseQuery({
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
@@ -42,7 +42,7 @@ export const commentsApi = createApi({
   endpoints: (builder) => ({
 
     create: builder.mutation<CommentEntity, Parameters<typeof commentsApiInstance.create>[0]>({
-      invalidatesTags: ['Comments'],
+      invalidatesTags: ['Comments', 'ChildComments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.createInit(params)
         return { url, ...init }
@@ -73,7 +73,7 @@ export const commentsApi = createApi({
     }),
 
     remove: builder.mutation<any, Parameters<typeof commentsApiInstance.remove>[0]>({
-      invalidatesTags: ['Comments'],
+      invalidatesTags: ['Comments', 'ChildComments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.removeInit(params)
         return { url, ...init }
@@ -89,6 +89,7 @@ export const commentsApi = createApi({
     }),
 
     findChildComments: builder.query<CommentEntity[], Parameters<typeof commentsApiInstance.findChildComments>[0]>({
+      providesTags: ['ChildComments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.findChildCommentsInit(params)
         return { url, ...init }
@@ -96,6 +97,7 @@ export const commentsApi = createApi({
     }),
 
     pinComment: builder.mutation<CommentEntity, Parameters<typeof commentsApiInstance.pinComment>[0]>({
+      invalidatesTags: ['Comments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.pinCommentInit(params)
         return { url, ...init }

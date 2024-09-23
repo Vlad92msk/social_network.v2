@@ -8,7 +8,7 @@ import {
     Delete,
     Query,
     HttpCode,
-    HttpStatus, Res,
+    HttpStatus, Res, BadRequestException,
 } from '@nestjs/common'
 import { CommentService } from './comment.service'
 import { CreateCommentDto } from './dto/create-comment.dto'
@@ -120,15 +120,16 @@ export class CommentController {
         return await this.commentService.remove(id)
     }
 
-    @Patch(':id/pin')
+
+    @Patch(':comment_id/pin')
     @ApiOperation({ summary: 'Закрепить/открепить комментарий' })
     @ApiOkResponse({ description: 'Комментарий успешно закреплен/откреплен', type: CommentEntity })
     @ApiNotFoundResponse({ description: 'Комментарий не найден' })
     async pinComment(
-        @Param('id') id: string,
-        @Body('action') action: 'pin' | 'unpin'
+        @Param('comment_id') id: string,
+        @RequestParams() params: RequestParams
     ) {
-        return await this.commentService.pinComment(id, action)
+        return await this.commentService.pinComment(id, params.user_info_id)
     }
 
     @Get('post/:postId/pinned')

@@ -28,7 +28,11 @@ export function ChangeContainer(props:ChangeContainerProps) {
           <Icon name="edit" />
         </Button>
         {onPin && (
-          <Button onClick={() => onPin(publicationId)}>
+          <Button onClick={() => {
+            onPin(publicationId)
+            handleSetChangeActive(() => ({ isChangeActive: false, status: 'reset' }))
+          }}
+          >
             <Text fs="12">Закрепить/Открепить</Text>
           </Button>
         )}

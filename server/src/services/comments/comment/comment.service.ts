@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { CommentTarget } from '@services/comments/comment/comment.controller'
 import { MediaInfoService } from '@services/media/info/media-info.service'
@@ -31,8 +31,10 @@ export class CommentService {
 
     async create(createCommentDto: CreateCommentDto, target: CommentTarget, entityId: string, params: RequestParams) {
         const { parent_comment_id, ...rest } = createCommentDto
-        const comment = this.commentRepository.create(rest)
-
+        const comment = this.commentRepository.create({
+            ...rest,
+            date_updated: null
+        })
         comment.author = await this.userInfoService.getUsersById(params.user_info_id)
 
         if (entityId) {
@@ -164,12 +166,19 @@ export class CommentService {
         await this.commentRepository.delete(id)
     }
 
-    async pinComment(id: string, action: 'pin' | 'unpin'): Promise<CommentEntity> {
-        const comment = await this.commentRepository.findOne({ where: { id } })
+    /**
+     * Закрепление/открепление комментария
+     */
+    async pinComment(postId: string, userId: number) {
+        const comment = await this.commentRepository.findOne({ where: { id: postId }, relations: ['author'] })
         if (!comment) {
             throw new NotFoundException('Комментарий не найден')
         }
-        comment.is_pinned = action === 'pin'
+
+        if (comment.author.id !== userId) {
+            throw new BadRequestException('Вы не можете закрепить чужой комментарий')
+        }
+        comment.is_pinned = !comment.is_pinned
         return this.commentRepository.save(comment)
     }
 
