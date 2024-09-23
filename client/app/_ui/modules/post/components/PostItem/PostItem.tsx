@@ -39,7 +39,8 @@ export function PostItem(props: PostsListProps) {
         <Publication.ChangeContainer
           // Обновить пост
           onSubmit={(result) => {
-            const { removeMediaIds: { video, voices, other, image, audio }, id } = result
+            const { removeMediaIds: { video, voices, other, image, audio }, media, id } = result
+            console.log('result', result)
             const updatePost: Parameters<typeof onUpdate>[0] = {
               id,
               body: {
@@ -51,6 +52,7 @@ export function PostItem(props: PostsListProps) {
             if (result?.text) {
               updatePost.body.text = result.text
             }
+            console.log('updatePost', updatePost)
             onUpdate(updatePost)
           }}
           // Удалить пост

@@ -89,7 +89,7 @@ export class PostsService {
     ) {
         const post = await this.postRepository.findOne({
             where: { id },
-            relations: ['media', 'voices', 'videos', 'tags', 'author']
+            relations: ['media', 'media.meta', 'voices', 'videos', 'tags', 'author']
         })
 
         if (!post) throw new NotFoundException(`Пост с ID "${id}" не найден`)
