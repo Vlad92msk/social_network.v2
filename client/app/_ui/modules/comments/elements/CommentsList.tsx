@@ -1,20 +1,27 @@
-import { CommentWithChildCountDto } from '../../../../../../swagger/comments/interfaces-comments'
 import { classNames } from '@utils/others'
+import { commentsApi } from '../../../../../store/api'
 import { Comment } from './Comment'
 import { cn } from '../cn'
 
 interface CommentsListProps {
-    comments?: CommentWithChildCountDto[]
+  target: 'post' | 'media'
+  id: string
 }
 
 export function CommentsList(props:CommentsListProps) {
-  const { comments } = props
+  const { id, target } = props
+  const { data: comments } = commentsApi.useFindCommentsQuery({ target, entity_id: id })
 
-  if (!comments) return null
+  if (!comments?.data) return null
   return (
     <div className={classNames(cn('CommentsList'))}>
-      {comments?.map((comment) => (
-        <Comment key={comment.id} comment={comment} />
+      {comments.data?.map((comment) => (
+        <Comment
+          key={comment.id}
+          target={target}
+          id={id}
+          comment={comment}
+        />
       ))}
     </div>
   )

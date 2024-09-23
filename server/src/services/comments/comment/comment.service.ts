@@ -1,15 +1,17 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { UserInfoService } from '@services/users/user-info/user-info.service'
-import { CommentResponseDto, CommentWithChildCountDto } from './dto/comment-response.dto'
+import { CommentTarget } from '@services/comments/comment/comment.controller'
+import { MediaInfoService } from '@services/media/info/media-info.service'
 import { PostsService } from '@services/posts/post/post.service'
-import { In, Repository } from 'typeorm'
-import { CommentEntity } from './entities/comment.entity'
-import { CreateCommentDto } from './dto/create-comment.dto'
-import { UpdateCommentDto } from './dto/update-comment.dto'
-import { FindCommentDto } from './dto/find-comment.dto'
+import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
 import { createPaginationQueryOptions, createPaginationResponse } from '@shared/utils'
+import { In, Repository, IsNull } from 'typeorm'
+import { CommentResponseDto, CommentWithChildCountDto } from './dto/comment-response.dto'
+import { CreateCommentDto } from './dto/create-comment.dto'
+import { FindCommentDto } from './dto/find-comment.dto'
+import { UpdateCommentDto } from './dto/update-comment.dto'
+import { CommentEntity } from './entities/comment.entity'
 
 @Injectable()
 export class CommentService {
@@ -20,21 +22,30 @@ export class CommentService {
         @Inject(forwardRef(() => PostsService))
           private postService: PostsService,
 
+        @Inject(forwardRef(() => MediaInfoService))
+        private mediaInfoService: MediaInfoService,
+
         @Inject(forwardRef(() => UserInfoService))
         private userInfoService: UserInfoService,
     ) {}
 
-    async create(createCommentDto: CreateCommentDto, params: RequestParams) {
-        const { parent_comment_id, post_id, ...rest } = createCommentDto
+    async create(createCommentDto: CreateCommentDto, target: CommentTarget, entityId: string, params: RequestParams) {
+        const { parent_comment_id, ...rest } = createCommentDto
         const comment = this.commentRepository.create(rest)
 
         comment.author = await this.userInfoService.getUsersById(params.user_info_id)
 
-        if (parent_comment_id) {
-            comment.parent_comment = await this.commentRepository.findOne({ where: { id: parent_comment_id } })
+        if (entityId) {
+            if (target === 'post') {
+                comment.post = await this.postService.findOne(entityId)
+            }
+            if (target === 'media') {
+                comment.media = await this.mediaInfoService.getFileById(entityId)
+            }
         }
-        if (post_id) {
-            comment.post = await this.postService.findOne(post_id)
+
+        if (parent_comment_id) {
+            comment.parent_comment = await this.findOne(parent_comment_id)
         }
 
         return this.commentRepository.save(comment)
@@ -42,7 +53,7 @@ export class CommentService {
 
 
     async findCommentsByEntity(
-      entityType: 'post' | 'media',
+      entityType: CommentTarget,
       entityId: string,
       query: FindCommentDto,
       params: RequestParams
@@ -50,10 +61,10 @@ export class CommentService {
         const queryOptions = createPaginationQueryOptions<CommentEntity>({
             query,
             options: {
-                relations: ['reactions', 'author'],
+                relations: ['reactions', 'author', entityType, 'parent_comment'],
                 where: {
                     [entityType]: { id: entityId },
-                    parent_comment: null,
+                    parent_comment: IsNull(),
                 }
             }
         })
@@ -66,6 +77,7 @@ export class CommentService {
 
         const [rootComments, totalRootComments] = await this.commentRepository.findAndCount(queryOptions)
 
+
         // Получаем общее количество комментариев и количество дочерних комментариев
         const [totalComments, childComments] = await Promise.all([
             this.commentRepository.count({
@@ -76,6 +88,7 @@ export class CommentService {
                     [entityType]: { id: entityId },
                     parent_comment: { id: In(rootComments.map(c => c.id)) }
                 },
+                relations: ['parent_comment'],
                 select: ['id', 'parent_comment']
             })
         ])
@@ -109,17 +122,18 @@ export class CommentService {
     }
 
     async getChildComments(parentId: string, query: FindCommentDto) {
+        console.log('parentId', parentId)
         const queryOptions = createPaginationQueryOptions<CommentEntity>({
             query,
             options: {
-                relations: ['reactions', 'author'],
+                relations: ['reactions', 'author', 'parent_comment'],
                 where: { parent_comment: { id: parentId } }
             }
         })
 
         // По умолчанию сортируем по дате создания (новые первыми)
         if (!query.sort_by) {
-            queryOptions.order = { created_at: 'DESC' }
+            queryOptions.order = { date_created: 'DESC' }
         }
 
         const [childComments, total] = await this.commentRepository.findAndCount(queryOptions)

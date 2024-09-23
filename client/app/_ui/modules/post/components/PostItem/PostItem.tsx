@@ -1,9 +1,9 @@
 'use client'
 
-import { Text } from '@ui/common/Text'
 import { get, groupBy } from 'lodash'
 import { useMemo } from 'react'
 import { useBooleanState } from '@hooks'
+import { Text } from '@ui/common/Text'
 import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
 import { cn } from './cn'
@@ -76,7 +76,7 @@ export function PostItem(props: PostsListProps) {
       </Publication>
       {isOpenComments && (
         <ModuleComments
-          module="post"
+          target="post"
           id={post.id}
           onClose={onCloseComments}
         />

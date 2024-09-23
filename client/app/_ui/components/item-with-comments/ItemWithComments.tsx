@@ -13,7 +13,7 @@ export const cn = makeCn('ItemWithComments', style)
 interface ItemWithCommentsProps {
   className?: string
   item?: any
-  module: CommentsProps['module']
+  module: CommentsProps['target']
   children: JSX.Element
 }
 
@@ -56,7 +56,7 @@ export function ItemWithComments(props: ItemWithCommentsProps) {
           <ModuleComments
             className={cn('CommentsContent')}
             id={item?.id}
-            module={module}
+            target={module}
           />
         </div>
       </Modal>

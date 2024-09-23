@@ -58,6 +58,7 @@ export const commentsApi = createApi({
     }),
 
     update: builder.mutation<CommentEntity, Parameters<typeof commentsApiInstance.update>[0]>({
+      invalidatesTags: ['Comments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.updateInit(params)
         return { url, ...init }
@@ -72,30 +73,24 @@ export const commentsApi = createApi({
     }),
 
     remove: builder.mutation<any, Parameters<typeof commentsApiInstance.remove>[0]>({
+      invalidatesTags: ['Comments'],
       query: (params) => {
         const { url, init } = commentsApiInstance.removeInit(params)
         return { url, ...init }
       },
     }),
 
-    findCommentsByPost: builder.query<CommentResponseDto, Parameters<typeof commentsApiInstance.findCommentsByPost>[0]>({
+    findComments: builder.query<CommentResponseDto, Parameters<typeof commentsApiInstance.findComments>[0]>({
       providesTags: ['Comments'],
       query: (params) => {
-        const { url, init } = commentsApiInstance.findCommentsByPostInit(params)
+        const { url, init } = commentsApiInstance.findCommentsInit(params)
         return { url, ...init }
       },
     }),
 
-    findCommentsByMedia: builder.query<CommentResponseDto, Parameters<typeof commentsApiInstance.findCommentsByMedia>[0]>({
+    findChildComments: builder.query<CommentEntity[], Parameters<typeof commentsApiInstance.findChildComments>[0]>({
       query: (params) => {
-        const { url, init } = commentsApiInstance.findCommentsByMediaInit(params)
-        return { url, ...init }
-      },
-    }),
-
-    getChildComments: builder.query<CommentEntity[], Parameters<typeof commentsApiInstance.getChildComments>[0]>({
-      query: (params) => {
-        const { url, init } = commentsApiInstance.getChildCommentsInit(params)
+        const { url, init } = commentsApiInstance.findChildCommentsInit(params)
         return { url, ...init }
       },
     }),
@@ -134,14 +129,11 @@ export const CommentsApiApi = {
   remove: (props: Parameters<typeof commentsApiInstance.remove>[0]): Promise<QueryResult<any>> =>
     store.dispatch(commentsApi.endpoints.remove.initiate(props)),
 
-  findCommentsByPost: (props: Parameters<typeof commentsApiInstance.findCommentsByPost>[0]): Promise<QueryResult<CommentResponseDto>> =>
-    store.dispatch(commentsApi.endpoints.findCommentsByPost.initiate(props)),
+  findCommentsByPost: (props: Parameters<typeof commentsApiInstance.findComments>[0]): Promise<QueryResult<CommentResponseDto>> =>
+    store.dispatch(commentsApi.endpoints.findComments.initiate(props)),
 
-  findCommentsByMedia: (props: Parameters<typeof commentsApiInstance.findCommentsByMedia>[0]): Promise<QueryResult<CommentResponseDto>> =>
-    store.dispatch(commentsApi.endpoints.findCommentsByMedia.initiate(props)),
-
-  getChildComments: (props: Parameters<typeof commentsApiInstance.getChildComments>[0]): Promise<QueryResult<CommentEntity[]>> =>
-    store.dispatch(commentsApi.endpoints.getChildComments.initiate(props)),
+  getChildComments: (props: Parameters<typeof commentsApiInstance.findChildComments>[0]): Promise<QueryResult<CommentEntity[]>> =>
+    store.dispatch(commentsApi.endpoints.findChildComments.initiate(props)),
 
   pinComment: (props: Parameters<typeof commentsApiInstance.pinComment>[0]): Promise<QueryResult<CommentEntity>> =>
     store.dispatch(commentsApi.endpoints.pinComment.initiate(props)),

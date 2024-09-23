@@ -21,7 +21,7 @@ export class CommentEntity extends PublicationEntity {
     reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Пост к которому относится комментарий', type: () => PostEntity })
-    @ManyToOne(() => PostEntity, { nullable: true })
+    @ManyToOne(() => PostEntity, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     post: PostEntity
 

@@ -8,10 +8,11 @@ interface ChangeContainerProps {
   onSubmit: (data: PublicationContextChangeState) => void
   onRemove: (id: string) => void
   onPin?: (id: string) => void
+  onAnswerEntity?: (id: string) => void
 }
 
 export function ChangeContainer(props:ChangeContainerProps) {
-  const { onSubmit, onRemove, onPin } = props
+  const { onSubmit, onRemove, onPin, onAnswerEntity } = props
   const handleSetChangeActive = usePublicationCtxUpdate()
   const isChangeActive = usePublicationCtxSelect((ctx) => ctx.isChangeActive)
   const publicationId = usePublicationCtxSelect((ctx) => ctx.id)
@@ -29,6 +30,11 @@ export function ChangeContainer(props:ChangeContainerProps) {
         {onPin && (
           <Button onClick={() => onPin(publicationId)}>
             <Text fs="12">Закрепить/Открепить</Text>
+          </Button>
+        )}
+        {onAnswerEntity && (
+          <Button onClick={() => onAnswerEntity(publicationId)}>
+            <Text fs="12">Ответить</Text>
           </Button>
         )}
       </div>
