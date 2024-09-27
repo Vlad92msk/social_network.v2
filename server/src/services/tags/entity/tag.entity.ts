@@ -4,6 +4,7 @@ import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { PostEntity } from '@services/posts/post/entities/post.entity'
 import { ApiProperty } from '@nestjs/swagger'
 
+
 @Entity({ name: 'tags', comment: 'Теги которыми можно помечать различные сущности' })
 export class Tag {
     @ApiProperty({ description: 'Уникальный идентификатор тега' })
@@ -26,11 +27,11 @@ export class Tag {
     })
     entity_type: EntityType
 
-    @ApiProperty({ description: 'Связанные медиа-файлы', type: () => [MediaEntity] })
+    @ApiProperty({ description: 'Связанные медиа-файлы', type: () => [MediaEntity], nullable: true })
     @ManyToMany(() => MediaEntity, media => media.tags)
     media: MediaEntity[]
 
-    @ApiProperty({ description: 'Связанные посты', type: () => [PostEntity] })
+    @ApiProperty({ description: 'Связанные посты', type: () => [PostEntity], nullable: true })
     @ManyToMany(() => PostEntity, media => media.tags)
     posts: PostEntity[]
 

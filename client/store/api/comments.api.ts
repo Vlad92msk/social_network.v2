@@ -1,10 +1,9 @@
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CookieType } from '../../app/types/cookie';
-import { RootState, store } from '../store'
-import { commentsApiInstance } from '../../store/instance'
-import { CreateCommentDto, PublicationType, UserAbout, MediaMetadata, DialogEntity, MessageEntity, ReactionEntity, CommentEntity, PostVisibility, PostEntity, Tag, MediaEntity, UserInfo, UpdateCommentDto, CommentWithChildCountDto, CommentResponseDto } from '../../../swagger/comments/interfaces-comments'
 import { SerializedError } from '@reduxjs/toolkit'
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { CommentEntity, CommentResponseDto } from '../../../swagger/comments/interfaces-comments'
+import { CookieType } from '../../app/types/cookie'
+import { commentsApiInstance } from '../../store/instance'
+import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
   data?: T

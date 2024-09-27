@@ -34,7 +34,7 @@ export abstract class PublicationEntity {
     @Column({ type: 'enum', enum: PublicationType, comment: 'Тип публикации' })
     type: PublicationType
 
-    @ApiProperty({ description: 'Дата создания публикации' })
+    @ApiProperty({ description: 'Дата создания публикации', type: Date })
     @CreateDateColumn({ comment: 'Дата создания' })
     date_created: Date
 

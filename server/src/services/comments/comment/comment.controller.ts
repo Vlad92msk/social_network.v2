@@ -8,7 +8,7 @@ import {
     Delete,
     Query,
     HttpCode,
-    HttpStatus, Res, BadRequestException,
+    HttpStatus, Res,
 } from '@nestjs/common'
 import { CommentService } from './comment.service'
 import { CreateCommentDto } from './dto/create-comment.dto'

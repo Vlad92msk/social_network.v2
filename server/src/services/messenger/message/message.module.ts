@@ -1,17 +1,16 @@
 import { forwardRef, Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { MessageEntity } from './entity/message.entity'
-import { ReactionEntity } from '@shared/entity/reaction.entity'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
-import { MessageService } from './message.service'
-import { MessageController } from './message.controller'
 import { PublicationEntity } from '@shared/entity/publication.entity'
-import { ConfigModule } from '@nestjs/config'
+import { MessageEntity } from './entity/message.entity'
+import { MessageController } from './message.controller'
+import { MessageService } from './message.service'
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([PublicationEntity, MessageEntity, ReactionEntity]),
+        TypeOrmModule.forFeature([PublicationEntity, MessageEntity]),
         forwardRef(() => MediaInfoModule),
         forwardRef(() => UserInfoModule),
         ConfigModule

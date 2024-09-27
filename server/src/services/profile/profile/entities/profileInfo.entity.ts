@@ -1,9 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm'
 import { ProfileInfoType, ProfileType } from '../../_interfaces'
 import { UserInfo } from '@services/users/user-info/entities/user.entity'
-import { UserInfoType } from '@src/services/users/_interfaces'
 import { Settings } from './settings.entity'
-import { ProfileSettings } from '../../_interfaces/settings'
 import { ApiProperty } from '@nestjs/swagger'
 
 @Entity({ comment: 'Профиль пользователя' })

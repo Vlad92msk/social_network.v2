@@ -1,10 +1,9 @@
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CookieType } from '../../app/types/cookie';
-import { RootState, store } from '../store'
-import { messagesApiInstance } from '../../store/instance'
-import { CreateMessageDto, PublicationType, UserAbout, MediaMetadata, DialogEntity, MessageEntity, ReactionEntity, CommentEntity, PostVisibility, PostEntity, Tag, MediaEntity, UserInfo, UpdateMessageDto } from '../../../swagger/messages/interfaces-messages'
 import { SerializedError } from '@reduxjs/toolkit'
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { MessageEntity } from '../../../swagger/messages/interfaces-messages'
+import { CookieType } from '../../app/types/cookie'
+import { messagesApiInstance } from '../instance'
+import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
   data?: T
@@ -23,6 +22,7 @@ type QueryResult<T> = {
 export const messagesApi = createApi({
   reducerPath: 'API_messages',
   baseQuery: fetchBaseQuery({
+    credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
       const profileId = state.profile?.profile?.id
@@ -38,7 +38,7 @@ export const messagesApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    
+
     create: builder.mutation<MessageEntity, Parameters<typeof messagesApiInstance.create>[0]>({
       query: (params) => {
         const { url, init } = messagesApiInstance.createInit(params)
@@ -116,44 +116,9 @@ export const messagesApi = createApi({
       },
     }),
 
-    addReaction: builder.mutation<any, Parameters<typeof messagesApiInstance.addReaction>[0]>({
-      query: (params) => {
-        const { url, init } = messagesApiInstance.addReactionInit(params)
-        return { url, ...init }
-      },
-    }),
-
-    getReactions: builder.query<any, Parameters<typeof messagesApiInstance.getReactions>[0]>({
-      query: (params) => {
-        const { url, init } = messagesApiInstance.getReactionsInit(params)
-        return { url, ...init }
-      },
-    }),
-
-    removeReaction: builder.mutation<any, Parameters<typeof messagesApiInstance.removeReaction>[0]>({
-      query: (params) => {
-        const { url, init } = messagesApiInstance.removeReactionInit(params)
-        return { url, ...init }
-      },
-    }),
-
     fullTextSearch: builder.mutation<MessageEntity[], Parameters<typeof messagesApiInstance.fullTextSearch>[0]>({
       query: (params) => {
         const { url, init } = messagesApiInstance.fullTextSearchInit(params)
-        return { url, ...init }
-      },
-    }),
-
-    getReactionCount: builder.query<any, Parameters<typeof messagesApiInstance.getReactionCount>[0]>({
-      query: (params) => {
-        const { url, init } = messagesApiInstance.getReactionCountInit(params)
-        return { url, ...init }
-      },
-    }),
-
-    hasUserReacted: builder.mutation<any, Parameters<typeof messagesApiInstance.hasUserReacted>[0]>({
-      query: (params) => {
-        const { url, init } = messagesApiInstance.hasUserReactedInit(params)
         return { url, ...init }
       },
     }),
@@ -169,61 +134,33 @@ export const messagesApi = createApi({
 
 // Типизированные функции-обертки в объекте
 export const MessagesApiApi = {
-  
-  create: (props: Parameters<typeof messagesApiInstance.create>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.create.initiate(props)),
 
-  findAll: (props: Parameters<typeof messagesApiInstance.findAll>[0]): Promise<QueryResult<MessageEntity[]>> =>
-    store.dispatch(messagesApi.endpoints.findAll.initiate(props)),
+  create: (props: Parameters<typeof messagesApiInstance.create>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.create.initiate(props)),
 
-  findOne: (props: Parameters<typeof messagesApiInstance.findOne>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.findOne.initiate(props)),
+  findAll: (props: Parameters<typeof messagesApiInstance.findAll>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.findAll.initiate(props)),
 
-  update: (props: Parameters<typeof messagesApiInstance.update>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.update.initiate(props)),
+  findOne: (props: Parameters<typeof messagesApiInstance.findOne>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.findOne.initiate(props)),
 
-  remove: (props: Parameters<typeof messagesApiInstance.remove>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.remove.initiate(props)),
+  update: (props: Parameters<typeof messagesApiInstance.update>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.update.initiate(props)),
 
-  markAsDelivered: (props: Parameters<typeof messagesApiInstance.markAsDelivered>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.markAsDelivered.initiate(props)),
+  remove: (props: Parameters<typeof messagesApiInstance.remove>[0]): Promise<QueryResult<any>> => store.dispatch(messagesApi.endpoints.remove.initiate(props)),
 
-  markAsRead: (props: Parameters<typeof messagesApiInstance.markAsRead>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.markAsRead.initiate(props)),
+  markAsDelivered: (props: Parameters<typeof messagesApiInstance.markAsDelivered>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.markAsDelivered.initiate(props)),
 
-  forwardMessage: (props: Parameters<typeof messagesApiInstance.forwardMessage>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.forwardMessage.initiate(props)),
+  markAsRead: (props: Parameters<typeof messagesApiInstance.markAsRead>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.markAsRead.initiate(props)),
 
-  replyToMessage: (props: Parameters<typeof messagesApiInstance.replyToMessage>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.replyToMessage.initiate(props)),
+  forwardMessage: (props: Parameters<typeof messagesApiInstance.forwardMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.forwardMessage.initiate(props)),
 
-  getAllMediaForMessage: (props: Parameters<typeof messagesApiInstance.getAllMediaForMessage>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.getAllMediaForMessage.initiate(props)),
+  replyToMessage: (props: Parameters<typeof messagesApiInstance.replyToMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.replyToMessage.initiate(props)),
 
-  getReplyChain: (props: Parameters<typeof messagesApiInstance.getReplyChain>[0]): Promise<QueryResult<MessageEntity[]>> =>
-    store.dispatch(messagesApi.endpoints.getReplyChain.initiate(props)),
+  getAllMediaForMessage: (props: Parameters<typeof messagesApiInstance.getAllMediaForMessage>[0]): Promise<QueryResult<any>> => store.dispatch(messagesApi.endpoints.getAllMediaForMessage.initiate(props)),
 
-  addReaction: (props: Parameters<typeof messagesApiInstance.addReaction>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.addReaction.initiate(props)),
+  getReplyChain: (props: Parameters<typeof messagesApiInstance.getReplyChain>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.getReplyChain.initiate(props)),
 
-  getReactions: (props: Parameters<typeof messagesApiInstance.getReactions>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.getReactions.initiate(props)),
+  fullTextSearch: (props: Parameters<typeof messagesApiInstance.fullTextSearch>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.fullTextSearch.initiate(props)),
 
-  removeReaction: (props: Parameters<typeof messagesApiInstance.removeReaction>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.removeReaction.initiate(props)),
-
-  fullTextSearch: (props: Parameters<typeof messagesApiInstance.fullTextSearch>[0]): Promise<QueryResult<MessageEntity[]>> =>
-    store.dispatch(messagesApi.endpoints.fullTextSearch.initiate(props)),
-
-  getReactionCount: (props: Parameters<typeof messagesApiInstance.getReactionCount>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.getReactionCount.initiate(props)),
-
-  hasUserReacted: (props: Parameters<typeof messagesApiInstance.hasUserReacted>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(messagesApi.endpoints.hasUserReacted.initiate(props)),
-
-  createTemporaryMessage: (props: Parameters<typeof messagesApiInstance.createTemporaryMessage>[0]): Promise<QueryResult<MessageEntity>> =>
-    store.dispatch(messagesApi.endpoints.createTemporaryMessage.initiate(props))
-};
+  createTemporaryMessage: (props: Parameters<typeof messagesApiInstance.createTemporaryMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.createTemporaryMessage.initiate(props)),
+}
 
 // Экспорт типов для использования в других частях приложения
 export type MessagesApiApiType = typeof MessagesApiApi

@@ -12,8 +12,6 @@ export function ModulePost() {
   const { data, isLoading } = postsApi.useFindAllQuery({})
   const [submit, { isLoading: isSubmitting }] = postsApi.useCreateMutation()
 
-  console.log('data', data)
-
   const handleSubmit = (createdPost: CreatePublicationContextProps) => {
     // console.log('media', createdPost)
     const formData = new FormData()

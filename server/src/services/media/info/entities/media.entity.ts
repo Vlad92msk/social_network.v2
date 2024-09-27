@@ -1,4 +1,5 @@
 import { PostEntity } from '@services/posts/post/entities/post.entity'
+import { ReactionEntity } from '@services/reactions/entities/reaction.entity'
 import {
     Column,
     Entity,
@@ -19,6 +20,7 @@ import { Tag } from '@src/services/tags/entity'
 import { CommentEntity } from '@services/comments/comment/entities/comment.entity'
 import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { ApiProperty } from '@nestjs/swagger'
+
 
 @Entity({ name: 'media', comment: 'Общая информация о файле, который пользователь загружает в систему' })
 export class MediaEntity implements MediaItem {
@@ -74,30 +76,34 @@ export class MediaEntity implements MediaItem {
     })
     tags: Tag[]
 
-    @ApiProperty({ description: 'Комментарии к данному медиа', type: () => [CommentEntity] })
+    @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity], nullable: true })
+    @OneToMany(() => ReactionEntity, reaction => reaction.media, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    reactions: ReactionEntity[]
+
+    @ApiProperty({ description: 'Комментарии к данному медиа', type: () => [CommentEntity], nullable: true })
     @OneToMany(() => CommentEntity, comment => comment.media, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
     comments: CommentEntity[]
 
-    @ApiProperty({ description: 'Сообщения, к которым добавлен медиа-файл', type: () => [MessageEntity] })
+    @ApiProperty({ description: 'Сообщения, к которым добавлен медиа-файл', type: () => [MessageEntity], nullable: true })
     @ManyToMany(() => MessageEntity, message => message.media, { cascade: true, onDelete: 'CASCADE', lazy: true })
     messagesRef: MessageEntity[]
 
-    @ApiProperty({ description: 'Сообщение, к которому относится данный медиа-файл (аудио сообщение)', type: () => MessageEntity })
+    @ApiProperty({ description: 'Сообщение, к которому относится данный медиа-файл (аудио сообщение)', type: () => MessageEntity, nullable: true })
     @ManyToOne(() => MessageEntity, message => message.voices, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'added_voice_id' })
     voiceMessage: MessageEntity
 
-    @ApiProperty({ description: 'Сообщение, к которому относится данный медиа-файл (видео сообщение)', type: () => MessageEntity })
+    @ApiProperty({ description: 'Сообщение, к которому относится данный медиа-файл (видео сообщение)', type: () => MessageEntity, nullable: true })
     @ManyToOne(() => MessageEntity, message => message.videos, { cascade: true, onDelete: 'CASCADE', lazy: true })
     @JoinColumn({ name: 'added_video_id' })
     videoMessage: MessageEntity
 
-    @ApiProperty({ description: 'Пост, к которому относится данный медиа-файл (аудио вложение)', type: () => PostEntity })
+    @ApiProperty({ description: 'Пост, к которому относится данный медиа-файл (аудио вложение)', type: () => PostEntity, nullable: true })
     @ManyToOne(() => PostEntity, post => post.voices, { cascade: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'added_voice_post_id' }) // Исправляем имя колонки для голоса
     voicePost: PostEntity
 
-    @ApiProperty({ description: 'Пост, к которому относится данный медиа-файл (видео вложение)', type: () => PostEntity })
+    @ApiProperty({ description: 'Пост, к которому относится данный медиа-файл (видео вложение)', type: () => PostEntity, nullable: true })
     @ManyToOne(() => PostEntity, post => post.videos, { cascade: true, onDelete: 'CASCADE', lazy: true })
     @JoinColumn({ name: 'added_video_post_id' }) // Исправляем имя колонки для видео
     videoPost: PostEntity

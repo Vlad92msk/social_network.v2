@@ -19,7 +19,7 @@ import { ClientToServerEvents, ServerToClientEvents, DialogEvents, Authenticated
 import { OnEvent } from '@nestjs/event-emitter'
 import { DialogEntity } from './entities/dialog.entity'
 import { DialogShortDto } from './dto/dialog-short.dto'
-import { VideoConferenceEvents } from "@services/messenger/video-conference/types";
+import { VideoConferenceEvents } from '../video-conference/types'
 
 
 @Injectable()
@@ -233,7 +233,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(payload.dialogId).emit(DialogEvents.VIDEO_CONFERENCE_STARTED, {
             dialogId: payload.dialogId,
             initiatorId: payload.initiatorId
-        });
+        })
     }
 
     @OnEvent(VideoConferenceEvents.CONFERENCE_ENDED)
@@ -242,7 +242,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(payload.dialogId).emit(DialogEvents.VIDEO_CONFERENCE_ENDED, {
             dialogId: payload.dialogId,
             initiatorId: payload.initiatorId
-        });
+        })
     }
 
     /**

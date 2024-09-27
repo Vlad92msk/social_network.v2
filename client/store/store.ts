@@ -4,7 +4,7 @@ import { merge } from 'lodash'
 import logger from 'redux-logger'
 import { createEpicMiddleware } from 'redux-observable'
 import {
-  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
+  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
 import {
   commentsApiInstance,
@@ -13,6 +13,7 @@ import {
   messagesApiInstance,
   postsApiInstance,
   profileApiInstance,
+  reactionsApiInstance,
   tagsApiInstance,
   userInfoApiInstance,
 } from './instance'
@@ -28,6 +29,7 @@ export const ApiService = {
   posts: postsApiInstance,
   profile: profileApiInstance,
   userInfo: userInfoApiInstance,
+  reactions: reactionsApiInstance,
 }
 
 export type ApiServiceType = typeof ApiService
@@ -51,6 +53,8 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       postsApi.middleware,
       profileApi.middleware,
       userInfoApi.middleware,
+      userInfoApi.middleware,
+      reactionsApi.middleware,
       effectMiddleware,
       logger,
     ),

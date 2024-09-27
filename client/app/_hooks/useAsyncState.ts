@@ -16,12 +16,10 @@ export const useAsyncState = <T = any>(
 
   useEffect(() => {
     if (isUpdate) {
-      console.log('1232')
       setState(value)
     }
   }, [isUpdate, setState, value])
 
-  console.log('setState', getValue())
 
   return [getValue, setState]
 }

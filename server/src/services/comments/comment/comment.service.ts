@@ -63,7 +63,7 @@ export class CommentService {
         const queryOptions = createPaginationQueryOptions<CommentEntity>({
             query,
             options: {
-                relations: ['reactions', 'author', entityType, 'parent_comment'],
+                relations: ['reactions', 'author', 'parent_comment'],
                 where: {
                     [entityType]: { id: entityId },
                     parent_comment: IsNull(),
@@ -153,7 +153,7 @@ export class CommentService {
     async findOne(id: string) {
         return await this.commentRepository.findOne({
             where: { id },
-            relations: ['parent_comment', 'reactions']
+            relations: ['parent_comment', 'reactions', 'reactions.reaction']
         })
     }
 

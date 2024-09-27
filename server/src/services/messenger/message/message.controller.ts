@@ -188,34 +188,6 @@ export class MessageController {
         return await this.messageService.getReplyChain(id)
     }
 
-    @Post(':id/reactions')
-    @ApiOperation({ summary: 'Добавить реакцию к сообщению' })
-    @ApiResponse({ status: 200, description: 'Реакция успешно добавлена' })
-    async addReaction(
-        @Param('id') id: string,
-        @Body('emoji') emoji: string,
-        @RequestParams() params: RequestParams,
-    ) {
-        return await this.messageService.addReaction(id, params.user_info_id, emoji)
-    }
-
-    @Delete('reactions/:reactionId')
-    @ApiOperation({ summary: 'Удалить реакцию с сообщения' })
-    @ApiResponse({ status: 200, description: 'Реакция успешно удалена' })
-    async removeReaction(
-        @Param('reactionId') reactionId: string,
-        @RequestParams() params: RequestParams,
-    ) {
-        return await this.messageService.removeReaction(reactionId, params.user_info_id)
-    }
-
-    @Get(':id/reactions')
-    @ApiOperation({ summary: 'Получить все реакции на сообщение' })
-    @ApiResponse({ status: 200, description: 'Реакции успешно получены' })
-    async getReactions(@Param('id') id: string) {
-        return await this.messageService.getReactions(id)
-    }
-
     @Get('search')
     @ApiOperation({ summary: 'Полнотекстовый поиск по сообщениям' })
     @ApiResponse({ status: 200, description: 'Результаты поиска успешно получены', type: [MessageEntity] })
@@ -226,26 +198,6 @@ export class MessageController {
         return await this.messageService.fullTextSearch(searchTerm, params)
     }
 
-    @Get(':id/reaction-count')
-    @ApiOperation({ summary: 'Получить количество реакций на сообщение' })
-    @ApiResponse({ status: 200, description: 'Количество реакций успешно получено' })
-   async getReactionCount(
-        @Param('id') id: string,
-        @Query('emoji') emoji: string,
-    ) {
-        return await this.messageService.getReactionCount(id, emoji)
-    }
-
-    @Get(':id/has-user-reacted')
-    @ApiOperation({ summary: 'Проверить, отреагировал ли пользователь на сообщение' })
-    @ApiResponse({ status: 200, description: 'Информация о реакции пользователя получена' })
-    async hasUserReacted(
-        @Param('id') id: string,
-        @Query('emoji') emoji: string,
-        @RequestParams() params: RequestParams,
-    ) {
-        return await this.messageService.hasUserReacted(id, params.user_info_id, emoji)
-    }
 
     @Post('temporary')
     @ApiOperation({ summary: 'Создать временное сообщение' })

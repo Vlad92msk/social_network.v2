@@ -1,6 +1,5 @@
 import {
     BadRequestException,
-    ForbiddenException,
     forwardRef,
     Inject,
     Injectable,
@@ -21,7 +20,6 @@ import {
     updateEntityParams
 } from '@shared/utils'
 import { MessageEntity } from './entity/message.entity'
-import { ReactionEntity } from '@shared/entity/reaction.entity'
 import { Cron, CronExpression } from '@nestjs/schedule'
 
 @Injectable()
@@ -35,9 +33,6 @@ export class MessageService {
 
         @Inject(forwardRef(() => UserInfoService))
         private userInfoService: UserInfoService,
-
-        @InjectRepository(ReactionEntity)
-        private reactionRepository: Repository<ReactionEntity>,
     ) {}
 
     /**
@@ -172,7 +167,7 @@ export class MessageService {
     async findOne(id: string) {
         const message = await this.messageRepository.findOne({
             where: { id },
-            relations: ['media', 'voices', 'videos', 'reply_to', 'original_message']
+            relations: ['media', 'voices', 'videos', 'reply_to', 'original_message', 'reactions', 'reactions.reaction']
         })
         if (!message) {
             throw new NotFoundException(`Сообщение с ID "${id}" не найдено`)
@@ -289,52 +284,6 @@ export class MessageService {
         return chain
     }
 
-    /**
-     * Добавить реакцию к сообщению
-     */
-    async addReaction(messageId: string, userId: number, emoji: string) {
-        const message = await this.findOne(messageId)
-        const user = await this.userInfoService.getUsersById(userId)
-
-        const reaction = this.reactionRepository.create({
-            message,
-            user,
-            emoji,
-        })
-
-        return this.reactionRepository.save(reaction)
-    }
-
-    /**
-     * Удалить реакцию с сообщения
-     */
-    async removeReaction(reactionId: string, userId: number) {
-        const reaction = await this.reactionRepository.findOne({
-            where: { id: reactionId },
-            relations: ['user'],
-        })
-
-        if (!reaction) {
-            throw new NotFoundException('Реакция не найдена')
-        }
-
-        if (reaction.user.id !== userId) {
-            throw new ForbiddenException('Вы не можете удалить чужую реакцию')
-        }
-
-        await this.reactionRepository.remove(reaction)
-    }
-
-    /**
-     * Получить все реакции на сообщение
-     */
-    async getReactions(messageId: string) {
-        const message = await this.findOne(messageId)
-        return this.reactionRepository.find({
-            where: { message: { id: messageId } },
-            relations: ['user'],
-        })
-    }
 
     /**
      * Выполнить полнотекстовый поиск по сообщениям
@@ -352,35 +301,6 @@ export class MessageService {
         return createPaginationResponse({ data: messages, total, query: { page: 1, limit: 20 } })
     }
 
-    /**
-     * Получить количество реакций на сообщение
-     */
-    async getReactionCount(messageId: string, emoji?: string) {
-        const query = this.reactionRepository.createQueryBuilder('reaction')
-            .where('reaction.messageId = :messageId', { messageId })
-
-        if (emoji) {
-            query.andWhere('reaction.emoji = :emoji', { emoji })
-        }
-
-        return query.getCount()
-    }
-
-    /**
-     * Проверить, отреагировал ли пользователь на сообщение
-     */
-    async hasUserReacted(messageId: string, userId: number, emoji?: string) {
-        const query = this.reactionRepository.createQueryBuilder('reaction')
-            .where('reaction.messageId = :messageId', { messageId })
-            .andWhere('reaction.userId = :userId', { userId })
-
-        if (emoji) {
-            query.andWhere('reaction.emoji = :emoji', { emoji })
-        }
-
-        const count = await query.getCount()
-        return count > 0
-    }
 
     /**
      * Создать временное сообщение с автоматическим удалением

@@ -16,5 +16,6 @@ import { CommentEntity } from './entities/comment.entity'
     ],
     providers: [CommentService],
     controllers: [CommentController],
+    exports: [CommentService],
 })
 export class CommentModule {}

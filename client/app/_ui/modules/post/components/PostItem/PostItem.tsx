@@ -8,7 +8,7 @@ import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
 import { cn } from './cn'
 import { PostEntity } from '../../../../../../../swagger/posts/interfaces-posts'
-import { postsApi } from '../../../../../../store/api'
+import { postsApi, reactionsApi } from '../../../../../../store/api'
 
 interface PostsListProps {
   post: PostEntity
@@ -19,7 +19,12 @@ export function PostItem(props: PostsListProps) {
   const [onRemove] = postsApi.useRemoveMutation()
   const [onUpdate] = postsApi.useUpdateMutation()
   const [onPin] = postsApi.useTogglePinPostMutation()
-
+  const [onToggleReaction] = reactionsApi.useCreateMutation()
+  const { data } = reactionsApi.useGetReactionsQuery({
+    entity_type: 'post',
+    entity_id: post.id,
+  })
+  console.log('reactions', data)
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
   const gropedMediaByType = useMemo(() => groupBy(post.media, 'meta.type'), [post.media])
 
@@ -27,7 +32,7 @@ export function PostItem(props: PostsListProps) {
     <div className={cn({ pinned: post.pinned })}>
       {post.pinned && (<Text>Закреплено</Text>)}
       <Publication
-        contextProps={{ id: post.id, dateChanged: new Date(post.date_updated) }}
+        contextProps={{ id: post.id, dateChanged: post.date_updated }}
         className={cn('PostItem')}
         authorPosition="right"
         onRead={(publicationId) => {
@@ -73,7 +78,14 @@ export function PostItem(props: PostsListProps) {
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
         <Publication.Commets isActive={isOpenComments} countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
-        <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
+        <Publication.Emojies reactions={data} onClick={(emojie) => {
+          onToggleReaction({
+            entity_type: 'post',
+            entity_id: post.id,
+            body: { name: emojie.name },
+          })
+        }}
+        />
         <Publication.DateCreated dateCreated={new Date(post.date_created)} />
       </Publication>
       {isOpenComments && (

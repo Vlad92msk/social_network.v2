@@ -1,3 +1,4 @@
+import { ReactionEntity } from '@services/reactions/entities/reaction.entity'
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm'
 import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
 import { MediaEntity } from '@services/media/info/entities/media.entity'
@@ -59,6 +60,10 @@ export class PostEntity extends PublicationEntity {
     @ApiProperty({ description: 'Комментарии к данному посту', type: () => [CommentEntity] })
     @OneToMany(() => CommentEntity, comment => comment.post, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
     comments: CommentEntity[]
+
+    @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity] })
+    @OneToMany(() => ReactionEntity, reaction => reaction.post, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Количество комментариев к посту', default: 0 })
     @Column({ type: 'int', default: 0, comment: 'Количество комментариев' })

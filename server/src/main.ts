@@ -1,3 +1,4 @@
+import { ReactionsModule } from '@services/reactions/reactions.module'
 import { config } from 'dotenv'
 config()
 
@@ -116,6 +117,13 @@ async function bootstrap() {
             url: 'dialogs',
             name: 'Диалоги',
             description: 'API операций с диалогами (чатами)',
+            version: '1.0'
+          },
+          {
+            module: ReactionsModule,
+            url: 'reactions',
+            name: 'Реакции',
+            description: 'API операций с реакциями',
             version: '1.0'
           },
         ]

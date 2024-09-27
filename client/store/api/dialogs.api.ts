@@ -1,10 +1,9 @@
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CookieType } from '../../app/types/cookie';
-import { RootState, store } from '../store'
-import { dialogsApiInstance } from '../../store/instance'
-import { CreateDialogDto, PublicationType, UserAbout, MediaMetadata, ReactionEntity, CommentEntity, PostVisibility, PostEntity, Tag, MediaEntity, UserInfo, DialogEntity, MessageEntity, UpdateDialogDto, Object, DialogShortDto } from '../../../swagger/dialogs/interfaces-dialogs'
 import { SerializedError } from '@reduxjs/toolkit'
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { DialogEntity, DialogShortDto } from '../../../swagger/dialogs/interfaces-dialogs'
+import { CookieType } from '../../app/types/cookie'
+import { dialogsApiInstance } from '../../store/instance'
+import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
   data?: T
@@ -38,7 +37,7 @@ export const dialogsApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    
+
     create: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.create>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.createInit(params)
@@ -211,7 +210,7 @@ export const dialogsApi = createApi({
 
 // Типизированные функции-обертки в объекте
 export const DialogsApiApi = {
-  
+
   create: (props: Parameters<typeof dialogsApiInstance.create>[0]): Promise<QueryResult<DialogEntity>> =>
     store.dispatch(dialogsApi.endpoints.create.initiate(props)),
 

@@ -115,7 +115,7 @@ export class MediaInfoService {
     async getFileById(id: string, requestParams?: RequestParams) {
         return await this.mediaInfoRepository.findOne({
             where: { id },
-            relations: ['meta', 'owner', 'tags']
+            relations: ['meta', 'owner', 'tags', 'reactions', 'reactions.reaction']
         })
     }
 

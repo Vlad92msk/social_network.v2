@@ -1,10 +1,9 @@
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CookieType } from '../../app/types/cookie';
-import { RootState, store } from '../store'
-import { tagsApiInstance } from '../../store/instance'
-import { CreateTagDto, MediaMetadata, UserAbout, PublicationType, Tag, PostVisibility, PostEntity, CommentEntity, DialogEntity, MessageEntity, ReactionEntity, UserInfo, MediaEntity, UpdateTagDto } from '../../../swagger/tags/interfaces-tags'
 import { SerializedError } from '@reduxjs/toolkit'
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { Tag } from '../../../swagger/tags/interfaces-tags'
+import { CookieType } from '../../app/types/cookie'
+import { tagsApiInstance } from '../../store/instance'
+import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
   data?: T
@@ -23,6 +22,7 @@ type QueryResult<T> = {
 export const tagsApi = createApi({
   reducerPath: 'API_tags',
   baseQuery: fetchBaseQuery({
+    credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
       const profileId = state.profile?.profile?.id
@@ -38,7 +38,7 @@ export const tagsApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    
+
     createTag: builder.mutation<Tag, Parameters<typeof tagsApiInstance.createTag>[0]>({
       query: (params) => {
         const { url, init } = tagsApiInstance.createTagInit(params)
@@ -85,7 +85,7 @@ export const tagsApi = createApi({
 
 // Типизированные функции-обертки в объекте
 export const TagsApiApi = {
-  
+
   createTag: (props: Parameters<typeof tagsApiInstance.createTag>[0]): Promise<QueryResult<Tag>> =>
     store.dispatch(tagsApi.endpoints.createTag.initiate(props)),
 

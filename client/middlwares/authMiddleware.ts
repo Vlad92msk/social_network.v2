@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { DEFAULT_LOCALE, PUBLIC_PATHS } from '@middlewares/variables'
 import { Session } from 'next-auth'
-
-
+import { DEFAULT_LOCALE, PUBLIC_PATHS } from '@middlewares/variables'
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname.endsWith(path) || pathname.endsWith(`${path}/`))

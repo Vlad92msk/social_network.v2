@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { MediaItemType } from '@services/media/metadata/interfaces/mediaItemType'
 import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
+import { ReactionsService } from '@services/reactions/reactions.service'
 import { TagsService } from '@services/tags/tags.service'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
@@ -27,7 +28,7 @@ export class PostsService {
         private userInfoService: UserInfoService,
 
         @Inject(forwardRef(() => TagsService))
-        private tagsService: TagsService
+        private tagsService: TagsService,
     ) {}
 
     /**
@@ -48,6 +49,7 @@ export class PostsService {
             visibility: createPostDto.visibility,
             comment_count: 0,
             date_updated: null,
+            reactions: [],
         })
 
         if (media && media.length > 0) {
@@ -89,7 +91,7 @@ export class PostsService {
     ) {
         const post = await this.postRepository.findOne({
             where: { id },
-            relations: ['media', 'media.meta', 'voices', 'videos', 'tags', 'author']
+            relations: ['media', 'media.meta', 'voices', 'videos', 'tags', 'author', 'reactions']
         })
 
         if (!post) throw new NotFoundException(`Пост с ID "${id}" не найден`)
@@ -170,6 +172,7 @@ export class PostsService {
                     'videos',         // Видео файлы
                     'videos.meta',    // Метаданные для видео
                     'author',         // Автор
+                    'reactions',      // Реакции
                 ]
             }
         })
@@ -216,6 +219,8 @@ export class PostsService {
                 'videos',         // Видео файлы
                 'videos.meta',    // Метаданные для видео
                 'author',         // Автор
+                'reactions',      // Реакции
+                'reactions.reaction',      // Реакции
             ]
         })
         if (!post) {
@@ -323,7 +328,7 @@ export class PostsService {
                 scheduled_publish_time: LessThanOrEqual(now),
                 visibility: PostVisibility.PRIVATE // Предполагаем, что запланированные посты изначально приватны
             },
-            relations: ['media', 'tags']
+            relations: ['media', 'tags', 'reactions']
         })
     }
 

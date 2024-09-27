@@ -78,8 +78,6 @@ export function FileUpLoad(props: FileUpLoadProps) {
     }
   }, [isConfirm, addedFiles, applyAttachments])
 
-  console.log('isOpenPevFiles', isOpenPevFiles)
-  console.log('addedFiles', addedFiles)
   return (
     <>
       <div className={classNames(cn(), className)}>

@@ -1,8 +1,8 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { UserProfileInfo } from '../../../swagger/profile/interfaces-profile'
+import { CalculateReactionsResponse } from '../../../swagger/reactions/interfaces-reactions'
 import { CookieType } from '../../app/types/cookie'
-import { profileApiInstance } from '../../store/instance'
+import { reactionsApiInstance } from '../instance'
 import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
@@ -19,9 +19,10 @@ type QueryResult<T> = {
   status: 'pending' | 'fulfilled' | 'rejected'
 }
 
-export const profileApi = createApi({
-  reducerPath: 'API_profile',
+export const reactionsApi = createApi({
+  reducerPath: 'API_reactions',
   baseQuery: fetchBaseQuery({
+    credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
       const profileId = state.profile?.profile?.id
@@ -38,23 +39,23 @@ export const profileApi = createApi({
   }),
   endpoints: (builder) => ({
 
-    getProfileInfo: builder.query<UserProfileInfo, Parameters<typeof profileApiInstance.getProfileInfo>[0]>({
+    create: builder.mutation<CalculateReactionsResponse, Parameters<typeof reactionsApiInstance.create>[0]>({
       query: (params) => {
-        const { url, init } = profileApiInstance.getProfileInfoInit(params)
+        const { url, init } = reactionsApiInstance.createInit(params)
         return { url, ...init }
       },
     }),
 
-    getProfiles: builder.query<UserProfileInfo[], Parameters<typeof profileApiInstance.getProfiles>[0]>({
+    getReactions: builder.query<CalculateReactionsResponse, Parameters<typeof reactionsApiInstance.getReactions>[0]>({
       query: (params) => {
-        const { url, init } = profileApiInstance.getProfilesInit(params)
+        const { url, init } = reactionsApiInstance.getReactionsInit(params)
         return { url, ...init }
       },
     }),
 
-    removeProfile: builder.mutation<any, Parameters<typeof profileApiInstance.removeProfile>[0]>({
+    reactionUpdates: builder.mutation<any, Parameters<typeof reactionsApiInstance.reactionUpdates>[0]>({
       query: (params) => {
-        const { url, init } = profileApiInstance.removeProfileInit(params)
+        const { url, init } = reactionsApiInstance.reactionUpdatesInit(params)
         return { url, ...init }
       },
     }),
@@ -62,17 +63,14 @@ export const profileApi = createApi({
 })
 
 // Типизированные функции-обертки в объекте
-export const ProfileApiApi = {
+export const ReactionsApiApi = {
 
-  getProfileInfo: (props: Parameters<typeof profileApiInstance.getProfileInfo>[0]): Promise<QueryResult<UserProfileInfo>> =>
-    store.dispatch(profileApi.endpoints.getProfileInfo.initiate(props)),
+  create: (props: Parameters<typeof reactionsApiInstance.create>[0]): Promise<QueryResult<CalculateReactionsResponse>> => store.dispatch(reactionsApi.endpoints.create.initiate(props)),
 
-  getProfiles: (props: Parameters<typeof profileApiInstance.getProfiles>[0]): Promise<QueryResult<UserProfileInfo[]>> =>
-    store.dispatch(profileApi.endpoints.getProfiles.initiate(props)),
+  getReactions: (props: Parameters<typeof reactionsApiInstance.getReactions>[0]): Promise<QueryResult<CalculateReactionsResponse>> => store.dispatch(reactionsApi.endpoints.getReactions.initiate(props)),
 
-  removeProfile: (props: Parameters<typeof profileApiInstance.removeProfile>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(profileApi.endpoints.removeProfile.initiate(props))
-};
+  reactionUpdates: (props: Parameters<typeof reactionsApiInstance.reactionUpdates>[0]): Promise<QueryResult<any>> => store.dispatch(reactionsApi.endpoints.reactionUpdates.initiate(props)),
+}
 
 // Экспорт типов для использования в других частях приложения
-export type ProfileApiApiType = typeof ProfileApiApi
+export type ReactionsApiApiType = typeof ReactionsApiApi

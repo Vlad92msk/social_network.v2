@@ -3,7 +3,6 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { UserInfo, UserInfoDto } from '../../../swagger/userInfo/interfaces-userInfo'
 import { CookieType } from '../../app/types/cookie'
 import { userInfoApiInstance } from '../instance'
-import { ProfileSliceActions } from '../profile.slice'
 import { RootState, store } from '../store'
 // Тип для результатов запросов
 type QueryResult<T> = {
@@ -56,12 +55,12 @@ export const userInfoApi = createApi({
       },
       invalidatesTags: ['User', 'Users'],
       // Функция которая вызывается после того как вызывался метод
-      // @ts-ignore
       async onQueryStarted({ body }, { dispatch, queryFulfilled, getState }) {
         const previousUserInfo = (getState() as RootState).profile.profile?.user_info
 
         // Создаем предполагаемое новое состояние на основе FormData
         const optimisticUpdate = { ...previousUserInfo }
+        // @ts-ignore
         for (const [key, value] of body.entries()) {
           if (typeof value === 'string') {
             optimisticUpdate[key] = value
@@ -73,7 +72,7 @@ export const userInfoApi = createApi({
         // @ts-ignore
           userInfoApi.util.updateQueryData('getUserById', previousUserInfo.id, (draft) => {
             Object.assign(draft, optimisticUpdate)
-          })
+          }),
         )
 
         try {
@@ -85,7 +84,7 @@ export const userInfoApi = createApi({
           // @ts-ignore
             userInfoApi.util.updateQueryData('getUserById', previousUserInfo.id, (draft) => {
               Object.assign(draft, data)
-            })
+            }),
           )
         } catch (error) {
           // Откатываем изменения в кэше getUserById

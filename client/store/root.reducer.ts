@@ -1,6 +1,6 @@
 import { combineReducers } from '@reduxjs/toolkit'
 import {
-  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, tagsApi, userInfoApi,
+  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
 import { profileInitialState, profileReducer, ProfileSliceState } from './profile.slice'
 
@@ -14,6 +14,7 @@ export interface RootReducer {
   [postsApi.reducerPath]: ReturnType<typeof postsApi.reducer>
   [profileApi.reducerPath]: ReturnType<typeof profileApi.reducer>
   [userInfoApi.reducerPath]: ReturnType<typeof userInfoApi.reducer>
+  [reactionsApi.reducerPath]: ReturnType<typeof reactionsApi.reducer>
 }
 
 export const rootReducer = combineReducers({
@@ -26,6 +27,7 @@ export const rootReducer = combineReducers({
   [postsApi.reducerPath]: postsApi.reducer,
   [profileApi.reducerPath]: profileApi.reducer,
   [userInfoApi.reducerPath]: userInfoApi.reducer,
+  [reactionsApi.reducerPath]: reactionsApi.reducer,
 })
 
 export const rootInitialState: Partial<RootReducer> = {

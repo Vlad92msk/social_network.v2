@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef } from 'react'
-import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { createStoreContext } from '@utils/client'
 import { classNames } from '@utils/others'
@@ -11,6 +10,7 @@ import {
 } from './elements'
 import { useUpdateDateRead } from './hooks'
 import { MediaEntity } from '../../../../../swagger/posts/interfaces-posts'
+import { CalculateReactionsResponse } from '../../../../../swagger/reactions/interfaces-reactions'
 
 interface PublicationComponents {
   Author?: typeof Author
@@ -24,15 +24,14 @@ interface PublicationComponents {
   Response?: typeof Response
 }
 
-type PublicationEmojis = any[]
-
 /**
  * То что можно передать в контекст Компонента
  */
 interface PublicationContextState {
   id: string
   isChangeActive?: boolean
-  dateChanged?: any
+  dateChanged?: Date
+  reactions?: CalculateReactionsResponse
 }
 
 export interface MediaObject {
@@ -48,8 +47,8 @@ export interface PublicationContextChangeState {
   id: string
   media: Record<string, MediaEntity[]>
   text?: string
-  emojis?: PublicationEmojis
   removeMediaIds: MediaObject
+  reactions?: Partial<CalculateReactionsResponse>
 }
 
 /**
@@ -68,6 +67,9 @@ const initialState: PublicationContextState & PublicationContextPrivateState = {
   changeState: {
     id: '',
     media: {},
+    reactions: {
+      my_reaction: undefined,
+    },
     removeMediaIds: {
       audio: [],
       video: [],
@@ -112,20 +114,20 @@ function BasePublication(props: PublicationProps) {
   })
 
   return (
-    <div ref={publicationRef} className={classNames(cn(), className)}>
+    <div ref={publicationRef} className={classNames(cn({ isChangeActive }), className)}>
+      <button
+        className={classNames(cn('ChangeOptions'), classNameChangeOptions)}
+        onClick={() => {
+          handleSetChangeActive((ctx) => ({ isChangeActive: !ctx.isChangeActive }))
+        }}
+      >
+        <Icon name="edit" />
+      </button>
       <div className={cn('Wrapper', {
         authorPosition,
         isChangeActive,
       })}
       >
-        <Button
-          className={classNames(cn('ChangeOptions'), classNameChangeOptions)}
-          onClick={() => {
-            handleSetChangeActive((ctx) => ({ isChangeActive: !ctx.isChangeActive }))
-          }}
-        >
-          <Icon name="edit" />
-        </Button>
         {children}
       </div>
     </div>

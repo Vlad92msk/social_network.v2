@@ -7,7 +7,7 @@ import { resultMap, validateMap } from './utils/rxUtils'
 const exampleEpic: Effect = (action$, store$, { tags, profile, userInfo }) => action$.pipe(
   ofType('FETCH_TAGS'),
   validateMap({
-    apiCall: (_, { requestParams }) => from(TagsApiApi.findTags(undefined))
+    apiCall: (_, { requestParams }) => from(TagsApiApi.findTags({}))
       .pipe(
         resultMap({
           success: (response) => {

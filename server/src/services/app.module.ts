@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import mainConfig from '@config/main.config'
 import baseOrmConfig from '@config/orm.config'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ReactionsModule } from '@services/reactions/reactions.module'
 import { ProfileModule } from '@src/services/profile/profile/profile.module'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
 import { MediaInfoModule } from '@src/services/media/info/media-info.module'
@@ -36,6 +37,7 @@ import { VideoConferenceModule } from '@services/messenger/video-conference/vide
     PostModule,
     DialogModule,
     VideoConferenceModule,
+    ReactionsModule,
   ],
 })
 export class AppModule {
