@@ -326,6 +326,10 @@ $padding: rem(6);
     align-items: center;
     gap: rem(3);
 
+    &--active {
+      color: var(--Color-Text--variant-7--theme-default);
+    }
+
     & > svg {
       height: 60%;
     }

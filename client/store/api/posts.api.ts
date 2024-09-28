@@ -1,7 +1,7 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { set, without } from 'lodash'
-import { PostEntity } from '../../../swagger/posts/interfaces-posts'
+import { PostEntity, PostResponseDto } from '../../../swagger/posts/interfaces-posts'
 import { CookieType } from '../../app/types/cookie'
 import { postsApiInstance } from '../instance'
 import { RootState, store } from '../store'
@@ -41,7 +41,7 @@ export const postsApi = createApi({
   tagTypes: ['Posts'],
   endpoints: (builder) => ({
 
-    create: builder.mutation<PostEntity, Parameters<typeof postsApiInstance.create>[0]>({
+    create: builder.mutation<PostResponseDto, Parameters<typeof postsApiInstance.create>[0]>({
       // invalidatesTags: ['Posts'],
       query: (params) => {
         const { url, init } = postsApiInstance.createInit(params)
@@ -61,7 +61,7 @@ export const postsApi = createApi({
       },
     }),
 
-    findAll: builder.query<PostEntity[], Parameters<typeof postsApiInstance.findAll>[0]>({
+    findAll: builder.query<PostResponseDto[], Parameters<typeof postsApiInstance.findAll>[0]>({
       providesTags: ['Posts'],
       query: (params) => {
         const { url, init } = postsApiInstance.findAllInit(params)
@@ -76,7 +76,7 @@ export const postsApi = createApi({
       },
     }),
 
-    update: builder.mutation<PostEntity, Parameters<typeof postsApiInstance.update>[0]>({
+    update: builder.mutation<PostResponseDto, Parameters<typeof postsApiInstance.update>[0]>({
       query: (params) => {
         const { url, init } = postsApiInstance.updateInit(params)
         return { url, ...init }
@@ -111,7 +111,7 @@ export const postsApi = createApi({
         const patchResult = dispatch(
           postsApi.util.updateQueryData('findAll', {}, (draft) => {
             const postToRemove = draft.find((post) => post.id === arg?.id)
-            if (postToRemove) return without(draft, postToRemove) as PostEntity[]
+            if (postToRemove) return without(draft, postToRemove) as PostResponseDto[]
 
             return draft // Возвращаем исходный массив, если пост не найден
           }),
@@ -256,7 +256,7 @@ export const PostsApiApi = {
 // @ts-ignore
   create: (props: Parameters<typeof postsApiInstance.create>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.create.initiate(props)),
 
-  findAll: (props: Parameters<typeof postsApiInstance.findAll>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.findAll.initiate(props)),
+  findAll: (props: Parameters<typeof postsApiInstance.findAll>[0]): Promise<QueryResult<PostResponseDto[]>> => store.dispatch(postsApi.endpoints.findAll.initiate(props)),
 
   findOne: (props: Parameters<typeof postsApiInstance.findOne>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.findOne.initiate(props)),
 

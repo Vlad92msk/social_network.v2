@@ -1,29 +1,18 @@
-import {
-    Controller,
-    Get,
-    Post,
-    Body,
-    Patch,
-    Param,
-    Delete,
-    UseInterceptors,
-    UploadedFiles,
-    Query,
-    Res
-} from '@nestjs/common'
+import { ConfigEnum } from '@config/config.enum'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, UploadedFiles, UseInterceptors } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { FileFieldsInterceptor } from '@nestjs/platform-express'
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { MediaInfoService } from '@services/media/info/media-info.service'
+import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
+import { PostResponseDto } from '@services/posts/post/dto/post-response.dto'
+import { PostEntity, PostVisibility } from '@services/posts/post/entities/post.entity'
+import { PostsService } from '@services/posts/post/post.service'
+import { RequestParams } from '@shared/decorators'
+import { createPaginationHeaders } from '@shared/utils'
+import { Response } from 'express'
 import { CreatePostDto } from './dto/create-post.dto'
 import { UpdatePostDto } from './dto/update-post.dto'
-import { FileFieldsInterceptor } from '@nestjs/platform-express'
-import { RequestParams } from '@shared/decorators'
-import { PostsService } from '@services/posts/post/post.service'
-import { ConfigService } from '@nestjs/config'
-import { ConfigEnum } from '@config/config.enum'
-import { MediaInfoService } from '@services/media/info/media-info.service'
-import { Response } from 'express'
-import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
-import { createPaginationHeaders } from '@shared/utils'
-import { PostEntity, PostVisibility } from '@services/posts/post/entities/post.entity'
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 @ApiTags('Посты')
 @Controller('api/posts')
@@ -76,12 +65,12 @@ export class PostsController {
 
     @Get()
     @ApiOperation({ summary: 'Найти все посты' })
-    @ApiResponse({ status: 200, description: 'Список постов', type: [PostEntity] })
+    @ApiResponse({ status: 200, description: 'Список постов', type: [PostResponseDto] })
     async findAll(
         @Query() query: FindPostDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
-    ): Promise<PostEntity[]> {
+    ): Promise<PostResponseDto[]> {
         const { data, paginationInfo } = await this.postsService.findAll(query, params)
 
         response.set(createPaginationHeaders(paginationInfo))

@@ -1,11 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger'
 
-import { CalculateReactions } from '@services/reactions/reactions.service'
-import { IsString } from 'class-validator'
 
-export class CalculateReactionsResponse implements CalculateReactions {
-  @ApiProperty({ description: 'Реакция которую поставил текущий пользователь', type: String, nullable: true })
-  @IsString()
+export class CalculateReactionsResponse {
+  @ApiProperty({ description: 'Количество каждого типа реакции', example: { like: 5, heart: 3 } })
+  counts: Record<string, number>
+
+  @ApiProperty({ description: 'Реакция текущего пользователя', example: 'like', nullable: true })
   my_reaction: string | null
-  [key: string]: string | number;
 }

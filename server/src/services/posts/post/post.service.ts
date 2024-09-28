@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { MediaItemType } from '@services/media/metadata/interfaces/mediaItemType'
 import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
+import { PostResponseDto } from '@services/posts/post/dto/post-response.dto'
+import { CalculateReactionsResponse } from '@services/reactions/dto/toggle-reaction-response.dto'
 import { ReactionsService } from '@services/reactions/reactions.service'
 import { TagsService } from '@services/tags/tags.service'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
@@ -29,6 +31,9 @@ export class PostsService {
 
         @Inject(forwardRef(() => TagsService))
         private tagsService: TagsService,
+
+      @Inject(forwardRef(() => ReactionsService))
+      private reactionsService: ReactionsService,
     ) {}
 
     /**
@@ -155,36 +160,37 @@ export class PostsService {
         return this.postRepository.save(post)
     }
 
+
     async findAll(query: FindPostDto, params: RequestParams) {
         const queryOptions = createPaginationQueryOptions<PostEntity>({
             query,
             options: {
                 where: { author: { id: params.user_info_id } },
                 relations: [
-                    'media',          // Загружаем медиа
-                    'media.meta',     // Загружаем метаданные для каждого медиа-файла
-                    'tags',           // Теги поста
-                    'original_post',  // Оригинальный пост (если репост)
-                    'reply_to',       // Ответы
-                    'forwarded_post', // Пересланные посты
-                    'voices',         // Аудио файлы
-                    'voices.meta',    // Метаданные для аудио
-                    'videos',         // Видео файлы
-                    'videos.meta',    // Метаданные для видео
-                    'author',         // Автор
-                    'reactions',      // Реакции
+                    'media',
+                    'media.meta',
+                    'tags',
+                    'original_post',
+                    'reply_to',
+                    'forwarded_post',
+                    'voices',
+                    'voices.meta',
+                    'videos',
+                    'videos.meta',
+                    'author',
+                    'reactions',
+                    'reactions.reaction',
+                    'reactions.user',
                 ]
             }
         })
 
-        // По умолчанию сортируем по дате создания (новые первыми)
         if (!query.sort_by) {
             queryOptions.order = { date_created: SortDirection.ASC }
         }
 
         const [posts, total] = await this.postRepository.findAndCount(queryOptions)
 
-        // Считаем кол-во комментариев для поста
         const commentCounts = await this.postRepository
           .createQueryBuilder('post')
           .leftJoin('post.comments', 'comment')
@@ -195,14 +201,49 @@ export class PostsService {
           .getRawMany()
 
         const commentCountMap = new Map(commentCounts.map(item => [item.postId, parseInt(item.commentCount)]))
-        posts.forEach(post => {
-            post.comment_count = commentCountMap.get(post.id) || 0
+
+        const postsResponse = posts.map(post => {
+            const reactionCounts = post.reactions.reduce((acc, reaction) => {
+                const reactionName = reaction.reaction.name
+                acc[reactionName] = (acc[reactionName] || 0) + 1
+                return acc
+            }, {} as Record<string, number>)
+
+            const userReaction = post.reactions.find(reaction => reaction.user.id === params.user_info_id)
+
+            const reactionInfo: CalculateReactionsResponse = {
+                counts: reactionCounts,
+                my_reaction: userReaction ? userReaction.reaction.name : null
+            }
+
+            const postResponse: PostResponseDto = {
+                id: post.id,
+                text: post.text,
+                date_created: post.date_created,
+                date_updated: post.date_updated,
+                author: post.author,
+                title: post.title,
+                count_views: post.count_views,
+                repost_count: post.repost_count,
+                is_repost: post.is_repost,
+                // reposts: post.reposts,
+                comment_count: commentCountMap.get(post.id) || 0,
+                voices: post.voices,
+                videos: post.videos,
+                media: post.media,
+                visibility: post.visibility,
+                pinned: post.pinned,
+                location: post.location,
+                // original_post: post.original_post ? convertToDto(PostResponseDto, post.original_post) : undefined,
+                // reply_to: post.reply_to ? convertToDto(PostResponseDto, post.reply_to) : undefined,
+                // forwarded_post: post.forwarded_post ? convertToDto(PostResponseDto, post.forwarded_post) : undefined,
+                reaction_info: reactionInfo,
+            }
+            return postResponse
         })
 
-        // Возвращаем посты вместе с их медиа и метаданными
-        return createPaginationResponse({ data: posts || [], total, query })
-    }
-
+        return createPaginationResponse({ data: postsResponse, total, query })
+}
 
     async findOne(id: string){
         const post = await this.postRepository.findOne({

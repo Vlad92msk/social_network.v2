@@ -155,7 +155,7 @@ export class ReactionsService {
 
 
   // Метод для расчета количества реакций и определения реакции пользователя
-  private async calculateReactions(entity: any, userReactionName: string): Promise<CalculateReactions> {
+  async calculateReactions(entity: any, userReactionName: string): Promise<CalculateReactions> {
     const reactions = await entity.reactions
     const reactionsCount = reactions?.reduce((acc, reaction) => {
       const key = reaction.reaction.name

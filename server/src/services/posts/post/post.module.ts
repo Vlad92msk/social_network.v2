@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ReactionsModule } from '@services/reactions/reactions.module'
 import { PostEntity } from './entities/post.entity'
 import { MediaInfoModule } from '@services/media/info/media-info.module'
 import { UserInfoModule } from '@services/users/user-info/user-info.module'
@@ -14,6 +15,7 @@ import { PublicationEntity } from '@shared/entity/publication.entity'
         TypeOrmModule.forFeature([PostEntity, PublicationEntity]),
         forwardRef(() => MediaInfoModule),
         forwardRef(() => UserInfoModule),
+        forwardRef(() => ReactionsModule),
         forwardRef(() => TagModule),
         ConfigModule,
     ],

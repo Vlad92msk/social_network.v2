@@ -7,11 +7,11 @@ import { Text } from '@ui/common/Text'
 import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
 import { cn } from './cn'
-import { PostEntity } from '../../../../../../../swagger/posts/interfaces-posts'
+import { PostResponseDto } from '../../../../../../../swagger/posts/interfaces-posts'
 import { postsApi, reactionsApi } from '../../../../../../store/api'
 
 interface PostsListProps {
-  post: PostEntity
+  post: PostResponseDto
 }
 
 export function PostItem(props: PostsListProps) {
@@ -20,11 +20,7 @@ export function PostItem(props: PostsListProps) {
   const [onUpdate] = postsApi.useUpdateMutation()
   const [onPin] = postsApi.useTogglePinPostMutation()
   const [onToggleReaction] = reactionsApi.useCreateMutation()
-  const { data } = reactionsApi.useGetReactionsQuery({
-    entity_type: 'post',
-    entity_id: post.id,
-  })
-  console.log('reactions', data)
+
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
   const gropedMediaByType = useMemo(() => groupBy(post.media, 'meta.type'), [post.media])
 
@@ -35,7 +31,7 @@ export function PostItem(props: PostsListProps) {
         contextProps={{ id: post.id, dateChanged: post.date_updated }}
         className={cn('PostItem')}
         authorPosition="right"
-        onRead={(publicationId) => {
+        onRead={() => {
           // const newDate = subMinutes(new Date(), 1)
           // console.log('read', publicationId, newDate)
           // handleUpdateMsg({ id: publicationId, dateRead: newDate, dateDeliver: newDate })
@@ -78,13 +74,15 @@ export function PostItem(props: PostsListProps) {
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
         <Publication.Commets isActive={isOpenComments} countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
-        <Publication.Emojies reactions={data} onClick={(emojie) => {
-          onToggleReaction({
-            entity_type: 'post',
-            entity_id: post.id,
-            body: { name: emojie.name },
-          })
-        }}
+        <Publication.Emojies
+          reactions={post.reaction_info}
+          onClick={(emojie) => {
+            onToggleReaction({
+              entity_type: 'post',
+              entity_id: post.id,
+              body: { name: emojie.name },
+            })
+          }}
         />
         <Publication.DateCreated dateCreated={new Date(post.date_created)} />
       </Publication>

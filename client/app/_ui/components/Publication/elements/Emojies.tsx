@@ -1,68 +1,66 @@
-import { mapValues, merge, pick } from 'lodash'
-import { useCallback, useEffect, useState } from 'react'
+import { mapValues, merge } from 'lodash'
+import { useCallback, useState } from 'react'
 import { Icon } from 'app/_ui/common/Icon'
 import { Text } from 'app/_ui/common/Text'
-import { CalculateReactionsResponse } from '../../../../../../swagger/reactions/interfaces-reactions'
+import { PostResponseDto } from '../../../../../../swagger/posts/interfaces-posts'
 import { cn } from '../cn'
 
-interface ReactionsState extends CalculateReactionsResponse {
-  [key: string]: string | number;
-}
-
 interface EmojiesProps {
-  onClick?: (emoji: { name: string }) => void;
-  reactions?: Partial<ReactionsState>;
+  onClick?: (emoji: { name: string }) => void
+  reactions?: PostResponseDto['reaction_info']
 }
 
-const DEFAULT_REACTIONS = ['thumbsup', 'thumbsdown']
+const DEFAULT_REACTIONS = ['thumbsup', 'thumbsdown'] as const
+type ReactionType = typeof DEFAULT_REACTIONS[number]
 
-export function Emojies({ onClick, reactions: initialReactions }: EmojiesProps) {
-  const [reactions, setReactions] = useState<ReactionsState>(() => {
-    const initialState = DEFAULT_REACTIONS.reduce(
+export function Emojies(props: EmojiesProps) {
+  const { onClick, reactions: initialReactions } = props
+
+  const [reactions, setReactions] = useState(() => {
+    const initialCounts = DEFAULT_REACTIONS.reduce(
       (acc, reaction) => ({ ...acc, [reaction]: 0 }),
-      { my_reaction: null },
+      {},
     )
-    return merge({}, initialState, initialReactions)
+
+    return ({
+      counts: merge({}, initialCounts, initialReactions?.counts),
+      myReaction: initialReactions?.my_reaction || null,
+    })
   })
 
-  useEffect(() => {
-    if (initialReactions) {
-      setReactions((prev) => merge({}, prev, initialReactions))
-    }
-  }, [initialReactions])
-
   const handleReactionClick = useCallback(
-    (name: string) => {
+    (name: ReactionType) => {
       setReactions((prev) => {
-        const isRemoving = prev.my_reaction === name
+        const isRemoving = prev.myReaction === name
+        const newMyReaction = isRemoving ? null : name
 
-        const updatedReactions = mapValues(prev, (count, key) => {
-          if (key === 'my_reaction') return isRemoving ? null : name
-          if (key === name) return isRemoving ? Math.max(0, (count as number) - 1) : (count as number) + 1
-          if (key === prev.my_reaction) return Math.max(0, (count as number) - 1)
+        const newCounts = mapValues(prev.counts, (count, key) => {
+          if (key === name) return isRemoving ? Math.max(0, count - 1) : count + 1
+          if (key === prev.myReaction) return Math.max(0, count - 1)
           return count
         })
 
-        return updatedReactions as ReactionsState
+        return {
+          counts: newCounts,
+          myReaction: newMyReaction,
+        }
       })
 
-      if (onClick) onClick({ name })
+      onClick?.({ name })
     },
     [onClick],
   )
 
-  const availableReactions = pick(reactions, DEFAULT_REACTIONS)
-
   return (
     <div className={cn('Emojies')}>
-      {Object.keys(availableReactions).map((reaction) => (
+      {DEFAULT_REACTIONS.map((reaction) => (
         <button
           key={reaction}
-          className={cn('EmojieBox', { active: reactions.my_reaction === reaction })}
+          className={cn('EmojieBox', { active: reactions.myReaction === reaction })}
           onClick={() => handleReactionClick(reaction)}
         >
           <Icon name={reaction === 'thumbsup' ? 'thump-up' : 'thumb-down'} />
-          <Text fs="12" letterSpacing={0.18}>{reactions[reaction]}</Text>
+          <Text fs="12" letterSpacing={0.18}>{reactions.counts[reaction]}</Text>
         </button>
       ))}
     </div>

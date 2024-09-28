@@ -14,7 +14,7 @@ export enum PostVisibility {
 
 @Entity({ name: 'posts', comment: 'Посты, которые пользователи могут публиковать у себя на странице/канале' })
 export class PostEntity extends PublicationEntity {
-    @ApiProperty({ description: 'Заголовок поста', required: false })
+    @ApiProperty({ description: 'Заголовок поста', required: false, nullable: true })
     @Column({ nullable: true, type: 'varchar', length: 50, comment: 'Заголовок (если есть)' })
     title: string
 
@@ -62,7 +62,7 @@ export class PostEntity extends PublicationEntity {
     comments: CommentEntity[]
 
     @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity] })
-    @OneToMany(() => ReactionEntity, reaction => reaction.post, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    @OneToMany(() => ReactionEntity, reaction => reaction.post, { cascade: true, onDelete: 'CASCADE', nullable: true })
     reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Количество комментариев к посту', default: 0 })
