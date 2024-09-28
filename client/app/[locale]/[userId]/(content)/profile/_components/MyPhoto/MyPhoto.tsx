@@ -4,6 +4,7 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@
 import { SortableContext } from '@dnd-kit/sortable'
 import { groupBy, omit } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { mediaApi } from '../../../../../../../store/api'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
 
@@ -36,6 +37,10 @@ export function MyPhoto() {
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
+  const media = mediaApi.useGetFilesQuery({
+    type: 'image'
+  })
+console.log('media', media.data)
   useEffect(() => {
     setItems(createArr(30, 'photo'))
   }, [])

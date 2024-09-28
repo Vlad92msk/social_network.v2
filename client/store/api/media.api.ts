@@ -23,6 +23,7 @@ type QueryResult<T> = {
 export const mediaApi = createApi({
   reducerPath: 'API_media',
   baseQuery: fetchBaseQuery({
+    credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
       const profileId = state.profile?.profile?.id
@@ -38,7 +39,7 @@ export const mediaApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    
+
     uploadFiles: builder.mutation<MediaEntity[], Parameters<typeof mediaApiInstance.uploadFiles>[0]>({
       query: (params) => {
         const { url, init } = mediaApiInstance.uploadFilesInit(params)
@@ -92,7 +93,7 @@ export const mediaApi = createApi({
 
 // Типизированные функции-обертки в объекте
 export const MediaApiApi = {
-  
+
   uploadFiles: (props: Parameters<typeof mediaApiInstance.uploadFiles>[0]): Promise<QueryResult<MediaEntity[]>> =>
     store.dispatch(mediaApi.endpoints.uploadFiles.initiate(props)),
 

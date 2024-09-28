@@ -18,14 +18,14 @@ interface UserPageProps {
 export default async function ProfileContent(props: UserPageProps) {
   return (
     <PageContent className={cn()}>
-      <ProfileTab activeTab="Публикации">
+      <ProfileTab activeTab="Фото">
         <ProfileTabItem
           name="Обо мне"
           content={(<AboutMe />)}
         />
         <ProfileTabItem
           name="Публикации"
-          content={<ModulePost posts={['1', '2', '3', '4', '5']} />}
+          content={<ModulePost />}
         />
         <ProfileTabItem name="Фото" content={<MyPhoto />} />
         <ProfileTabItem name="Музыка" content={<MyMusic />} />

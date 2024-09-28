@@ -1,29 +1,37 @@
-import { Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm'
+import { FindOptionsWhere, Between, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeorm'
 
-/**
- * Добавляет фильтр по диапазону значений в условия WHERE
- * @param whereClause - объект условий WHERE
- * @param field - поле для фильтрации
- * @param min - минимальное значение
- * @param max - максимальное значение
- */
-export function addRangeFilter(whereClause: any, field: string, min?: number | Date, max?: number | Date) {
+type RangeValue = number | Date | null
+
+export function addRangeFilter<Entity>(
+  whereClause: FindOptionsWhere<Entity>,
+  field: string & keyof Entity,
+  min?: RangeValue,
+  max?: RangeValue
+) {
     if (min !== undefined && max !== undefined) {
-        whereClause[field] = Between(min, max)
+        if (min === null && max === null) {
+            whereClause[field] = IsNull() as any
+        } else if (min === null) {
+            whereClause[field] = LessThanOrEqual(max) as any
+        } else if (max === null) {
+            whereClause[field] = MoreThanOrEqual(min) as any
+        } else {
+            whereClause[field] = Between(min, max) as any
+        }
     } else if (min !== undefined) {
-        whereClause[field] = MoreThanOrEqual(min)
+        whereClause[field] = min === null ? IsNull() as any : MoreThanOrEqual(min) as any
     } else if (max !== undefined) {
-        whereClause[field] = LessThanOrEqual(max)
+        whereClause[field] = max === null ? IsNull() as any : LessThanOrEqual(max) as any
     }
 }
 
-/**
- * Добавляет несколько фильтров по диапазону значений в условия WHERE
- * @param whereClause - объект условий WHERE
- * @param filters - объект с фильтрами, где ключ - имя поля, а значение - объект с min и max
- */
-export function addMultipleRangeFilters(whereClause: any, filters: Record<string, { min?: number | Date, max?: number | Date }>) {
+export function addMultipleRangeFilters<Entity>(
+  whereClause: FindOptionsWhere<Entity>,
+  filters: Partial<Record<string & keyof Entity, { min?: RangeValue; max?: RangeValue }>>
+) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     Object.entries(filters).forEach(([field, { min, max }]) => {
-        addRangeFilter(whereClause, field, min, max)
+        addRangeFilter(whereClause, field as string & keyof Entity, min, max)
     })
 }

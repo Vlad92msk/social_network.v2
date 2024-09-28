@@ -6,7 +6,7 @@ import * as path from 'path'
 import * as crypto from 'crypto'
 import { GetMediaDto } from './dto/get-media.dto'
 import { RequestParams } from 'src/shared/decorators'
-import { createPaginationQueryOptions, createPaginationResponse, validUuids } from 'src/shared/utils'
+import { addMultipleRangeFilters, createPaginationQueryOptions, createPaginationResponse, validUuids } from 'src/shared/utils'
 import { MediaEntity } from './entities/media.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository } from 'typeorm'
@@ -123,16 +123,42 @@ export class MediaInfoService {
      * Получить ссылки на файлы
      */
     async getFiles(query: GetMediaDto, requestParams?: RequestParams) {
-        const { file_ids, ...restQuery } = query
+        const {
+            file_ids,
+            type,
+            owner_id,
+          created_at_from, created_at_to,
+          updated_at_from, updated_at_to,
+          comments_count_from, comments_count_to,
+          views_count_from, views_count_to
+          ,
+          ...restQuery } = query
 
         const ids = validUuids(file_ids)
 
-        const [data, total] = await this.mediaInfoRepository.findAndCount(
-            createPaginationQueryOptions<MediaEntity>({
-                query: {...restQuery, id: ids && In(ids) },
-                options: { relations: ['meta', 'owner', 'tags'] }
-            })
-        )
+        const queryOptions = createPaginationQueryOptions<MediaEntity>({
+            query: {...restQuery, id: ids && In(ids) },
+            options: {
+                where: {
+                    owner: { id: owner_id },
+                    meta: { type }
+                },
+                relations: ['tags']
+            }
+        })
+
+        console.log('queryOptions', queryOptions)
+        // Фильтры по диапазонам
+        addMultipleRangeFilters<MediaEntity>(queryOptions.where, {
+            comments_count: { min: comments_count_from, max: comments_count_to },
+            created_at: { min: created_at_from, max: created_at_to },
+            updated_at: { min: updated_at_from, max: updated_at_to },
+            views_count: { min: views_count_from, max: views_count_to }
+        })
+        console.log('type', type)
+        console.log('queryOptions', queryOptions)
+
+        const [data, total] = await this.mediaInfoRepository.findAndCount(queryOptions)
 
         // Отдаем ответ с пагинацией
         return createPaginationResponse({ data, total, query })

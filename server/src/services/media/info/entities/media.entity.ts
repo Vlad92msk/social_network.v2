@@ -49,12 +49,12 @@ export class MediaEntity implements MediaItem {
     comments_count: number
 
     @ApiProperty({ description: 'Мета-информация по файлу', type: () => MediaMetadata })
-    @OneToOne(() => MediaMetadata, { cascade: true, onDelete: 'CASCADE' })
+    @OneToOne(() => MediaMetadata, { cascade: true, onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'metadata_id', referencedColumnName: 'id' })
     meta: MediaMetadata
 
     @ApiProperty({ description: 'Автор загруженного файла', type: () => UserInfo })
-    @ManyToOne(() => UserInfo)
+    @ManyToOne(() => UserInfo, { eager: true })
     @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' })
     owner: UserInfo
 
