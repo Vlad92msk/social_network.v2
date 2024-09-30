@@ -1,7 +1,9 @@
 import { DraggableAttributes } from '@dnd-kit/core'
 import { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities'
 import { CSSProperties } from 'react'
+import { Image } from '@ui/common/Image'
 import { ItemWithComments } from '@ui/components/item-with-comments'
+import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 
 interface ElementProps {
@@ -12,7 +14,7 @@ interface ElementProps {
   attributes?: DraggableAttributes
   listeners?: SyntheticListenerMap
   ref?: any
-  item?: any
+  item?: MediaEntity
 }
 
 export function ItemElement(props: ElementProps) {
@@ -21,7 +23,7 @@ export function ItemElement(props: ElementProps) {
   } = props
 
   return (
-    <ItemWithComments item={item} module="photo">
+    <ItemWithComments item={item} target="media">
       <div
         className={
           cn('PhotoItem', {
@@ -34,7 +36,14 @@ export function ItemElement(props: ElementProps) {
         {...attributes}
         {...rest}
       >
-        {item?.name}
+        {item && (
+          <Image
+            src={item?.meta.src}
+            alt={item?.meta.name}
+            width={400}
+            height={400}
+          />
+        )}
       </div>
     </ItemWithComments>
   )

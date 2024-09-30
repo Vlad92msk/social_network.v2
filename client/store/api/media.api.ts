@@ -22,18 +22,23 @@ type QueryResult<T> = {
 
 export const mediaApi = createApi({
   reducerPath: 'API_media',
+  tagTypes: ['MediaFiles'],
   baseQuery: fetchBaseQuery({
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
       const profileId = state.profile?.profile?.id
       const userInfoId = state.profile?.profile?.user_info?.id
+      const publicId = state.profile?.profile?.user_info?.public_id
 
       if (profileId) {
         headers.set(CookieType.USER_PROFILE_ID, String(profileId))
       }
       if (userInfoId) {
         headers.set(CookieType.USER_INFO_ID, String(userInfoId))
+      }
+      if (publicId) {
+        headers.set(CookieType.USER_PUBLIC_ID, String(publicId))
       }
       return headers
     },
@@ -62,11 +67,20 @@ export const mediaApi = createApi({
     }),
 
     getFiles: builder.query<MediaEntity[], Parameters<typeof mediaApiInstance.getFiles>[0]>({
+      providesTags: ['MediaFiles'],
       query: (params) => {
         const { url, init } = mediaApiInstance.getFilesInit(params)
         return { url, ...init }
       },
     }),
+
+    updateMedia: builder.mutation<any, Parameters<typeof mediaApiInstance.updateMedia>[0]>({
+      query: (params) => {
+        const { url, init } = mediaApiInstance.updateMediaInit(params)
+        return { url, ...init }
+      },
+    }),
+
 
     addTagsToMedia: builder.mutation<MediaEntity, Parameters<typeof mediaApiInstance.addTagsToMedia>[0]>({
       query: (params) => {
@@ -105,6 +119,10 @@ export const MediaApiApi = {
 
   getFiles: (props: Parameters<typeof mediaApiInstance.getFiles>[0]): Promise<QueryResult<MediaEntity[]>> =>
     store.dispatch(mediaApi.endpoints.getFiles.initiate(props)),
+
+  updateMedia: (props: Parameters<typeof mediaApiInstance.updateMedia>[0]): Promise<QueryResult<any>> =>
+    store.dispatch(mediaApi.endpoints.updateMedia.initiate(props)),
+
 
   addTagsToMedia: (props: Parameters<typeof mediaApiInstance.addTagsToMedia>[0]): Promise<QueryResult<MediaEntity>> =>
     store.dispatch(mediaApi.endpoints.addTagsToMedia.initiate(props)),

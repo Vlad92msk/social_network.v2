@@ -1,4 +1,5 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
 import { MetadataService } from '../metadata/media-metadata.service'
 import { AbstractStorageService } from '../storage/abstract-storage.service'
 import { MediaItemType } from '../metadata/interfaces/mediaItemType'
@@ -134,20 +135,20 @@ export class MediaInfoService {
           ,
           ...restQuery } = query
 
+        const owner = await this.userService.getUsersByParams({ public_id: requestParams.user_public_id }, requestParams)
         const ids = validUuids(file_ids)
-
         const queryOptions = createPaginationQueryOptions<MediaEntity>({
-            query: {...restQuery, id: ids && In(ids) },
+            query: {...restQuery, id: ids?.length && In(ids) },
             options: {
                 where: {
-                    owner: { id: owner_id },
-                    meta: { type }
+                    owner: owner_id ? { id: owner_id } : { id: owner.id },
+                    meta: type ? { type } : undefined,
                 },
-                relations: ['tags']
+                // relations: ['tags']
             }
         })
 
-        console.log('queryOptions', queryOptions)
+
         // Фильтры по диапазонам
         addMultipleRangeFilters<MediaEntity>(queryOptions.where, {
             comments_count: { min: comments_count_from, max: comments_count_to },
@@ -155,10 +156,19 @@ export class MediaInfoService {
             updated_at: { min: updated_at_from, max: updated_at_to },
             views_count: { min: views_count_from, max: views_count_to }
         })
-        console.log('type', type)
-        console.log('queryOptions', queryOptions)
+        // console.log('queryOptions', queryOptions)
 
-        const [data, total] = await this.mediaInfoRepository.findAndCount(queryOptions)
+        const test = {
+            ...queryOptions,
+            where: {
+                ...queryOptions.where,
+                id: ids?.length && In(ids)
+            },
+        }
+
+        // console.log('test_____', test)
+        const [data, total] = await this.mediaInfoRepository.findAndCount(test)
+        // console.log('find', data.length)
 
         // Отдаем ответ с пагинацией
         return createPaginationResponse({ data, total, query })
@@ -179,6 +189,19 @@ export class MediaInfoService {
             return { message: 'Файл успешно удален' }
         } catch (error) {
             throw new BadRequestException('Не удалось удалить файл')
+        }
+    }
+
+    async updateMedias(query: UpdateMediaDto, requestParams?: RequestParams) {
+        const { data: currentFiles } = await this.getFiles({ file_ids: query.target_ids, owner_id: requestParams.user_info_id }, requestParams)
+
+        console.log('currentFiles', currentFiles)
+        console.log('query', query)
+        for (const media of currentFiles) {
+            if (query?.album_name !== undefined) {
+                media.album_name = query.album_name
+            }
+            await this.mediaInfoRepository.save(media)
         }
     }
 

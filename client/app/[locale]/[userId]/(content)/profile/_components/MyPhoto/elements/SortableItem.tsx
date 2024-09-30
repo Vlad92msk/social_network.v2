@@ -1,13 +1,13 @@
 // SortableItem.tsx
 import { useSortable } from '@dnd-kit/sortable'
 import { ItemElement } from './ItemElement'
-
+import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
 
 interface SortableItemProps {
   id: string
   isPotentialGroup: boolean
   disabled?: boolean
-  item?: any
+  item: MediaEntity
 }
 
 export function SortableItem(props: SortableItemProps) {

@@ -60,25 +60,22 @@ export class CommentService {
       query: FindCommentDto,
       params: RequestParams
     ) {
-        const queryOptions = createPaginationQueryOptions<CommentEntity>({
-            query,
-            options: {
-                relations: ['reactions', 'author', 'parent_comment'],
-                where: {
-                    [entityType]: { id: entityId },
-                    parent_comment: IsNull(),
-                }
-            }
+
+        const {page, per_page, sort_by, sort_direction, ...restQuery} = query
+        console.log('entityType', entityType)
+        console.log('entityId', entityId)
+
+        const [rootComments, totalRootComments] = await this.commentRepository.findAndCount({
+            where: {
+                ...restQuery,
+                [entityType]: { id: entityId },
+                parent_comment: IsNull(),
+            },
+            order: sort_by ? {[sort_by]: sort_direction || 'ASC'} : { date_created: 'DESC' },
+            relations: ['reactions', 'author', 'parent_comment'],
         })
 
-        if (query.sort_by) {
-            queryOptions.order = { [query.sort_by]: query.sort_direction || 'ASC' }
-        } else {
-            queryOptions.order = { date_created: 'DESC' }
-        }
-
-        const [rootComments, totalRootComments] = await this.commentRepository.findAndCount(queryOptions)
-
+        console.log('rootComments', rootComments)
 
         // Получаем общее количество комментариев и количество дочерних комментариев
         const [totalComments, childComments] = await Promise.all([

@@ -259,6 +259,7 @@ function generateApiClientFile(document: any, config: YamlGenerationConfig, modu
   console.log(`Завершение генерации API-клиента для модуля ${moduleName}`)
 }
 
+
 function generateInitMethod(operationId: string, paramsType: string, path: string, method: string, parameters: any[], requestBody: any, operation: any) {
   let content = ''
   content += '  /**\n'
@@ -267,33 +268,57 @@ function generateInitMethod(operationId: string, paramsType: string, path: strin
   content += `   * @name ${operationId}Init\n`
   content += '   */\n'
   content += `  ${operationId}Init(params: ${paramsType}, requestParams?: RequestInit): { url: string, init: RequestInit } {\n`
-  content += `    const url = new URL(\`${path}\`, this.baseUrl);\n`
-  if (parameters.length > 0) {
-    content += '    Object.entries(params).forEach(([key, value]) => {\n'
-    content += '      if (value !== undefined) {\n'
-    content += '        if (Array.isArray(value)) {\n'
-    content += '          url.searchParams.append(key, value.join(\',\'));\n'
+
+  // Обработка параметров пути
+  const pathParams = parameters.filter(p => p.in === 'path');
+  let processedPath = path;
+  pathParams.forEach(param => {
+    processedPath = processedPath.replace(`{${param.name}}`, `\${params.${param.name}}`);
+  });
+  content += `    let path = \`${processedPath}\`;\n`
+  content += `    const url = new URL(path, this.baseUrl);\n`
+
+  // Обработка query-параметров
+  const queryParams = parameters.filter(p => p.in === 'query');
+  if (queryParams.length > 0) {
+    content += '    const queryParams = [\'' + queryParams.map(p => p.name).join('\', \'') + '\'];\n'
+    content += '    queryParams.forEach(key => {\n'
+    content += '      if (params[key] !== undefined) {\n'
+    content += '        if (Array.isArray(params[key])) {\n'
+    content += '          url.searchParams.append(key, params[key].join(\',\'));\n'
     content += '        } else {\n'
-    content += '          url.searchParams.append(key, value.toString());\n'
+    content += '          url.searchParams.append(key, params[key].toString());\n'
     content += '        }\n'
     content += '      }\n'
     content += '    });\n'
   }
+
   content += '    const headers = { ...this.defaultConfig?.headers, ...requestParams?.headers };\n'
-  content += '    let body: string | undefined | FormData;\n'
-  if (requestBody) {
-    content += '    if (params.body instanceof FormData) {\n'
-    content += '      body = params.body;\n'
-    content += '      delete headers[\'Content-Type\'];\n'
-    content += '    } else if (params.body) {\n'
-    content += '      body = JSON.stringify(params.body);\n'
-    content += '      headers[\'Content-Type\'] = \'application/json\';\n'
-    content += '    }\n'
+
+  // Обработка тела запроса для всех методов, кроме GET
+  if (method.toUpperCase() !== 'GET') {
+    content += '    let body: string | undefined | FormData;\n'
+    if (requestBody) {
+      content += '    if (params.body instanceof FormData) {\n'
+      content += '      body = params.body;\n'
+      content += '      delete headers[\'Content-Type\'];\n'
+      content += '    } else if (params.body) {\n'
+      content += '      body = JSON.stringify(params.body);\n'
+      content += '      headers[\'Content-Type\'] = \'application/json\';\n'
+      content += '    }\n'
+    } else {
+      // Если нет явного requestBody, но метод не GET, создаем пустое тело
+      content += '    body = JSON.stringify({});\n'
+      content += '    headers[\'Content-Type\'] = \'application/json\';\n'
+    }
   }
+
   content += '    const init: RequestInit = {\n'
   content += `      method: '${method.toUpperCase()}',\n`
   content += '      ...this.defaultConfig,\n'
-  content += '      body,\n'
+  if (method.toUpperCase() !== 'GET') {
+    content += '      body,\n'
+  }
   content += '      ...requestParams,\n'
   content += '      headers,\n'
   content += '    };\n'
@@ -301,6 +326,7 @@ function generateInitMethod(operationId: string, paramsType: string, path: strin
   content += '  }\n\n'
   return content
 }
+
 
 function generateMainMethod(operationId: string, paramsType: string, responseType: string, method: string, path: string, operation: any) {
   let content = ''

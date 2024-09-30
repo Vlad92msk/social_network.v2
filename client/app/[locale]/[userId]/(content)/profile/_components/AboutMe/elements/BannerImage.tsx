@@ -35,7 +35,7 @@ export const BannerImage = (props: BannerImageProps) => {
   return (
     <>
       <div className={cn('BannerBck', { active: isChangeActive })} onClick={handleImageClick}>
-        <Image alt="bunner" src={bunner_image} width={400} height={200}/>
+        <Image alt="bunner" src={bunner_image} width={400} height={200} />
       </div>
       <input
         type="file"

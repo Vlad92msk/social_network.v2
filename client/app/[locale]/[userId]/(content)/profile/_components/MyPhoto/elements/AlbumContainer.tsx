@@ -1,13 +1,15 @@
 import { SortableContext } from '@dnd-kit/sortable'
 import { useBooleanState } from '@hooks'
 import { Text } from '@ui/common/Text'
+import { AlbumTitle } from './AlbumTitle'
 import { ModalAlbum } from './ModalAlbum'
 import { SortableItem } from './SortableItem'
+import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 
 interface AlbumContainerProps {
-  title?: string
-  albumItems: any[]
+  title: string
+  albumItems: MediaEntity[]
   overItemId: string | null
 }
 
@@ -22,7 +24,7 @@ export function AlbumContainer(props: AlbumContainerProps) {
     }
 
     return acc
-  }, [[], []])
+  }, [[] as MediaEntity[], [] as MediaEntity[]])
 
   return (
     <div
@@ -56,7 +58,7 @@ export function AlbumContainer(props: AlbumContainerProps) {
           )}
         </div>
       </SortableContext>
-      <Text className={cn('AlbumTitle')} fs="12" weight="bold">{title}</Text>
+      <AlbumTitle title={title} items={albumItems} />
       <ModalAlbum isAlbumOpen={isAlbumOpen} onClose={onAlbumClose} items={albumItems} />
     </div>
   )

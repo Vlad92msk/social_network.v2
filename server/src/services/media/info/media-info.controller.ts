@@ -1,27 +1,33 @@
+import { ConfigEnum } from '@config/config.enum'
 import {
     BadRequestException,
+    Body,
     Controller,
     Delete,
-    Get, InternalServerErrorException, NotFoundException,
+    Get,
+    InternalServerErrorException,
+    NotFoundException,
     Param,
     ParseFilePipe,
-    Post, Query,
+    Patch,
+    Post,
+    Query,
     Req,
     Res,
     UploadedFiles,
     UseInterceptors
 } from '@nestjs/common'
-import { MediaInfoService } from './media-info.service'
-import { FilesInterceptor } from '@nestjs/platform-express'
-import { Request, Response } from 'express'
-import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from './decorators'
 import { ConfigService } from '@nestjs/config'
-import { ConfigEnum } from '@config/config.enum'
-import { GetMediaDto } from './dto/get-media.dto'
+import { FilesInterceptor } from '@nestjs/platform-express'
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
+import { MediaEntity } from '@services/media/info/entities/media.entity'
+import { Request, Response } from 'express'
 import { RequestParams } from 'src/shared/decorators'
 import { createPaginationHeaders } from 'src/shared/utils'
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { MediaEntity } from '@services/media/info/entities/media.entity'
+import { AudioValidator, DocumentValidator, ImageValidator, VideoValidator } from './decorators'
+import { GetMediaDto } from './dto/get-media.dto'
+import { MediaInfoService } from './media-info.service'
 
 @ApiTags('Медиа')
 @Controller('api/media/info')
@@ -117,6 +123,16 @@ export class MediaInfoController {
 
         response.set(createPaginationHeaders(paginationInfo))
         return data
+    }
+
+    @Patch('update')
+    @ApiOperation({ summary: 'Обновить инф о файлах' })
+    @ApiResponse({ status: 200, description: 'Файлы успешно обновлены' })
+    async updateMedia(
+      @Body() updateMediaDto: UpdateMediaDto,
+      @RequestParams() params: RequestParams
+    ) {
+        return await this.mediaInfoService.updateMedias(updateMediaDto, params)
     }
 
     @Delete(':id')

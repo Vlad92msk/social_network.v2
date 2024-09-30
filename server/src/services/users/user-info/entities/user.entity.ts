@@ -41,7 +41,7 @@ export class UserInfo implements UserInfoType {
     // Связи
 
     @ApiProperty({ description: 'Общая информация о пользователе', type: () => UserAbout })
-    @OneToOne(type => UserAbout, { cascade: true, onDelete: 'CASCADE' })
+    @OneToOne(type => UserAbout, { cascade: true, onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'user_id' })
     about_info: UserAbout
 

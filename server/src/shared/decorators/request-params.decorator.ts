@@ -6,8 +6,9 @@ import { BadRequestException, createParamDecorator, ExecutionContext } from '@ne
 export interface RequestParams {
     profile_id: number
     user_info_id: number
+    user_public_id: string
     headers: any
-  body: any
+    body: any
 }
 
 export const RequestParams = createParamDecorator(
@@ -15,6 +16,7 @@ export const RequestParams = createParamDecorator(
       const request = ctx.switchToHttp().getRequest()
       const profile_id = request.cookies['profile_id']
       const user_info_id = request.cookies['user_info_id']
+      const user_public_id = request.headers['user_public_id']
 
       if (!profile_id || !user_info_id) {
         throw new BadRequestException('Отсутствуют требуемые файлы cookie. Убедитесь, что вы установили учетные данные: "include" в конфигурации API.')
@@ -23,6 +25,7 @@ export const RequestParams = createParamDecorator(
       return {
         profile_id: Number(profile_id),
         user_info_id: Number(user_info_id),
+        user_public_id: String(user_public_id),
         headers: request.headers,
         body: request.body
       }

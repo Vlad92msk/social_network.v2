@@ -2,48 +2,35 @@
 
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext } from '@dnd-kit/sortable'
-import { groupBy, omit } from 'lodash'
+import { groupBy, omit, uniqBy } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { mediaApi } from '../../../../../../../store/api'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
-
-interface MediaItem {
-  id: string
-  name: string
-  album?: string
-}
-
-function random(min, max) {
-  min = Math.ceil(min)
-  max = Math.floor(max)
-  return Math.floor(Math.random() * (max - min + 1)) + min
-}
+import { MediaEntity, MediaMetadata } from '../../../../../../../../swagger/media/interfaces-media'
+import { mediaApi } from '../../../../../../../store/api'
 
 function generateRandomAlbum() {
   return `Album_${Math.random().toString(36).substring(7)}`
 }
 
-const albums = ['story', 'work', 'business']
-const createArr = (count: number, name = ''): MediaItem[] => Array.from({ length: count }, (_, index) => ({
-  id: String(index + 1),
-  name: `${name} ${index + 1}`,
-  album: index % 2 ? albums[random(0, albums.length - 1)] : undefined,
-}))
-
 export function MyPhoto() {
-  const [items, setItems] = useState<MediaItem[]>([])
+  const type: MediaMetadata['type'] = 'image'
+  const [items, setItems] = useState<MediaEntity[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
   const media = mediaApi.useGetFilesQuery({
-    type: 'image'
+    type,
   })
-console.log('media', media.data)
+
+  const [onMediaUpdate] = mediaApi.useUpdateMediaMutation()
+
+  console.log('media', media.data)
   useEffect(() => {
-    setItems(createArr(30, 'photo'))
-  }, [])
+    // @ts-ignore
+    setItems(media.data)
+  }, [media])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -54,7 +41,7 @@ console.log('media', media.data)
   )
 
   const { groupedItems, singleItems } = useMemo(() => {
-    const grouped = groupBy(items, (item) => item.album || 'single')
+    const grouped = groupBy(items, (item) => item.album_name || 'single')
     return {
       groupedItems: omit(grouped, 'single'),
       singleItems: grouped.single || [],
@@ -75,7 +62,7 @@ console.log('media', media.data)
 
     setOverItemId(over.id)
 
-    if (!activeItem?.album && !overItem?.album && active.id !== over.id) {
+    if (!activeItem?.album_name && !overItem?.album_name && active.id !== over.id) {
       setPotentialNewAlbum(generateRandomAlbum())
     } else {
       setPotentialNewAlbum(null)
@@ -86,6 +73,8 @@ console.log('media', media.data)
     const { active, over } = event
     if (!over) return
 
+    const updatedItems: MediaEntity[] = []
+
     setItems((prevItems) => {
       const activeItem = prevItems.find((item) => item.id === active.id)
       const overItem = prevItems.find((item) => item.id === over.id)
@@ -94,24 +83,30 @@ console.log('media', media.data)
 
       let newAlbum: string | undefined
 
-      if (overItem.album) {
-        newAlbum = overItem.album
-      } else if (!activeItem.album && !overItem.album && active.id !== over.id) {
+      if (overItem.album_name) {
+        newAlbum = overItem.album_name
+      } else if (!activeItem.album_name && !overItem.album_name && active.id !== over.id) {
         newAlbum = potentialNewAlbum || generateRandomAlbum()
       }
 
       return prevItems.map((item) => {
-        if (item.id === active.id || (item.id === over.id && !overItem.album && !activeItem.album && active.id !== over.id)) {
-          return { ...item, album: newAlbum }
+        if (item.id === active.id || (item.id === over.id && !overItem.album_name && !activeItem.album_name && active.id !== over.id)) {
+          const result = { ...item, album_name: newAlbum }
+          updatedItems.push(result)
+          return result
         }
         return item
       })
     })
-
+    const uniqItems = uniqBy(updatedItems, 'id')
+    onMediaUpdate({ body: {
+      target_ids: uniqItems.map(({ id }) => id),
+      album_name: uniqItems[0]?.album_name,
+    } })
     setActiveId(null)
     setOverItemId(null)
     setPotentialNewAlbum(null)
-  }, [potentialNewAlbum])
+  }, [onMediaUpdate, potentialNewAlbum])
 
   return (
     <div className={cn()}>
@@ -120,6 +115,9 @@ console.log('media', media.data)
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={(a) => {
+          console.log('Drag cancelled', a)
+        }}
       >
         {Object.entries(groupedItems)
           .map(([albumName, albumItems]) => (
@@ -132,7 +130,7 @@ console.log('media', media.data)
           ))}
 
         <SortableContext items={singleItems}>
-          {singleItems.map((item: MediaItem) => (
+          {singleItems.map((item: MediaEntity) => (
             <SortableItem
               key={item.id}
               id={item.id}

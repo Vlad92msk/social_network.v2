@@ -68,6 +68,15 @@
     }
   }
 
+  &-AlbumTitleContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    gap: rem(5);
+  }
+
   &-AlbumTitle {
     text-align: center;
   }

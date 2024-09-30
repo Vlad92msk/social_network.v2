@@ -28,7 +28,7 @@ export class MediaEntity implements MediaItem {
     @PrimaryGeneratedColumn('uuid')
     id: string
 
-    @ApiProperty({ description: 'Название альбома', required: false })
+    @ApiProperty({ description: 'Название альбома', required: false, nullable: true })
     @Column({ nullable: true, type: 'varchar', length: 50, comment: 'Название альбома, если есть' })
     album_name: string
 

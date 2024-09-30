@@ -8,7 +8,7 @@ import { commentsApi } from '../../../../../store/api'
 import { cn } from '../cn'
 
 export interface CommentProps {
-  target: 'post' | 'media'
+  target: 'post' | 'media' | 'photo'
   id: string
   comment: CommentWithChildCountDto
 }

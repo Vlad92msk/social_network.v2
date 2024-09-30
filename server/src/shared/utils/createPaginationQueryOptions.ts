@@ -1,4 +1,5 @@
-import { assign, isEmpty } from 'lodash'
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from '@utils/createPaginationResponse'
+import { isEmpty, merge } from 'lodash'
 import { FindOneOptions } from 'typeorm'
 
 interface CreatePaginationQueryOptions<Entity> {
@@ -22,7 +23,7 @@ function removeEmptyValues(obj: any): any {
 
 export function createPaginationQueryOptions<Entity>(props: CreatePaginationQueryOptions<Entity>) {
     const { query, options = {} } = props
-    const { page, per_page, sort_by, sort_direction, ...searchParams } = query
+    const { page = DEFAULT_PAGE, per_page = DEFAULT_PER_PAGE, sort_by, sort_direction, ...searchParams } = query
 
     const queryOptions: any = {
         skip: (page - 1) * per_page,
@@ -45,6 +46,5 @@ export function createPaginationQueryOptions<Entity>(props: CreatePaginationQuer
           ? removeEmptyValues({ ...queryOptions.where, ...cleanOptions.where })
           : cleanOptions.where
     }
-
-    return removeEmptyValues(assign({}, queryOptions, cleanOptions))
+    return merge({}, queryOptions, cleanOptions)
 }

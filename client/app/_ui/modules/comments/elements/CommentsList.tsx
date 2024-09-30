@@ -4,7 +4,7 @@ import { Comment } from './Comment'
 import { cn } from '../cn'
 
 interface CommentsListProps {
-  target: 'post' | 'media'
+  target: 'post' | 'media' | 'photo'
   id: string
 }
 

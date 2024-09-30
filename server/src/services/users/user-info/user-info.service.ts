@@ -65,13 +65,18 @@ export class UserInfoService {
         return user
     }
 
+    async getUsersByParams(query: GetUsersDto, params: RequestParams) {
+        const user = await this.userInfoRepository.findOne({ where: query })
+
+        return user
+    }
+
     /**
      * Обновить информацию о пользователе
      */
     async updateUserInfo(data: UpdateUserInfo, params: RequestParams): Promise<UserInfo> {
         const findUser = await this.userInfoRepository.findOne({
             where: { id: params.user_info_id },
-            relations: ['about_info'],
         })
 
         if (!findUser) throw new Error('Пользователь не найден')

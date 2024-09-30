@@ -1,11 +1,12 @@
 import { Modal } from '@ui/common/Modal'
-import { cn } from '../cn'
 import { ItemElement } from './ItemElement'
+import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
+import { cn } from '../cn'
 
 interface ModalAlbumProps {
   isAlbumOpen: boolean
   onClose: VoidFunction
-  items: any[]
+  items: MediaEntity[]
 }
 
 export function ModalAlbum(props: ModalAlbumProps) {
