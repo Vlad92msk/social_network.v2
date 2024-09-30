@@ -20,6 +20,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { MediaResponseDto } from '@services/media/info/dto/media-response.dto'
 import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
 import { MediaEntity } from '@services/media/info/entities/media.entity'
 import { Request, Response } from 'express'
@@ -113,13 +114,13 @@ export class MediaInfoController {
     @Get()
     @ApiOperation({ summary: 'Получить список файлов' })
     @ApiQuery({ type: GetMediaDto })
-    @ApiResponse({ status: 200, description: 'Список файлов', type: [MediaEntity] })
+    @ApiResponse({ status: 200, description: 'Список файлов', type: [MediaResponseDto] })
     async getFiles(
         @Query() query: GetMediaDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
-        const { data, paginationInfo } = await this.mediaInfoService.getFiles(query, params)
+        const { data, paginationInfo } = await this.mediaInfoService.getFilesWithReactions(query, params)
 
         response.set(createPaginationHeaders(paginationInfo))
         return data

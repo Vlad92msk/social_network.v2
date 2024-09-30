@@ -312,6 +312,7 @@ $padding: rem(6);
       width: 100%;
     }
   }
+
   &-Emojies {
     grid-area: emojies;
     padding-left: $padding;
@@ -319,20 +320,6 @@ $padding: rem(6);
     align-content: center;
     display: flex;
     gap: rem(3);
-  }
-
-  &-EmojieBox {
-    display: flex;
-    align-items: center;
-    gap: rem(3);
-
-    &--active {
-      color: var(--Color-Text--variant-7--theme-default);
-    }
-
-    & > svg {
-      height: 60%;
-    }
   }
 
   &-Commets {

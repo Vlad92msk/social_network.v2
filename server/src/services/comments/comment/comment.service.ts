@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { CommentTarget } from '@services/comments/comment/comment.controller'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { PostsService } from '@services/posts/post/post.service'
+import { CalculateReactionsResponse } from '@services/reactions/dto/toggle-reaction-response.dto'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
-import { createPaginationQueryOptions, createPaginationResponse } from '@shared/utils'
+import { SortDirection } from '@shared/types'
+import { createPaginationQueryOptions, createPaginationAndOrder, createPaginationResponse } from '@shared/utils'
 import { In, Repository, IsNull } from 'typeorm'
 import { CommentResponseDto, CommentWithChildCountDto } from './dto/comment-response.dto'
 import { CreateCommentDto } from './dto/create-comment.dto'
@@ -60,10 +62,14 @@ export class CommentService {
       query: FindCommentDto,
       params: RequestParams
     ) {
+        const { page, per_page, sort_by, sort_direction, ...restQuery} = query
 
-        const {page, per_page, sort_by, sort_direction, ...restQuery} = query
-        console.log('entityType', entityType)
-        console.log('entityId', entityId)
+        const paginationAndOrder = createPaginationAndOrder({
+            page,
+            per_page,
+            sort_by,
+            sort_direction
+        })
 
         const [rootComments, totalRootComments] = await this.commentRepository.findAndCount({
             where: {
@@ -71,11 +77,16 @@ export class CommentService {
                 [entityType]: { id: entityId },
                 parent_comment: IsNull(),
             },
-            order: sort_by ? {[sort_by]: sort_direction || 'ASC'} : { date_created: 'DESC' },
-            relations: ['reactions', 'author', 'parent_comment'],
+            ...paginationAndOrder,
+            relations: [
+                'author',
+                'parent_comment',
+                'reactions',
+                'reactions.reaction',
+                'reactions.user',
+            ],
         })
 
-        console.log('rootComments', rootComments)
 
         // Получаем общее количество комментариев и количество дочерних комментариев
         const [totalComments, childComments] = await Promise.all([
@@ -100,10 +111,13 @@ export class CommentService {
         })
 
         // Преобразуем rootComments в CommentWithChildCountDto
-        const commentsWithChildCount: CommentWithChildCountDto[] = rootComments.map(comment => ({
-            ...comment,
-            child_count: childCountMap.get(comment.id) || 0
-        }))
+        const commentsWithChildCount: CommentWithChildCountDto[] = rootComments.map(comment => {
+            return ({
+                ...comment,
+                reaction_info: this.calculateReactions(comment, params),
+                child_count: childCountMap.get(comment.id) || 0
+            })
+        })
 
         // Создаем объект CommentResponseDto
         const commentResponseDto: CommentResponseDto = {
@@ -118,6 +132,25 @@ export class CommentService {
             total: totalRootComments,
             query
         })
+    }
+
+    private calculateReactions(comment, params): CalculateReactionsResponse {
+        const reactionCounts = comment.reactions.reduce((acc, reaction) => {
+            const reactionName = reaction.reaction.name
+            acc[reactionName] = (acc[reactionName] || 0) + 1
+            return acc
+        }, {} as Record<string, number>)
+
+        const userReaction = comment.reactions.find(reaction => reaction.user.id === params.user_info_id)
+
+        const reactionInfo: CalculateReactionsResponse = {
+            counts: reactionCounts,
+            my_reaction: userReaction ? userReaction.reaction.name : null
+        }
+
+        delete comment.reactions
+
+        return reactionInfo
     }
 
     async getChildComments(parentId: string, query: FindCommentDto) {

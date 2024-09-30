@@ -18,7 +18,7 @@ export class CommentEntity extends PublicationEntity {
     parent_comment: CommentEntity | null
 
     @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity] })
-    @OneToMany(() => ReactionEntity, reaction => reaction.comment, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    @OneToMany(() => ReactionEntity, reaction => reaction.comment, { cascade: true, onDelete: 'CASCADE', nullable: true })
     reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Пост к которому относится комментарий', type: () => PostEntity, nullable: true })

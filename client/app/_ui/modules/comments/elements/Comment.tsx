@@ -8,7 +8,7 @@ import { commentsApi } from '../../../../../store/api'
 import { cn } from '../cn'
 
 export interface CommentProps {
-  target: 'post' | 'media' | 'photo'
+  target: 'post' | 'media'
   id: string
   comment: CommentWithChildCountDto
 }
@@ -54,7 +54,7 @@ export function Comment(props: CommentProps) {
             }
           />
         )}
-        <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
+        <Publication.Emojies entity_id={comment.id} entity_type="comment" reactions={comment.reaction_info} />
         <Publication.Commets isActive={isOpenComments} countComments={child_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
         <Publication.DateCreated dateCreated={date_created} />
       </Publication>

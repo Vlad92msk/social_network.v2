@@ -77,7 +77,7 @@ export class MediaEntity implements MediaItem {
     tags: Tag[]
 
     @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity], nullable: true })
-    @OneToMany(() => ReactionEntity, reaction => reaction.media, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    @OneToMany(() => ReactionEntity, reaction => reaction.media, { cascade: true, onDelete: 'CASCADE', nullable: true })
     reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Комментарии к данному медиа', type: () => [CommentEntity], nullable: true })

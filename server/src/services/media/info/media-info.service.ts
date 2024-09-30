@@ -1,5 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { MediaResponseDto } from '@services/media/info/dto/media-response.dto'
 import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
+import { CalculateReactionsResponse } from '@services/reactions/dto/toggle-reaction-response.dto'
 import { MetadataService } from '../metadata/media-metadata.service'
 import { AbstractStorageService } from '../storage/abstract-storage.service'
 import { MediaItemType } from '../metadata/interfaces/mediaItemType'
@@ -120,6 +122,25 @@ export class MediaInfoService {
         })
     }
 
+    private calculateReactions(comment, params): CalculateReactionsResponse {
+        const reactionCounts = comment.reactions.reduce((acc, reaction) => {
+            const reactionName = reaction.reaction.name
+            acc[reactionName] = (acc[reactionName] || 0) + 1
+            return acc
+        }, {} as Record<string, number>)
+
+        const userReaction = comment.reactions.find(reaction => reaction.user.id === params.user_info_id)
+
+        const reactionInfo: CalculateReactionsResponse = {
+            counts: reactionCounts,
+            my_reaction: userReaction ? userReaction.reaction.name : null
+        }
+
+        delete comment.reactions
+
+        return reactionInfo
+    }
+
     /**
      * Получить ссылки на файлы
      */
@@ -144,7 +165,11 @@ export class MediaInfoService {
                     owner: owner_id ? { id: owner_id } : { id: owner.id },
                     meta: type ? { type } : undefined,
                 },
-                // relations: ['tags']
+                relations: [
+                    'reactions',
+                    'reactions.reaction',
+                    'reactions.user',
+                ]
             }
         })
 
@@ -156,7 +181,6 @@ export class MediaInfoService {
             updated_at: { min: updated_at_from, max: updated_at_to },
             views_count: { min: views_count_from, max: views_count_to }
         })
-        // console.log('queryOptions', queryOptions)
 
         const test = {
             ...queryOptions,
@@ -166,12 +190,24 @@ export class MediaInfoService {
             },
         }
 
-        // console.log('test_____', test)
         const [data, total] = await this.mediaInfoRepository.findAndCount(test)
-        // console.log('find', data.length)
 
         // Отдаем ответ с пагинацией
         return createPaginationResponse({ data, total, query })
+    }
+
+    async getFilesWithReactions(query: GetMediaDto, requestParams?: RequestParams) {
+        const { data, paginationInfo:{total} } = await this.getFiles(query, requestParams)
+
+        const responseData = data.map(comment => {
+            return ({
+                ...comment,
+                reaction_info: this.calculateReactions(comment, requestParams),
+            })
+        })
+
+        // Отдаем ответ с пагинацией
+        return createPaginationResponse<MediaResponseDto[]>({ data: responseData, total, query })
     }
 
     async deleteFile(id: string) {

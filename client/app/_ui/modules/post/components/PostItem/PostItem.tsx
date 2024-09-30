@@ -8,7 +8,7 @@ import { Publication } from '@ui/components/Publication'
 import { ModuleComments } from '@ui/modules/comments'
 import { cn } from './cn'
 import { PostResponseDto } from '../../../../../../../swagger/posts/interfaces-posts'
-import { postsApi, reactionsApi } from '../../../../../../store/api'
+import { postsApi } from '../../../../../../store/api'
 
 interface PostsListProps {
   post: PostResponseDto
@@ -19,7 +19,6 @@ export function PostItem(props: PostsListProps) {
   const [onRemove] = postsApi.useRemoveMutation()
   const [onUpdate] = postsApi.useUpdateMutation()
   const [onPin] = postsApi.useTogglePinPostMutation()
-  const [onToggleReaction] = reactionsApi.useCreateMutation()
 
   const [isOpenComments, onOpenComments, onCloseComments] = useBooleanState(false)
   const gropedMediaByType = useMemo(() => groupBy(post.media, 'meta.type'), [post.media])
@@ -76,13 +75,8 @@ export function PostItem(props: PostsListProps) {
         <Publication.Commets isActive={isOpenComments} countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
         <Publication.Emojies
           reactions={post.reaction_info}
-          onClick={(emojie) => {
-            onToggleReaction({
-              entity_type: 'post',
-              entity_id: post.id,
-              body: { name: emojie.name },
-            })
-          }}
+          entity_id={post.id}
+          entity_type="post"
         />
         <Publication.DateCreated dateCreated={new Date(post.date_created)} />
       </Publication>

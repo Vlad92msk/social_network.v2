@@ -31,6 +31,10 @@
     &-ContentItem {
       height: calc(100% - (#{$metaInfo-height} + #{$gap}));
       flex-grow: 1;
+
+      img {
+        object-fit: contain;
+      }
     }
 
     &-CommentsContainer {
@@ -40,6 +44,7 @@
       flex-direction: column;
       overflow: hidden;
       gap: rem(20);
+      flex-shrink: 0;
       transition: width .5s;
 
       &--hide {

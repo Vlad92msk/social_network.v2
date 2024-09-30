@@ -1,3 +1,4 @@
+import { SortDirection } from '@shared/types'
 import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from '@utils/createPaginationResponse'
 import { isEmpty, merge } from 'lodash'
 import { FindOneOptions } from 'typeorm'
@@ -47,4 +48,36 @@ export function createPaginationQueryOptions<Entity>(props: CreatePaginationQuer
           : cleanOptions.where
     }
     return merge({}, queryOptions, cleanOptions)
+}
+
+interface CreatePaginationAndOrderProps {
+    page: number
+    per_page: number
+    sort_by: string
+    sort_direction?: string
+}
+
+interface CreatePaginationAndOrderResponse {
+    skip: number
+    take: number
+    order: any
+}
+export function createPaginationAndOrder(props: CreatePaginationAndOrderProps): CreatePaginationAndOrderResponse {
+    const {
+        page = DEFAULT_PAGE,
+        per_page = DEFAULT_PER_PAGE,
+        sort_direction = SortDirection.ASC,
+        sort_by,
+    } = props
+
+    const queryOptions: any = {
+        skip: (page - 1) * per_page,
+        take: per_page,
+    }
+
+    if (sort_by) {
+        queryOptions.order = { [sort_by]: sort_direction }
+    }
+
+    return queryOptions
 }
