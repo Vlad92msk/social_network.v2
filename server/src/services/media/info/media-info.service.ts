@@ -1,6 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { MediaResponseDto } from '@services/media/info/dto/media-response.dto'
 import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
+import { getCommentCounts } from '@services/posts/post/post.service'
 import { CalculateReactionsResponse } from '@services/reactions/dto/toggle-reaction-response.dto'
 import { MetadataService } from '../metadata/media-metadata.service'
 import { AbstractStorageService } from '../storage/abstract-storage.service'
@@ -122,25 +123,6 @@ export class MediaInfoService {
         })
     }
 
-    private calculateReactions(comment, params): CalculateReactionsResponse {
-        const reactionCounts = comment.reactions.reduce((acc, reaction) => {
-            const reactionName = reaction.reaction.name
-            acc[reactionName] = (acc[reactionName] || 0) + 1
-            return acc
-        }, {} as Record<string, number>)
-
-        const userReaction = comment.reactions.find(reaction => reaction.user.id === params.user_info_id)
-
-        const reactionInfo: CalculateReactionsResponse = {
-            counts: reactionCounts,
-            my_reaction: userReaction ? userReaction.reaction.name : null
-        }
-
-        delete comment.reactions
-
-        return reactionInfo
-    }
-
     /**
      * Получить ссылки на файлы
      */
@@ -231,14 +213,36 @@ export class MediaInfoService {
     async updateMedias(query: UpdateMediaDto, requestParams?: RequestParams) {
         const { data: currentFiles } = await this.getFiles({ file_ids: query.target_ids, owner_id: requestParams.user_info_id }, requestParams)
 
-        console.log('currentFiles', currentFiles)
-        console.log('query', query)
         for (const media of currentFiles) {
-            if (query?.album_name !== undefined) {
-                media.album_name = query.album_name
-            }
+            media.album_name = query.album_name
             await this.mediaInfoRepository.save(media)
         }
+    }
+
+    /**
+     * Добавляет счетчик комментариев
+     */
+    async incrementCommentCount(id: string, requestParams?: RequestParams) {
+        const findMedia = await this.mediaInfoRepository.findOne({
+            where: { id },
+        })
+
+        findMedia.comments_count++
+        await this.mediaInfoRepository.save(findMedia)
+    }
+
+    /**
+     * Убавляет счетчик комментариев
+     */
+    async decrementCommentCount(id: string, requestParams?: RequestParams) {
+        const findMedia = await this.mediaInfoRepository.findOne({
+            where: { id },
+        })
+
+       if (findMedia.comments_count > 0) {
+           findMedia.comments_count--
+           await this.mediaInfoRepository.save(findMedia)
+       }
     }
 
     /**
@@ -255,5 +259,25 @@ export class MediaInfoService {
         } else {
             console.log(`Storage check passed. Remaining space after upload: ${maxStorage - totalAfterUpload} bytes`)
         }
+    }
+
+
+    private calculateReactions(comment, params): CalculateReactionsResponse {
+        const reactionCounts = comment.reactions.reduce((acc, reaction) => {
+            const reactionName = reaction.reaction.name
+            acc[reactionName] = (acc[reactionName] || 0) + 1
+            return acc
+        }, {} as Record<string, number>)
+
+        const userReaction = comment.reactions.find(reaction => reaction.user.id === params.user_info_id)
+
+        const reactionInfo: CalculateReactionsResponse = {
+            counts: reactionCounts,
+            my_reaction: userReaction ? userReaction.reaction.name : null
+        }
+
+        delete comment.reactions
+
+        return reactionInfo
     }
 }

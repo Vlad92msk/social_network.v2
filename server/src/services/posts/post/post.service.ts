@@ -12,10 +12,34 @@ import { RequestParams } from '@shared/decorators'
 import { PublicationType } from '@shared/entity/publication.entity'
 import { SortDirection } from '@shared/types'
 import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from '@shared/utils'
-import { LessThanOrEqual, Repository } from 'typeorm'
+import { EntityManager, LessThanOrEqual, Repository } from 'typeorm'
 import { CreatePostDto } from './dto/create-post.dto'
 import { UpdatePostDto } from './dto/update-post.dto'
 import { PostEntity, PostVisibility } from './entities/post.entity'
+
+
+interface CommentCountOptions {
+    entityManager: EntityManager;
+    entityIds: number[] | string[];
+    entityName: string;
+    commentRelationName: string;
+}
+
+export async function getCommentCounts({
+    entityManager,
+    entityIds,
+    entityName,
+    commentRelationName,
+}: CommentCountOptions): Promise<Array<{ entityId: number | string; commentCount: string }>> {
+    return entityManager
+      .createQueryBuilder(entityName, 'entity')
+      .leftJoin(`entity.${commentRelationName}`, 'comment')
+      .select('entity.id', 'entityId')
+      .addSelect('COUNT(comment.id)', 'commentCount')
+      .where('entity.id IN (:...entityIds)', { entityIds })
+      .groupBy('entity.id')
+      .getRawMany()
+}
 
 @Injectable()
 export class PostsService {
@@ -52,7 +76,7 @@ export class PostsService {
             location: createPostDto.location,
             pinned: createPostDto.pinned,
             visibility: createPostDto.visibility,
-            comment_count: 0,
+            comments_count: 0,
             date_updated: null,
             reactions: [],
         })
@@ -191,17 +215,6 @@ export class PostsService {
 
         const [posts, total] = await this.postRepository.findAndCount(queryOptions)
 
-        const commentCounts = await this.postRepository
-          .createQueryBuilder('post')
-          .leftJoin('post.comments', 'comment')
-          .select('post.id', 'postId')
-          .addSelect('COUNT(comment.id)', 'commentCount')
-          .where('post.id IN (:...postIds)', { postIds: posts.map(post => post.id) })
-          .groupBy('post.id')
-          .getRawMany()
-
-        const commentCountMap = new Map(commentCounts.map(item => [item.postId, parseInt(item.commentCount)]))
-
         const postsResponse = posts.map(post => {
             const reactionCounts = post.reactions.reduce((acc, reaction) => {
                 const reactionName = reaction.reaction.name
@@ -226,17 +239,13 @@ export class PostsService {
                 count_views: post.count_views,
                 repost_count: post.repost_count,
                 is_repost: post.is_repost,
-                // reposts: post.reposts,
-                comment_count: commentCountMap.get(post.id) || 0,
                 voices: post.voices,
                 videos: post.videos,
                 media: post.media,
                 visibility: post.visibility,
                 pinned: post.pinned,
                 location: post.location,
-                // original_post: post.original_post ? convertToDto(PostResponseDto, post.original_post) : undefined,
-                // reply_to: post.reply_to ? convertToDto(PostResponseDto, post.reply_to) : undefined,
-                // forwarded_post: post.forwarded_post ? convertToDto(PostResponseDto, post.forwarded_post) : undefined,
+                comments_count: post.comments_count,
                 reaction_info: reactionInfo,
             }
             return postResponse
@@ -277,7 +286,7 @@ export class PostsService {
           .select('COUNT(comment.id)', 'commentCount')
           .getRawOne()
 
-        post.comment_count = parseInt(commentCount) || 0
+        post.comments_count = parseInt(commentCount) || 0
 
         return post
     }
@@ -517,5 +526,31 @@ export class PostsService {
         }
 
         return chain
+    }
+
+    /**
+     * Добавляет счетчик комментариев
+     */
+    async incrementCommentCount(id: string, requestParams?: RequestParams) {
+        const findMedia = await this.postRepository.findOne({
+            where: { id },
+        })
+
+        findMedia.comments_count++
+        await this.postRepository.save(findMedia)
+    }
+
+    /**
+     * Убавляет счетчик комментариев
+     */
+    async decrementCommentCount(id: string, requestParams?: RequestParams) {
+        const findMedia = await this.postRepository.findOne({
+            where: { id },
+        })
+
+        if (findMedia.comments_count > 0) {
+            findMedia.comments_count--
+            await this.postRepository.save(findMedia)
+        }
     }
 }

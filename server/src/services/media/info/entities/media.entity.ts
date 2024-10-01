@@ -11,7 +11,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinTable
+    JoinTable,
 } from 'typeorm'
 import { MediaItem } from '../interfaces/media-item'
 import { MediaMetadata } from '../../metadata/entities/media-metadata.entity'
@@ -29,7 +29,7 @@ export class MediaEntity implements MediaItem {
     id: string
 
     @ApiProperty({ description: 'Название альбома', required: false, nullable: true })
-    @Column({ nullable: true, type: 'varchar', length: 50, comment: 'Название альбома, если есть' })
+    @Column({ nullable: true, default: null, type: 'varchar', length: 50, comment: 'Название альбома, если есть' })
     album_name: string
 
     @ApiProperty({ description: 'Дата создания записи' })
@@ -81,7 +81,7 @@ export class MediaEntity implements MediaItem {
     reactions: ReactionEntity[]
 
     @ApiProperty({ description: 'Комментарии к данному медиа', type: () => [CommentEntity], nullable: true })
-    @OneToMany(() => CommentEntity, comment => comment.media, { cascade: true, onDelete: 'CASCADE', nullable: true, lazy: true })
+    @OneToMany(() => CommentEntity, comment => comment.media, { cascade: true, onDelete: 'CASCADE', nullable: true })
     comments: CommentEntity[]
 
     @ApiProperty({ description: 'Сообщения, к которым добавлен медиа-файл', type: () => [MessageEntity], nullable: true })

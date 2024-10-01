@@ -4,12 +4,12 @@ import { Text } from '@ui/common/Text'
 import { AlbumTitle } from './AlbumTitle'
 import { ModalAlbum } from './ModalAlbum'
 import { SortableItem } from './SortableItem'
-import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
+import { MediaResponseDto } from '../../../../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 
 interface AlbumContainerProps {
   title: string
-  albumItems: MediaEntity[]
+  albumItems: MediaResponseDto[]
   overItemId: string | null
 }
 
@@ -24,7 +24,7 @@ export function AlbumContainer(props: AlbumContainerProps) {
     }
 
     return acc
-  }, [[] as MediaEntity[], [] as MediaEntity[]])
+  }, [[] as MediaResponseDto[], [] as MediaResponseDto[]])
 
   return (
     <div

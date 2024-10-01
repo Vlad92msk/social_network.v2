@@ -22,6 +22,10 @@ export class PostEntity extends PublicationEntity {
     @Column({ type: 'int', default: 0, comment: 'Количество просмотров' })
     count_views: number
 
+    @ApiProperty({ description: 'Количество комментариев' })
+    @Column({ type: 'int', default: 0, comment: 'Количество комментариев' })
+    comments_count: number
+
     @ApiProperty({ description: 'Количество репостов', default: 0 })
     @Column({ type: 'int', default: 0, comment: 'Количество репостов' })
     repost_count: number
@@ -64,10 +68,6 @@ export class PostEntity extends PublicationEntity {
     @ApiProperty({ description: 'Реакции', type: () => [ReactionEntity] })
     @OneToMany(() => ReactionEntity, reaction => reaction.post, { cascade: true, onDelete: 'CASCADE', nullable: true })
     reactions: ReactionEntity[]
-
-    @ApiProperty({ description: 'Количество комментариев к посту', default: 0 })
-    @Column({ type: 'int', default: 0, comment: 'Количество комментариев' })
-    comment_count: number
 
     @ApiProperty({ description: 'Голосовые вложения', type: () => [MediaEntity] })
     @OneToMany(() => MediaEntity, media => media.voicePost)

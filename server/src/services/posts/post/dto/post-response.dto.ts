@@ -16,7 +16,6 @@ export class PostResponseDto extends PickType(FullType(PostEntity), [
     'count_views',
     'repost_count',
     'is_repost',
-    'comment_count',
     'voices',
     'videos',
     'media',
@@ -52,7 +51,7 @@ export class PostResponseDto extends PickType(FullType(PostEntity), [
     is_repost: boolean
 
     @ApiProperty({ description: 'Количество комментариев', example: 20 })
-    comment_count: number
+    comments_count: number
 
     @ApiProperty({ description: 'Голосовые вложения', type: () => [MediaEntity] })
     voices: MediaEntity[]

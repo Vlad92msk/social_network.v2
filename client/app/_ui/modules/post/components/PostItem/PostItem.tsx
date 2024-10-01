@@ -72,7 +72,7 @@ export function PostItem(props: PostsListProps) {
           other={get(gropedMediaByType, 'other', [])}
         />
         <Publication.Text className={cn('MessageItemText')} text={post.text} />
-        <Publication.Commets isActive={isOpenComments} countComments={post?.comment_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
+        <Publication.Commets isActive={isOpenComments} countComments={post?.comments_count} onClick={isOpenComments ? onCloseComments : onOpenComments} />
         <Publication.Emojies
           reactions={post.reaction_info}
           entity_id={post.id}

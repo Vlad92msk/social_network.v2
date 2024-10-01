@@ -6,7 +6,7 @@ import { groupBy, omit, uniqBy } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
-import { MediaEntity, MediaMetadata } from '../../../../../../../../swagger/media/interfaces-media'
+import { MediaMetadata, MediaResponseDto } from '../../../../../../../../swagger/media/interfaces-media'
 import { mediaApi } from '../../../../../../../store/api'
 
 function generateRandomAlbum() {
@@ -15,7 +15,7 @@ function generateRandomAlbum() {
 
 export function MyPhoto() {
   const type: MediaMetadata['type'] = 'image'
-  const [items, setItems] = useState<MediaEntity[]>([])
+  const [items, setItems] = useState<MediaResponseDto[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
@@ -73,7 +73,7 @@ export function MyPhoto() {
     const { active, over } = event
     if (!over) return
 
-    const updatedItems: MediaEntity[] = []
+    const updatedItems: MediaResponseDto[] = []
 
     setItems((prevItems) => {
       const activeItem = prevItems.find((item) => item.id === active.id)
@@ -101,7 +101,8 @@ export function MyPhoto() {
     const uniqItems = uniqBy(updatedItems, 'id')
     onMediaUpdate({ body: {
       target_ids: uniqItems.map(({ id }) => id),
-      album_name: uniqItems[0]?.album_name,
+      // @ts-ignore
+      album_name: uniqItems[0]?.album_name || null,
     } })
     setActiveId(null)
     setOverItemId(null)
@@ -130,7 +131,7 @@ export function MyPhoto() {
           ))}
 
         <SortableContext items={singleItems}>
-          {singleItems.map((item: MediaEntity) => (
+          {singleItems.map((item: MediaResponseDto) => (
             <SortableItem
               key={item.id}
               id={item.id}

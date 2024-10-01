@@ -6,7 +6,6 @@ import { PostsService } from '@services/posts/post/post.service'
 import { CalculateReactionsResponse } from '@services/reactions/dto/toggle-reaction-response.dto'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
-import { SortDirection } from '@shared/types'
 import { createPaginationQueryOptions, createPaginationAndOrder, createPaginationResponse } from '@shared/utils'
 import { In, Repository, IsNull } from 'typeorm'
 import { CommentResponseDto, CommentWithChildCountDto } from './dto/comment-response.dto'
@@ -41,10 +40,14 @@ export class CommentService {
 
         if (entityId) {
             if (target === 'post') {
-                comment.post = await this.postService.findOne(entityId)
+                const findPost = await this.postService.findOne(entityId)
+                await this.postService.incrementCommentCount(entityId)
+                comment.post = findPost
             }
             if (target === 'media') {
-                comment.media = await this.mediaInfoService.getFileById(entityId)
+                const findMedia = await this.mediaInfoService.getFileById(entityId)
+                await this.mediaInfoService.incrementCommentCount(entityId)
+                comment.media = findMedia
             }
         }
 

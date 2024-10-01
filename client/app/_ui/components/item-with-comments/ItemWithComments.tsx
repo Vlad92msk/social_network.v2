@@ -8,13 +8,13 @@ import { CommentsProps, ModuleComments } from '@ui/modules/comments'
 import { ToggleReactions } from '@ui/modules/toggle-reactions'
 import { classNames, makeCn } from '@utils/others'
 import style from './ItemWithComments.module.scss'
-import { MediaEntity } from '../../../../../swagger/media/interfaces-media'
+import { MediaResponseDto } from '../../../../../swagger/media/interfaces-media'
 
 export const cn = makeCn('ItemWithComments', style)
 
 interface ItemWithCommentsProps {
   className?: string
-  item?: MediaEntity
+  item?: MediaResponseDto
   target: CommentsProps['target']
   children: JSX.Element
 }
@@ -24,6 +24,9 @@ export function ItemWithComments(props: ItemWithCommentsProps) {
   const [isOpen, onOpen, onClose] = useBooleanState(false)
   const [isHideComments, onOpenComments] = useState(false)
 
+  if (isOpen) {
+    console.log('item', item)
+  }
   return (
     <>
       {cloneElement(children, {
@@ -46,16 +49,12 @@ export function ItemWithComments(props: ItemWithCommentsProps) {
                 height={400}
               />
             </div>
-            <div>
-              <a href={item?.meta.src} target="_blank" rel="noopener noreferrer">
-                Открыть в новой вкладке
-              </a>
-            </div>
+            <div />
             <div className={cn('MetaInfo')}>
-              {/* @ts-ignore */}
               <ToggleReactions entity_type="media" entity_id={item.id} reactions={item.reaction_info} />
               <Button onClick={() => onOpenComments((prev) => !prev)}>
                 <Icon name="chat" />
+                {item.comments_count}
               </Button>
             </div>
           </div>

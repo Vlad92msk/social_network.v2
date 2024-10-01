@@ -1,9 +1,9 @@
 import { DraggableAttributes } from '@dnd-kit/core'
 import { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities'
-import { CSSProperties } from 'react'
 import { Image } from '@ui/common/Image'
 import { ItemWithComments } from '@ui/components/item-with-comments'
-import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
+import { CSSProperties } from 'react'
+import { MediaResponseDto } from '../../../../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 
 interface ElementProps {
@@ -14,7 +14,7 @@ interface ElementProps {
   attributes?: DraggableAttributes
   listeners?: SyntheticListenerMap
   ref?: any
-  item?: MediaEntity
+  item?: MediaResponseDto
 }
 
 export function ItemElement(props: ElementProps) {

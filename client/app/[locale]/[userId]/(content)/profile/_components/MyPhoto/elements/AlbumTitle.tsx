@@ -2,13 +2,13 @@ import { useCallback, useState } from 'react'
 import { Icon } from '@ui/common/Icon'
 import { Input } from '@ui/common/Input'
 import { Text } from '@ui/common/Text'
-import { MediaEntity } from '../../../../../../../../../swagger/media/interfaces-media'
+import { MediaResponseDto } from '../../../../../../../../../swagger/media/interfaces-media'
 import { mediaApi } from '../../../../../../../../store/api'
 import { cn } from '../cn'
 
 interface AlbumTitleProps {
   title: string
-  items: MediaEntity[]
+  items: MediaResponseDto[]
 }
 
 export function AlbumTitle(props: AlbumTitleProps) {

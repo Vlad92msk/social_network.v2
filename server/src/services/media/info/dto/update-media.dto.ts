@@ -1,7 +1,7 @@
 import { IntersectionType, } from '@nestjs/mapped-types'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { TransformToArray } from '@shared/decorators'
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import { PaginationAndSortingDto } from 'src/shared/dto'
 
 export class UpdateMediaDto extends IntersectionType(
@@ -17,4 +17,8 @@ export class UpdateMediaDto extends IntersectionType(
     @IsString()
     @IsOptional()
     album_name?: string
+
+    @IsNumber()
+    @IsOptional()
+    comments_count: number
 }

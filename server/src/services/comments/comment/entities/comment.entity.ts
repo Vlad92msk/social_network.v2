@@ -5,7 +5,6 @@ import { ReactionEntity } from '@services/reactions/entities/reaction.entity'
 import { PublicationEntity, PublicationType } from '@shared/entity/publication.entity'
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 
-
 @Entity({ name: 'comments', comment: 'Комментарии, которые пользователь может оставлять под те или иные сущности' })
 export class CommentEntity extends PublicationEntity {
     @ApiProperty({ description: 'Закреплен ли комментарий', default: false, type: Boolean })
