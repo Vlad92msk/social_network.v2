@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { Repository } from 'typeorm'
 import { UserInfo } from './entities/user.entity'
 import { GetUsersDto } from './dto/get-users.dto'
@@ -89,7 +90,8 @@ export class UserInfoService {
 
             const uploadedFiles = await this.mediaInfoService.uploadFiles(
                 values(filesToUpload),
-                params.user_info_id
+                params.user_info_id,
+                MediaEntitySourceType.USER_INFO
             )
 
             forIn(filesToUpload, (file, key) => {

@@ -1,5 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { MediaItemType } from '@services/media/metadata/interfaces/mediaItemType'
 import { FindPostDto } from '@services/posts/post/dto/find-post.dto'
@@ -12,34 +13,10 @@ import { RequestParams } from '@shared/decorators'
 import { PublicationType } from '@shared/entity/publication.entity'
 import { SortDirection } from '@shared/types'
 import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from '@shared/utils'
-import { EntityManager, LessThanOrEqual, Repository } from 'typeorm'
+import { LessThanOrEqual, Repository } from 'typeorm'
 import { CreatePostDto } from './dto/create-post.dto'
 import { UpdatePostDto } from './dto/update-post.dto'
 import { PostEntity, PostVisibility } from './entities/post.entity'
-
-
-interface CommentCountOptions {
-    entityManager: EntityManager;
-    entityIds: number[] | string[];
-    entityName: string;
-    commentRelationName: string;
-}
-
-export async function getCommentCounts({
-    entityManager,
-    entityIds,
-    entityName,
-    commentRelationName,
-}: CommentCountOptions): Promise<Array<{ entityId: number | string; commentCount: string }>> {
-    return entityManager
-      .createQueryBuilder(entityName, 'entity')
-      .leftJoin(`entity.${commentRelationName}`, 'comment')
-      .select('entity.id', 'entityId')
-      .addSelect('COUNT(comment.id)', 'commentCount')
-      .where('entity.id IN (:...entityIds)', { entityIds })
-      .groupBy('entity.id')
-      .getRawMany()
-}
 
 @Injectable()
 export class PostsService {
@@ -82,15 +59,15 @@ export class PostsService {
         })
 
         if (media && media.length > 0) {
-            const uploadedMedia = await this.mediaInfoService.uploadFiles(media, author.id)
+            const uploadedMedia = await this.mediaInfoService.uploadFiles(media, author.id, MediaEntitySourceType.PUBLICATION)
             post.media = uploadedMedia
         }
         if (voices && voices.length > 0) {
-            const uploadedVoices = await this.mediaInfoService.uploadFiles(voices, author.id, MediaItemType.VOICE)
+            const uploadedVoices = await this.mediaInfoService.uploadFiles(voices, author.id, MediaEntitySourceType.PUBLICATION, MediaItemType.VOICE)
             post.voices = uploadedVoices
         }
         if (videos && videos.length > 0) {
-            const uploadedVideos = await this.mediaInfoService.uploadFiles(videos, author.id, MediaItemType.SHORTS)
+            const uploadedVideos = await this.mediaInfoService.uploadFiles(videos, author.id, MediaEntitySourceType.PUBLICATION, MediaItemType.SHORTS)
             post.videos = uploadedVideos
         }
 
@@ -147,19 +124,19 @@ export class PostsService {
 
         // Загружаем новые медиа
         if (media) {
-            const addMedia = await this.mediaInfoService.uploadFiles(media, userId)
+            const addMedia = await this.mediaInfoService.uploadFiles(media, userId, MediaEntitySourceType.PUBLICATION)
             post.media = [...(post.media || []), ...addMedia]
         }
 
         // Загружаем новые голосовые сообщения
         if (voices) {
-            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId, MediaItemType.VOICE)
+            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId, MediaEntitySourceType.PUBLICATION, MediaItemType.VOICE)
             post.voices = [...(post.voices || []), ...addVoices]
         }
 
         // Загружаем новые видео-сообщения
         if (videos) {
-            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId, MediaItemType.SHORTS)
+            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId, MediaEntitySourceType.PUBLICATION,  MediaItemType.SHORTS)
             post.videos = [...(post.videos || []), ...addVideos]
         }
 

@@ -40,7 +40,7 @@ export function MediaContent(props: MyPhotoProps) {
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
-  const media = mediaApi.useGetFilesQuery({ type })
+  const media = mediaApi.useGetFilesQuery({ type, source: 'user_uploaded_media' })
 
   const [onMediaUpdate] = mediaApi.useUpdateMediaMutation()
   const [onMediaUpload] = mediaApi.useUploadFilesMutation()

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { Repository } from 'typeorm'
 import { DialogEntity } from './entities/dialog.entity'
 import { CreateDialogDto } from './dto/create-dialog.dto'
@@ -134,7 +135,7 @@ export class DialogService {
         })
 
         if (image) {
-            const [uploadedFile] = await this.mediaInfoService.uploadFiles([image], params.user_info_id)
+            const [uploadedFile] = await this.mediaInfoService.uploadFiles([image], params.user_info_id, MediaEntitySourceType.DIALOG)
             dialog.image = uploadedFile.meta.src
         }
 
@@ -172,7 +173,7 @@ export class DialogService {
         }
 
         if (image) {
-            const [uploadedFile] = await this.mediaInfoService.uploadFiles([image], params.user_info_id)
+            const [uploadedFile] = await this.mediaInfoService.uploadFiles([image], params.user_info_id, MediaEntitySourceType.DIALOG)
             dialog.image = uploadedFile.meta.src
         }
 
@@ -471,7 +472,7 @@ export class DialogService {
             throw new BadRequestException('У вас нет прав для обновления изображения этого диалога')
         }
 
-        const [uploadedFile] = await this.mediaInfoService.uploadFiles([file], params.user_info_id)
+        const [uploadedFile] = await this.mediaInfoService.uploadFiles([file], params.user_info_id, MediaEntitySourceType.DIALOG)
         dialog.image = uploadedFile.meta.src
 
         const updatedDialog = await this.dialogRepository.save(dialog)

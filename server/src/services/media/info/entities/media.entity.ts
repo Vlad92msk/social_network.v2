@@ -21,12 +21,27 @@ import { CommentEntity } from '@services/comments/comment/entities/comment.entit
 import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { ApiProperty } from '@nestjs/swagger'
 
+export enum MediaEntitySourceType {
+    PUBLICATION = 'publication',
+    USER_INFO = 'user_info',
+    USER_UPLOADED_MEDIA = 'user_uploaded_media',
+    DIALOG = 'dialog',
+    UNCNOWN = 'uncnown'
+}
 
 @Entity({ name: 'media', comment: 'Общая информация о файле, который пользователь загружает в систему' })
 export class MediaEntity implements MediaItem {
     @ApiProperty({ description: 'Уникальный идентификатор медиа' })
     @PrimaryGeneratedColumn('uuid')
     id: string
+
+    @ApiProperty({
+        description: 'В каком разделе пользователь загрузил это медиа (publication/user-info)',
+        enum: MediaEntitySourceType,
+        enumName: 'MediaEntitySourceType'
+    })
+    @Column({ type: 'enum', enum: MediaEntitySourceType, default: MediaEntitySourceType.UNCNOWN })
+    source: MediaEntitySourceType
 
     @ApiProperty({ description: 'Название альбома', required: false, nullable: true })
     @Column({ nullable: true, default: null, type: 'varchar', length: 50, comment: 'Название альбома, если есть' })

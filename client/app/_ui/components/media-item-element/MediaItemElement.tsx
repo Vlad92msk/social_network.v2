@@ -21,6 +21,10 @@ export function MediaItemElement(props: MediaItemElementProps) {
 
   const [onDeleteMedia] = mediaApi.useDeleteFileMutation()
 
+  /**
+   * TODO: переделать потом
+   * Пока просто чтоб была кнопка удаления
+   */
   const buttonRemove = (
     <button onClick={(event) => {
       event.preventDefault()

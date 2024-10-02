@@ -22,7 +22,7 @@ import { FilesInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { MediaResponseDto } from '@services/media/info/dto/media-response.dto'
 import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
-import { MediaEntity } from '@services/media/info/entities/media.entity'
+import { MediaEntity, MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { Request, Response } from 'express'
 import { RequestParams } from 'src/shared/decorators'
 import { createPaginationHeaders } from 'src/shared/utils'
@@ -81,7 +81,7 @@ export class MediaInfoController {
         await this.mediaInfoService.checkStorageLimit(params.user_info_id, files, this.maxStorage)
 
         // Если есть доступное место - возвращаем загруженный файл
-        return this.mediaInfoService.uploadFiles(files, params.user_info_id)
+        return this.mediaInfoService.uploadFiles(files, params.user_info_id, MediaEntitySourceType.USER_UPLOADED_MEDIA)
     }
 
     @Get(':id')

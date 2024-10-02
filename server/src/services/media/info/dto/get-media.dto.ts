@@ -1,3 +1,4 @@
+import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { MediaItemType } from '@services/media/metadata/interfaces/mediaItemType'
 import { IsArray, IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
 import { PaginationAndSortingDto } from 'src/shared/dto'
@@ -79,4 +80,10 @@ export class GetMediaDto extends IntersectionType(
     @IsEnum(MediaItemType, {message: 'Значение должно быть enum'})
     @IsOptional()
     type?: MediaItemType
+
+    @ApiProperty({ description: 'Раздел в котором был загружен файл', enum: MediaEntitySourceType, required: false })
+    @TransformToEnum(MediaEntitySourceType)
+    @IsEnum(MediaEntitySourceType, {message: 'Значение должно быть enum'})
+    @IsOptional()
+    source?: MediaEntitySourceType
 }

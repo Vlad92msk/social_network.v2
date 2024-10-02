@@ -6,6 +6,7 @@ import {
     NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { LessThan, Repository } from 'typeorm'
 import { CreateMessageDto } from './dto/create-message.dto'
 import { UpdateMessageDto } from './dto/update-message.dto'
@@ -51,13 +52,13 @@ export class MessageService {
         })
 
         if (media) {
-            message.media = await this.mediaInfoService.uploadFiles(media, author.id)
+            message.media = await this.mediaInfoService.uploadFiles(media, author.id, MediaEntitySourceType.USER_INFO)
         }
         if (voices) {
-            message.voices = await this.mediaInfoService.uploadFiles(voices, author.id)
+            message.voices = await this.mediaInfoService.uploadFiles(voices, author.id, MediaEntitySourceType.USER_INFO)
         }
         if (videos) {
-            message.videos = await this.mediaInfoService.uploadFiles(videos, author.id)
+            message.videos = await this.mediaInfoService.uploadFiles(videos, author.id, MediaEntitySourceType.USER_INFO)
         }
 
         if (createMessageDto.reply_to_id) {
@@ -100,17 +101,17 @@ export class MessageService {
         )
 
         if (media) {
-            const addMedia = await this.mediaInfoService.uploadFiles(media, userId)
+            const addMedia = await this.mediaInfoService.uploadFiles(media, userId, MediaEntitySourceType.PUBLICATION)
             message.media = [...(message.media || []), ...addMedia]
         }
 
         if (voices) {
-            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId)
+            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId, MediaEntitySourceType.PUBLICATION)
             message.voices = [...(message.voices || []), ...addVoices]
         }
 
         if (videos) {
-            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId)
+            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId, MediaEntitySourceType.PUBLICATION)
             message.videos = [...(message.videos || []), ...addVideos]
         }
 

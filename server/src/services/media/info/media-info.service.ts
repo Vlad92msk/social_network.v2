@@ -13,7 +13,7 @@ import { MediaItemType } from '../metadata/interfaces/mediaItemType'
 import { MetadataService } from '../metadata/media-metadata.service'
 import { AbstractStorageService } from '../storage/abstract-storage.service'
 import { GetMediaDto } from './dto/get-media.dto'
-import { MediaEntity } from './entities/media.entity'
+import { MediaEntity, MediaEntitySourceType } from './entities/media.entity'
 
 @Injectable()
 export class MediaInfoService {
@@ -32,7 +32,7 @@ export class MediaInfoService {
     /**
      * Загружает файлы
      */
-    async uploadFiles(files: Express.Multer.File[], userId: number, fileType?: MediaItemType) {
+    async uploadFiles(files: Express.Multer.File[], userId: number, source: MediaEntitySourceType, fileType?: MediaItemType) {
         const uploadedFiles: MediaEntity[] = []
 
         const user = await this.userService.getUsersById(userId)
@@ -76,6 +76,7 @@ export class MediaInfoService {
             const media = this.mediaInfoRepository.create({
                 meta: metadata,
                 owner: user,
+                source
             })
 
             const savedMedia = await this.mediaInfoRepository.save(media)
