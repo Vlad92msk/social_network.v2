@@ -14,7 +14,7 @@ export function ChildComment(props: ChildCommentProps) {
   const { text, date_created, author, date_updated } = comment
   const [onRemoveComment] = commentsApi.useRemoveMutation()
   const [onUpdateComment] = commentsApi.useUpdateMutation()
-console.log('comment', comment)
+
   return (
     <Publication
       authorPosition="left"

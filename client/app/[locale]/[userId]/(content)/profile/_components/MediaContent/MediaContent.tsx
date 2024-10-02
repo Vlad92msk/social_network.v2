@@ -6,6 +6,7 @@ import { groupBy, omit, uniqBy } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MaterialAttachProps } from '@hooks'
 import { FileUpLoad } from '@ui/common/FileUpLoad'
+import { Spinner } from '@ui/common/Spinner'
 import { Text } from '@ui/common/Text'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
@@ -40,15 +41,19 @@ export function MediaContent(props: MyPhotoProps) {
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
-  const media = mediaApi.useGetFilesQuery({ type, source: 'user_uploaded_media' })
+  const { data, isLoading } = mediaApi.useGetFilesQuery({ type, source: 'user_uploaded_media' })
 
   const [onMediaUpdate] = mediaApi.useUpdateMediaMutation()
   const [onMediaUpload] = mediaApi.useUploadFilesMutation()
 
+  /**
+   * TODO: возможно это не нужно, а можно работать с данными из кэша
+   * пока делаю лиж бы работало
+   */
   useEffect(() => {
     // @ts-ignore
-    setItems(media.data)
-  }, [media])
+    setItems(data)
+  }, [data])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -129,37 +134,39 @@ export function MediaContent(props: MyPhotoProps) {
 
   return (
     <div className={cn()}>
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        {Object.entries(groupedItems)
-          .map(([albumName, albumItems]) => (
-            <AlbumContainer
-              key={albumName}
-              title={albumName}
-              albumItems={albumItems}
-              overItemId={overItemId}
-            />
-          ))}
+      { isLoading ? <Spinner /> : (
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          {Object.entries(groupedItems)
+            .map(([albumName, albumItems]) => (
+              <AlbumContainer
+                key={albumName}
+                title={albumName}
+                albumItems={albumItems}
+                overItemId={overItemId}
+              />
+            ))}
 
-        <SortableContext items={singleItems}>
-          {singleItems.map((item: MediaResponseDto) => (
-            <SortableItem
-              key={item.id}
-              id={item.id}
-              item={item}
-              isPotentialGroup={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
-            />
-          ))}
-        </SortableContext>
+          <SortableContext items={singleItems}>
+            {singleItems.map((item: MediaResponseDto) => (
+              <SortableItem
+                key={item.id}
+                id={item.id}
+                item={item}
+                isPotentialGroup={potentialNewAlbum !== null && (item.id === activeId || item.id === overItemId)}
+              />
+            ))}
+          </SortableContext>
 
-        <DragOverlay>
-          {activeId ? <ItemElement isDraging /> : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay>
+            {activeId ? <ItemElement isDraging /> : null}
+          </DragOverlay>
+        </DndContext>
+      ) }
       <FileUpLoad
         className={cn('PhotoItem')}
         buttonElement={<Text fs="12" className={cn('ButtonUpload')}>Загрузить файлы</Text>}

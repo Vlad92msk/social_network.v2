@@ -1,5 +1,6 @@
-import { classNames } from '@utils/others'
 import React from 'react'
+import { Spinner } from '@ui/common/Spinner'
+import { classNames } from '@utils/others'
 import { ChildComment } from './ChildComment'
 import { commentsApi } from '../../../../../store/api'
 import { cn } from '../cn'
@@ -11,12 +12,14 @@ interface ChildCommentsListProps {
 
 export const ChildCommentsList = React.memo((props:ChildCommentsListProps) => {
   const { id, parentCommentId } = props
-  const { data: comments } = commentsApi.useFindChildCommentsQuery({ parent_id: parentCommentId })
+  const { data: comments, isLoading } = commentsApi.useFindChildCommentsQuery({ parent_id: parentCommentId })
 
   if (!comments) return null
   return (
     <div className={classNames(cn('CommentsList'))}>
-      {comments?.map((comment) => (
+      {isLoading ? (
+        <Spinner />
+      ) : comments?.map((comment) => (
         <ChildComment
           key={comment.id}
           id={id}
