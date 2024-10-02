@@ -57,7 +57,7 @@ export class LocalStorageService extends AbstractStorageService {
         try {
             await fs.unlink(fullPath)
         } catch (error) {
-            throw new Error('Не удалось удалить файл')
+            throw new Error('LocalStorageService: Не удалось удалить файл')
         }
     }
 

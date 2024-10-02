@@ -15,6 +15,7 @@ export function ButtonAttachment(props: ButtonAttachmentProps) {
   return (
     <FileUpLoad
       className={cn('UploadFile')}
+      icon={'attachment'}
       isConfirm
       availableTypes={{
         // maxFileSize: '1mb',

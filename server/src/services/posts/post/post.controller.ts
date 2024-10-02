@@ -126,8 +126,11 @@ export class PostsController {
     @ApiOperation({ summary: 'Удалить пост по ID' })
     @ApiParam({ name: 'id', description: 'ID поста' })
     @ApiResponse({ status: 200, description: 'Пост успешно удален' })
-    async remove(@Param('id') id: string) {
-        return await this.postsService.remove(id)
+    async remove(
+      @Param('id') id: string,
+      @RequestParams() params: RequestParams
+    ) {
+        return await this.postsService.remove(id, params)
     }
 
     @Post(':id/repost')

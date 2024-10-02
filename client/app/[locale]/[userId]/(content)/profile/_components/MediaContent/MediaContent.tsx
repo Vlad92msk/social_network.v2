@@ -4,29 +4,47 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@
 import { SortableContext } from '@dnd-kit/sortable'
 import { groupBy, omit, uniqBy } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { MaterialAttachProps } from '@hooks'
+import { FileUpLoad } from '@ui/common/FileUpLoad'
+import { Text } from '@ui/common/Text'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
 import { MediaMetadata, MediaResponseDto } from '../../../../../../../../swagger/media/interfaces-media'
 import { mediaApi } from '../../../../../../../store/api'
+import { FILE_FORMAT_AUDIO, FILE_FORMAT_IMAGE, FILE_FORMAT_VIDEO } from '../../../../../../types/fileFormats'
 
 function generateRandomAlbum() {
   return `Album_${Math.random().toString(36).substring(7)}`
 }
 
-export function MyPhoto() {
-  const type: MediaMetadata['type'] = 'image'
+const availableTypes = {
+  audio: Object.values(FILE_FORMAT_AUDIO),
+  video: Object.values(FILE_FORMAT_VIDEO),
+  image: Object.values(FILE_FORMAT_IMAGE),
+}
+
+const maxFileSize: Record<'audio' | 'video' | 'image', MaterialAttachProps['maxFileSize']> = {
+  audio: '10mb',
+  video: '20mb',
+  image: '5mb',
+}
+
+interface MyPhotoProps {
+  type: MediaMetadata['type']
+}
+
+export function MediaContent(props: MyPhotoProps) {
+  const { type } = props
   const [items, setItems] = useState<MediaResponseDto[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
-  const media = mediaApi.useGetFilesQuery({
-    type,
-  })
+  const media = mediaApi.useGetFilesQuery({ type })
 
   const [onMediaUpdate] = mediaApi.useUpdateMediaMutation()
+  const [onMediaUpload] = mediaApi.useUploadFilesMutation()
 
-  console.log('media', media.data)
   useEffect(() => {
     // @ts-ignore
     setItems(media.data)
@@ -116,9 +134,6 @@ export function MyPhoto() {
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={(a) => {
-          console.log('Drag cancelled', a)
-        }}
       >
         {Object.entries(groupedItems)
           .map(([albumName, albumItems]) => (
@@ -145,6 +160,29 @@ export function MyPhoto() {
           {activeId ? <ItemElement isDraging /> : null}
         </DragOverlay>
       </DndContext>
+      <FileUpLoad
+        className={cn('PhotoItem')}
+        buttonElement={<Text fs="12" className={cn('ButtonUpload')}>Загрузить файлы</Text>}
+        isConfirm
+        availableTypes={{
+          maxFileSize: maxFileSize[type],
+          availableTypes: availableTypes[type],
+        }}
+        onApplyWithGroup={(files) => {
+          const formData = new FormData()
+
+          if (files.image) {
+            files.image.forEach((file) => {
+              if (file.blob) {
+                formData.append('files', file.blob, file.name)
+              }
+            })
+          }
+
+          // @ts-ignore
+          onMediaUpload({ body: formData })
+        }}
+      />
     </div>
   )
 }

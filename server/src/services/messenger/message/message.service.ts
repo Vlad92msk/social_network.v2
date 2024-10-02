@@ -178,22 +178,17 @@ export class MessageService {
     /**
      * Удалить сообщение
      */
-    async remove(id: string) {
+    async remove(id: string, params: RequestParams) {
         const message = await this.findOne(id)
-        if (message.media && message.media.length > 0) {
-            for (const media of message.media) {
-                await this.mediaInfoService.deleteFile(media.id)
-            }
-        }
-        if (message.voices && message.voices.length > 0) {
-            for (const voice of message.voices) {
-                await this.mediaInfoService.deleteFile(voice.id)
-            }
-        }
-        if (message.videos && message.videos.length > 0) {
-            for (const video of message.videos) {
-                await this.mediaInfoService.deleteFile(video.id)
-            }
+
+        const allMedia = [
+            ...(message.media || []),
+            ...(message.voices || []),
+            ...(message.videos || [])
+        ]
+
+        for (const media of allMedia) {
+            await this.mediaInfoService.deleteFile(media.id, params)
         }
         await this.messageRepository.remove(message)
     }
@@ -324,7 +319,8 @@ export class MessageService {
         })
 
         for (const message of expiredMessages) {
-            await this.remove(message.id)
+            // @ts-ignore
+            await this.remove(message.id, {user_info_id: message.author.id})
         }
     }
 

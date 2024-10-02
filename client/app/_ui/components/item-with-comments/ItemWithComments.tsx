@@ -1,3 +1,4 @@
+import { MediaItemElement } from '@ui/components/media-item-element'
 import { cloneElement, JSX, useState } from 'react'
 import { useBooleanState } from '@hooks'
 import { Button } from '@ui/common/Button'
@@ -7,6 +8,7 @@ import { Modal } from '@ui/common/Modal'
 import { CommentsProps, ModuleComments } from '@ui/modules/comments'
 import { ToggleReactions } from '@ui/modules/toggle-reactions'
 import { classNames, makeCn } from '@utils/others'
+import { mediaApi } from '../../../../store/api'
 import style from './ItemWithComments.module.scss'
 import { MediaResponseDto } from '../../../../../swagger/media/interfaces-media'
 
@@ -42,12 +44,7 @@ export function ItemWithComments(props: ItemWithCommentsProps) {
         <Modal contentClassName={classNames(cn(), className)} isOpen={isOpen} showOverlay onClose={onClose}>
           <div className={cn('ContentContainer')}>
             <div className={cn('ContentItem')}>
-              <Image
-                src={item?.meta.src}
-                alt={item?.meta.name}
-                width={400}
-                height={400}
-              />
+              <MediaItemElement mediaInfoId={item?.id} type={item?.meta.type} metadata={item?.meta} />
             </div>
             <div />
             <div className={cn('MetaInfo')}>

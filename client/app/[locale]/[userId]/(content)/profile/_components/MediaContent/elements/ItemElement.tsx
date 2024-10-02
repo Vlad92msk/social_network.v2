@@ -2,6 +2,7 @@ import { DraggableAttributes } from '@dnd-kit/core'
 import { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities'
 import { Image } from '@ui/common/Image'
 import { ItemWithComments } from '@ui/components/item-with-comments'
+import { MediaItemElement } from '@ui/components/media-item-element'
 import { CSSProperties } from 'react'
 import { MediaResponseDto } from '../../../../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
@@ -36,14 +37,7 @@ export function ItemElement(props: ElementProps) {
         {...attributes}
         {...rest}
       >
-        {item && (
-          <Image
-            src={item?.meta.src}
-            alt={item?.meta.name}
-            width={400}
-            height={400}
-          />
-        )}
+        <MediaItemElement mediaInfoId={item?.id} type={item?.meta.type} metadata={item?.meta} />
       </div>
     </ItemWithComments>
   )

@@ -53,7 +53,7 @@ export class MediaInfoController {
                 files: {
                     type: 'array',
                     items: {
-                        type: 'string',
+                        type: 'any',
                         format: 'binary',
                     },
                 },
@@ -136,19 +136,22 @@ export class MediaInfoController {
         return await this.mediaInfoService.updateMedias(updateMediaDto, params)
     }
 
-    @Delete(':id')
+    @Delete('delete/:id')
     @ApiOperation({ summary: 'Удалить файл' })
-    @ApiParam({ name: 'id', description: 'ID файла' })
+    @ApiParam({ name: 'id', description: 'ID медиа', type: String })
     @ApiResponse({ status: 200, description: 'Файл успешно удален' })
     @ApiResponse({ status: 404, description: 'Файл не найден' })
-    async deleteFile(@Param('id') id: string) {
+    async deleteFile(
+      @Param('id') id: string,
+      @RequestParams() params: RequestParams
+      ) {
         try {
-            return await this.mediaInfoService.deleteFile(id)
+            return await this.mediaInfoService.deleteFile(id, params)
         } catch (error) {
             if (error instanceof NotFoundException) {
                 throw new NotFoundException('Файл не найден')
             }
-            throw new InternalServerErrorException('Не удалось удалить файл')
+            throw new InternalServerErrorException('MediaInfoController: Не удалось удалить файл', error)
         }
     }
 }

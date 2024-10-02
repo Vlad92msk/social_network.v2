@@ -14,6 +14,7 @@ const cn = makeCn('FileUpLoad', styles)
 type FileUpLoadProps = {
   className?: string
   icon?: IconName
+  buttonElement?: React.ReactElement
   onApply?: (files: AddedFile[]) => void
   onApplyWithGroup?: (files: GroupedFiles) => void
   disabled?: boolean
@@ -24,9 +25,10 @@ type FileUpLoadProps = {
 export function FileUpLoad(props: FileUpLoadProps) {
   const {
     className,
-    icon = 'attachment',
+    icon,
     disabled,
     isConfirm,
+    buttonElement,
     availableTypes: { availableTypes, maxFileSize } = {
       availableTypes: availableFormats,
       maxFileSize: '1mb',
@@ -83,7 +85,10 @@ export function FileUpLoad(props: FileUpLoadProps) {
       <div className={classNames(cn(), className)}>
         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
         <label className={cn('AddFile', { disabled })} htmlFor={inputId}>
-          <Icon name="attachment" fill="grey" />
+          {icon && (
+            <Icon name={icon} fill="grey" />
+          )}
+          {buttonElement}
           <input
             className={cn('FileInput')}
             id={inputId}

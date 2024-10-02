@@ -195,8 +195,57 @@ export class CommentService {
         return this.commentRepository.findOne({ where: { id } })
     }
 
-    async remove(id: string) {
-        await this.commentRepository.delete(id)
+    async remove(id: string, params: RequestParams) {
+        const comment = await this.commentRepository.findOne({
+            where: { id },
+            relations: ['author', 'post', 'media', 'parent_comment']
+        })
+
+        if (!comment) {
+            throw new NotFoundException('Comment not found')
+        }
+
+        // Check if the user is the author of the comment
+        if (comment.author.id !== params.user_info_id) {
+            throw new BadRequestException('You can only delete your own comments')
+        }
+
+        // If the comment has child comments, mark it as deleted instead of removing it
+        const hasChildren = await this.commentRepository.count({ where: { parent_comment: { id } } }) > 0
+
+        if (hasChildren) {
+            await this.commentRepository.save(comment)
+        } else {
+            // If it's a root comment, decrement the comment count on the associated entity
+            if (!comment.parent_comment) {
+                if (comment.post) {
+                    await this.postService.decrementCommentCount(comment.post.id)
+                } else if (comment.media) {
+                    await this.mediaInfoService.decrementCommentCount(comment.media.id)
+                }
+            }
+
+            // Delete the comment
+            await this.commentRepository.remove(comment)
+        }
+
+        // If it was a child comment, check if the parent now has no children and update accordingly
+        if (comment.parent_comment) {
+            const parentStillHasChildren = await this.commentRepository.count({
+                where: { parent_comment: { id: comment.parent_comment.id } }
+            }) > 0
+
+            if (!parentStillHasChildren) {
+                const parentComment = await this.commentRepository.findOne({
+                    where: { id: comment.parent_comment.id }
+                })
+                if (parentComment) {
+                    await this.commentRepository.remove(parentComment)
+                }
+            }
+        }
+
+        return { message: 'Comment deleted successfully' }
     }
 
     /**

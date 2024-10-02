@@ -292,11 +292,11 @@ export class PostsService {
     }
 
 
-    async remove(id: string) {
-        const post = await this.findOne(id)
+    async remove(id: string, params: RequestParams) {
+        const post = await this.postRepository.findOne({ where: { id }, relations: ['media'] })
         if (post.media && post.media.length > 0) {
             for (const media of post.media) {
-                await this.mediaInfoService.deleteFile(media.id)
+                await this.mediaInfoService.deleteFile(media.id, params)
             }
         }
 

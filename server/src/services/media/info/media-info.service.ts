@@ -1,20 +1,19 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
 import { MediaResponseDto } from '@services/media/info/dto/media-response.dto'
 import { UpdateMediaDto } from '@services/media/info/dto/update-media.dto'
-import { getCommentCounts } from '@services/posts/post/post.service'
 import { CalculateReactionsResponse } from '@services/reactions/dto/toggle-reaction-response.dto'
+import { UserInfoService } from '@services/users/user-info/user-info.service'
+import * as crypto from 'crypto'
+import * as path from 'path'
+import { RequestParams } from 'src/shared/decorators'
+import { createPaginationQueryOptions, createPaginationResponse, validUuids } from 'src/shared/utils'
+import { In, Repository } from 'typeorm'
+import { MediaItemType } from '../metadata/interfaces/mediaItemType'
 import { MetadataService } from '../metadata/media-metadata.service'
 import { AbstractStorageService } from '../storage/abstract-storage.service'
-import { MediaItemType } from '../metadata/interfaces/mediaItemType'
-import * as path from 'path'
-import * as crypto from 'crypto'
 import { GetMediaDto } from './dto/get-media.dto'
-import { RequestParams } from 'src/shared/decorators'
-import { addMultipleRangeFilters, createPaginationQueryOptions, createPaginationResponse, validUuids } from 'src/shared/utils'
 import { MediaEntity } from './entities/media.entity'
-import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
-import { UserInfoService } from '@services/users/user-info/user-info.service'
 
 @Injectable()
 export class MediaInfoService {
@@ -81,13 +80,7 @@ export class MediaInfoService {
 
             const savedMedia = await this.mediaInfoRepository.save(media)
 
-            // Загружаем метаданные вместе с медиа
-            const savedMediaWithMeta = await this.mediaInfoRepository.findOne({
-                where: { id: savedMedia.id },
-                relations: ['meta'],
-            })
-
-            uploadedFiles.push(savedMediaWithMeta)
+            uploadedFiles.push(savedMedia)
         }
 
         return uploadedFiles
@@ -157,12 +150,12 @@ export class MediaInfoService {
 
 
         // Фильтры по диапазонам
-        addMultipleRangeFilters<MediaEntity>(queryOptions.where, {
-            comments_count: { min: comments_count_from, max: comments_count_to },
-            created_at: { min: created_at_from, max: created_at_to },
-            updated_at: { min: updated_at_from, max: updated_at_to },
-            views_count: { min: views_count_from, max: views_count_to }
-        })
+        // addMultipleRangeFilters<MediaEntity>(queryOptions.where, {
+        //     comments_count: { min: comments_count_from, max: comments_count_to },
+        //     created_at: { min: created_at_from, max: created_at_to },
+        //     updated_at: { min: updated_at_from, max: updated_at_to },
+        //     views_count: { min: views_count_from, max: views_count_to }
+        // })
 
         const test = {
             ...queryOptions,
@@ -192,21 +185,25 @@ export class MediaInfoService {
         return createPaginationResponse<MediaResponseDto[]>({ data: responseData, total, query })
     }
 
-    async deleteFile(id: string) {
-        const metadata = await this.metadataService.findOne(id)
-        if (!metadata) {
+    async deleteFile(id: string, requestParams: RequestParams) {
+        const findMedia = await this.mediaInfoRepository.findOne({ where: { id }})
+        if (!findMedia) {
             throw new NotFoundException('Файл не найден')
         }
 
+        if (findMedia.owner.id !== requestParams.user_info_id) {
+            throw new BadRequestException('Удалить файл может только владелец файла')
+        }
+
         try {
-            const urlParts = new URL(metadata.src)
+            const urlParts = new URL(findMedia.meta.src)
             const relativePath = decodeURIComponent(urlParts.pathname.replace('/uploads/', ''))
 
             await this.storageService.deleteFile(relativePath)
-            await this.metadataService.remove(id)
+            await this.metadataService.remove(findMedia.meta.id)
             return { message: 'Файл успешно удален' }
         } catch (error) {
-            throw new BadRequestException('Не удалось удалить файл')
+            throw new BadRequestException('MediaInfoService: Не удалось удалить файл', error)
         }
     }
 

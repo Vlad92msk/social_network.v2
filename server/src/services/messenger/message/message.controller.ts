@@ -119,8 +119,11 @@ export class MessageController {
     @Delete(':id')
     @ApiOperation({ summary: 'Удалить сообщение' })
     @ApiResponse({ status: 200, description: 'Сообщение успешно удалено' })
-    async remove(@Param('id') id: string) {
-        return await this.messageService.remove(id)
+    async remove(
+      @Param('id') id: string,
+      @RequestParams() params: RequestParams,
+      ) {
+        return await this.messageService.remove(id, params)
     }
 
     @Post(':id/mark-delivered')

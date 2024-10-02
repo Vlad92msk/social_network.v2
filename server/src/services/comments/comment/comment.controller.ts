@@ -116,8 +116,8 @@ export class CommentController {
     @ApiNoContentResponse({ description: 'Комментарий успешно удален' })
     @ApiNotFoundResponse({ description: 'Комментарий не найден' })
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('id') id: string) {
-        return await this.commentService.remove(id)
+    async remove(@Param('id') id: string, @RequestParams() params: RequestParams) {
+        return await this.commentService.remove(id, params)
     }
 
 

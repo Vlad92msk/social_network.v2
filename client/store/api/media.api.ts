@@ -46,6 +46,7 @@ export const mediaApi = createApi({
   endpoints: (builder) => ({
 
     uploadFiles: builder.mutation<MediaEntity[], Parameters<typeof mediaApiInstance.uploadFiles>[0]>({
+      invalidatesTags: ['MediaFiles'],
       query: (params) => {
         const { url, init } = mediaApiInstance.uploadFilesInit(params)
         return { url, ...init }
@@ -60,6 +61,7 @@ export const mediaApi = createApi({
     }),
 
     deleteFile: builder.mutation<any, Parameters<typeof mediaApiInstance.deleteFile>[0]>({
+      invalidatesTags: ['MediaFiles'],
       query: (params) => {
         const { url, init } = mediaApiInstance.deleteFileInit(params)
         return { url, ...init }
@@ -75,6 +77,7 @@ export const mediaApi = createApi({
     }),
 
     updateMedia: builder.mutation<any, Parameters<typeof mediaApiInstance.updateMedia>[0]>({
+      invalidatesTags: ['MediaFiles'],
       query: (params) => {
         const { url, init } = mediaApiInstance.updateMediaInit(params)
         return { url, ...init }
