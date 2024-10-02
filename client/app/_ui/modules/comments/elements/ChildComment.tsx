@@ -14,7 +14,7 @@ export function ChildComment(props: ChildCommentProps) {
   const { text, date_created, author, date_updated } = comment
   const [onRemoveComment] = commentsApi.useRemoveMutation()
   const [onUpdateComment] = commentsApi.useUpdateMutation()
-
+console.log('comment', comment)
   return (
     <Publication
       authorPosition="left"
@@ -38,7 +38,10 @@ export function ChildComment(props: ChildCommentProps) {
       {author && (
         <Publication.Author authorComponent={<Image src={author.profile_image} height={40} width={40} alt={author.name} />} />
       )}
-      <Publication.Emojies onClick={(emojie) => console.log(`нажали на эмоцию ${emojie.name}`)} />
+      <Publication.Emojies
+        //@ts-ignore
+        entity_id={comment.id} entity_type="comment" reactions={comment.reaction_info}
+      />
       <Publication.DateCreated dateCreated={date_created} />
     </Publication>
   )

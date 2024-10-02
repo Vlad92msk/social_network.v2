@@ -157,12 +157,17 @@ export class CommentService {
     }
 
     async getChildComments(parentId: string, query: FindCommentDto) {
-        console.log('parentId', parentId)
         const queryOptions = createPaginationQueryOptions<CommentEntity>({
             query,
             options: {
-                relations: ['reactions', 'author', 'parent_comment'],
-                where: { parent_comment: { id: parentId } }
+                where: { parent_comment: { id: parentId } },
+                relations: [
+                    'author',
+                    'parent_comment',
+                    'reactions',
+                    'reactions.reaction',
+                    'reactions.user',
+                ]
             }
         })
 
@@ -173,7 +178,15 @@ export class CommentService {
 
         const [childComments, total] = await this.commentRepository.findAndCount(queryOptions)
 
-        return createPaginationResponse({ data: childComments, total, query })
+
+        // Преобразуем rootComments в CommentWithChildCountDto
+        const commentsWithChildCount = childComments.map(comment => {
+            return ({
+                ...comment,
+                reaction_info: this.calculateReactions(comment, query),
+            })
+        })
+        return createPaginationResponse({ data: commentsWithChildCount, total, query })
     }
 
 
