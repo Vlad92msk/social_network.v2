@@ -1,8 +1,9 @@
 import { Dialog } from '@api/messenger/dialogs/types/dialogs.type'
-import { ProfileType } from '@api/profiles/types/profile.type'
 import { Locale } from '@middlewares/variables'
-import { DialogsDrawerBar, DialogSelected } from './components'
 import { Messenger as MessengerModule } from '@ui/modules/messenger/components/Messenger'
+import { DialogShortDto } from '../../../../../swagger/dialogs/interfaces-dialogs'
+import { DialogsDrawerBar, DialogSelected } from './components'
+import { UserProfileInfo } from '../../../../../swagger/profile/interfaces-profile'
 
 interface MessengerProps {
   params: {
@@ -10,8 +11,8 @@ interface MessengerProps {
     userId: string
   }
   searchParams: {}
-  profile: ProfileType | undefined
-  dialogs: Dialog[]
+  profile: UserProfileInfo | undefined
+  dialogs: DialogShortDto[]
 }
 
 export async function Messenger(props: MessengerProps) {

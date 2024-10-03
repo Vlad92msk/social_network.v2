@@ -9,6 +9,11 @@ export class GetUsersDto extends IntersectionType(
     PaginationAndSortingDto<UserInfo>
 ) {
 
+    @ApiProperty({ description: 'Имя пользователя', required: false })
+    @IsString()
+    @IsOptional()
+    name?: string
+
     @ApiProperty({ description: 'Публичный ID пользователя', required: false })
     @IsString()
     @IsOptional()

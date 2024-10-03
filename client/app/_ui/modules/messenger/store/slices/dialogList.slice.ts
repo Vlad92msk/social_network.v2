@@ -1,14 +1,15 @@
+import { Dialog, SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { StateCreator } from 'zustand'
-import { Dialog, DialogShort, SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
+import { DialogShortDto } from '../../../../../../../swagger/dialogs/interfaces-dialogs'
 
 export interface DialogListSlice {
   dialogs?: Dialog[]
-  dialogsShort?: DialogShort[]
+  dialogsShort?: DialogShortDto[]
   selectType: SelectDialogType
   filter: string
   setSelectType: (select: SelectDialogType) => void
   setFilter: (s: string) => void
-  viewDialogList: () => DialogShort[]
+  viewDialogList: () => DialogShortDto[]
 }
 
 export const createDialogListSlice: StateCreator<DialogListSlice, [], [], DialogListSlice> = (set, get) => ({
@@ -22,10 +23,9 @@ export const createDialogListSlice: StateCreator<DialogListSlice, [], [], Dialog
     const { filter, dialogsShort, selectType } = get()
     if (!dialogsShort || dialogsShort.length === 0) return []
     const target = dialogsShort.filter(({ type }) => type === selectType)
-    return target.filter(({ title, description, lastMessage }) => (
+    return target.filter(({ title, last_message }) => (
       title?.toLowerCase().includes(filter.toLowerCase())
-      || description?.toLowerCase().includes(filter.toLowerCase())
-      || lastMessage?.text.toLowerCase().includes(filter.toLowerCase())
+      || last_message?.text.toLowerCase().includes(filter.toLowerCase())
     ))
   },
 })

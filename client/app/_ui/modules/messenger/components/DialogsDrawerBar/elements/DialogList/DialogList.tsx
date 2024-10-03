@@ -20,25 +20,24 @@ export function DialogList(props: DialogListProps) {
   return (
     <div className={classNames(cn({ status }), className)}>
       {viewDialogList.map(({
-        img,
+        image,
         title,
         type,
-        description,
-        lastMessage,
+        last_message,
         id,
       }) => (
         <div key={id} className={cn('Contact')}>
           <div className={cn('ContactImgContainer')}>
             { type === SelectDialogType.PUBLIC ? (
-              <Image src={img} alt={title || description || ''} width="50" height="50" />
+              <Image src={image} alt={title || ''} width="50" height="50" />
             ) : (
-              <Image src={lastMessage?.author?.profileImage} alt={lastMessage?.author?.name || ''} width="50" height="50" />
+              <Image src={last_message?.author?.profile_image} alt={last_message?.author?.name || ''} width="50" height="50" />
             ) }
           </div>
           <div className={cn('ContactContentWrapper')}>
             <Text className={cn('ContactName')} fs="12" textElipsis>{title}</Text>
-            <Text className={cn('ContactLastContactName')} fs="12" textElipsis>{lastMessage?.text}</Text>
-            <Text className={cn('ContactLastMessage')} fs="12" textElipsis>{lastMessage?.text}</Text>
+            <Text className={cn('ContactLastContactName')} fs="12" textElipsis>{last_message?.text}</Text>
+            <Text className={cn('ContactLastMessage')} fs="12" textElipsis>{last_message?.text}</Text>
           </div>
           <div className={cn('ContactHoverActions')}>
             <Button onClick={() => {

@@ -22,6 +22,7 @@ export class DialogShortController {
     ): Promise<DialogShortDto[]> {
         const { data, paginationInfo } = await this.dialogService.findAllShort(query, params)
         response.set(createPaginationHeaders(paginationInfo))
+        console.log('____data____', data)
         return data
     }
 

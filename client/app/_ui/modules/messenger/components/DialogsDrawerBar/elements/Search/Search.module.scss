@@ -6,6 +6,7 @@
   max-width: 100%;
   display: flex;
   gap: rem(10);
+  flex-direction: column;
 
   &-Input {
     width: 100%;

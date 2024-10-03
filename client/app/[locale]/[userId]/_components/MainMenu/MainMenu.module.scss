@@ -75,7 +75,7 @@
     @include color-theme('default') {
       color: var(--Palette--BrightGreen--120--opacity-1);
       background: rgba(128, 128, 128, 0.13);
-      border: rem(1) solid var(--Color-Border--variant-3--theme-default);
+      //border: rem(1) solid var(--Color-Border--variant-3--theme-default);
       box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
     }
 

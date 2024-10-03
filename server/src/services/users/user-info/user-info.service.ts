@@ -1,14 +1,14 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
-import { Repository } from 'typeorm'
+import { ILike, Repository,  } from 'typeorm'
 import { UserInfo } from './entities/user.entity'
 import { GetUsersDto } from './dto/get-users.dto'
 import { RequestParams } from 'src/shared/decorators'
 import { UpdateUserDto } from './dto/update-users.dto'
 import { UserAbout } from './entities'
 import { CreateUserDto } from './dto/create-user.dto'
-import { createPaginationResponse, createPaginationQueryOptions } from '@shared/utils'
+import { createPaginationResponse, createPaginationAndOrder } from '@shared/utils'
 import { pick, forIn, omit, pickBy, isEmpty, values, size } from 'lodash'
 import { MediaInfoService } from '@services/media/info/media-info.service'
 import { UserStatus } from '@services/users/_interfaces'
@@ -52,9 +52,26 @@ export class UserInfoService {
      * Получить всех пользователей
      */
     async getUsers(query: GetUsersDto, params: RequestParams) {
-        const { user_info_id, profile_id } = params
+        const { page, per_page, sort_by, sort_direction, name, ...restQuery} = query
+
+        const paginationAndOrder = createPaginationAndOrder({
+            page,
+            per_page,
+            sort_by,
+            sort_direction
+        })
+
+        console.log('restQuery', name)
+
         const [users, total] = await this.userInfoRepository.findAndCount(
-            createPaginationQueryOptions<UserInfo>({ query, options:{ relations: ['about_info'] }})
+          {
+              where: {
+                  ...restQuery,
+                  name: name && ILike(`%${name?.trim()}%`),
+              },
+              ...paginationAndOrder,
+              relations: ['about_info']
+          }
         )
 
         return createPaginationResponse({ data: users, total, query })
