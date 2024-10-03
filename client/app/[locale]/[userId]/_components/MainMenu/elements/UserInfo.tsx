@@ -1,10 +1,10 @@
+import { useParams, useRouter } from 'next/navigation'
+import { Dispatch, SetStateAction } from 'react'
 import { useProfile } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Spinner } from '@ui/common/Spinner'
 import { Text } from '@ui/common/Text/Text'
 import { Image } from 'app/_ui/common/Image'
-import { useRouter, useParams } from 'next/navigation'
-import { Dispatch, SetStateAction } from 'react'
 import { cn } from '../cn'
 
 interface UserInfoProps {
@@ -14,17 +14,21 @@ interface UserInfoProps {
 export function UserInfo(props: UserInfoProps) {
   const { setStatus } = props
   const router = useRouter()
-  // const params = useParams()
+  const params = useParams()
   const { profile, session } = useProfile()
 
   const userImg = profile?.user_info.profile_image || session.data?.user?.image
   const userName = profile?.user_info.name || session.data?.user?.name
 
   return (
-    <div className={cn('UserInfo')}>
+    <button
+      className={cn('UserInfo')}
+      disabled={params.userId === profile?.user_info.public_id}
+      onClick={() => { router.push(`/${params.locale}/${profile?.user_info.public_id}`) }}
+    >
       {
         session.status === 'loading' ? <Spinner /> : session.status === 'authenticated' ? (
-          <button onClick={() => { router.back() }}>
+          <>
             {userImg && (
             <div className={cn('UserAvatarContainer')}>
               <Image src={userImg} alt="me" width={50} height={50} />
@@ -33,7 +37,7 @@ export function UserInfo(props: UserInfoProps) {
             <Text className={cn('UserName')} fs="12">
               {userName}
             </Text>
-          </button>
+          </>
         ) : undefined
       }
       <Button
@@ -41,6 +45,6 @@ export function UserInfo(props: UserInfoProps) {
         onClick={() => setStatus((prev) => (prev === 'open' ? 'close' : 'open'))}
         size="es"
       />
-    </div>
+    </button>
   )
 }
