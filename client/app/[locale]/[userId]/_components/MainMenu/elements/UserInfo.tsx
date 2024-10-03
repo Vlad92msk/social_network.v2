@@ -3,6 +3,7 @@ import { Button } from '@ui/common/Button'
 import { Spinner } from '@ui/common/Spinner'
 import { Text } from '@ui/common/Text/Text'
 import { Image } from 'app/_ui/common/Image'
+import { useRouter, useParams } from 'next/navigation'
 import { Dispatch, SetStateAction } from 'react'
 import { cn } from '../cn'
 
@@ -12,6 +13,8 @@ interface UserInfoProps {
 
 export function UserInfo(props: UserInfoProps) {
   const { setStatus } = props
+  const router = useRouter()
+  // const params = useParams()
   const { profile, session } = useProfile()
 
   const userImg = profile?.user_info.profile_image || session.data?.user?.image
@@ -21,7 +24,7 @@ export function UserInfo(props: UserInfoProps) {
     <div className={cn('UserInfo')}>
       {
         session.status === 'loading' ? <Spinner /> : session.status === 'authenticated' ? (
-          <>
+          <button onClick={() => { router.back() }}>
             {userImg && (
             <div className={cn('UserAvatarContainer')}>
               <Image src={userImg} alt="me" width={50} height={50} />
@@ -30,7 +33,7 @@ export function UserInfo(props: UserInfoProps) {
             <Text className={cn('UserName')} fs="12">
               {userName}
             </Text>
-          </>
+          </button>
         ) : undefined
       }
       <Button

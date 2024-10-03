@@ -16,19 +16,11 @@ export interface UserPageProps {
 }
 
 export default async function ProfileContent(props: UserPageProps) {
-  const { params: { userId } } = props
-
   return (
     <PageContent className={cn()}>
       <ProfileTab activeTab="Фото">
-        <ProfileTabItem
-          name="Обо мне"
-          content={(<AboutMe />)}
-        />
-        <ProfileTabItem
-          name="Публикации"
-          content={<ModulePost />}
-        />
+        <ProfileTabItem name="Обо мне" content={(<AboutMe />)} />
+        <ProfileTabItem name="Публикации" content={<ModulePost />} />
         <ProfileTabItem name="Фото" content={<MediaContent type="image" />} />
         <ProfileTabItem name="Музыка" content={<MediaContent type="audio" />} />
         <ProfileTabItem name="Видео" content={<MediaContent type="video" />} />
