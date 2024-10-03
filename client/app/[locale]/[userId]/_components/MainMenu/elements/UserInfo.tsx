@@ -21,10 +21,13 @@ export function UserInfo(props: UserInfoProps) {
   const userName = profile?.user_info.name || session.data?.user?.name
 
   return (
-    <button
+    <div
       className={cn('UserInfo')}
-      disabled={params.userId === profile?.user_info.public_id}
-      onClick={() => { router.push(`/${params.locale}/${profile?.user_info.public_id}`) }}
+      onClick={() => {
+        if (params.userId !== profile?.user_info.public_id) {
+          router.push(`/${params.locale}/${profile?.user_info.public_id}`)
+        }
+      }}
     >
       {
         session.status === 'loading' ? <Spinner /> : session.status === 'authenticated' ? (
@@ -45,6 +48,6 @@ export function UserInfo(props: UserInfoProps) {
         onClick={() => setStatus((prev) => (prev === 'open' ? 'close' : 'open'))}
         size="es"
       />
-    </button>
+    </div>
   )
 }
