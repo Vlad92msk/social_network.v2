@@ -57,7 +57,7 @@ export default auth(async (request: NextRequest) => {
      * чтобы можно было проверять UUID в базе и есть он есть - редиректить на него
      * если нет - то на страницу текщего пользователя
      */
-    if (uuid === 'undefined' || uuid !== userPublicId) {
+    if (uuid === 'undefined') {
       const userId = userPublicId
       if (userId) {
         // Если uuid отсутствует в URL, но есть в сессии, перенаправляем на URL с uuid

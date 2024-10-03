@@ -125,20 +125,31 @@ export class MediaInfoService {
             file_ids,
             type,
             owner_id,
+          owner_public_id,
           created_at_from, created_at_to,
           updated_at_from, updated_at_to,
           comments_count_from, comments_count_to,
-          views_count_from, views_count_to
-          ,
+          views_count_from, views_count_to,
           ...restQuery } = query
 
-        const owner = await this.userService.getUsersByParams({ public_id: requestParams.user_public_id }, requestParams)
+        let ownerId: number
+
+        if (owner_public_id) {
+            const owner = await this.userService.getUsersByParams({ public_id: owner_public_id }, requestParams)
+            ownerId = owner.id
+        } else if (owner_id) {
+            ownerId = owner_id
+        } else {
+            const owner = await this.userService.getUsersByParams({ public_id: requestParams.user_public_id }, requestParams)
+            ownerId = owner.id
+        }
+
         const ids = validUuids(file_ids)
         const queryOptions = createPaginationQueryOptions<MediaEntity>({
             query: {...restQuery, id: ids?.length && In(ids) },
             options: {
                 where: {
-                    owner: owner_id ? { id: owner_id } : { id: owner.id },
+                    owner: { id: ownerId },
                     meta: type ? { type } : undefined,
                 },
                 relations: [
@@ -173,7 +184,7 @@ export class MediaInfoService {
     }
 
     async getFilesWithReactions(query: GetMediaDto, requestParams?: RequestParams) {
-        const { data, paginationInfo:{total} } = await this.getFiles(query, requestParams)
+        const { data, paginationInfo:{ total } } = await this.getFiles(query, requestParams)
 
         const responseData = data.map(comment => {
             return ({

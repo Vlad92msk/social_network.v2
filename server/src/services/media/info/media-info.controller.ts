@@ -120,6 +120,7 @@ export class MediaInfoController {
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
+        console.log('query____', query)
         const { data, paginationInfo } = await this.mediaInfoService.getFilesWithReactions(query, params)
 
         response.set(createPaginationHeaders(paginationInfo))

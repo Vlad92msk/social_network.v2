@@ -23,6 +23,7 @@ export const userInfoApi = createApi({
   reducerPath: 'API_userInfo',
   tagTypes: ['User', 'Users'],
   baseQuery: fetchBaseQuery({
+    credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState
       const profileId = state.profile?.profile?.id
@@ -36,7 +37,6 @@ export const userInfoApi = createApi({
       }
       return headers
     },
-    credentials: 'include',
   }),
   endpoints: (builder) => ({
 
@@ -90,6 +90,13 @@ export const userInfoApi = createApi({
           // Откатываем изменения в кэше getUserById
           patchResult.undo()
         }
+      },
+    }),
+
+    getOneUserByParams: builder.query<UserInfoDto, Parameters<typeof userInfoApiInstance.getOneUserByParams>[0]>({
+      query: (params) => {
+        const { url, init } = userInfoApiInstance.getOneUserByParamsInit(params)
+        return { url, ...init }
       },
     }),
 

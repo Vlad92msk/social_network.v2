@@ -46,7 +46,19 @@ export class UserInfoController {
         return data
     }
 
-    @Get(':user_id')
+    @Get('get_one')
+    @ApiOperation({ summary: 'Получить пользователя по публичному ID' })
+    @ApiResponse({ status: 200, description: 'Возвращает информацию о пользователе', type: UserInfoDto })
+    async getOneUserByParams(
+      @Query() query: GetUsersDto,
+      @RequestParams() params: RequestParams,
+    ) {
+        console.log('Запрашиваем пользователя get_one', query)
+        const user = await this.userService.getUsersByParams(query, params)
+        return user
+    }
+
+    @Get('get_one_by_id/:user_id')
     @ApiOperation({ summary: 'Получить пользователя по ID' })
     @ApiParam({ name: 'user_id', type: 'number', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Возвращает информацию о пользователе', type: UserInfoDto })

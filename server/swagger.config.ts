@@ -279,9 +279,9 @@ function generateInitMethod(operationId: string, paramsType: string, path: strin
   content += `    const url = new URL(path, this.baseUrl);\n`
 
   // Обработка query-параметров
-  const queryParams = parameters.filter(p => p.in === 'query');
+  const queryParams = [...new Set(parameters.filter(p => p.in === 'query').map(p => p.name))]; // Убираем дубликаты
   if (queryParams.length > 0) {
-    content += '    const queryParams = [\'' + queryParams.map(p => p.name).join('\', \'') + '\'];\n'
+    content += `    const queryParams = ['${queryParams.join('\', \'')}'];\n`; // Добавляем объявление массива
     content += '    queryParams.forEach(key => {\n'
     content += '      if (params[key] !== undefined) {\n'
     content += '        if (Array.isArray(params[key])) {\n'

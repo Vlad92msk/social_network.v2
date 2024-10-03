@@ -65,6 +65,11 @@ export class GetMediaDto extends IntersectionType(
     @IsOptional()
     owner_id?: number
 
+    @ApiProperty({ description: 'ID автора/владельца по публичному ID', required: false })
+    @IsString()
+    @IsOptional()
+    owner_public_id?: string
+
     @ApiProperty({ description: 'ID отмеченных пользователей', type: [Number], required: false })
     @IsArray()
     @IsOptional()

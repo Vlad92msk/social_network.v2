@@ -7,7 +7,7 @@ import style from './Page.module.scss'
 
 const cn = makeCn('Page', style)
 
-interface UserPageProps {
+export interface UserPageProps {
   params: {
     locale: Locale
     userId: string
@@ -16,6 +16,8 @@ interface UserPageProps {
 }
 
 export default async function ProfileContent(props: UserPageProps) {
+  const { params: { userId } } = props
+
   return (
     <PageContent className={cn()}>
       <ProfileTab activeTab="Фото">

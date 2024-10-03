@@ -66,8 +66,9 @@ export class UserInfoService {
         return user
     }
 
-    async getUsersByParams(query: GetUsersDto, params: RequestParams) {
-        const user = await this.userInfoRepository.findOne({ where: query })
+    async getUsersByParams(query: GetUsersDto, params?: RequestParams) {
+        const { public_id, name } = query
+        const user = await this.userInfoRepository.findOne({ where: { public_id, name } })
 
         return user
     }

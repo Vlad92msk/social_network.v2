@@ -13,6 +13,7 @@ import { RequestParams } from '@shared/decorators'
 import { PublicationType } from '@shared/entity/publication.entity'
 import { SortDirection } from '@shared/types'
 import { createPaginationQueryOptions, createPaginationResponse, updateEntityParams } from '@shared/utils'
+import { omit } from 'lodash'
 import { LessThanOrEqual, Repository } from 'typeorm'
 import { CreatePostDto } from './dto/create-post.dto'
 import { UpdatePostDto } from './dto/update-post.dto'
@@ -163,10 +164,20 @@ export class PostsService {
 
 
     async findAll(query: FindPostDto, params: RequestParams) {
+
+        let ownerId: number
+
+        if (query?.owner_public_id) {
+            const owner = await this.userInfoService.getUsersByParams({ public_id: query.owner_public_id }, params)
+            ownerId = owner.id
+        } else {
+            ownerId = params.user_info_id
+        }
+
         const queryOptions = createPaginationQueryOptions<PostEntity>({
-            query,
+            query: omit(query, 'owner_public_id'),
             options: {
-                where: { author: { id: params.user_info_id } },
+                where: { author: { id: ownerId } },
                 relations: [
                     'media',
                     'media.meta',

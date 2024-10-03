@@ -20,9 +20,12 @@ export default async function UserPage(props: UserPageProps) {
   const { params: { userId }, children } = props
   const { layoutVariant } = await getSettings(userId)
 
-  const serverSession = await auth()
-  const profile = await getProfileQuery(serverSession?.user?.email as string)
-  const dialogs = await getDialogsShortQuery(profile?.dialogsIds)
+  // const serverSession = await auth()
+  /**
+   * Это Убираем когда перейдем на реальное АПИ
+   */
+  // const profile = await getProfileQuery(serverSession?.user?.email as string)
+  // const dialogs = await getDialogsShortQuery(profile?.dialogsIds)
 
   return (
     <Layout
@@ -33,14 +36,14 @@ export default async function UserPage(props: UserPageProps) {
         content: (
           <ContentArea>
             {children}
-            <Suspense fallback={<div>.........Loading..........</div>}>
-              <Messenger
-                params={props.params}
-                searchParams={props.searchParams}
-                profile={profile}
-                dialogs={dialogs}
-              />
-            </Suspense>
+            {/* <Suspense fallback={<div>.........Loading..........</div>}> */}
+            {/*   <Messenger */}
+            {/*     params={props.params} */}
+            {/*     searchParams={props.searchParams} */}
+            {/*     profile={profile} */}
+            {/*     dialogs={dialogs} */}
+            {/*   /> */}
+            {/* </Suspense> */}
           </ContentArea>
         ),
       }}

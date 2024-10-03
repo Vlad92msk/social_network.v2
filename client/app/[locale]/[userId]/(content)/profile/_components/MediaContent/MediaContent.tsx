@@ -3,6 +3,7 @@
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext } from '@dnd-kit/sortable'
 import { groupBy, omit, uniqBy } from 'lodash'
+import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MaterialAttachProps } from '@hooks'
 import { FileUpLoad } from '@ui/common/FileUpLoad'
@@ -11,8 +12,9 @@ import { Text } from '@ui/common/Text'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
 import { MediaMetadata, MediaResponseDto } from '../../../../../../../../swagger/media/interfaces-media'
-import { mediaApi } from '../../../../../../../store/api'
+import { mediaApi, userInfoApi } from '../../../../../../../store/api'
 import { FILE_FORMAT_AUDIO, FILE_FORMAT_IMAGE, FILE_FORMAT_VIDEO } from '../../../../../../types/fileFormats'
+import { UserPageProps } from '../../page'
 
 function generateRandomAlbum() {
   return `Album_${Math.random().toString(36).substring(7)}`
@@ -36,12 +38,18 @@ interface MyPhotoProps {
 
 export function MediaContent(props: MyPhotoProps) {
   const { type } = props
+  const params = useParams<UserPageProps['params']>()
+
   const [items, setItems] = useState<MediaResponseDto[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [potentialNewAlbum, setPotentialNewAlbum] = useState<string | null>(null)
 
-  const { data, isLoading } = mediaApi.useGetFilesQuery({ type, source: 'user_uploaded_media' })
+  const { data, isLoading } = mediaApi.useGetFilesQuery({
+    type,
+    source: 'user_uploaded_media',
+    owner_public_id: params.userId,
+  })
 
   const [onMediaUpdate] = mediaApi.useUpdateMediaMutation()
   const [onMediaUpload] = mediaApi.useUploadFilesMutation()

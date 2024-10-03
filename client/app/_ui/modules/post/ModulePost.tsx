@@ -1,15 +1,14 @@
 'use client'
 
-import { useProfile } from '@hooks'
+import { useParams } from 'next/navigation'
 import { CreatePublication, CreatePublicationContextProps } from '@ui/components/create-publication'
 import { PostItem, PostsList } from './components'
 import { postsApi } from '../../../../store/api'
-
+import { UserPageProps } from '../../../[locale]/[userId]/(content)/profile/page'
 
 export function ModulePost() {
-  const { profile } = useProfile()
-
-  const { data, isLoading } = postsApi.useFindAllQuery({})
+  const params = useParams<UserPageProps['params']>()
+  const { data, isLoading } = postsApi.useFindAllQuery({ owner_public_id: params.userId })
   const [submit, { isLoading: isSubmitting }] = postsApi.useCreateMutation()
 
   const handleSubmit = (createdPost: CreatePublicationContextProps) => {

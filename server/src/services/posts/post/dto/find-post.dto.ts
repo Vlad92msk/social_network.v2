@@ -18,6 +18,11 @@ export class FindPostDto extends IntersectionType(
     ])),
     PaginationAndSortingDto<PostEntity>
 ) {
+    @ApiProperty({ description: 'ID автора/владельца по публичному ID', required: false })
+    @IsString()
+    @IsOptional()
+    owner_public_id?: string
+    
     @ApiProperty({ description: 'ID тегов для фильтрации', type: [String], required: false })
     @IsArray()
     @IsUUID('all', { each: true })

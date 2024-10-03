@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { AddedFile, useProfile } from '@hooks'
 import { Spinner } from '@ui/common/Spinner'
 import { createZustandContext } from '@utils/client'
@@ -9,6 +10,7 @@ import {
   Banner, ButtonEdit, Company, Information, Name, Position, Univercity,
 } from './elements'
 import { userInfoApi } from '../../../../../../../store/api'
+import { UserPageProps } from '../../page'
 
 // Поля, которые могут быть отредактированы
 export interface AboutMeContextChangeState {
@@ -44,14 +46,25 @@ export interface AboutMeProps {
 }
 
 export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((props) => {
+  const params = useParams<UserPageProps['params']>()
   const aboutMeUpdate = useAboutMeCtxUpdate()
 
   const { profile, isLoading } = useProfile()
+
   const handleClickFriend = (id: string) => {
     console.log(`Переходим к пользователю ${id}`)
   }
 
+  /**
+   * Получаем инф о пользователе если это не текущий пользователь
+   * (чтобы отображать инф о пользователе из URL)
+   */
+  const { data: gotUserProfile, status } = userInfoApi.useGetUsersQuery(
+    { public_id: params.userId },
+    { skip: profile?.user_info.public_id === params.userId },
+  )
   const [updateUser, { isError }] = userInfoApi.useUpdateUserMutation()
+
   useEffect(() => {
     if (isError) {
       aboutMeUpdate(() => ({ isChangeActive: false, status: 'reset', changeState: {} }))
@@ -82,21 +95,35 @@ export const AboutMe = contextZustand<AboutMeProps, PublicationContextState>((pr
     })
   }
 
-  if (isLoading) return <Spinner />
+  const [currentUser, setCurrentUser] = useState(profile?.user_info)
+
+  useEffect(() => {
+    if (profile?.user_info.public_id !== params.userId && status === 'fulfilled' && gotUserProfile?.length) {
+      // @ts-ignore
+      setCurrentUser(gotUserProfile[0])
+    }
+  }, [gotUserProfile, params, profile, status])
+
   return (
     <div className={cn()}>
-      <ButtonEdit onSubmit={handleSubmit} />
-      <Banner
-        contacts={[]}
-        image={profile?.user_info?.profile_image}
-        bunner_image={profile?.user_info?.about_info.banner_image}
-        onClickUser={handleClickFriend}
-      />
-      <Name name={profile?.user_info?.name} />
-      <Univercity university={profile?.user_info?.about_info.study} />
-      <Position position={profile?.user_info?.about_info.position} />
-      <Company company={profile?.user_info?.about_info.working} />
-      <Information information={profile?.user_info?.about_info.description} />
+      {
+        isLoading ? <Spinner /> : currentUser && (
+          <>
+            <ButtonEdit onSubmit={handleSubmit} />
+            <Banner
+              contacts={[]}
+              image={currentUser.profile_image}
+              bunner_image={currentUser.about_info.banner_image}
+              onClickUser={handleClickFriend}
+            />
+            <Name name={currentUser.name} />
+            <Univercity university={currentUser.about_info.study} />
+            <Position position={currentUser.about_info.position} />
+            <Company company={currentUser.about_info.working} />
+            <Information information={currentUser.about_info.description} />
+          </>
+        )
+      }
     </div>
   )
 })
