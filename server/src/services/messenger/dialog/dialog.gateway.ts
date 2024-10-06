@@ -7,20 +7,56 @@ import {
     WebSocketGateway,
     WebSocketServer
 } from '@nestjs/websockets'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import { DialogService } from './dialog.service'
 import { MessageService } from '../message/message.service'
-import { CreateMessageDto } from '../message/dto/create-message.dto'
 import { BadRequestException, Injectable, UseGuards } from '@nestjs/common'
-import { RequestParams } from '@shared/decorators'
+import { RequestParams, WsRequestParams } from '@shared/decorators'
 import { WebsocketDevMiddleware } from './middleware/websocket-dev.middleware'
 import { UserStatus } from '@services/users/_interfaces'
-import { ClientToServerEvents, ServerToClientEvents, DialogEvents, AuthenticatedSocket } from './types'
+import { ClientToServerEvents, ServerToClientEvents, DialogEvents } from './types'
 import { OnEvent } from '@nestjs/event-emitter'
 import { DialogEntity } from './entities/dialog.entity'
 import { DialogShortDto } from './dto/dialog-short.dto'
 import { VideoConferenceEvents } from '../video-conference/types'
 
+// Вспомогательная функция для декодирования base64 в File
+function base64ToFile(base64: string): Express.Multer.File {
+    // Извлекаем MIME-тип и данные из base64 строки
+    const matches = base64.match(/^data:(.+);base64,(.+)$/)
+    if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 string')
+    }
+
+    const [, mimetype, data] = matches
+    const buffer = Buffer.from(data, 'base64')
+
+    // Генерируем случайное имя файла
+    const originalname = `file-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
+
+    return {
+        fieldname: 'file',
+        originalname,
+        encoding: '7bit',
+        mimetype,
+        buffer,
+        size: buffer.length,
+    } as Express.Multer.File
+}
+
+
+interface AuthenticatedSocket extends Socket {
+    auth: {
+        profile_id: string;
+        user_info_id: string;
+        user_public_id: string;
+    };
+    data: {
+        profile_id: number;
+        user_info_id: number;
+        user_public_id: string;
+    };
+}
 
 @Injectable()
 @WebSocketGateway({
@@ -41,7 +77,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private async handleUserStatusChange(client: AuthenticatedSocket, status: UserStatus): Promise<void> {
         try {
-            const userId = client.requestParams.user_info_id
+            const userId = client.data.user_info_id
             const dialogs = await this.dialogService.getDialogsByParticipant(userId)
 
             for (const dialog of dialogs) {
@@ -67,11 +103,9 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * Получает список активных (онлайн) участников диалога
      */
     private async getActiveParticipants(dialogId: string): Promise<number[]> {
-        // Получаем все сокеты (подключения) в данном диалоге
         const sockets = await this.server.in(dialogId).fetchSockets()
-        // Извлекаем ID пользователей из каждого сокета
-        // @ts-ignore используется из-за проблем с типизацией socket.io
-        return sockets.map(socket => socket.requestParams.user_info_id)
+        // @ts-ignore
+        return sockets.map(socket => (socket as AuthenticatedSocket).data.user_info_id)
     }
 
     /**
@@ -79,7 +113,24 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * @param client Подключившийся клиент
      */
     async handleConnection(client: AuthenticatedSocket) {
-        await this.handleUserStatusChange(client, UserStatus.Online)
+        try {
+            const { profile_id, user_info_id, user_public_id } = client.handshake.auth
+
+            if (!profile_id || !user_info_id) {
+                throw new BadRequestException('Отсутствуют требуемые данные аутентификации')
+            }
+
+            client.data = {
+                profile_id: Number(profile_id),
+                user_info_id: Number(user_info_id),
+                user_public_id: String(user_public_id),
+            }
+
+            await this.handleUserStatusChange(client, UserStatus.Online)
+        } catch (error) {
+            console.error('Ошибка при подключении клиента:', error.message)
+            client.disconnect()
+        }
     }
 
     /**
@@ -99,9 +150,9 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleJoinDialog(
         @MessageBody() data: { dialogId: string, per_page?: number, page?: number },
         @ConnectedSocket() client: AuthenticatedSocket,
+      @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const params: RequestParams = client.requestParams
             const { dialogId, per_page = 20, page = 0 } = data
 
             // Проверяем, является ли пользователь участником диалога
@@ -148,11 +199,12 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleLeaveDialog(
         @MessageBody() dialogId: string,
         @ConnectedSocket() client: AuthenticatedSocket,
+      @WsRequestParams() params: RequestParams,
     ) {
         // Отсоединяем клиента от комнаты диалога
         client.leave(dialogId)
         // Обновляем статус пользователя на 'offline' в этом диалоге
-        await this.updateUserStatus(client.requestParams.user_info_id, dialogId, UserStatus.Offline)
+        await this.updateUserStatus(params.user_info_id, dialogId, UserStatus.Offline)
     }
 
     /**
@@ -162,12 +214,19 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.SEND_MESSAGE)
     async handleSendMessage(
-        @MessageBody() data: { dialogId: string; participants?: number[], createMessageDto: CreateMessageDto; media: Express.Multer.File[]; voices: Express.Multer.File[]; videos: Express.Multer.File[] },
+        @MessageBody() data: {
+            dialogId: string;
+            text: string;
+            participants?: number[];
+            media?: string[];
+            voices?: string[];
+            videos?: string[];
+        },
         @ConnectedSocket() client: AuthenticatedSocket,
+        @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const { dialogId, participants, createMessageDto, media, voices, videos } = data
-            const params: RequestParams = client.requestParams
+            const { dialogId, text, participants, media, voices, videos } = data
 
             let currentDialog: DialogEntity
 
@@ -189,8 +248,21 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
             }
 
+            // Декодирование base64 файлов
+            const decodedMedia = media ? media.map(base64ToFile) : []
+            const decodedVoices = voices ? voices.map(base64ToFile) : []
+            const decodedVideos = videos ? videos.map(base64ToFile) : []
+
             // Создаем сообщение
-            const message = await this.messageService.create({ createMessageDto, media, voices, videos }, params)
+            const message = await this.messageService.create(
+              {
+                  createMessageDto: { text },
+                  media: decodedMedia,
+                  voices: decodedVoices,
+                  videos: decodedVideos,
+              },
+              params
+            )
             // Добавляем созданное сообщение в диалог
             await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
 
@@ -214,9 +286,10 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleStartTyping(
         @MessageBody() dialogId: string,
         @ConnectedSocket() client: AuthenticatedSocket,
+      @WsRequestParams() params: RequestParams,
     ) {
         // Оповещаем других участников диалога о начале набора
-        client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: client.requestParams.user_info_id, isTyping: true })
+        client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: params.user_info_id, isTyping: true })
     }
 
     /**
@@ -228,9 +301,10 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleStopTyping(
         @MessageBody() dialogId: string,
         @ConnectedSocket() client: AuthenticatedSocket,
+      @WsRequestParams() params: RequestParams,
     ) {
         // Оповещаем других участников диалога об окончании набора
-        client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: client.requestParams.user_info_id, isTyping: false })
+        client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: params.user_info_id, isTyping: false })
     }
 
 

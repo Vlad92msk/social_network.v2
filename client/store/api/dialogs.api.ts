@@ -1,27 +1,14 @@
-import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { io } from 'socket.io-client'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
+import { DialogEvents } from '../events/dialog-events-enum'
 import { dialogsApiInstance } from '../instance'
-import { RootState, store } from '../store'
-// Тип для результатов запросов
-type QueryResult<T> = {
-  data?: T
-  error?: SerializedError
-  endpointName: string
-  fulfilledTimeStamp?: number
-  isError: boolean
-  isLoading: boolean
-  isSuccess: boolean
-  isUninitialized: boolean
-  requestId: string
-  startedTimeStamp?: number
-  status: 'pending' | 'fulfilled' | 'rejected'
-}
+import { RootState } from '../store'
 
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',
-  tagTypes: ['Messages'],
+  tagTypes: ['Messages', 'Dialogs'],
   baseQuery: fetchBaseQuery({
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
@@ -39,14 +26,6 @@ export const dialogsApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    addMessageToDialog: builder.mutation<MessageEntity, Parameters<typeof dialogsApiInstance.addMessageToDialog>[0]>({
-      query: (params) => {
-        const { url, init } = dialogsApiInstance.addMessageToDialogInit(params)
-        return { url, ...init }
-      },
-      invalidatesTags: ['Messages'],
-    }),
-
     create: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.create>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.createInit(params)
@@ -66,7 +45,108 @@ export const dialogsApi = createApi({
         const { url, init } = dialogsApiInstance.findOneInit(params)
         return { url, ...init }
       },
-      providesTags: ['Messages']
+      // providesTags: ['Messages', 'Dialogs'],
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch, getState },
+      ) {
+        const state = getState() as RootState
+
+        const socket = io('http://localhost:3001/dialog', {
+          path: '/socket.io',
+          auth: {
+            profile_id: state.profile?.profile?.id,
+            user_info_id: state.profile?.profile?.user_info?.id,
+            user_public_id: state.profile?.profile?.user_info?.public_id,
+          },
+        })
+
+        try {
+          await cacheDataLoaded
+
+          socket.on('connect', () => {
+            console.log('Connected to WebSocket')
+            socket.emit(DialogEvents.JOIN_DIALOG, { dialogId: arg })
+          })
+
+          socket.on(DialogEvents.NEW_MESSAGE, (message) => {
+            updateCachedData((draft) => {
+              if (!draft.messages) {
+                draft.messages = []
+              }
+              draft.messages.push(message)
+            })
+          })
+
+          socket.on(DialogEvents.DIALOG_UPDATED, (updatedDialog) => {
+            updateCachedData((draft) => {
+              Object.assign(draft, updatedDialog)
+            })
+          })
+
+          socket.on(DialogEvents.DIALOG_SHORT_UPDATED, (updatedDialogShort) => {
+            updateCachedData((draft) => {
+              // Обновите соответствующие поля в draft на основе updatedDialogShort
+              // Например:
+              // draft.lastMessage = updatedDialogShort.lastMessage;
+              // draft.unreadCount = updatedDialogShort.unreadCount;
+              // и т.д.
+            })
+          })
+
+          socket.on(DialogEvents.USER_STATUS_CHANGED, ({ userId, status }) => {
+            updateCachedData((draft) => {
+              const participant = draft.participants?.find((p) => p.id === userId)
+              if (participant) {
+                participant.status = status
+              }
+            })
+          })
+
+          socket.on(DialogEvents.USER_TYPING, ({ userId, isTyping }) => {
+            // Обновите состояние, чтобы отразить, что пользователь печатает
+            // Например:
+            // updateCachedData((draft) => {
+            //   draft.typingUsers = draft.typingUsers || {};
+            //   draft.typingUsers[userId] = isTyping;
+            // });
+          })
+
+          await cacheEntryRemoved
+          socket.disconnect()
+        } catch {
+          // Handle errors
+        }
+      },
+    }),
+    sendMessage: builder.mutation<void, {
+      dialogId: string,
+      message: {
+        text: string,
+        participants?: number[],
+        dialog_id?: string,
+        media?: string[],
+        voices?: string[],
+        videos?: string[]
+      }
+    }>({
+      queryFn: ({ dialogId, message }, { getState }) => new Promise((resolve) => {
+        const state = getState() as RootState
+
+        const socket = io('http://localhost:3001/dialog', {
+          path: '/socket.io',
+          auth: {
+            profile_id: state.profile?.profile?.id,
+            user_info_id: state.profile?.profile?.user_info?.id,
+            user_public_id: state.profile?.profile?.user_info?.public_id,
+          },
+        })
+
+        socket.emit(DialogEvents.SEND_MESSAGE, { dialogId, ...message }, () => {
+          resolve({ data: undefined })
+        })
+      }),
+      // invalidatesTags: ['Messages'],
     }),
 
     update: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.update>[0]>({

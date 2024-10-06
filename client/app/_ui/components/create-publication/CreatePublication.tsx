@@ -14,7 +14,7 @@ import {
 
 export const SUBMIT_PROPS = ['text', 'media', 'voices', 'videos']
 
-interface MyFile {
+export interface MyFile {
   id: string;
   blob: Blob;
   url: string;

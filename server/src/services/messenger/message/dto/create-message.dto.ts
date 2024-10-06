@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsBoolean, IsArray, IsNumber } from 'class-validator'
+import { IsString, IsUUID, IsOptional, IsBoolean, IsArray } from 'class-validator'
 import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
 import { MessageEntity } from '../entity/message.entity'
 
@@ -12,17 +12,6 @@ export class CreateMessageDto extends IntersectionType(
     @IsOptional()
     @IsString()
     dialog_id?: string
-
-    //_____________________________________
-    @ApiProperty({ description: 'ID участников диалога', type: [Number] })
-    @IsOptional()
-    @IsArray()
-    @IsNumber({}, { each: true })
-    participants?: number[];
-    //_____________________________________
-
-
-
 
     @ApiProperty({ description: 'Текст сообщения' })
     @IsString()

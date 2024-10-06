@@ -1,60 +1,19 @@
-import {
-    Controller,
-    Get,
-    Post,
-    Body,
-    Patch,
-    Param,
-    Delete,
-    UseInterceptors,
-    UploadedFiles,
-    Query,
-    Res, BadRequestException, HttpException, InternalServerErrorException, NestInterceptor, CallHandler, ExecutionContext, Injectable
-} from '@nestjs/common'
+import { ConfigEnum } from '@config/config.enum'
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, UploadedFiles, UseInterceptors } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger'
-import { CreateMessageDto } from '@services/messenger/message/dto/create-message.dto'
-import { MessageEntity } from '@services/messenger/message/entity/message.entity'
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { MediaInfoService } from '@services/media/info/media-info.service'
 import { MessageService } from '@services/messenger/message/message.service'
 import { UserInfo } from '@services/users/user-info/entities'
+import { RequestParams } from '@shared/decorators'
+import { createPaginationHeaders } from '@shared/utils'
 import { Response } from 'express'
-import { Observable } from 'rxjs'
 import { DialogService } from './dialog.service'
 import { CreateDialogDto } from './dto/create-dialog.dto'
-import { UpdateDialogDto } from './dto/update-dialog.dto'
 import { FindDialogDto } from './dto/find-dialog.dto'
+import { UpdateDialogDto } from './dto/update-dialog.dto'
 import { DialogEntity } from './entities/dialog.entity'
-import { RequestParams } from '@shared/decorators'
-import { MediaInfoService } from '@services/media/info/media-info.service'
-import { ConfigService } from '@nestjs/config'
-import { ConfigEnum } from '@config/config.enum'
-import { createPaginationHeaders } from '@shared/utils'
-
-// TODO: чтото сделать с этим - кажется это стремно
-// это нужно чтобы ID участников корректно передавались из formdata...
-@Injectable()
-export class FormDataInterceptor implements NestInterceptor {
-    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-        const request = context.switchToHttp().getRequest();
-        const body = request.body;
-
-        // Преобразуем поля, оканчивающиеся на [], в массивы
-        for (const key in body) {
-            if (key.endsWith('[]')) {
-                const newKey = key.slice(0, -2);
-                body[newKey] = Array.isArray(body[key]) ? body[key] : [body[key]];
-                delete body[key];
-            }
-        }
-
-        // Преобразуем строковые числа в числа
-        if (body.participants) {
-            body.participants = body.participants.map(Number);
-        }
-
-        return next.handle();
-    }
-}
 
 @ApiTags('Диалоги')
 @Controller('api/dialogs')
@@ -68,75 +27,6 @@ export class DialogController {
         private messageService: MessageService
     ) {
         this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
-    }
-
-    @Post('add-message')
-    @ApiOperation({ summary: 'Добавить сообщение в диалог' })
-    @ApiResponse({ status: 200, description: 'Сообщение добавлено', type: MessageEntity })
-    @ApiConsumes('multipart/form-data')
-    @UseInterceptors(FileFieldsInterceptor([
-        { name: 'media', maxCount: 20 },
-        { name: 'voices', maxCount: 5 },
-        { name: 'videos', maxCount: 5 }
-    ]), FormDataInterceptor)
-    async addMessageToDialog(
-      @Body() createMessageDto: CreateMessageDto,
-      @UploadedFiles() files: {
-          media?: Express.Multer.File[],
-          voices?: Express.Multer.File[],
-          videos?: Express.Multer.File[]
-      },
-      @RequestParams() params: RequestParams,
-    ) {
-        try {
-            // Проверяем квоту
-            await this.mediaInfoService.checkStorageLimit(
-              params.user_info_id,
-              [].concat(files?.media || [], files?.voices || [], files?.videos || []),
-              this.maxStorage
-            )
-
-            let currentDialog: DialogEntity
-
-            // Добавляем сообщение в существующий диалог
-            if (createMessageDto?.dialog_id) {
-                currentDialog = await this.dialogService.findOne(createMessageDto?.dialog_id)
-            } else {
-                // Если диалога еще нет
-                // создаем с выбранными участниками
-                if (createMessageDto?.participants) {
-                    currentDialog = await this.dialogService.create({ query: { participants: createMessageDto.participants } }, params)
-                } else {
-                    // Если участников еще не выбрали - без них
-                    currentDialog = await this.dialogService.create(undefined, params)
-                }
-            }
-
-            if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
-                throw new BadRequestException('Вы не являетесь участником этого диалога')
-            }
-
-            // Создаем сообщение
-            const message = await this.messageService.create(
-              {
-                  createMessageDto,
-                  media: files.media || [],
-                  voices: files.voices || [],
-                  videos: files.videos || []
-              },
-              params
-            )
-            // Добавляем сообщение в диалог
-            await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
-            // Возвращаем созданное сообщение
-            return message
-        } catch (error) {
-            // Обработка ошибок
-            if (error instanceof HttpException) {
-                throw error
-            }
-            throw new InternalServerErrorException('Не удалось добавить сообщение в диалог')
-        }
     }
 
     @Post('create')
