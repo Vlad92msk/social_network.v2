@@ -39,8 +39,10 @@ export function ChildComment(props: ChildCommentProps) {
         <Publication.Author authorComponent={<Image src={author.profile_image} height={40} width={40} alt={author.name} />} />
       )}
       <Publication.Emojies
+        entity_id={comment.id}
+        entity_type="comment"
         //@ts-ignore
-        entity_id={comment.id} entity_type="comment" reactions={comment.reaction_info}
+        reactions={comment.reaction_info}
       />
       <Publication.DateCreated dateCreated={date_created} />
     </Publication>

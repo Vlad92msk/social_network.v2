@@ -14,16 +14,20 @@ export function Skeleton(props: SkeletonProps) {
 
   return (
     <div className={cn({ statusVisible: chatingPanelStatus })}>
-      <div className={cn('Header')}>
-        {headerComponent}
-      </div>
-      {fixedMessages}
-      <div className={cn('Body')}>
-        {bodyComponent}
-      </div>
-      <div className={cn('Footer')}>
-        {footerComponent}
-      </div>
+      {chatingPanelStatus === 'open' && (
+        <>
+          <div className={cn('Header')}>
+            {headerComponent}
+          </div>
+          {fixedMessages}
+          <div className={cn('Body')}>
+            {bodyComponent}
+          </div>
+          <div className={cn('Footer')}>
+            {footerComponent}
+          </div>
+        </>
+      )}
     </div>
   )
 }

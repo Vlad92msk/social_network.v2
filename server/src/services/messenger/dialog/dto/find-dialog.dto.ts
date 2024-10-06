@@ -16,5 +16,5 @@ export class FindDialogDto extends PaginationAndSortingDto {
     @ApiPropertyOptional({ description: 'ID участника диалога' })
     @IsOptional()
     @IsUUID('all')
-    participant_id?: string
+    participant_id?: number
 }

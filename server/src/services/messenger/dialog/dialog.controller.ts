@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger'
+import { UserInfo } from '@services/users/user-info/entities'
 import { Response } from 'express'
 import { DialogService } from './dialog.service'
 import { CreateDialogDto } from './dto/create-dialog.dto'
@@ -38,14 +39,14 @@ export class DialogController {
         this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
     }
 
-    @Post()
+    @Post('create')
     @ApiOperation({ summary: 'Создать диалог' })
     @ApiResponse({ status: 201, description: 'Диалог успешно создан', type: DialogEntity })
     @UseInterceptors(FileFieldsInterceptor([
         { name: 'image', maxCount: 1 }
     ]))
     async create(
-        @Body() createDialogDto: CreateDialogDto,
+        @Body() query: CreateDialogDto,
         @UploadedFiles() files: { image?: Express.Multer.File[] },
         @RequestParams() params: RequestParams,
     ) {
@@ -56,7 +57,7 @@ export class DialogController {
         )
 
         return this.dialogService.create({
-            createDialogDto,
+            query,
             image: files?.image?.[0]
         }, params)
     }
@@ -68,7 +69,7 @@ export class DialogController {
         @Query() query: FindDialogDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
-    ): Promise<DialogEntity[]> {
+    ) {
         const { data, paginationInfo } = await this.dialogService.findAll(query, params)
         response.set(createPaginationHeaders(paginationInfo))
         return data
@@ -91,7 +92,7 @@ export class DialogController {
     ]))
     async update(
         @Param('id') id: string,
-        @Body() updateDialogDto: UpdateDialogDto,
+        @Body() query: UpdateDialogDto,
         @UploadedFiles() files: { image?: Express.Multer.File[] },
         @RequestParams() params: RequestParams,
     ) {
@@ -104,7 +105,7 @@ export class DialogController {
         }
 
         return this.dialogService.update(id, {
-            updateDialogDto,
+            query,
             image: files?.image?.[0]
         }, params)
     }
@@ -267,7 +268,7 @@ export class DialogController {
     @Patch(':id/options')
     @ApiOperation({ summary: 'Обновление настроек диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiBody({ description: 'Новые настройки', type: Object })
+    @ApiBody({ description: 'Новые настройки' })
     @ApiResponse({ status: 200, description: 'Настройки диалога обновлены', type: DialogEntity })
     async updateDialogOptions(
         @Param('id') id: string,
@@ -288,7 +289,7 @@ export class DialogController {
     @Get(':id/participants')
     @ApiOperation({ summary: 'Получение участников диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiResponse({ status: 200, description: 'Список участников', type: [Object] })
+    @ApiResponse({ status: 200, description: 'Список участников', type: [UserInfo] })
     async getDialogParticipants(@Param('id') id: string) {
         return this.dialogService.getDialogParticipants(id)
     }
@@ -296,7 +297,7 @@ export class DialogController {
     @Get(':id/admins')
     @ApiOperation({ summary: 'Получение администраторов диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiResponse({ status: 200, description: 'Список администраторов', type: [Object] })
+    @ApiResponse({ status: 200, description: 'Список администраторов', type: [UserInfo] })
     async getDialogAdmins(@Param('id') id: string) {
         return this.dialogService.getDialogAdmins(id)
     }

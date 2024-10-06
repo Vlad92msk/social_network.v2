@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
+import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
 
 interface DialogListProps{
@@ -13,12 +15,13 @@ interface DialogListProps{
 export function DialogList(props: DialogListProps) {
   const { className } = props
   const viewDialogList = useMessageStore((state) => state.viewDialogList())
-  const status = useMessageStore((state) => state.drawerStatus)
+  const drawerStatus = useMessageStore((state) => state.drawerStatus)
   const setChatingPanelStatus = useMessageStore((state) => state.setChatingPanelStatus)
-  const setOpenedDialogIds = useMessageStore((state) => state.setOpenedDialogIds)
+  const setOpenDialogId = useMessageStore((state) => state.setOpenDialogId)
+  const [onGetDialog] = dialogsApi.useLazyFindOneQuery()
 
   return (
-    <div className={classNames(cn({ status }), className)}>
+    <div className={classNames(cn({ status: drawerStatus }), className)}>
       {viewDialogList.map(({
         image,
         title,
@@ -43,7 +46,8 @@ export function DialogList(props: DialogListProps) {
             <Button onClick={() => {
               console.log(`Открыл диалог с ID:${id}`)
               setChatingPanelStatus('open')
-              setOpenedDialogIds([id])
+              onGetDialog({ id })
+              setOpenDialogId(id)
             }}
             >
               <Text fs="12">Чат</Text>

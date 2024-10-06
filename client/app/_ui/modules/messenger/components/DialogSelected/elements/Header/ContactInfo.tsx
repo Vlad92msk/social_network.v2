@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { useProfile } from '@hooks'
 import { Spinner } from '@ui/common/Spinner'
@@ -5,6 +6,7 @@ import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
+import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
 
 interface ContactInfoProps {
@@ -13,11 +15,43 @@ interface ContactInfoProps {
 
 export function ContactInfo(props: ContactInfoProps) {
   const { className } = props
-  const { apiStatus, apiError } = useMessageStore((store) => store.getCurrentDialog())
   const { profile } = useProfile()
+  const openDialogId = useMessageStore((store) => store.openDialogId)
+  const isCreatable = useMessageStore((store) => store.isCreatable)
+  const selectUser = useMessageStore((store) => store.selectUser)
 
-  const { img, name, status } = useMessageStore((store) => {
-    const { apiData } = store.getCurrentDialog()
+  const { apiIsLoading, apiIsError, type, participants, title, image } = dialogsApi.useFindOneQuery(
+    { id: openDialogId },
+    {
+      skip: !Boolean(openDialogId?.length),
+      selectFromResult: ({ data, isLoading, isError }) => ({
+        participants: data?.participants ?? [],
+        title: data?.title,
+        image: data?.image,
+        type: data?.type,
+        id: data?.id,
+        apiIsLoading: isLoading,
+        apiIsError: isError,
+      }),
+    },
+  )
+
+  const { status, name, img } = useMemo(() => {
+    if (isCreatable && selectUser) {
+      return ({
+        img: <Image src={selectUser?.profile_image} alt={selectUser?.name} width={50} height={50} />,
+        name: (
+          <Text className={cn('InfoName')} fs="14">
+            {selectUser.name}
+          </Text>
+        ),
+        status: (
+          <Text className={cn('OnlineStatus')} fs="10">
+            online!
+          </Text>
+        ),
+      })
+    }
 
     const byDefault = {
       img: <Image alt="contact" width={50} height={50} />,
@@ -25,17 +59,12 @@ export function ContactInfo(props: ContactInfoProps) {
       status: <Text className={cn('OnlineStatus')} fs="10" />,
     }
 
-    if (!apiData) return byDefault
-
-    const { type, title, participants, img: picture } = apiData
-
     switch (type) {
       case SelectDialogType.PRIVATE: {
-        // @ts-ignore
         const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
 
         return ({
-          img: <Image src={participant.profileImage} alt="contact" width={50} height={50} />,
+          img: <Image src={participant.profile_image} alt={participant.name} width={50} height={50} />,
           name: (
             <Text className={cn('InfoName')} fs="14">
               {participant.name}
@@ -43,14 +72,14 @@ export function ContactInfo(props: ContactInfoProps) {
           ),
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
-              {participant.onlineStatus}
+              {participant.status}
             </Text>
           ),
         })
       }
       case SelectDialogType.PUBLIC: {
         return ({
-          img: <Image src={picture} alt="contact" width={50} height={50} />,
+          img: <Image src={image} alt="contact" width={50} height={50} />,
           name: (
             <Text className={cn('InfoName')} fs="14">
               {title}
@@ -59,17 +88,17 @@ export function ContactInfo(props: ContactInfoProps) {
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
               {`${participants.length} участников,
-              ${participants.filter(({ onlineStatus }) => onlineStatus === 'online').length} в сети`}
+              ${participants.filter(({ status: userStatus }) => userStatus === 'online').length} в сети`}
             </Text>
           ),
         })
       }
       default: return byDefault
     }
-  })
+  }, [image, isCreatable, participants, profile, selectUser, title, type])
 
-  if (apiStatus) return <Spinner />
-  if (apiError) return <div>Error</div>
+  if (apiIsLoading) return <Spinner />
+  if (apiIsError) return <div>Ошибка</div>
 
   return (
     <div className={classNames(cn('ContactInfo'), className)}>

@@ -24,6 +24,7 @@ export function ButtonSubmit(props: ButtonSubmitProps) {
       disabled={isEmpty}
       onClick={() => {
         update((ctx) => {
+          console.log('ctx', ctx)
           // @ts-ignore
           onSubmit?.(pick(ctx, SUBMIT_PROPS))
           return initialState

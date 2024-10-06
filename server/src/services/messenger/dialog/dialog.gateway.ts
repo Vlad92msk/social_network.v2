@@ -169,22 +169,34 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const { dialogId, createMessageDto, media, voices, videos } = data
             const params: RequestParams = client.requestParams
 
-            // Проверяем, является ли пользователь участником диалога
-            const dialog = await this.dialogService.findOne(dialogId)
-            if (!dialog.participants.some(participant => participant.id === params.user_info_id)) {
+            // Получаем диалоги пользователя
+            const userDialogs = await this.dialogService.getDialogsByParticipant(params.user_info_id)
+
+            // находим тот в которое добавляется сообщение
+            let currentDialog = userDialogs.find(({ id }) => id === dialogId)
+
+            // Если его нет - создаем новый приватный диалог
+            if (!currentDialog) {
+                currentDialog = await this.dialogService.create(undefined, params)
+            }
+
+            if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
             }
 
+            // Создаем сообщение
             const message = await this.messageService.create({ createMessageDto, media, voices, videos }, params)
-            await this.dialogService.updateLastMessage(dialogId, message)
+            // Добавляем созданное сообщение в диалог
+            await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
 
-            this.server.to(dialogId).emit(DialogEvents.NEW_MESSAGE, message)
+            // Отправляет всем участникам диалога новое сообщение
+            this.server.to(currentDialog.id).emit(DialogEvents.NEW_MESSAGE, message)
 
-            const updatedDialogShort = await this.dialogService.findOneShort(dialogId)
+            const updatedDialogShort = await this.dialogService.findOneShort(currentDialog.id)
             this.server.emit(DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
         } catch (error) {
-            console.error(`Error sending message: ${error.message}`)
-            client.emit('error', { message: 'Failed to send message', error: error.message })
+            console.error(`Ошибка отправки сообщения: ${error.message}`)
+            client.emit('error', { message: 'Ошибка отправки сообщения', error: error.message })
         }
     }
 

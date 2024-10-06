@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
+import { omit } from 'lodash'
 import { Repository } from 'typeorm'
 import { DialogEntity } from './entities/dialog.entity'
 import { CreateDialogDto } from './dto/create-dialog.dto'
@@ -18,7 +19,7 @@ import { SortDirection } from '@shared/types'
 import { UserStatus } from '@services/users/_interfaces'
 import { DialogEvents } from './types'
 import { VideoConferenceService } from '@services/messenger/video-conference/video-conference.service'
-import { VideoConferenceEvents } from "@services/messenger/video-conference/types";
+import { VideoConferenceEvents } from '@services/messenger/video-conference/types'
 
 @Injectable()
 export class DialogService {
@@ -122,16 +123,17 @@ export class DialogService {
     /**
      * Создать диалог
      */
-    async create({ createDialogDto, image }: { createDialogDto: CreateDialogDto, image: Express.Multer.File }, params: RequestParams) {
+    async create({ query, image }: { query: CreateDialogDto, image?: Express.Multer.File }, params: RequestParams) {
         const creator = await this.userInfoService.getUsersById(params.user_info_id)
         const participants = await Promise.all(
-            createDialogDto.participants.map(id => this.userInfoService.getUsersById(id))
+            query?.participants?.map(id => this.userInfoService.getUsersById(id))
         )
 
         const dialog = this.dialogRepository.create({
-            ...createDialogDto,
+            ...query,
             admins: [creator],
-            participants: [creator, ...participants],
+            participants: [creator, ...(participants || [])],
+            last_message: null
         })
 
         if (image) {
@@ -139,19 +141,16 @@ export class DialogService {
             dialog.image = uploadedFile.meta.src
         }
 
-        const savedDialog = await this.dialogRepository.save(dialog)
-        // Инициализируем last_message как Promise<null>
-        savedDialog.last_message = Promise.resolve(null)
-        return savedDialog
+        return await this.dialogRepository.save(dialog)
     }
 
     /**
      * Обновить диалог
      */
-    async update(id: string, { updateDialogDto, image }: { updateDialogDto: UpdateDialogDto, image: Express.Multer.File }, params: RequestParams) {
+    async update(id: string, { query, image }: { query: UpdateDialogDto, image: Express.Multer.File }, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
-            relations: ['admins', 'participants']
+            relations: ['admins', 'participants', 'last_message']
         })
 
         if (!dialog) {
@@ -163,13 +162,19 @@ export class DialogService {
         }
 
         // Обновляем поля диалога
-        Object.assign(dialog, updateDialogDto)
+        Object.assign(dialog, omit(query, ['add_participants', 'remove_participants']))
 
-        if (updateDialogDto.participants) {
+        // Добавляем участников к диалогу
+        if (query?.add_participants) {
             const newParticipants = await Promise.all(
-                updateDialogDto.participants.map(id => this.userInfoService.getUsersById(id))
+              query.add_participants.map(id => this.userInfoService.getUsersById(id))
             )
-            dialog.participants = newParticipants
+            dialog.participants = [...(dialog.participants || []), ...newParticipants]
+        }
+        // Удаляем участников из диалога
+        if (query?.remove_participants) {
+            const newParticipants = dialog.participants?.filter(({ id }) => !query.remove_participants.includes(id))
+            dialog.participants = [...(dialog.participants || []), ...newParticipants]
         }
 
         if (image) {
@@ -177,38 +182,20 @@ export class DialogService {
             dialog.image = uploadedFile.meta.src
         }
 
-        // Сохраняем обновленный диалог
-        const updatedDialog = await this.dialogRepository.save(dialog)
-
-        // Получаем последнее сообщение
-        const lastMessage = await this.messageService.findLastMessageForDialog(id)
-
-        // Возвращаем обновленный диалог с last_message в виде Promise
-        return {
-            ...updatedDialog,
-            last_message: Promise.resolve(lastMessage)
-        }
+        return await this.dialogRepository.save(dialog)
     }
 
     /**
      * Найти все диалоги
      */
     async findAll(query: FindDialogDto, params: RequestParams) {
-        const queryOptions = createPaginationQueryOptions<DialogEntity>({
-            query,
-            options: {
-                relations: ['participants', 'admins', 'last_message'],
-            }
+        const [dialogs, total] = await this.dialogRepository.findAndCount({
+            where: {
+                type: query?.type,
+                participants: { id: query?.participant_id || params.user_info_id }
+            },
+            relations: ['participants', 'admins', 'last_message'],
         })
-
-        if (query.participant_id) {
-            queryOptions.where = {
-                ...queryOptions.where,
-                participants: { id: query.participant_id },
-            }
-        }
-
-        const [dialogs, total] = await this.dialogRepository.findAndCount(queryOptions)
         return createPaginationResponse({ data: dialogs, total, query })
     }
 
@@ -216,30 +203,24 @@ export class DialogService {
      * Найти диалог по ID
      */
     async findOne(id: string) {
-        const dialog = await this.dialogRepository.findOne({
+        return await this.dialogRepository.findOne({
             where: { id },
             relations: ['participants', 'admins', 'messages']
         })
-
-        if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
-        }
-
-        // Получаем последнее сообщение
-        const lastMessage = await this.messageService.findLastMessageForDialog(id)
-
-        // Возвращаем диалог с last_message в виде Promise
-        return {
-            ...dialog,
-            last_message: Promise.resolve(lastMessage)
-        }
     }
 
     /**
      * Удалить диалог
      */
     async remove(id: string, params: RequestParams) {
-        const dialog = await this.findOne(id)
+        const dialog = await this.dialogRepository.findOne({
+            where: { id },
+            relations: ['admins']
+        })
+
+        if (!dialog) {
+            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
+        }
 
         if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
             throw new BadRequestException('У вас нет прав для удаления этого диалога')
@@ -402,7 +383,7 @@ export class DialogService {
         const lastMessage = await this.messageService.findLastMessageForDialog(dialogId)
 
         if (lastMessage) {
-            updatedDialog.last_message = Promise.resolve(lastMessage)
+            updatedDialog.last_message = lastMessage
             await this.dialogRepository.save(updatedDialog)
             this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort: await this.findOneShort(dialogId) })
         }
@@ -412,7 +393,7 @@ export class DialogService {
 
 
     private async mapToDialogShortDto(dialog: DialogEntity): Promise<DialogShortDto> {
-        const lastMessage = await dialog.last_message
+        const lastMessage = dialog.last_message
 
         return {
             id: dialog.id,
@@ -465,6 +446,7 @@ export class DialogService {
 
         return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)))
     }
+
     async updateDialogImage(dialogId: string, file: Express.Multer.File, params: RequestParams) {
         const dialog = await this.findOne(dialogId)
 
@@ -481,12 +463,19 @@ export class DialogService {
         return updatedDialog
     }
 
-    async updateLastMessage(dialogId: string, message: MessageEntity) {
-        const dialog = await this.dialogRepository.findOne({ where: { id: dialogId } })
-        dialog.last_message = Promise.resolve(message)
-        await this.dialogRepository.save(dialog)
 
-        const updatedDialogShort = await this.findOneShort(dialogId)
+    // Добавляет сообщение в диалог
+    async addMessageToDialog(dialogId: string, message: MessageEntity, params: RequestParams) {
+        const dialog = await this.dialogRepository.findOne({
+            where: { id: dialogId },
+            relations: ['messages', 'fixed_messages', 'participants', 'last_message']
+        })
+        dialog.messages.concat(message)
+        dialog.last_message = message
+
+        const updatedDialog = await this.dialogRepository.save(dialog)
+
+        const updatedDialogShort = this.mapToDialogShortDto(updatedDialog)
         this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
     }
 
@@ -546,55 +535,55 @@ export class DialogService {
     }
 
     async createVideoConference(dialogId: string, userId: number) {
-        const dialog = await this.findOne(dialogId);
+        const dialog = await this.findOne(dialogId)
         if (!dialog.participants.some(participant => participant.id === userId)) {
-            throw new BadRequestException('Вы не являетесь участником этого диалога');
+            throw new BadRequestException('Вы не являетесь участником этого диалога')
         }
 
         if (dialog.is_video_conference_active) {
-            return dialog.video_conference_link;
+            return dialog.video_conference_link
         }
 
-        const link = await this.videoConferenceService.createConference(dialogId);
-        dialog.video_conference_link = link;
-        dialog.is_video_conference_active = true;
-        await this.dialogRepository.save(dialog);
+        const link = await this.videoConferenceService.createConference(dialogId)
+        dialog.video_conference_link = link
+        dialog.is_video_conference_active = true
+        await this.dialogRepository.save(dialog)
 
         // Оповещаем всех участников диалога о начале видео-конференции
-        this.eventEmitter.emit(VideoConferenceEvents.CONFERENCE_STARTED, { dialogId, initiatorId: userId });
+        this.eventEmitter.emit(VideoConferenceEvents.CONFERENCE_STARTED, { dialogId, initiatorId: userId })
 
-        return link;
+        return link
     }
 
     async endVideoConference(dialogId: string, userId: number) {
-        const dialog = await this.findOne(dialogId);
+        const dialog = await this.findOne(dialogId)
         if (!dialog.participants.some(participant => participant.id === userId)) {
-            throw new BadRequestException('Вы не являетесь участником этого диалога');
+            throw new BadRequestException('Вы не являетесь участником этого диалога')
         }
 
         if (!dialog.is_video_conference_active) {
-            throw new BadRequestException('Видео-конференция не активна');
+            throw new BadRequestException('Видео-конференция не активна')
         }
 
-        await this.videoConferenceService.endConference(dialogId);
-        dialog.is_video_conference_active = false;
-        dialog.video_conference_link = null;
-        await this.dialogRepository.save(dialog);
+        await this.videoConferenceService.endConference(dialogId)
+        dialog.is_video_conference_active = false
+        dialog.video_conference_link = null
+        await this.dialogRepository.save(dialog)
 
         // Оповещаем всех участников диалога о завершении видео-конференции
-        this.eventEmitter.emit(VideoConferenceEvents.CONFERENCE_ENDED, { dialogId, initiatorId: userId });
+        this.eventEmitter.emit(VideoConferenceEvents.CONFERENCE_ENDED, { dialogId, initiatorId: userId })
     }
 
     async checkAndCloseInactiveConferences() {
         const activeDialogs = await this.dialogRepository.find({
             where: { is_video_conference_active: true },
             relations: ['participants']
-        });
+        })
 
         for (const dialog of activeDialogs) {
-            const participants = await this.videoConferenceService.getParticipants(dialog.id);
+            const participants = await this.videoConferenceService.getParticipants(dialog.id)
             if (participants.length === 0) {
-                await this.endVideoConference(dialog.id, dialog.participants[0].id);
+                await this.endVideoConference(dialog.id, dialog.participants[0].id)
             }
         }
     }

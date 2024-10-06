@@ -40,7 +40,13 @@ export class MessageService {
      * Создать новое сообщение
      */
     async create(
-        { createMessageDto, media, voices, videos }: { createMessageDto: CreateMessageDto, media: Express.Multer.File[], voices: Express.Multer.File[], videos: Express.Multer.File[] },
+        { createMessageDto, media, voices, videos }:
+        {
+            createMessageDto: CreateMessageDto,
+            media: Express.Multer.File[],
+            voices: Express.Multer.File[],
+            videos: Express.Multer.File[]
+        },
         params: RequestParams
     ) {
         const author = await this.userInfoService.getUsersById(params.user_info_id)
@@ -83,7 +89,13 @@ export class MessageService {
      */
     async update(
         id: string,
-        { updateMessageDto, media, voices, videos }: { updateMessageDto: UpdateMessageDto, media: Express.Multer.File[], voices: Express.Multer.File[], videos: Express.Multer.File[] },
+        { updateMessageDto, media, voices, videos }:
+          {
+              updateMessageDto: UpdateMessageDto,
+              media: Express.Multer.File[],
+              voices: Express.Multer.File[],
+              videos: Express.Multer.File[]
+          },
         userId: number
     ) {
         const message = await this.messageRepository.findOne({

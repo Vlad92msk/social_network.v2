@@ -32,10 +32,10 @@ export enum DialogEvents {
     /** Пользователь печатает */
     USER_TYPING = 'user_typing',
 
-    /** Пользователь печатает */
+    /** Обновилось фото диалога */
     DIALOG_IMAGE_UPDATED = 'dialog_image_updated',
 
-    /** Пользователь печатает */
+    /** Обновлилось последнее сообщение */
     DIALOG_LAST_MESSAGE_UPDATED = 'dialog_last_message_updated',
 
     /** Начало конференции */

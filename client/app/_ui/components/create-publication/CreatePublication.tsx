@@ -1,7 +1,6 @@
 import { Text } from '@ui/common/Text'
 import { createZustandContext } from '@utils/client'
 import { classNames } from '@utils/others'
-import { CreatePostDto } from '../../../../../swagger/posts/interfaces-posts'
 import { cn } from './cn'
 import {
   AddAttachmentsList, AddVideoList,
@@ -12,17 +11,19 @@ import {
   ButtonSubmit,
   InputText,
 } from './components'
-import { PublicationDTO } from '../../../types/publicationDTO'
 
-export const SUBMIT_PROPS = ['text', 'emojis', 'media', 'voices', 'videos']
+export const SUBMIT_PROPS = ['text', 'media', 'voices', 'videos']
 
-export interface CreatePublicationContextProps extends Pick<PublicationDTO, 'text' | 'emojis' | 'media' | 'voices' | 'videos'>{
+export interface CreatePublicationContextProps {
+  media: any
+  text: string
+  voices: any
+  videos: any
 }
 
 export const initialState: CreatePublicationContextProps = {
   media: undefined,
   text: '',
-  emojis: undefined,
   voices: undefined,
   videos: undefined,
 }
@@ -32,7 +33,6 @@ export const {
   useZustandSelector: useCreatePublicationCtxSelect,
   useZustandDispatch: useCreatePublicationCtxUpdate,
 } = createZustandContext(initialState)
-
 
 export interface CreatePublicationProps {
   onSubmit: (data?: CreatePublicationContextProps) => void
@@ -46,7 +46,7 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
     className,
     onSubmit,
     onReset,
-    title
+    title,
   } = props
 
   return (

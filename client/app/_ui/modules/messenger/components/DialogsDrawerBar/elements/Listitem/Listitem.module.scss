@@ -1,0 +1,78 @@
+@import "@ui/styles/for_components";
+@import "../../../variables";
+
+.Listitem {
+
+    $contact: &;
+    display: flex;
+    gap: rem(5);
+    position: relative;
+
+  &-ContentWrapper {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-width: 100%;
+    justify-content: center;
+  }
+
+    &-ImgContainer {
+      overflow: hidden;
+      border-radius: $border-radius--small;
+      width: $messenger--contacts-contact--photo-size;
+      height: $messenger--contacts-contact--photo-size;
+      min-width: $messenger--contacts-contact--photo-size;
+      min-height: $messenger--contacts-contact--photo-size;
+      aspect-ratio: 1;
+    }
+
+    &-Name {
+      width: 100%;
+    }
+    &-LastContactName {
+      width: 100%;
+    }
+    &-LastMessage {
+      width: 100%;
+      position: relative;
+
+      &:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: rem(1);
+        background: var(--Color-Border--variant-3--theme-default);
+      }
+    }
+
+    &-HoverActions {
+      border-radius: $border-radius--small;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(29, 112, 199, 0.83);
+      transition: opacity .5s;
+      gap: rem(10);
+      padding: 2% 10%;
+      overflow: hidden;
+
+      & > * {
+        flex: 1 1;
+        max-height: rem(25);
+        border-radius: 0;
+        overflow: hidden;
+      }
+
+
+      :is(#{$contact}:hover) & {
+        opacity: 1;
+        transition: .5s;
+      }
+    }
+}
