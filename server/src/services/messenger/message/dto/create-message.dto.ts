@@ -14,16 +14,11 @@ export class CreateMessageDto extends IntersectionType(
     dialog_id?: string
 
     //_____________________________________
-    @ApiProperty({ description: 'ID участников диалога (если диалог создается впервые и сразу выбран пользователь)', type: [Number] })
+    @ApiProperty({ description: 'ID участников диалога', type: [Number] })
+    @IsOptional()
     @IsArray()
     @IsNumber({}, { each: true })
-    @IsOptional()
-    participants?: number[]
-
-    @ApiProperty({ description: 'Новый диалог?', required: false })
-    @IsOptional()
-    @IsBoolean()
-    is_new_dialog?: boolean
+    participants?: number[];
     //_____________________________________
 
 

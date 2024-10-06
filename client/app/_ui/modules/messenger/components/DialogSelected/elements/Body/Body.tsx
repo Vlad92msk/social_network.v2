@@ -21,7 +21,7 @@ export function Body(props: BodyProps) {
       }),
     },
   )
-
+console.log('messages', messages)
   if (isLoading) return <Spinner />
 
   return (

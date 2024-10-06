@@ -205,7 +205,15 @@ export class DialogService {
     async findOne(id: string) {
         return await this.dialogRepository.findOne({
             where: { id },
-            relations: ['participants', 'admins', 'messages']
+            relations: [
+              'participants',
+                'admins',
+                'messages',
+                'messages.author',
+                'messages.voices',
+                'messages.videos',
+                'messages.media'
+            ]
         })
     }
 

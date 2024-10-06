@@ -2,9 +2,6 @@ import { StateCreator } from 'zustand'
 import { UserInfoDto } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 
 export interface DialogSelectedSlice {
-  // ID открываемого диалога
-  openedDialogId?: string
-  setOpenDialogId: (user: string) => void
   // Создаваемый / существующий
   isCreatable: boolean
   // Пользователь с которым создается диалог (для НОВЫХ создаваемых диалогов)
@@ -15,7 +12,5 @@ export interface DialogSelectedSlice {
 
 export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], [], DialogSelectedSlice> = (set, get) => ({
   isCreatable: false,
-  openedDialogId: undefined,
-  setOpenDialogId: (dialogId: string) => set((state) => ({ ...state, openedDialogId: dialogId })),
   setSelectUSer: (user) => set((state) => ({ ...state, selectUser: user, isCreatable: true })),
 })

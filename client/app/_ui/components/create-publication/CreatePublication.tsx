@@ -14,11 +14,18 @@ import {
 
 export const SUBMIT_PROPS = ['text', 'media', 'voices', 'videos']
 
+interface MyFile {
+  id: string;
+  blob: Blob;
+  url: string;
+  name?: string
+}
+
 export interface CreatePublicationContextProps {
-  media: any
   text: string
-  voices: any
-  videos: any
+  media?: MyFile[]
+  voices?: MyFile[]
+  videos?: MyFile[]
 }
 
 export const initialState: CreatePublicationContextProps = {

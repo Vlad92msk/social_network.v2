@@ -13,7 +13,7 @@ interface MessageProps {
 export function Message(props: MessageProps) {
   const { message } = props
   const { profile } = useProfile()
-
+  console.log('message__', message)
   const gropedMediaByType = useMemo(() => groupBy(message.media, 'meta.type'), [message.media])
 
   const [onRemove] = postsApi.useRemoveMutation()
@@ -28,7 +28,7 @@ export function Message(props: MessageProps) {
     >
       <Publication
         contextProps={{ id: message.id, dateChanged: message.date_updated }}
-        className={cn('PostItem')}
+        className={cn('MessageItem')}
         authorPosition="right"
         onRead={() => {
           // const newDate = subMinutes(new Date(), 1)

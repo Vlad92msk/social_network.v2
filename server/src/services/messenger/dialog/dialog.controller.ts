@@ -9,7 +9,7 @@ import {
     UseInterceptors,
     UploadedFiles,
     Query,
-    Res, BadRequestException, HttpException, InternalServerErrorException
+    Res, BadRequestException, HttpException, InternalServerErrorException, NestInterceptor, CallHandler, ExecutionContext, Injectable
 } from '@nestjs/common'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger'
@@ -18,6 +18,7 @@ import { MessageEntity } from '@services/messenger/message/entity/message.entity
 import { MessageService } from '@services/messenger/message/message.service'
 import { UserInfo } from '@services/users/user-info/entities'
 import { Response } from 'express'
+import { Observable } from 'rxjs'
 import { DialogService } from './dialog.service'
 import { CreateDialogDto } from './dto/create-dialog.dto'
 import { UpdateDialogDto } from './dto/update-dialog.dto'
@@ -28,6 +29,32 @@ import { MediaInfoService } from '@services/media/info/media-info.service'
 import { ConfigService } from '@nestjs/config'
 import { ConfigEnum } from '@config/config.enum'
 import { createPaginationHeaders } from '@shared/utils'
+
+// TODO: чтото сделать с этим - кажется это стремно
+// это нужно чтобы ID участников корректно передавались из formdata...
+@Injectable()
+export class FormDataInterceptor implements NestInterceptor {
+    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+        const request = context.switchToHttp().getRequest();
+        const body = request.body;
+
+        // Преобразуем поля, оканчивающиеся на [], в массивы
+        for (const key in body) {
+            if (key.endsWith('[]')) {
+                const newKey = key.slice(0, -2);
+                body[newKey] = Array.isArray(body[key]) ? body[key] : [body[key]];
+                delete body[key];
+            }
+        }
+
+        // Преобразуем строковые числа в числа
+        if (body.participants) {
+            body.participants = body.participants.map(Number);
+        }
+
+        return next.handle();
+    }
+}
 
 @ApiTags('Диалоги')
 @Controller('api/dialogs')
@@ -51,7 +78,7 @@ export class DialogController {
         { name: 'media', maxCount: 20 },
         { name: 'voices', maxCount: 5 },
         { name: 'videos', maxCount: 5 }
-    ]))
+    ]), FormDataInterceptor)
     async addMessageToDialog(
       @Body() createMessageDto: CreateMessageDto,
       @UploadedFiles() files: {
@@ -99,10 +126,8 @@ export class DialogController {
               },
               params
             )
-
             // Добавляем сообщение в диалог
             await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
-
             // Возвращаем созданное сообщение
             return message
         } catch (error) {

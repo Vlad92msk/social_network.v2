@@ -35,7 +35,7 @@ export class DialogEntity {
     type: 'private' | 'public'
 
     @ApiProperty({ description: 'Настройки диалога' })
-    @Column('jsonb')
+    @Column('jsonb', { nullable: true, default: { hide_me: false,  notify: true } })
     options: {
         hide_me: boolean;
         notify: boolean;
