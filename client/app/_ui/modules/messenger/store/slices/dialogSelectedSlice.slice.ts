@@ -7,15 +7,15 @@ export interface DialogSelectedSlice {
   setOpenDialogId: (user: string) => void
   // Создаваемый / существующий
   isCreatable: boolean
+  // Пользователь с которым создается диалог (для НОВЫХ создаваемых диалогов)
   selectUser?: UserInfoDto,
   // С каким пользователем планируется диалог (для тех с кем еще нет диалога)
   setSelectUSer: (user: UserInfoDto) => void
 }
 
 export const createDialogSelectedSlice: StateCreator<DialogSelectedSlice, [], [], DialogSelectedSlice> = (set, get) => ({
-  isCreatable: true,
+  isCreatable: false,
   openedDialogId: undefined,
   setOpenDialogId: (dialogId: string) => set((state) => ({ ...state, openedDialogId: dialogId })),
-  setSelectUSer: (user) => set((state) => ({ ...state, selectUser: user })),
-
+  setSelectUSer: (user) => set((state) => ({ ...state, selectUser: user, isCreatable: true })),
 })

@@ -1,6 +1,6 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { DialogEntity, DialogShortDto } from '../../../swagger/dialogs/interfaces-dialogs'
+import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
 import { dialogsApiInstance } from '../instance'
 import { RootState, store } from '../store'
@@ -21,6 +21,7 @@ type QueryResult<T> = {
 
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',
+  tagTypes: ['Messages'],
   baseQuery: fetchBaseQuery({
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
@@ -38,6 +39,13 @@ export const dialogsApi = createApi({
     },
   }),
   endpoints: (builder) => ({
+    addMessageToDialog: builder.mutation<MessageEntity, Parameters<typeof dialogsApiInstance.addMessageToDialog>[0]>({
+      query: (params) => {
+        const { url, init } = dialogsApiInstance.addMessageToDialogInit(params)
+        return { url, ...init }
+      },
+      invalidatesTags: ['Messages'],
+    }),
 
     create: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.create>[0]>({
       query: (params) => {
@@ -58,6 +66,7 @@ export const dialogsApi = createApi({
         const { url, init } = dialogsApiInstance.findOneInit(params)
         return { url, ...init }
       },
+      providesTags: ['Messages']
     }),
 
     update: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.update>[0]>({

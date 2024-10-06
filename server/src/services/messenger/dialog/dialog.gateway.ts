@@ -162,22 +162,27 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.SEND_MESSAGE)
     async handleSendMessage(
-        @MessageBody() data: { dialogId: string; createMessageDto: CreateMessageDto; media: Express.Multer.File[]; voices: Express.Multer.File[]; videos: Express.Multer.File[] },
+        @MessageBody() data: { dialogId: string; participants?: number[], createMessageDto: CreateMessageDto; media: Express.Multer.File[]; voices: Express.Multer.File[]; videos: Express.Multer.File[] },
         @ConnectedSocket() client: AuthenticatedSocket,
     ) {
         try {
-            const { dialogId, createMessageDto, media, voices, videos } = data
+            const { dialogId, participants, createMessageDto, media, voices, videos } = data
             const params: RequestParams = client.requestParams
 
-            // Получаем диалоги пользователя
-            const userDialogs = await this.dialogService.getDialogsByParticipant(params.user_info_id)
+            let currentDialog: DialogEntity
 
-            // находим тот в которое добавляется сообщение
-            let currentDialog = userDialogs.find(({ id }) => id === dialogId)
-
-            // Если его нет - создаем новый приватный диалог
-            if (!currentDialog) {
-                currentDialog = await this.dialogService.create(undefined, params)
+            // Добавляем сообщение в существующий диалог
+            if (dialogId) {
+                currentDialog = await this.dialogService.findOne(dialogId)
+            } else {
+                // Если диалога еще нет
+                // создаем с выбранными участниками
+                if (participants) {
+                    currentDialog = await this.dialogService.create({ query: { participants: participants } }, params)
+                } else {
+                    // Если участников еще не выбрали - без них
+                    currentDialog = await this.dialogService.create(undefined, params)
+                }
             }
 
             if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {

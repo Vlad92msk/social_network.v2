@@ -1,9 +1,12 @@
-import { Dialog, SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { StateCreator } from 'zustand'
 import { DialogShortDto } from '../../../../../../../swagger/dialogs/interfaces-dialogs'
 
+export enum SelectDialogType {
+  PRIVATE ='private',
+  PUBLIC = 'public'
+}
+
 export interface DialogListSlice {
-  dialogs?: Dialog[]
   dialogsShort?: DialogShortDto[]
   selectType: SelectDialogType
   filter: string
@@ -13,7 +16,6 @@ export interface DialogListSlice {
 }
 
 export const createDialogListSlice: StateCreator<DialogListSlice, [], [], DialogListSlice> = (set, get) => ({
-  dialogs: undefined,
   dialogsShort: undefined,
   filter: '',
   selectType: SelectDialogType.PRIVATE,

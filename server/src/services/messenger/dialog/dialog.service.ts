@@ -123,7 +123,7 @@ export class DialogService {
     /**
      * Создать диалог
      */
-    async create({ query, image }: { query: CreateDialogDto, image?: Express.Multer.File }, params: RequestParams) {
+    async create({ query, image }: { query?: CreateDialogDto, image?: Express.Multer.File }, params: RequestParams) {
         const creator = await this.userInfoService.getUsersById(params.user_info_id)
         const participants = await Promise.all(
             query?.participants?.map(id => this.userInfoService.getUsersById(id))
@@ -468,9 +468,18 @@ export class DialogService {
     async addMessageToDialog(dialogId: string, message: MessageEntity, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
-            relations: ['messages', 'fixed_messages', 'participants', 'last_message']
+            relations: ['messages', 'last_message']
         })
-        dialog.messages.concat(message)
+        if (!dialog) {
+            throw new NotFoundException(`Диалог с ID ${dialogId} не найден`);
+        }
+
+        // Добавляем новое сообщение в массив сообщений диалога
+        dialog.messages.push(message)
+
+        // Явно помечаем свойство messages как измененное
+        // this.dialogRepository.merge(dialog, { messages: dialog.messages })
+
         dialog.last_message = message
 
         const updatedDialog = await this.dialogRepository.save(dialog)

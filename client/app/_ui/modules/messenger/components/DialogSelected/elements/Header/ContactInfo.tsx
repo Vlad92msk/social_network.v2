@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { useProfile } from '@hooks'
 import { Spinner } from '@ui/common/Spinner'
 import { classNames } from '@utils/others'
@@ -8,6 +7,7 @@ import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
+import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
 
 interface ContactInfoProps {
   className?: string

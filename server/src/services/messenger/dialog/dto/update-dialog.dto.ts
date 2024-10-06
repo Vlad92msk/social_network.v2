@@ -1,4 +1,3 @@
-// update-dialog.dto.ts
 import { ApiProperty } from '@nestjs/swagger'
 import { IsArray, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
 

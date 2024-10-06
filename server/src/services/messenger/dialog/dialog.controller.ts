@@ -9,10 +9,13 @@ import {
     UseInterceptors,
     UploadedFiles,
     Query,
-    Res, BadRequestException
+    Res, BadRequestException, HttpException, InternalServerErrorException
 } from '@nestjs/common'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger'
+import { CreateMessageDto } from '@services/messenger/message/dto/create-message.dto'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
+import { MessageService } from '@services/messenger/message/message.service'
 import { UserInfo } from '@services/users/user-info/entities'
 import { Response } from 'express'
 import { DialogService } from './dialog.service'
@@ -35,8 +38,80 @@ export class DialogController {
         private readonly dialogService: DialogService,
         private readonly mediaInfoService: MediaInfoService,
         private readonly configService: ConfigService,
+        private messageService: MessageService
     ) {
         this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
+    }
+
+    @Post('add-message')
+    @ApiOperation({ summary: 'Добавить сообщение в диалог' })
+    @ApiResponse({ status: 200, description: 'Сообщение добавлено', type: MessageEntity })
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'media', maxCount: 20 },
+        { name: 'voices', maxCount: 5 },
+        { name: 'videos', maxCount: 5 }
+    ]))
+    async addMessageToDialog(
+      @Body() createMessageDto: CreateMessageDto,
+      @UploadedFiles() files: {
+          media?: Express.Multer.File[],
+          voices?: Express.Multer.File[],
+          videos?: Express.Multer.File[]
+      },
+      @RequestParams() params: RequestParams,
+    ) {
+        try {
+            // Проверяем квоту
+            await this.mediaInfoService.checkStorageLimit(
+              params.user_info_id,
+              [].concat(files?.media || [], files?.voices || [], files?.videos || []),
+              this.maxStorage
+            )
+
+            let currentDialog: DialogEntity
+
+            // Добавляем сообщение в существующий диалог
+            if (createMessageDto?.dialog_id) {
+                currentDialog = await this.dialogService.findOne(createMessageDto?.dialog_id)
+            } else {
+                // Если диалога еще нет
+                // создаем с выбранными участниками
+                if (createMessageDto?.participants) {
+                    currentDialog = await this.dialogService.create({ query: { participants: createMessageDto.participants } }, params)
+                } else {
+                    // Если участников еще не выбрали - без них
+                    currentDialog = await this.dialogService.create(undefined, params)
+                }
+            }
+
+            if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
+                throw new BadRequestException('Вы не являетесь участником этого диалога')
+            }
+
+            // Создаем сообщение
+            const message = await this.messageService.create(
+              {
+                  createMessageDto,
+                  media: files.media || [],
+                  voices: files.voices || [],
+                  videos: files.videos || []
+              },
+              params
+            )
+
+            // Добавляем сообщение в диалог
+            await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
+
+            // Возвращаем созданное сообщение
+            return message
+        } catch (error) {
+            // Обработка ошибок
+            if (error instanceof HttpException) {
+                throw error
+            }
+            throw new InternalServerErrorException('Не удалось добавить сообщение в диалог')
+        }
     }
 
     @Post('create')
@@ -318,6 +393,6 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiResponse({ status: 200, description: 'Ссылка на комнату', type: String })
     async createVideoConference(@Param('id') id: string, @RequestParams() req: RequestParams) {
-        return this.dialogService.createVideoConference(id, req.user_info_id);
+        return this.dialogService.createVideoConference(id, req.user_info_id)
     }
 }

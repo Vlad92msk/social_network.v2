@@ -15,9 +15,9 @@ export function Body(props: BodyProps) {
     { id: openDialogId },
     {
       skip: !Boolean(openDialogId?.length),
-      selectFromResult: ({ data, isLoading }) => ({
+      selectFromResult: ({ data, isLoading: isLoadingApi }) => ({
         messages: data?.messages ?? [],
-        isLoading,
+        isLoading: isLoadingApi,
       }),
     },
   )

@@ -1,6 +1,8 @@
 'use client'
 
-import { Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton, } from './elements'
+import {
+  Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton,
+} from './elements'
 
 interface ChatProps {}
 

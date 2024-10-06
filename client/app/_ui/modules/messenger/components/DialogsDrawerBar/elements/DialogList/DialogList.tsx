@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
@@ -7,6 +5,7 @@ import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
+import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
 
 interface DialogListProps{
   className?: string;
