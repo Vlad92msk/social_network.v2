@@ -22,7 +22,6 @@ export class DialogShortController {
     ): Promise<DialogShortDto[]> {
         const { data, paginationInfo } = await this.dialogService.findAllShort(query, params)
         response.set(createPaginationHeaders(paginationInfo))
-        console.log('____data____', data)
         return data
     }
 
@@ -30,15 +29,21 @@ export class DialogShortController {
     @ApiOperation({ summary: 'Получить краткий диалог по ID' })
     @ApiParam({ name: 'id', description: 'ID краткого диалога' })
     @ApiResponse({ status: 200, description: 'Краткий диалог', type: DialogShortDto })
-    findOneShortDialog(@Param('id') id: string) {
-        return this.dialogService.findOneShort(id)
+    findOneShortDialog(
+      @Param('id') id: string,
+      @RequestParams() params: RequestParams
+    ) {
+        return this.dialogService.findOneShort(id, params)
     }
 
     @Get('by-user/:userId')
     @ApiOperation({ summary: 'Получить краткие диалоги пользователя' })
     @ApiParam({ name: 'userId', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Список кратких диалогов пользователя', type: [DialogShortDto] })
-    findByUserShortDialog(@Param('userId') userId: number) {
-        return this.dialogService.findShortByUser(userId)
+    async findByUserShortDialog(
+      @Param('userId') userId: number,
+      @RequestParams() params: RequestParams
+    ) {
+        return await this.dialogService.findShortByUser(userId, params)
     }
 }

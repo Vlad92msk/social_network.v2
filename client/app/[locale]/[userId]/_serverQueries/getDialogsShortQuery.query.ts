@@ -1,9 +1,7 @@
 import { DialogShortDto } from '../../../../../swagger/dialogs/interfaces-dialogs'
 import { dialogsApiInstance } from '../../../../store/instance'
 
-export const getDialogsShortQuery = async ({ locale, userId, userInfoIdCookie, profileIdCookie }: {
-  locale?: string,
-  userId?: string,
+export const getDialogsShortQuery = async ({ userInfoIdCookie, profileIdCookie }: {
   userInfoIdCookie: any
   profileIdCookie: any
 }): Promise<DialogShortDto[]> => {
@@ -11,7 +9,7 @@ export const getDialogsShortQuery = async ({ locale, userId, userInfoIdCookie, p
   // Добавляем нужные куки в заголовки
   headers.append('Cookie', `${userInfoIdCookie.name}=${userInfoIdCookie.value}; ${profileIdCookie.name}=${profileIdCookie.value}`)
 
-  const { url, init } = dialogsApiInstance.findAllShortDialogsInit({})
+  const { url, init } = dialogsApiInstance.findByUserShortDialogInit({ userId: userInfoIdCookie.value })
   const response = await fetch(url, {
     ...init,
     credentials: 'include',

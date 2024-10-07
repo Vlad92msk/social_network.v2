@@ -150,7 +150,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleJoinDialog(
         @MessageBody() data: { dialogId: string, per_page?: number, page?: number },
         @ConnectedSocket() client: AuthenticatedSocket,
-      @WsRequestParams() params: RequestParams,
+        @WsRequestParams() params: RequestParams,
     ) {
         try {
             const { dialogId, per_page = 20, page = 0 } = data
@@ -227,23 +227,24 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         try {
             const { dialogId, text, participants, media, voices, videos } = data
-
+            console.log('Принимаем такое сообщение', data)
             let currentDialog: DialogEntity
 
             // Добавляем сообщение в существующий диалог
-            if (dialogId) {
+            if (dialogId?.length) {
                 currentDialog = await this.dialogService.findOne(dialogId)
             } else {
                 // Если диалога еще нет
                 // создаем с выбранными участниками
                 if (participants) {
-                    currentDialog = await this.dialogService.create({ query: { participants: participants } }, params)
+                    currentDialog = await this.dialogService.create({ query: { participants } }, params)
                 } else {
                     // Если участников еще не выбрали - без них
                     currentDialog = await this.dialogService.create(undefined, params)
                 }
             }
 
+            console.log('создан/найден диалог', currentDialog)
             if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
             }
@@ -269,7 +270,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             // Отправляет всем участникам диалога новое сообщение
             this.server.to(currentDialog.id).emit(DialogEvents.NEW_MESSAGE, message)
 
-            const updatedDialogShort = await this.dialogService.findOneShort(currentDialog.id)
+            const updatedDialogShort = await this.dialogService.findOneShort(currentDialog.id, params)
             this.server.emit(DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
         } catch (error) {
             console.error(`Ошибка отправки сообщения: ${error.message}`)

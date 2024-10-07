@@ -25,14 +25,16 @@ export function Search(props: SearchProps) {
 
   const [isFocus, setFocused] = useState(false)
 
+  const [onGetUsers, { data, isLoading }] = userInfoApi.useLazyGetUsersQuery()
 
-  const [onGetUsers, { data, isLoading }] = userInfoApi.useLazyGetUsersQuery(undefined)
   const componentRef = useRef<HTMLDivElement>(null)
 
   const { handleChange } = useDebouncedSearch({
     debounceMs: 700,
     onSearch: (value) => {
-      onGetUsers({ name: value })
+      if (value?.length) {
+        onGetUsers({ name: value })
+      }
     },
   })
 
@@ -48,7 +50,6 @@ export function Search(props: SearchProps) {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
-
 
   return (
     <div className={classNames(cn(), className)} ref={componentRef}>
@@ -73,6 +74,7 @@ export function Search(props: SearchProps) {
             gap: '30px',
           }}
         >
+          <Text fs="12">Поиск пользователей</Text>
           {isLoading ? (
             <Spinner />
           ) : (

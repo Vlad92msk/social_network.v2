@@ -15,10 +15,13 @@ export function Body(props: BodyProps) {
     { id: openDialogId },
     {
       skip: !Boolean(openDialogId?.length),
-      selectFromResult: ({ data, isLoading: isLoadingApi }) => ({
-        messages: data?.messages ?? [],
-        isLoading: isLoadingApi,
-      }),
+      selectFromResult: ({ data, isLoading: isLoadingApi }) => {
+        console.log('open_dialog', data)
+        return ({
+          messages: data?.messages ?? [],
+          isLoading: isLoadingApi,
+        })
+      },
     },
   )
 console.log('messages', messages)

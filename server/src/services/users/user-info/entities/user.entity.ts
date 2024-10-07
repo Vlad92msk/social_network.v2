@@ -1,19 +1,10 @@
-import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    BeforeInsert,
-    OneToOne,
-    JoinColumn,
-    ManyToMany, OneToMany,
-} from 'typeorm'
-import { v4 as uuidv4 } from 'uuid'
-import { UserAbout } from './user-about.entity'
-import { UserAboutType, UserInfoType, UserStatus } from '../../_interfaces'
-import { MediaEntity } from '@src/services/media/info/entities/media.entity'
-import { MediaItem } from '@src/services/media/info/interfaces/media-item'
 import { ApiProperty } from '@nestjs/swagger'
 import { ReactionEntity } from '@services/reactions/entities/reaction.entity'
+import { MediaEntity } from '@src/services/media/info/entities/media.entity'
+import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn, } from 'typeorm'
+import { v4 as uuidv4 } from 'uuid'
+import { UserInfoType, UserStatus } from '../../_interfaces'
+import { UserAbout } from './user-about.entity'
 
 @Entity({ comment: 'Профиль пользователя' })
 export class UserInfo implements UserInfoType {

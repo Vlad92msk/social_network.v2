@@ -205,13 +205,13 @@ export class DialogController {
         @Param('id') id: string,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.markMessagesAsRead(id, params.user_info_id)
+        return this.dialogService.markMessagesAsRead(id, params)
     }
 
     @Get(':id/media')
     @ApiOperation({ summary: 'Получение всех медиафайлов диалога' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
-    @ApiResponse({ status: 200, description: 'Список медиафайлов диалога', type: [Object] })
+    @ApiResponse({ status: 200, description: 'Список медиафайлов диалога' })
     async getAllMediaForDialog(@Param('id') id: string) {
         return this.dialogService.getAllMediaForDialog(id)
     }

@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { io, Socket } from 'socket.io-client'
-import { DialogEntity, DialogShortDto } from '../../../swagger/dialogs/interfaces-dialogs'
+import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
 import { DialogEvents } from '../events/dialog-events-enum'
 import { dialogsApiInstance } from '../instance'
@@ -24,7 +24,7 @@ const getSocket = (state: RootState) => {
 
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',
-  tagTypes: ['Messages', 'Dialogs'],
+  tagTypes: ['Messages', 'Dialogs', 'ShortDialogs'],
   baseQuery: fetchBaseQuery({
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
@@ -57,6 +57,7 @@ export const dialogsApi = createApi({
     }),
 
     findOne: builder.query<DialogEntity, { id: string }>({
+      providesTags: ['ShortDialogs'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.findOneInit(params)
         return { url, ...init }
@@ -72,7 +73,8 @@ export const dialogsApi = createApi({
 
           socket.emit(DialogEvents.JOIN_DIALOG, { dialogId: arg.id })
 
-          const handleNewMessage = (message: any) => {
+          const handleNewMessage = (message: MessageEntity) => {
+            console.log('пришло мое сообщение из сокета', message)
             updateCachedData((draft) => {
               if (!draft.messages) {
                 draft.messages = []
@@ -125,7 +127,11 @@ export const dialogsApi = createApi({
       queryFn: ({ dialogId, message }, { getState }) => new Promise((resolve) => {
         const socket = getSocket(getState() as RootState)
 
-        socket.emit(DialogEvents.SEND_MESSAGE, { dialogId, ...message }, () => {
+        const submitData = {
+          dialogId, ...message
+        }
+        console.log('Отправляем такое сообщение', submitData)
+        socket.emit(DialogEvents.SEND_MESSAGE, submitData, () => {
           resolve({ data: undefined })
         })
       }),
@@ -139,6 +145,7 @@ export const dialogsApi = createApi({
     }),
 
     remove: builder.mutation<void, Parameters<typeof dialogsApiInstance.remove>[0]>({
+      invalidatesTags: ['ShortDialogs'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.removeInit(params)
         return { url, ...init }
@@ -244,6 +251,7 @@ export const dialogsApi = createApi({
     }),
 
     leaveDialog: builder.mutation<void, Parameters<typeof dialogsApiInstance.leaveDialog>[0]>({
+      invalidatesTags: ['ShortDialogs'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.leaveDialogInit(params)
         return { url, ...init }

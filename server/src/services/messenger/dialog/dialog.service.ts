@@ -128,11 +128,14 @@ export class DialogService {
         const participants = await Promise.all(
             query?.participants?.map(id => this.userInfoService.getUsersById(id))
         )
+        console.log('query_____', query)
+        console.log('participants', participants)
+        console.log('result', [...participants, creator])
 
         const dialog = this.dialogRepository.create({
             ...query,
             admins: [creator],
-            participants: [creator, ...(participants || [])],
+            participants: [...participants, creator],
             last_message: null
         })
 
@@ -206,7 +209,7 @@ export class DialogService {
         return await this.dialogRepository.findOne({
             where: { id },
             relations: [
-              'participants',
+                'participants',
                 'admins',
                 'messages',
                 'messages.author',
@@ -365,7 +368,7 @@ export class DialogService {
     /**
      * Отметить все сообщения в диалоге как прочитанные
      */
-    async markMessagesAsRead(dialogId: string, userId: number) {
+    async markMessagesAsRead(dialogId: string, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
             relations: ['messages', 'messenger.author']
@@ -376,7 +379,7 @@ export class DialogService {
         }
 
         const messagesToMark = dialog.messages_not_read.filter(messageId =>
-            dialog.messages.find(message => message.id === messageId && message.author.id !== userId)
+            dialog.messages.find(message => message.id === messageId && message.author.id !== params.user_info_id)
         )
 
         for (const messageId of messagesToMark) {
@@ -393,23 +396,27 @@ export class DialogService {
         if (lastMessage) {
             updatedDialog.last_message = lastMessage
             await this.dialogRepository.save(updatedDialog)
-            this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort: await this.findOneShort(dialogId) })
+            this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort: await this.findOneShort(dialogId, params) })
         }
 
         return updatedDialog
     }
 
 
-    private async mapToDialogShortDto(dialog: DialogEntity): Promise<DialogShortDto> {
+    private async mapToDialogShortDto(dialog: DialogEntity, params: RequestParams): Promise<DialogShortDto> {
         const lastMessage = dialog.last_message
+        const [participant] = dialog.participants.filter(({ id }) => id !== params?.user_info_id)
 
         return {
             id: dialog.id,
-            title: dialog.title,
-            image: dialog.image,
+            title: dialog.type === 'public' ? dialog.title : participant?.name,
+            image: dialog.type === 'public' ? dialog.image : participant?.profile_image,
             type: dialog.type,
             last_message: lastMessage,
             unread_count: dialog.messages_not_read.length,
+            //@ts-ignore
+            _admins: dialog.admins,
+            _participants: dialog.participants
         }
     }
 
@@ -417,7 +424,7 @@ export class DialogService {
         const queryOptions = createPaginationQueryOptions<DialogEntity>({
             query,
             options: {
-                relations: ['last_message'],
+                relations: ['last_message', 'participants', 'last_message.author'],
             }
         })
 
@@ -429,30 +436,37 @@ export class DialogService {
         }
 
         const [dialogs, total] = await this.dialogRepository.findAndCount(queryOptions)
-        const shortDialogs = await Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)))
+        const shortDialogs = await Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog, params)))
         return createPaginationResponse({ data: shortDialogs, total, query })
     }
 
-    async findOneShort(id: string): Promise<DialogShortDto> {
+    async findOneShort(id: string, params: RequestParams): Promise<DialogShortDto> {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
-            relations: ['last_message'],
+            relations: ['last_message', 'participants', 'last_message.author'],
         })
 
         if (!dialog) {
             throw new NotFoundException(`Диалог с ID "${id}" не найден`)
         }
 
-        return this.mapToDialogShortDto(dialog)
+        return await this.mapToDialogShortDto(dialog, params)
     }
 
-    async findShortByUser(userId: number): Promise<DialogShortDto[]> {
+    async findShortByUser(userId: number, params: RequestParams): Promise<DialogShortDto[]> {
         const dialogs = await this.dialogRepository.find({
-            where: { participants: { id: userId } },
-            relations: ['last_message'],
-        })
+            //@ts-ignore
+            where: (qb) => {
+                qb.where('participants.id = :userId', { userId });
+            },
+            relations: {
+                admins: true,
+                participants: true,
+                last_message: true,
+            },
+        });
 
-        return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog)))
+        return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog, params)))
     }
 
     async updateDialogImage(dialogId: string, file: Express.Multer.File, params: RequestParams) {
@@ -476,23 +490,20 @@ export class DialogService {
     async addMessageToDialog(dialogId: string, message: MessageEntity, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
-            relations: ['messages', 'last_message']
+            relations: ['messages', 'last_message', 'messages.dialog', 'last_message.author']
         })
         if (!dialog) {
-            throw new NotFoundException(`Диалог с ID ${dialogId} не найден`);
+            throw new NotFoundException(`Диалог с ID ${dialogId} не найден`)
         }
 
         // Добавляем новое сообщение в массив сообщений диалога
-        dialog.messages.push(message)
-
-        // Явно помечаем свойство messages как измененное
-        // this.dialogRepository.merge(dialog, { messages: dialog.messages })
+        dialog.messages = [...(dialog.messages || []), message]
 
         dialog.last_message = message
 
         const updatedDialog = await this.dialogRepository.save(dialog)
 
-        const updatedDialogShort = this.mapToDialogShortDto(updatedDialog)
+        const updatedDialogShort = this.mapToDialogShortDto(updatedDialog, params)
         this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
     }
 

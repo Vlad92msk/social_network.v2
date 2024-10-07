@@ -53,7 +53,6 @@ export class UserInfoController {
       @Query() query: GetUsersDto,
       @RequestParams() params: RequestParams,
     ) {
-        console.log('Запрашиваем пользователя get_one', query)
         const user = await this.userService.getUsersByParams(query, params)
         return user
     }
