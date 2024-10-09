@@ -163,6 +163,39 @@ export const dialogsApi = createApi({
       }),
     }),
 
+    findByUserShortDialog: builder.query<DialogShortDto[], Parameters<typeof dialogsApiInstance.findByUserShortDialog>[0]>({
+      query: (params) => {
+        const { url, init } = dialogsApiInstance.findByUserShortDialogInit(params)
+        return { url, ...init }
+      },
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, getState },
+      ) {
+        const socket = getSocket(getState() as RootState)
+
+        try {
+          await cacheDataLoaded
+
+          const handleNewDialog = (newDialog) => {
+            console.log('Новый диалог получен:', newDialog)
+            // Обновляем кэш для findOne query
+            updateCachedData((draft) => {
+              draft.push(newDialog)
+            })
+          }
+
+          socket.on(DialogEvents.DIALOG_SHORT_UPDATED, handleNewDialog)
+
+          await cacheEntryRemoved
+
+          socket.off(DialogEvents.DIALOG_SHORT_UPDATED, handleNewDialog)
+        } catch {
+          // Handle errors
+        }
+      },
+    }),
+
     update: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.update>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.updateInit(params)
@@ -301,13 +334,6 @@ export const dialogsApi = createApi({
     findOneShortDialog: builder.query<DialogShortDto, Parameters<typeof dialogsApiInstance.findOneShortDialog>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.findOneShortDialogInit(params)
-        return { url, ...init }
-      },
-    }),
-
-    findByUserShortDialog: builder.query<DialogShortDto[], Parameters<typeof dialogsApiInstance.findByUserShortDialog>[0]>({
-      query: (params) => {
-        const { url, init } = dialogsApiInstance.findByUserShortDialogInit(params)
         return { url, ...init }
       },
     }),

@@ -191,23 +191,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     /**
-     * Обрабатывает выход пользователя из диалога
-     * @param dialogId ID диалога
-     * @param client Клиент, покидающий диалог
-     */
-    @SubscribeMessage(DialogEvents.LEAVE_DIALOG)
-    async handleLeaveDialog(
-        @MessageBody() dialogId: string,
-        @ConnectedSocket() client: AuthenticatedSocket,
-      @WsRequestParams() params: RequestParams,
-    ) {
-        // Отсоединяем клиента от комнаты диалога
-        client.leave(dialogId)
-        // Обновляем статус пользователя на 'offline' в этом диалоге
-        await this.updateUserStatus(params.user_info_id, dialogId, UserStatus.Offline)
-    }
-
-    /**
      * Обрабатывает отправку нового сообщения
      * @param data Данные сообщения
      * @param client Клиент, отправляющий сообщение
@@ -267,6 +250,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             )
             // Добавляем созданное сообщение в диалог
             const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
+            const updatedDialogShort = await this.dialogService.findOneShort(currentDialogWithMessage.id, params)
 
             if (isNewDialog) {
                 // @ts-ignore
@@ -276,7 +260,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             // Отправляет всем участникам диалога новое сообщение
             this.server.to(currentDialogWithMessage.id).emit(DialogEvents.NEW_MESSAGE, message)
 
-            const updatedDialogShort = await this.dialogService.findOneShort(currentDialogWithMessage.id, params)
             this.server.emit(DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
 
         } catch (error) {
@@ -284,6 +267,24 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.emit('error', { message: 'Ошибка отправки сообщения', error: error.message })
         }
     }
+
+    /**
+     * Обрабатывает выход пользователя из диалога
+     * @param dialogId ID диалога
+     * @param client Клиент, покидающий диалог
+     */
+    @SubscribeMessage(DialogEvents.LEAVE_DIALOG)
+    async handleLeaveDialog(
+      @MessageBody() dialogId: string,
+      @ConnectedSocket() client: AuthenticatedSocket,
+      @WsRequestParams() params: RequestParams,
+    ) {
+        // Отсоединяем клиента от комнаты диалога
+        client.leave(dialogId)
+        // Обновляем статус пользователя на 'offline' в этом диалоге
+        await this.updateUserStatus(params.user_info_id, dialogId, UserStatus.Offline)
+    }
+
     /**
      * Обрабатывает начало набора сообщения пользователем
      * @param dialogId ID диалога

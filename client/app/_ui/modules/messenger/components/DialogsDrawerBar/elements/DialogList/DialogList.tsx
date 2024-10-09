@@ -1,9 +1,10 @@
+import { useDispatch } from 'react-redux'
+import { useProfile } from '@hooks'
 import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
-import { useDispatch } from 'react-redux'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
@@ -15,11 +16,20 @@ interface DialogListProps{
 export function DialogList(props: DialogListProps) {
   const { className } = props
   const dispatch = useDispatch()
+  const { profile } = useProfile()
 
-  const viewDialogList = useMessageStore((state) => state.viewDialogList())
   const drawerStatus = useMessageStore((state) => state.drawerStatus)
   const setChatingPanelStatus = useMessageStore((state) => state.setChatingPanelStatus)
-  // const setOpenDialogId = useMessageStore((state) => state.setOpenDialogId)
+
+  /**
+   * Получаем краткие диалоги
+   */
+  const { data: viewDialogList } = dialogsApi.useFindByUserShortDialogQuery({
+    userId: profile?.user_info.id as number,
+  }, {
+    skip: !profile?.user_info.id,
+  })
+
   const [onGetDialog] = dialogsApi.useLazyFindOneQuery()
   const [onRemoveDialog] = dialogsApi.useRemoveMutation()
   const [onLeaveDialog] = dialogsApi.useLeaveDialogMutation()
@@ -27,7 +37,7 @@ export function DialogList(props: DialogListProps) {
   return (
     <div className={classNames(cn({ status: drawerStatus }), className)}>
       <Text fs="12">Мои диалоги</Text>
-      {viewDialogList.map(({
+      {viewDialogList?.map(({
         image,
         title,
         last_message,
