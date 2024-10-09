@@ -1,4 +1,7 @@
 export enum DialogEvents {
+    /** Создался диалог */
+    NEW_DIALOG = 'new_dialog',
+
     /** Присоединение к диалогу */
     JOIN_DIALOG = 'join_dialog',
 

@@ -13,7 +13,7 @@ interface MessageProps {
 export function Message(props: MessageProps) {
   const { message } = props
   const { profile } = useProfile()
-  console.log('message__', message)
+  // console.log('message__', message)
   const gropedMediaByType = useMemo(() => groupBy(message.media, 'meta.type'), [message.media])
 
   const [onRemove] = postsApi.useRemoveMutation()

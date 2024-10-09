@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { io, Socket } from 'socket.io-client'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
@@ -24,7 +25,7 @@ const getSocket = (state: RootState) => {
 
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',
-  tagTypes: ['Messages', 'Dialogs', 'ShortDialogs'],
+  tagTypes: ['Messages', 'Dialogs', 'ShortDialogs', 'First'],
   baseQuery: fetchBaseQuery({
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
@@ -56,8 +57,38 @@ export const dialogsApi = createApi({
       },
     }),
 
+    listenForNewDialogs: builder.query<void, void>({
+      queryFn: () => ({ data: undefined }),
+      async onCacheEntryAdded(
+        arg,
+        { cacheDataLoaded, cacheEntryRemoved, getState, dispatch },
+      ) {
+        const socket = getSocket(getState() as RootState)
+        try {
+          await cacheDataLoaded
+
+          const handleNewDialog = (newDialog: DialogEntity) => {
+            console.log('Новый диалог получен:', newDialog)
+            // Обновляем кэш для findOne query
+            dispatch(
+              dialogsApi.util.upsertQueryData('findOne', { id: newDialog.id }, newDialog),
+            )
+            dispatch(MessengerSliceActions.setCurrentDialogId(newDialog.id))
+          }
+
+          socket.on(DialogEvents.NEW_DIALOG, handleNewDialog)
+
+          await cacheEntryRemoved
+
+          socket.off(DialogEvents.NEW_DIALOG, handleNewDialog)
+        } catch (error) {
+          console.error('Ошибка в listenForNewDialogs:', error)
+        }
+      },
+    }),
+
     findOne: builder.query<DialogEntity, { id: string }>({
-      providesTags: ['ShortDialogs'],
+      providesTags: ['ShortDialogs', 'First'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.findOneInit(params)
         return { url, ...init }
@@ -73,13 +104,12 @@ export const dialogsApi = createApi({
 
           socket.emit(DialogEvents.JOIN_DIALOG, { dialogId: arg.id })
 
-          const handleNewMessage = (message: MessageEntity) => {
-            console.log('пришло мое сообщение из сокета', message)
+          const handleNewMessage = (newMessage: MessageEntity) => {
             updateCachedData((draft) => {
               if (!draft.messages) {
                 draft.messages = []
               }
-              draft.messages.push(message)
+              draft.messages.push(newMessage)
             })
           }
 
@@ -128,7 +158,7 @@ export const dialogsApi = createApi({
         const socket = getSocket(getState() as RootState)
 
         const submitData = {
-          dialogId, ...message
+          dialogId, ...message, isNewDialog: !dialogId.length,
         }
         console.log('Отправляем такое сообщение', submitData)
         socket.emit(DialogEvents.SEND_MESSAGE, submitData, () => {

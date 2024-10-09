@@ -128,9 +128,6 @@ export class DialogService {
         const participants = await Promise.all(
             query?.participants?.map(id => this.userInfoService.getUsersById(id))
         )
-        console.log('query_____', query)
-        console.log('participants', participants)
-        console.log('result', [...participants, creator])
 
         const dialog = this.dialogRepository.create({
             ...query,
@@ -403,7 +400,10 @@ export class DialogService {
     }
 
 
-    private async mapToDialogShortDto(dialog: DialogEntity, params: RequestParams): Promise<DialogShortDto> {
+    mapToDialogShortDto(dialog: DialogEntity, params: RequestParams): DialogShortDto {
+
+        console.log('dialog', dialog)
+        console.log('params', params)
         const lastMessage = dialog.last_message
         const [participant] = dialog.participants.filter(({ id }) => id !== params?.user_info_id)
 
@@ -450,7 +450,7 @@ export class DialogService {
             throw new NotFoundException(`Диалог с ID "${id}" не найден`)
         }
 
-        return await this.mapToDialogShortDto(dialog, params)
+        return this.mapToDialogShortDto(dialog, params)
     }
 
     async findShortByUser(userId: number, params: RequestParams): Promise<DialogShortDto[]> {
@@ -505,6 +505,8 @@ export class DialogService {
 
         const updatedDialogShort = this.mapToDialogShortDto(updatedDialog, params)
         this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
+
+        return updatedDialog
     }
 
     /**

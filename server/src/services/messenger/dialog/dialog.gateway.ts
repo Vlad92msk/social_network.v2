@@ -214,37 +214,37 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.SEND_MESSAGE)
     async handleSendMessage(
-        @MessageBody() data: {
-            dialogId: string;
-            text: string;
-            participants?: number[];
-            media?: string[];
-            voices?: string[];
-            videos?: string[];
-        },
-        @ConnectedSocket() client: AuthenticatedSocket,
-        @WsRequestParams() params: RequestParams,
+      @MessageBody() data: {
+          dialogId?: string;
+          text: string;
+          participants?: number[];
+          media?: string[];
+          voices?: string[];
+          videos?: string[];
+          isNewDialog: boolean
+      },
+      @ConnectedSocket() client: AuthenticatedSocket,
+      @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const { dialogId, text, participants, media, voices, videos } = data
+            const { dialogId, text, participants, media, voices, videos, isNewDialog } = data
             console.log('Принимаем такое сообщение', data)
+
             let currentDialog: DialogEntity
 
-            // Добавляем сообщение в существующий диалог
-            if (dialogId?.length) {
+            // Добавляем сообщение в существующий диалог или создаем новый
+            if (!isNewDialog) {
                 currentDialog = await this.dialogService.findOne(dialogId)
             } else {
-                // Если диалога еще нет
-                // создаем с выбранными участниками
+                // Создаем новый диалог
                 if (participants) {
                     currentDialog = await this.dialogService.create({ query: { participants } }, params)
                 } else {
-                    // Если участников еще не выбрали - без них
                     currentDialog = await this.dialogService.create(undefined, params)
                 }
             }
 
-            console.log('создан/найден диалог', currentDialog)
+
             if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
             }
@@ -264,20 +264,27 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
               },
               params
             )
+
             // Добавляем созданное сообщение в диалог
-            await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
+            const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
+console.log('currentDialogWithMessage', currentDialogWithMessage)
+console.log('message', message)
+            if (isNewDialog) {
+                // @ts-ignore
+                this.server.emit(DialogEvents.NEW_DIALOG, currentDialogWithMessage)
+            }
 
             // Отправляет всем участникам диалога новое сообщение
-            this.server.to(currentDialog.id).emit(DialogEvents.NEW_MESSAGE, message)
+            this.server.to(currentDialogWithMessage.id).emit(DialogEvents.NEW_MESSAGE, message)
 
-            const updatedDialogShort = await this.dialogService.findOneShort(currentDialog.id, params)
+            const updatedDialogShort = await this.dialogService.findOneShort(currentDialogWithMessage.id, params)
             this.server.emit(DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
+
         } catch (error) {
             console.error(`Ошибка отправки сообщения: ${error.message}`)
             client.emit('error', { message: 'Ошибка отправки сообщения', error: error.message })
         }
     }
-
     /**
      * Обрабатывает начало набора сообщения пользователем
      * @param dialogId ID диалога

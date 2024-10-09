@@ -99,7 +99,7 @@ export class DialogEntity {
     is_video_conference_active: boolean
 
     @ApiProperty({ description: 'Участники диалога', type: [UserInfo] })
-    @ManyToMany(() => UserInfo)
+    @ManyToMany(() => UserInfo, { eager: true })
     @JoinTable({
         name: 'dialog_participants',
         joinColumn: { name: 'dialog_id', referencedColumnName: 'id' },

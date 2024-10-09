@@ -56,7 +56,7 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       userInfoApi.middleware,
       reactionsApi.middleware,
       effectMiddleware,
-      // logger,
+      logger,
     ),
   })
 
