@@ -1,6 +1,6 @@
+import { useSelector } from 'react-redux'
 import { Spinner } from '@ui/common/Spinner'
 import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
-import { useSelector } from 'react-redux'
 import { cn } from './cn'
 import { Message } from './Messege'
 import { dialogsApi } from '../../../../../../../../store/api'
@@ -17,12 +17,10 @@ export function Body(props: BodyProps) {
     { id: currentDialogId },
     {
       skip: !currentDialogId,
-      selectFromResult: ({ data, isLoading: isLoadingApi }) => {
-        return ({
-          messages: data?.messages ?? [],
-          isLoading: isLoadingApi,
-        })
-      },
+      selectFromResult: ({ data, isLoading: isLoadingApi }) => ({
+        messages: data?.messages ?? [],
+        isLoading: isLoadingApi,
+      }),
     },
   )
 

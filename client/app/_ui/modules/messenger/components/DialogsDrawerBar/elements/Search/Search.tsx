@@ -1,3 +1,4 @@
+import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { useEffect, useRef, useState } from 'react'
 import { useDebouncedSearch } from '@hooks'
 import { Button } from '@ui/common/Button'
@@ -7,6 +8,7 @@ import { Listitem } from '@ui/modules/messenger/components/DialogsDrawerBar/elem
 import { classNames, makeCn } from '@utils/others'
 import { Icon } from 'app/_ui/common/Icon'
 import { Input, InputGroup } from 'app/_ui/common/Input'
+import { useDispatch } from 'react-redux'
 import style from './Search.module.scss'
 import { userInfoApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
@@ -19,13 +21,16 @@ interface SearchProps {
 
 export function Search(props: SearchProps) {
   const { className } = props
+  const dispatch = useDispatch()
   const set = useMessageStore((state) => state.setFilter)
-  const setSelectUSer = useMessageStore((state) => state.setSelectUSer)
   const setChatingPanelStatus = useMessageStore((state) => state.setChatingPanelStatus)
 
   const [isFocus, setFocused] = useState(false)
 
-  const [onGetUsers, { data, isLoading }] = userInfoApi.useLazyGetUsersQuery()
+  /**
+   * Ищем пользователей в БД по имени
+   */
+  const [onFindUsersByName, { data, isLoading }] = userInfoApi.useLazyGetUsersQuery()
 
   const componentRef = useRef<HTMLDivElement>(null)
 
@@ -33,7 +38,7 @@ export function Search(props: SearchProps) {
     debounceMs: 700,
     onSearch: (value) => {
       if (value?.length) {
-        onGetUsers({ name: value })
+        onFindUsersByName({ name: value })
       }
     },
   })
@@ -91,7 +96,7 @@ export function Search(props: SearchProps) {
                         onClick={(event) => {
                           event.stopPropagation()
                           console.log(`Открыл диалог с ID: ${public_id}`)
-                          setSelectUSer(user)
+                          dispatch(MessengerSliceActions.setTargetUserToDialog(user))
                           setChatingPanelStatus('open')
                         }}
                       >

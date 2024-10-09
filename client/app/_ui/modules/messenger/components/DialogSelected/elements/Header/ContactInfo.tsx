@@ -8,7 +8,6 @@ import { Text } from 'app/_ui/common/Text'
 import { useSelector } from 'react-redux'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
-import { useMessageStore } from '../../../../store'
 import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
 
 interface ContactInfoProps {
@@ -19,8 +18,7 @@ export function ContactInfo(props: ContactInfoProps) {
   const { className } = props
   const { profile } = useProfile()
   const openDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
-  const isCreatable = useMessageStore((store) => store.isCreatable)
-  const selectUser = useMessageStore((store) => store.selectUser)
+  const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
 
   const { apiIsLoading, apiIsError, type, participants, title, image } = dialogsApi.useFindOneQuery(
     { id: openDialogId },
@@ -39,7 +37,7 @@ export function ContactInfo(props: ContactInfoProps) {
   )
 
   const { status, name, img } = useMemo(() => {
-    if (isCreatable && selectUser) {
+    if (selectUser) {
       return ({
         img: <Image src={selectUser?.profile_image} alt={selectUser?.name} width={50} height={50} />,
         name: (
@@ -97,7 +95,7 @@ export function ContactInfo(props: ContactInfoProps) {
       }
       default: return byDefault
     }
-  }, [image, isCreatable, participants, profile, selectUser, title, type])
+  }, [image, participants, profile, selectUser, title, type])
 
   if (apiIsLoading) return <Spinner />
   if (apiIsError) return <div>Ошибка</div>

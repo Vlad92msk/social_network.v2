@@ -1,5 +1,4 @@
 import { CreatePublication, CreatePublicationContextProps, MyFile } from '@ui/components/create-publication'
-import { useMessageStore } from '@ui/modules/messenger/store'
 import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
 import { useSelector } from 'react-redux'
 import { cn } from './cn'
@@ -16,8 +15,8 @@ function fileToBase64(file: MyFile): Promise<string> {
 }
 
 export function Footer() {
-  const selectUser = useMessageStore((store) => store.selectUser)
   const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
+  const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
 
   const [sendMessage] = dialogsApi.useSendMessageMutation()
 
