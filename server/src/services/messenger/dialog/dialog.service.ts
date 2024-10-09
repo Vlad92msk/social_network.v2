@@ -130,7 +130,7 @@ export class DialogService {
         )
 
         const dialog = this.dialogRepository.create({
-            ...query,
+            ...omit(query, ['participants', 'admins', 'last_message']),
             admins: [creator],
             participants: [...participants, creator],
             last_message: null

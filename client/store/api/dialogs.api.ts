@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { io, Socket } from 'socket.io-client'
+import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
 import { DialogEvents } from '../events/dialog-events-enum'
@@ -88,7 +88,6 @@ export const dialogsApi = createApi({
     }),
 
     findOne: builder.query<DialogEntity, { id: string }>({
-      providesTags: ['ShortDialogs', 'First'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.findOneInit(params)
         return { url, ...init }
@@ -157,11 +156,8 @@ export const dialogsApi = createApi({
       queryFn: ({ dialogId, message }, { getState }) => new Promise((resolve) => {
         const socket = getSocket(getState() as RootState)
 
-        const submitData = {
-          dialogId, ...message, isNewDialog: !dialogId.length,
-        }
-        console.log('Отправляем такое сообщение', submitData)
-        socket.emit(DialogEvents.SEND_MESSAGE, submitData, () => {
+        console.log('Отправляем такое сообщение', message)
+        socket.emit(DialogEvents.SEND_MESSAGE, { dialogId, message }, () => {
           resolve({ data: undefined })
         })
       }),

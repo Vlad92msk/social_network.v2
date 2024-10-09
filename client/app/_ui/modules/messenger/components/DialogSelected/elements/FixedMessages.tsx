@@ -2,12 +2,13 @@ import { useScrollToElement } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { Text } from '@ui/common/Text'
+import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
+import { useSelector } from 'react-redux'
 import { dialogsApi } from '../../../../../../../store/api'
-import { useMessageStore } from '../../../store'
 import { cn } from '../cn'
 
 export function FixedMessages() {
-  const openDialogId = useMessageStore((store) => store.openDialogId)
+  const openDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
 
   const { fixedMessages } = dialogsApi.useFindOneQuery(
     { id: openDialogId },

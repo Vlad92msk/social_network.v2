@@ -1,9 +1,11 @@
+import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
 import { useMemo } from 'react'
 import { useProfile } from '@hooks'
 import { Spinner } from '@ui/common/Spinner'
 import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
+import { useSelector } from 'react-redux'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
@@ -16,7 +18,7 @@ interface ContactInfoProps {
 export function ContactInfo(props: ContactInfoProps) {
   const { className } = props
   const { profile } = useProfile()
-  const openDialogId = useMessageStore((store) => store.openDialogId)
+  const openDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const isCreatable = useMessageStore((store) => store.isCreatable)
   const selectUser = useMessageStore((store) => store.selectUser)
 

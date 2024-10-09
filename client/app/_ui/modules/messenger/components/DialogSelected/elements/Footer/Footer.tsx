@@ -17,12 +17,12 @@ function fileToBase64(file: MyFile): Promise<string> {
 
 export function Footer() {
   const selectUser = useMessageStore((store) => store.selectUser)
-  const selectСurrentDialogId = useSelector(MessengerSelectors.selectСurrentDialogId)
+  const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
 
   const [sendMessage] = dialogsApi.useSendMessageMutation()
 
   const handleSubmit = async (newMessage: CreatePublicationContextProps) => {
-    if (!selectСurrentDialogId && !selectUser) {
+    if (!currentDialogId && !selectUser) {
       console.error('No dialog or user selected')
       return
     }
@@ -30,13 +30,12 @@ export function Footer() {
     const messageData = {
       text: newMessage.text,
       participants: selectUser ? [selectUser.id] : undefined,
-      dialog_id: selectСurrentDialogId,
       media: newMessage.media ? await Promise.all(newMessage.media.map(fileToBase64)) : undefined,
       voices: newMessage.voices ? await Promise.all(newMessage.voices.map(fileToBase64)) : undefined,
       videos: newMessage.videos ? await Promise.all(newMessage.videos.map(fileToBase64)) : undefined,
     }
 
-    sendMessage({ dialogId: selectСurrentDialogId, message: messageData })
+    sendMessage({ dialogId: currentDialogId, message: messageData })
   }
 
   return (

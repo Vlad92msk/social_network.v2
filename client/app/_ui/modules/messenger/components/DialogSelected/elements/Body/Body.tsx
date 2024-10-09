@@ -11,17 +11,13 @@ interface BodyProps {
 
 export function Body(props: BodyProps) {
   dialogsApi.useListenForNewDialogsQuery()
-
-  const currentDialogId = useSelector(MessengerSelectors.selectСurrentDialogId)
-  console.log('selectCurrentDialogIds', currentDialogId)
-
+  const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
 
   const { messages, isLoading } = dialogsApi.useFindOneQuery(
     { id: currentDialogId },
     {
       skip: !currentDialogId,
       selectFromResult: ({ data, isLoading: isLoadingApi }) => {
-        console.log('open_dialog', data)
         return ({
           messages: data?.messages ?? [],
           isLoading: isLoadingApi,
@@ -29,7 +25,7 @@ export function Body(props: BodyProps) {
       },
     },
   )
-console.log('messages', messages)
+
   if (isLoading) return <Spinner />
 
   return (

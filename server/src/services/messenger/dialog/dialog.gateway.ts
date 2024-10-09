@@ -216,34 +216,35 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleSendMessage(
       @MessageBody() data: {
           dialogId?: string;
-          text: string;
-          participants?: number[];
-          media?: string[];
-          voices?: string[];
-          videos?: string[];
-          isNewDialog: boolean
+          message: {
+              text: string;
+              participants?: number[];
+              media?: string[];
+              voices?: string[];
+              videos?: string[];
+          }
       },
       @ConnectedSocket() client: AuthenticatedSocket,
       @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const { dialogId, text, participants, media, voices, videos, isNewDialog } = data
-            console.log('Принимаем такое сообщение', data)
+            const { dialogId, message: { text, participants, media, voices, videos } } = data
+            const isNewDialog = !dialogId.length
 
+            console.log('Принимаем такое сообщение', data)
             let currentDialog: DialogEntity
 
             // Добавляем сообщение в существующий диалог или создаем новый
-            if (!isNewDialog) {
-                currentDialog = await this.dialogService.findOne(dialogId)
-            } else {
+            if (isNewDialog) {
                 // Создаем новый диалог
                 if (participants) {
                     currentDialog = await this.dialogService.create({ query: { participants } }, params)
                 } else {
                     currentDialog = await this.dialogService.create(undefined, params)
                 }
+            } else {
+                currentDialog = await this.dialogService.findOne(dialogId)
             }
-
 
             if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
@@ -264,11 +265,9 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
               },
               params
             )
-
             // Добавляем созданное сообщение в диалог
             const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
-console.log('currentDialogWithMessage', currentDialogWithMessage)
-console.log('message', message)
+
             if (isNewDialog) {
                 // @ts-ignore
                 this.server.emit(DialogEvents.NEW_DIALOG, currentDialogWithMessage)

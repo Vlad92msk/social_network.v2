@@ -23,7 +23,7 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
 const selectSelf = (state: RootReducer) => state.messenger
 
 export const MessengerSelectors = {
-  selectСurrentDialogId: createSelector(
+  selectCurrentDialogId: createSelector(
     [selectSelf],
     (profileState) => profileState.currentDialogId,
   ),
