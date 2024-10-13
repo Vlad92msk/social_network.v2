@@ -1,8 +1,8 @@
-import { selectDrawerStatus } from '@ui/modules/messenger/store/selectors/messenger.selectors'
 import { useDispatch, useSelector } from 'react-redux'
 import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
 import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
+import { selectDrawerStatus } from '@ui/modules/messenger/store/selectors/messenger.selectors'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
@@ -40,9 +40,9 @@ export function DialogList(props: DialogListProps) {
           </div>
           <div className={cn('ContactContentWrapper')}>
             {type === 'public' && (
-              <Text className={cn('ContactName')} fs="12" textElipsis>{title}</Text>
+              <Text className={cn('ContactName')} fs="12" weight="bold" textElipsis>{title}</Text>
             )}
-            <Text className={cn('ContactLastContactName')} fs="12" textElipsis>{last_message?.author?.name}</Text>
+            <Text className={cn('ContactLastContactName')} fs="12" weight="bold" textElipsis>{last_message?.author?.name}</Text>
             <Text className={cn('ContactLastMessage')} fs="12" textElipsis>{last_message?.text}</Text>
           </div>
           <div className={cn('ContactHoverActions')}>

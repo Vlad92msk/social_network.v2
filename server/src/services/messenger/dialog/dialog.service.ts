@@ -118,7 +118,7 @@ export class DialogService {
 
         await this.dialogRepository.save(dialog)
 
-        this.eventEmitter.emit(DialogEvents.EXIT_DIALOG, { id, participants: dialog.participants.map(({ id }) => id)})
+        this.eventEmitter.emit(DialogEvents.EXIT_DIALOG, { id, participants: [userId]})
 
         return { message: 'Вы успешно покинули диалог' }
     }
