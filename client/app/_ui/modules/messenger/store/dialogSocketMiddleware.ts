@@ -1,11 +1,11 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
-import { createSocket } from '@ui/modules/messenger/store/socket.connect'
 import { Socket } from 'socket.io-client'
+import { createSocket } from '@ui/modules/messenger/store/utils'
+import { MessengerSliceActions } from './messenger.slice'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
 import { RootReducer } from '../../../../../store/root.reducer'
 import { PaginationResponse } from '../../../../../store/types/request'
-import { MessengerSliceActions } from './messenger.slice'
 
 let socket: Socket | null = null
 
@@ -56,21 +56,28 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     })
   }
 
-  // Обработка действий, связанных с WebSocket
-  if (action.type === 'WEBSOCKET_SEND_MESSAGE' && socket) {
-    const { event, data } = action.payload
-    console.log('Отправляем сообщение:', data)
-    socket.emit(event, data)
-  } else if (action.type === 'WEBSOCKET_JOIN_DIALOG' && socket) {
-    const { event, data } = action.payload
-    console.log('Присоединяемся к диалогу:', data)
-    socket.emit(event, data)
-  } else if (action.type === 'WEBSOCKET_DISCONNECT') {
-    if (socket) {
+  if (!socket) return next(action)
+
+  switch (action.type) {
+    case 'WEBSOCKET_SEND_MESSAGE': {
+      const { event, data } = action.payload
+      socket.emit(event, data)
+      break
+    }
+    case 'WEBSOCKET_JOIN_DIALOG': {
+      const { event, data } = action.payload
+      if (data.dialogId) {
+        socket.emit(event, data)
+      }
+      break
+    }
+    case 'WEBSOCKET_DISCONNECT': {
       socket.disconnect()
       socket = null
       store.dispatch(MessengerSliceActions.setConnected(false))
+      break
     }
+    default: return next(action)
   }
   return next(action)
 }

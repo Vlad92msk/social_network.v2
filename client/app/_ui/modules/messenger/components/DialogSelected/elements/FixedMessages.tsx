@@ -2,23 +2,12 @@ import { useScrollToElement } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { Text } from '@ui/common/Text'
-import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { useSelector } from 'react-redux'
-import { dialogsApi } from '../../../../../../../store/api'
 import { cn } from '../cn'
 
 export function FixedMessages() {
-  const openDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
-
-  const { fixedMessages } = dialogsApi.useFindOneQuery(
-    { id: openDialogId },
-    {
-      skip: !Boolean(openDialogId?.length),
-      selectFromResult: ({ data }) => ({
-        fixedMessages: data?.fixed_messages ?? [],
-      }),
-    },
-  )
+  const fixedMessages = useSelector(MessengerSelectors.selectCurrentDialogFixedMessages)
 
   const scrollToComment = useScrollToElement({
     behavior: 'smooth',

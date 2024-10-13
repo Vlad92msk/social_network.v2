@@ -125,6 +125,8 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         try {
             const { dialogId, ...restOptions } = data
+            if (!dialogId) return
+
             // Проверяем, является ли пользователь участником диалога
             const dialog = await this.dialogService.findOne(dialogId)
             if (!dialog.participants.some(participant => participant.id === params.user_info_id)) {

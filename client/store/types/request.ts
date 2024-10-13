@@ -71,7 +71,6 @@ export type ExtractApiData<T> = {
   [P in keyof T]: T[P] extends ApiStatusState<Record<string, any>> ? T[P]['apiData'] : unknown;
 };
 
-
 export interface PaginationInfo {
   total: number
   pages: number

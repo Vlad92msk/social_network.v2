@@ -1,7 +1,7 @@
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { useSelector } from 'react-redux'
 import { cn } from './cn'
 import { Message } from './Messege'
-import { MessengerSelectors } from '../../../../store/messenger.slice'
 
 interface BodyProps {
 

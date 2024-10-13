@@ -1,6 +1,7 @@
-import { CreatePublication, CreatePublicationContextProps, MyFile } from '@ui/components/create-publication'
-import { MessengerSelectors, sendMessage } from '@ui/modules/messenger/store/messenger.slice'
 import { useDispatch, useSelector } from 'react-redux'
+import { CreatePublication, CreatePublicationContextProps, MyFile } from '@ui/components/create-publication'
+import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { cn } from './cn'
 
 // Вспомогательная функция для конвертации File в base64
@@ -18,7 +19,6 @@ export function Footer() {
   const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
 
-
   const handleSubmit = async (newMessage: CreatePublicationContextProps) => {
     if (!currentDialogId && !selectUser) {
       console.error('No dialog or user selected')
@@ -32,7 +32,7 @@ export function Footer() {
       voices: newMessage.voices ? await Promise.all(newMessage.voices.map(fileToBase64)) : undefined,
       videos: newMessage.videos ? await Promise.all(newMessage.videos.map(fileToBase64)) : undefined,
     }
-    dispatch(sendMessage(currentDialogId, messageData))
+    dispatch(MessengerThunkActions.sendMessage(currentDialogId, messageData))
   }
 
   return (

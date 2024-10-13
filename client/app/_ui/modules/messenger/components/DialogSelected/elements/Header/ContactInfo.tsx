@@ -1,7 +1,7 @@
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useProfile } from '@hooks'
-import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
 import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'

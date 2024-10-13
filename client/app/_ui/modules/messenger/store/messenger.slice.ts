@@ -1,11 +1,7 @@
-import { createAsyncThunk, createSelector, PayloadAction } from '@reduxjs/toolkit'
-import { CreatePublicationContextProps } from '@ui/components/create-publication'
-import { getSocket } from '@ui/modules/messenger/store/socket.connect'
+import { PayloadAction } from '@reduxjs/toolkit'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userInfo'
-import { dialogsApi, userInfoApi } from '../../../../../store/api'
-import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
-import { RootReducer } from '../../../../../store/root.reducer'
+import { dialogsApi } from '../../../../../store/api'
 import { PaginationResponse } from '../../../../../store/types/request'
 import { sliceBuilder } from '../../../../../store/utils/other'
 
@@ -100,50 +96,3 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
     },
   }),
 )
-
-const selectSelf = (state: RootReducer) => state.messenger
-const selectCurrentDialogId = createSelector(selectSelf, (profileState) => profileState.currentDialogId)
-
-const selectCurrentDialogMessages = createSelector(
-  [selectSelf, selectCurrentDialogId],
-  (messenger, currentDialogId) => {
-    if (!currentDialogId || !messenger.messages[currentDialogId]) return ({ data: [], paginationInfo: null })
-    console.log('currentDialogId', currentDialogId)
-    console.log('messenger.messages', messenger.messages)
-    console.log('messenger.messages[currentDialogId]', messenger.messages[currentDialogId])
-    return messenger.messages[currentDialogId]
-  },
-)
-
-export const MessengerSelectors = {
-  selectCurrentDialogId: createSelector(selectSelf, (profileState) => profileState.currentDialogId),
-  selectTargetNewUserToDialog: createSelector(selectSelf, (profileState) => profileState.targetNewUserToDialog),
-  selectDialogList: createSelector(selectSelf, (profileState) => profileState.shortDialogs),
-  selectCurrentDialog: createSelector(selectSelf, (messenger) => messenger.currentDialog),
-  selectCurrentDialogMessages,
-}
-
-
-export const sendMessage = (dialogId: string | null, message: any) => ({
-  type: 'WEBSOCKET_SEND_MESSAGE',
-  payload: {
-    event: DialogEvents.SEND_MESSAGE,
-    data: { dialogId, message },
-  },
-
-})
-export const joinToDialog = (dialogId: string) => ({
-  type: 'WEBSOCKET_JOIN_DIALOG',
-  payload: {
-    event: DialogEvents.JOIN_DIALOG,
-    data: { dialogId },
-  },
-})
-
-export const removeDialog = (dialogId: string) => ({
-  type: 'WEBSOCKET_REMOVE_DIALOG',
-  payload: {
-    event: DialogEvents.JOIN_DIALOG,
-    data: { dialogId },
-  },
-})

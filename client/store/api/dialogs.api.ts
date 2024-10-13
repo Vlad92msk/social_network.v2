@@ -1,31 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { io, Socket } from 'socket.io-client'
-import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
-import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
+import { DialogEntity, DialogShortDto } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
-import { DialogEvents } from '../events/dialog-events-enum'
 import { dialogsApiInstance } from '../instance'
 import { RootState } from '../store'
 
-let socket: Socket | null = null
-
-const getSocket = (state: RootState) => {
-  if (!socket) {
-    socket = io('http://localhost:3001/dialog', {
-      path: '/socket.io',
-      auth: {
-        profile_id: state.profile?.profile?.id,
-        user_info_id: state.profile?.profile?.user_info?.id,
-        user_public_id: state.profile?.profile?.user_info?.public_id,
-      },
-    })
-  }
-  return socket
-}
-
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',
-  tagTypes: ['Messages', 'Dialogs', 'ShortDialogs', 'First'],
   baseQuery: fetchBaseQuery({
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
@@ -57,142 +37,17 @@ export const dialogsApi = createApi({
       },
     }),
 
-    listenForNewDialogs: builder.query<void, void>({
-      queryFn: () => ({ data: undefined }),
-      async onCacheEntryAdded(
-        arg,
-        { cacheDataLoaded, cacheEntryRemoved, getState, dispatch },
-      ) {
-        const socket = getSocket(getState() as RootState)
-        try {
-          await cacheDataLoaded
-
-          const handleNewDialog = (newDialog: DialogEntity) => {
-            console.log('Новый диалог получен:', newDialog)
-            // Обновляем кэш для findOne query
-            dispatch(
-              dialogsApi.util.upsertQueryData('findOne', { id: newDialog.id }, newDialog),
-            )
-            dispatch(MessengerSliceActions.setCurrentDialogId(newDialog.id))
-          }
-
-          socket.on(DialogEvents.NEW_DIALOG, handleNewDialog)
-
-          await cacheEntryRemoved
-
-          socket.off(DialogEvents.NEW_DIALOG, handleNewDialog)
-        } catch (error) {
-          console.error('Ошибка в listenForNewDialogs:', error)
-        }
-      },
-    }),
-
     findOne: builder.query<DialogEntity, { id: string }>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.findOneInit(params)
         return { url, ...init }
       },
-      async onCacheEntryAdded(
-        arg,
-        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, getState },
-      ) {
-        const socket = getSocket(getState() as RootState)
-
-        try {
-          await cacheDataLoaded
-
-          socket.emit(DialogEvents.JOIN_DIALOG, { dialogId: arg.id })
-
-          const handleNewMessage = (newMessage: MessageEntity) => {
-            updateCachedData((draft) => {
-              if (!draft.messages) {
-                draft.messages = []
-              }
-              draft.messages.push(newMessage)
-            })
-          }
-
-          const handleDialogUpdated = (updatedDialog: any) => {
-            updateCachedData((draft) => {
-              Object.assign(draft, updatedDialog)
-            })
-          }
-
-          const handleUserStatusChanged = ({ userId, status }: any) => {
-            updateCachedData((draft) => {
-              const participant = draft.participants?.find((p) => p.id === userId)
-              if (participant) {
-                participant.status = status
-              }
-            })
-          }
-
-          socket.on(DialogEvents.NEW_MESSAGE, handleNewMessage)
-          socket.on(DialogEvents.DIALOG_UPDATED, handleDialogUpdated)
-          socket.on(DialogEvents.USER_STATUS_CHANGED, handleUserStatusChanged)
-
-          await cacheEntryRemoved
-
-          socket.off(DialogEvents.NEW_MESSAGE, handleNewMessage)
-          socket.off(DialogEvents.DIALOG_UPDATED, handleDialogUpdated)
-          socket.off(DialogEvents.USER_STATUS_CHANGED, handleUserStatusChanged)
-        } catch {
-          // Handle errors
-        }
-      },
-    }),
-
-    sendMessage: builder.mutation<void, {
-      dialogId: string,
-      message: {
-        text: string,
-        participants?: number[],
-        dialog_id?: string,
-        media?: string[],
-        voices?: string[],
-        videos?: string[]
-      }
-    }>({
-      queryFn: ({ dialogId, message }, { getState }) => new Promise((resolve) => {
-        const socket = getSocket(getState() as RootState)
-
-        console.log('Отправляем такое сообщение', message)
-        socket.emit(DialogEvents.SEND_MESSAGE, { dialogId, message }, () => {
-          resolve({ data: undefined })
-        })
-      }),
     }),
 
     findByUserShortDialog: builder.query<DialogShortDto[], Parameters<typeof dialogsApiInstance.findByUserShortDialog>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.findByUserShortDialogInit(params)
         return { url, ...init }
-      },
-      async onCacheEntryAdded(
-        arg,
-        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, getState },
-      ) {
-        const socket = getSocket(getState() as RootState)
-
-        try {
-          await cacheDataLoaded
-
-          const handleNewDialog = (newDialog) => {
-            console.log('Новый диалог получен:', newDialog)
-            // Обновляем кэш для findOne query
-            updateCachedData((draft) => {
-              draft.push(newDialog)
-            })
-          }
-
-          socket.on(DialogEvents.DIALOG_SHORT_UPDATED, handleNewDialog)
-
-          await cacheEntryRemoved
-
-          socket.off(DialogEvents.DIALOG_SHORT_UPDATED, handleNewDialog)
-        } catch {
-          // Handle errors
-        }
       },
     }),
 
@@ -204,7 +59,6 @@ export const dialogsApi = createApi({
     }),
 
     remove: builder.mutation<void, Parameters<typeof dialogsApiInstance.remove>[0]>({
-      invalidatesTags: ['ShortDialogs'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.removeInit(params)
         return { url, ...init }
@@ -310,7 +164,6 @@ export const dialogsApi = createApi({
     }),
 
     leaveDialog: builder.mutation<void, Parameters<typeof dialogsApiInstance.leaveDialog>[0]>({
-      invalidatesTags: ['ShortDialogs'],
       query: (params) => {
         const { url, init } = dialogsApiInstance.leaveDialogInit(params)
         return { url, ...init }

@@ -1,4 +1,6 @@
-import { joinToDialog, MessengerSelectors, MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
+import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
+import {  MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
@@ -45,10 +47,8 @@ export function DialogList(props: DialogListProps) {
           </div>
           <div className={cn('ContactHoverActions')}>
             <Button onClick={() => {
-              console.log(`Открыл диалог с ID:${id}`)
               setChatingPanelStatus('open')
-              // joinToDialogAction(id)
-              dispatch(joinToDialog(id))
+              dispatch(MessengerThunkActions.joinToDialog(id))
               dispatch(MessengerSliceActions.setCurrentDialogId(id))
             }}
             >

@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogThunks'
+import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 import { merge } from 'lodash'
 import logger from 'redux-logger'
 import { createEpicMiddleware } from 'redux-observable'
