@@ -516,19 +516,19 @@ export class DialogService {
     /**
      * Получить сообщения диалога
      */
-    async getDialogMessages(dialogId: string, per_page: number = 20, page: number = 0, params: RequestParams) {
+    async getDialogMessages(options: { dialogId: string, per_page?: number, page?: number }, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
-            where: { id: dialogId },
+            where: { id: options?.dialogId },
         })
 
         if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${dialogId}" не найден`)
+            throw new NotFoundException(`Диалог с ID "${options?.dialogId}" не найден`)
         }
 
         const messages = await this.messageService.findAll({
-            dialog_id: dialogId,
-            per_page,
-            page,
+            dialog_id: options?.dialogId,
+            per_page: options?.per_page,
+            page: options?.page,
             sort_by: 'date_created',
             sort_direction: SortDirection.DESC
         }, params)

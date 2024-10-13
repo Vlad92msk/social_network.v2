@@ -3,6 +3,7 @@ import { CreatePublicationContextProps } from '@ui/components/create-publication
 import { getSocket } from '@ui/modules/messenger/store/socket.connect'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userInfo'
+import { dialogsApi, userInfoApi } from '../../../../../store/api'
 import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
 import { RootReducer } from '../../../../../store/root.reducer'
 import { PaginationResponse } from '../../../../../store/types/request'
@@ -64,6 +65,9 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
 
       setDialogHistory: (state, action: PayloadAction<{ dialog: DialogEntity, messages: PaginationResponse<MessageEntity[]>, activeParticipants: number[] }>) => {
         const { dialog, messages, activeParticipants } = action.payload
+        if (!state.currentDialogId) {
+          state.currentDialogId = dialog.id
+        }
         state.currentDialog = dialog
         state.messages[dialog.id] = messages
         state.participants[dialog.id] = dialog.participants
@@ -77,6 +81,23 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
         state.error = action.payload
       },
     },
+    extraReducers: (builder) => {
+      builder
+        // Реагируем на успешное удаление диалога
+        .addMatcher(
+          dialogsApi.endpoints.remove.matchFulfilled,
+          (state, action) => {
+            state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.meta.arg.originalArgs.id)
+          },
+        )
+        // Реагируем на успешное покидание диалога
+        .addMatcher(
+          dialogsApi.endpoints.leaveDialog.matchFulfilled,
+          (state, action) => {
+            state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.meta.arg.originalArgs.id)
+          },
+        )
+    },
   }),
 )
 
@@ -87,6 +108,9 @@ const selectCurrentDialogMessages = createSelector(
   [selectSelf, selectCurrentDialogId],
   (messenger, currentDialogId) => {
     if (!currentDialogId || !messenger.messages[currentDialogId]) return ({ data: [], paginationInfo: null })
+    console.log('currentDialogId', currentDialogId)
+    console.log('messenger.messages', messenger.messages)
+    console.log('messenger.messages[currentDialogId]', messenger.messages[currentDialogId])
     return messenger.messages[currentDialogId]
   },
 )
@@ -110,6 +134,14 @@ export const sendMessage = (dialogId: string | null, message: any) => ({
 })
 export const joinToDialog = (dialogId: string) => ({
   type: 'WEBSOCKET_JOIN_DIALOG',
+  payload: {
+    event: DialogEvents.JOIN_DIALOG,
+    data: { dialogId },
+  },
+})
+
+export const removeDialog = (dialogId: string) => ({
+  type: 'WEBSOCKET_REMOVE_DIALOG',
   payload: {
     event: DialogEvents.JOIN_DIALOG,
     data: { dialogId },

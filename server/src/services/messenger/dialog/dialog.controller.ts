@@ -105,7 +105,7 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiResponse({ status: 200, description: 'Диалог успешно удален' })
     async remove(@Param('id') id: string, @RequestParams() params: RequestParams) {
-        return this.dialogService.remove(id, params)
+        return await this.dialogService.remove(id, params)
     }
 
     @Post(':id/participants/:user_id')
@@ -300,7 +300,7 @@ export class DialogController {
         @Param('id') id: string,
         @RequestParams() params: RequestParams
     ) {
-        return this.dialogService.leaveDialog(id, params.user_info_id)
+        return await this.dialogService.leaveDialog(id, params.user_info_id)
     }
 
     @Post(':id/video-conference')

@@ -108,9 +108,8 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     private sendToUser(userId: number, event: string, data: any) {
-        const socket = this.userSockets.get(userId)
-        if (socket) {
-            console.log('отправляем пользователю', socket.data)
+        if (this.userSockets.has(userId)) {
+            const socket = this.userSockets.get(userId)
             socket.emit(event, data)
         }
     }
@@ -125,7 +124,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const { dialogId, per_page = 20, page = 1 } = data
+            const { dialogId, ...restOptions } = data
             // Проверяем, является ли пользователь участником диалога
             const dialog = await this.dialogService.findOne(dialogId)
             if (!dialog.participants.some(participant => participant.id === params.user_info_id)) {
@@ -136,9 +135,8 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             await client.join(dialogId)
 
             // Параллельно получаем сообщения, участников и активных пользователей
-            const [messages, participants, activeParticipants] = await Promise.all([
-                this.dialogService.getDialogMessages(dialogId, per_page, page, params),
-                this.dialogService.getDialogParticipants(dialogId),
+            const [messages, activeParticipants] = await Promise.all([
+                this.dialogService.getDialogMessages({ dialogId, ...restOptions }, params),
                 this.getActiveParticipants(dialogId)
             ])
 
@@ -183,8 +181,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const { dialogId, message: { text, participants, media, voices, videos } } = data
             const isNewDialog = !dialogId.length
 
-            this.sendToUser(6, 'HIIII', 'his')
-
             console.log('Принимаем такое сообщение', data)
             let currentDialog: DialogEntity
 
@@ -225,26 +221,30 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             // Создаем из него краткую форму
             const updatedDialogShort = this.dialogService.mapToDialogShortDto(currentDialogWithMessage, params)
 
-            // currentDialogWithMessage.participants.forEach(({ id, name }) => {
-            //     // Если это новый диалог - оповещаем всех участников, что создался новый диалог
-            //     // Если это уже имеющийся - оповещаем об обновлении
-            //     if (isNewDialog) {
-            //         this.sendToUser(id, DialogEvents.NEW_DIALOG, updatedDialogShort)
-            //     } else {
-            //         this.sendToUser(id, DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
-            //     }
-            // })
+            currentDialogWithMessage.participants.forEach(({ id }) => {
+                // Если это новый диалог - оповещаем всех участников, что создался новый диалог
+                // Если это уже имеющийся - оповещаем об обновлении
+                if (isNewDialog) {
+                    this.sendToUser(id, DialogEvents.NEW_DIALOG, updatedDialogShort)
+                } else {
+                    this.sendToUser(id, DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
+                }
+            })
 
-
-            // Отправляет всем участникам диалога новое сообщение
-            // @ts-ignore
-            this.server.to(currentDialogWithMessage.id).emit(DialogEvents.NEW_MESSAGE, { dialogId: currentDialogWithMessage.id, message })
+            // Если это новый диалог - оповещаем всех участников, что создался новый диалог
+            if (isNewDialog) {
+                await this.handleJoinDialog({ dialogId: currentDialog.id }, client, params)
+            } else {
+                // @ts-ignore
+                this.server.to(currentDialogWithMessage.id).emit(DialogEvents.NEW_MESSAGE, { dialogId: currentDialogWithMessage.id, message })
+            }
 
         } catch (error) {
             console.error(`Ошибка отправки сообщения: ${error.message}`)
             client.emit('error', { message: 'Ошибка отправки сообщения', error: error.message })
         }
     }
+
 
     /**
      * Обновляет статус пользователя в диалоге и оповещает других участников

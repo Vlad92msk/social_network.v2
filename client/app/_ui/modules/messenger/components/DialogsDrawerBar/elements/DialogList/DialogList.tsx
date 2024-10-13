@@ -24,7 +24,7 @@ export function DialogList(props: DialogListProps) {
 
   const [onRemoveDialog] = dialogsApi.useRemoveMutation()
   const [onLeaveDialog] = dialogsApi.useLeaveDialogMutation()
-  console.log('viewDialogList', viewDialogList)
+
   return (
     <div className={classNames(cn({ status: drawerStatus }), className)}>
       <Text fs="12">Мои диалоги</Text>
