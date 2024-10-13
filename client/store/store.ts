@@ -1,11 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
+import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogThunks'
 import { merge } from 'lodash'
 import logger from 'redux-logger'
 import { createEpicMiddleware } from 'redux-observable'
-import {
-  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
-} from './api'
+import { commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi, } from './api'
 import {
   commentsApiInstance,
   dialogsApiInstance,
@@ -56,6 +55,7 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       userInfoApi.middleware,
       reactionsApi.middleware,
       effectMiddleware,
+      dialogSocketMiddleware,
       logger,
     ),
   })

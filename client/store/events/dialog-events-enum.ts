@@ -1,4 +1,7 @@
 export enum DialogEvents {
+    /** Получить краткие диалоги */
+    GET_DIALOGS = 'get_dialogs',
+
     /** Создался диалог */
     NEW_DIALOG = 'new_dialog',
 
@@ -7,6 +10,9 @@ export enum DialogEvents {
 
     /** Выход из диалога */
     LEAVE_DIALOG = 'leave_dialog',
+
+    /** Обновление краткой информации о диалоге */
+    DIALOG_SHORT_UPDATED = 'dialog_short_updated',
 
     /** Отправка сообщения */
     SEND_MESSAGE = 'send_message',
@@ -26,8 +32,6 @@ export enum DialogEvents {
     /** Новое сообщение */
     NEW_MESSAGE = 'new_message',
 
-    /** Обновление краткой информации о диалоге */
-    DIALOG_SHORT_UPDATED = 'dialog_short_updated',
 
     /** Обновление краткой информации о диалоге */
     DIALOG_UPDATED = 'dialog_updated',

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
+import { omit } from 'lodash'
 import { LessThan, Repository } from 'typeorm'
 import { CreateMessageDto } from './dto/create-message.dto'
 import { UpdateMessageDto } from './dto/update-message.dto'
@@ -15,7 +16,7 @@ import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
 import { FindMessageDto } from './dto/find-message.dto'
 import {
-    addMultipleRangeFilters,
+    addMultipleRangeFilters, createPaginationAndOrder,
     createPaginationQueryOptions,
     createPaginationResponse,
     updateEntityParams
@@ -153,23 +154,45 @@ export class MessageService {
             ...restQuery
         } = query
 
-        const queryOptions = createPaginationQueryOptions<MessageEntity>({
-            query: restQuery,
-            options: {
-                relations: ['media', 'voices', 'videos', 'reply_to', 'original_message']
-            }
+        const { page, per_page, sort_by, sort_direction } = query
+
+        const paginationAndOrder = createPaginationAndOrder({
+            page,
+            per_page,
+            sort_by,
+            sort_direction
         })
 
-        if (!queryOptions.where) {
-            queryOptions.where = {}
-        }
+        // const queryOptions = createPaginationQueryOptions<MessageEntity>({
+        //     query: restQuery,
+        //     options: {
+        //         relations: ['media', 'voices', 'videos', 'reply_to', 'original_message']
+        //     }
+        // })
+        //
+        // if (!queryOptions.where) {
+        //     queryOptions.where = {}
+        // }
 
-        addMultipleRangeFilters(queryOptions.where, {
-            forward_count: { min: forward_count_min, max: forward_count_max },
-            date_created: { min: date_created_from, max: date_created_to }
+        // addMultipleRangeFilters(queryOptions.where, {
+        //     forward_count: { min: forward_count_min, max: forward_count_max },
+        //     date_created: { min: date_created_from, max: date_created_to }
+        // })
+
+        const [messages, total] = await this.messageRepository.findAndCount({
+            where: {
+                // ...omit(restQuery, 'dialog_id'),
+                dialog: { id: restQuery?.dialog_id }
+            },
+            ...paginationAndOrder,
+            relations: [
+              'media',
+                'voices',
+                'videos',
+                'reply_to',
+                'original_message'
+            ]
         })
-
-        const [messages, total] = await this.messageRepository.findAndCount(queryOptions)
         return createPaginationResponse({ data: messages, total, query })
     }
 

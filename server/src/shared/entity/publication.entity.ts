@@ -43,7 +43,7 @@ export abstract class PublicationEntity {
     date_updated: Date
 
     @ApiProperty({ description: 'Автор публикации', type: () => UserInfo })
-    @ManyToOne(() => UserInfo)
+    @ManyToOne(() => UserInfo, { eager: true })
     @JoinColumn({ name: 'author_id' })
     author: UserInfo
 }

@@ -1,30 +1,14 @@
 import { useSelector } from 'react-redux'
-import { Spinner } from '@ui/common/Spinner'
-import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
 import { cn } from './cn'
 import { Message } from './Messege'
-import { dialogsApi } from '../../../../../../../../store/api'
+import { MessengerSelectors } from '../../../../store/messenger.slice'
 
 interface BodyProps {
 
 }
 
 export function Body(props: BodyProps) {
-  dialogsApi.useListenForNewDialogsQuery()
-  const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
-
-  const { messages, isLoading } = dialogsApi.useFindOneQuery(
-    { id: currentDialogId },
-    {
-      skip: !currentDialogId,
-      selectFromResult: ({ data, isLoading: isLoadingApi }) => ({
-        messages: data?.messages ?? [],
-        isLoading: isLoadingApi,
-      }),
-    },
-  )
-
-  if (isLoading) return <Spinner />
+  const { data: messages } = useSelector(MessengerSelectors.selectCurrentDialogMessages)
 
   return (
     <div className={cn()}>

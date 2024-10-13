@@ -1,13 +1,11 @@
-import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
 import { useMemo } from 'react'
+import { useSelector } from 'react-redux'
 import { useProfile } from '@hooks'
-import { Spinner } from '@ui/common/Spinner'
+import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
 import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
-import { useSelector } from 'react-redux'
 import { cn } from './cn'
-import { dialogsApi } from '../../../../../../../../store/api'
 import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
 
 interface ContactInfoProps {
@@ -17,24 +15,8 @@ interface ContactInfoProps {
 export function ContactInfo(props: ContactInfoProps) {
   const { className } = props
   const { profile } = useProfile()
-  const openDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
-
-  const { apiIsLoading, apiIsError, type, participants, title, image } = dialogsApi.useFindOneQuery(
-    { id: openDialogId },
-    {
-      skip: !Boolean(openDialogId?.length),
-      selectFromResult: ({ data, isLoading, isError }) => ({
-        participants: data?.participants ?? [],
-        title: data?.title,
-        image: data?.image,
-        type: data?.type,
-        id: data?.id,
-        apiIsLoading: isLoading,
-        apiIsError: isError,
-      }),
-    },
-  )
+  const currentDialog = useSelector(MessengerSelectors.selectCurrentDialog)
 
   const { status, name, img } = useMemo(() => {
     if (selectUser) {
@@ -59,6 +41,9 @@ export function ContactInfo(props: ContactInfoProps) {
       status: <Text className={cn('OnlineStatus')} fs="10" />,
     }
 
+    if (!currentDialog) return byDefault
+
+    const { type, participants, image, title } = currentDialog
     switch (type) {
       case SelectDialogType.PRIVATE: {
         const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
@@ -95,10 +80,7 @@ export function ContactInfo(props: ContactInfoProps) {
       }
       default: return byDefault
     }
-  }, [image, participants, profile, selectUser, title, type])
-
-  if (apiIsLoading) return <Spinner />
-  if (apiIsError) return <div>Ошибка</div>
+  }, [currentDialog, profile, selectUser])
 
   return (
     <div className={classNames(cn('ContactInfo'), className)}>

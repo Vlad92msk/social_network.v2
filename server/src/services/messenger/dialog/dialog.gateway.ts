@@ -69,48 +69,16 @@ interface AuthenticatedSocket extends Socket {
 export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server<ClientToServerEvents, ServerToClientEvents, {}, RequestParams>
+    private userSockets = new Map<number, Socket>()
 
     constructor(
         private dialogService: DialogService,
         private messageService: MessageService
     ) {}
 
-    private async handleUserStatusChange(client: AuthenticatedSocket, status: UserStatus): Promise<void> {
-        try {
-            const userId = client.data.user_info_id
-            const dialogs = await this.dialogService.getDialogsByParticipant(userId)
-
-            for (const dialog of dialogs) {
-                await this.updateUserStatus(userId, dialog.id, status)
-            }
-        } catch (error) {
-            console.error(`Error handling user status change: ${error.message}`)
-            client.emit('error', { message: 'Failed to update user status', error: error.message })
-        }
-    }
-
-    /**
-     * Обновляет статус пользователя в диалоге и оповещает других участников
-     */
-    private async updateUserStatus(userId: number, dialogId: string, status: UserStatus) {
-        // Обновляем статус пользователя в базе данных
-        await this.dialogService.updateUserStatus(dialogId, userId, status)
-        // Отправляем всем участникам диалога уведомление об изменении статуса
-        this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, { userId, status })
-    }
-
-    /**
-     * Получает список активных (онлайн) участников диалога
-     */
-    private async getActiveParticipants(dialogId: string): Promise<number[]> {
-        const sockets = await this.server.in(dialogId).fetchSockets()
-        // @ts-ignore
-        return sockets.map(socket => (socket as AuthenticatedSocket).data.user_info_id)
-    }
 
     /**
      * Обрабатывает подключение нового клиента
-     * @param client Подключившийся клиент
      */
     async handleConnection(client: AuthenticatedSocket) {
         try {
@@ -120,31 +88,35 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 throw new BadRequestException('Отсутствуют требуемые данные аутентификации')
             }
 
+            this.userSockets.set(user_info_id, client)
+
             client.data = {
                 profile_id: Number(profile_id),
                 user_info_id: Number(user_info_id),
                 user_public_id: String(user_public_id),
             }
+            // @ts-ignore
+            const shortDialogs = await this.dialogService.findShortByUser(Number(user_info_id), client.handshake.auth)
 
-            await this.handleUserStatusChange(client, UserStatus.Online)
+            client.emit(DialogEvents.GET_DIALOGS, shortDialogs)
+            // await this.handleUserStatusChange(client, UserStatus.Online)
+            // return shortDialogs
         } catch (error) {
             console.error('Ошибка при подключении клиента:', error.message)
             client.disconnect()
         }
     }
 
-    /**
-     * Обрабатывает отключение клиента
-     * @param client Отключившийся клиент
-     */
-    async handleDisconnect(client: AuthenticatedSocket) {
-        await this.handleUserStatusChange(client, UserStatus.Offline)
+    private sendToUser(userId: number, event: string, data: any) {
+        const socket = this.userSockets.get(userId)
+        if (socket) {
+            console.log('отправляем пользователю', socket.data)
+            socket.emit(event, data)
+        }
     }
 
     /**
      * Обрабатывает присоединение пользователя к диалогу
-     * @param data Данные запроса (ID диалога, параметры пагинации)
-     * @param client Клиент, присоединяющийся к диалогу
      */
     @SubscribeMessage(DialogEvents.JOIN_DIALOG)
     async handleJoinDialog(
@@ -153,8 +125,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const { dialogId, per_page = 20, page = 0 } = data
-
+            const { dialogId, per_page = 20, page = 1 } = data
             // Проверяем, является ли пользователь участником диалога
             const dialog = await this.dialogService.findOne(dialogId)
             if (!dialog.participants.some(participant => participant.id === params.user_info_id)) {
@@ -175,7 +146,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             await this.updateUserStatus(params.user_info_id, dialogId, UserStatus.Online)
 
             // Отправляем историю диалога присоединившемуся клиенту
-            client.emit(DialogEvents.DIALOG_HISTORY, { messages, participants, activeParticipants })
+            client.emit(DialogEvents.DIALOG_HISTORY, { dialog, messages, activeParticipants })
 
             // Оповещаем всех участников диалога о новом активном пользователе
             this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, {
@@ -192,8 +163,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     /**
      * Обрабатывает отправку нового сообщения
-     * @param data Данные сообщения
-     * @param client Клиент, отправляющий сообщение
      */
     @SubscribeMessage(DialogEvents.SEND_MESSAGE)
     async handleSendMessage(
@@ -214,6 +183,8 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const { dialogId, message: { text, participants, media, voices, videos } } = data
             const isNewDialog = !dialogId.length
 
+            this.sendToUser(6, 'HIIII', 'his')
+
             console.log('Принимаем такое сообщение', data)
             let currentDialog: DialogEntity
 
@@ -228,6 +199,7 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             } else {
                 currentDialog = await this.dialogService.findOne(dialogId)
             }
+
 
             if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
@@ -250,21 +222,64 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             )
             // Добавляем созданное сообщение в диалог
             const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
-            const updatedDialogShort = await this.dialogService.findOneShort(currentDialogWithMessage.id, params)
+            // Создаем из него краткую форму
+            const updatedDialogShort = this.dialogService.mapToDialogShortDto(currentDialogWithMessage, params)
 
-            if (isNewDialog) {
-                // @ts-ignore
-                this.server.emit(DialogEvents.NEW_DIALOG, currentDialogWithMessage)
-            }
+            // currentDialogWithMessage.participants.forEach(({ id, name }) => {
+            //     // Если это новый диалог - оповещаем всех участников, что создался новый диалог
+            //     // Если это уже имеющийся - оповещаем об обновлении
+            //     if (isNewDialog) {
+            //         this.sendToUser(id, DialogEvents.NEW_DIALOG, updatedDialogShort)
+            //     } else {
+            //         this.sendToUser(id, DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
+            //     }
+            // })
+
 
             // Отправляет всем участникам диалога новое сообщение
-            this.server.to(currentDialogWithMessage.id).emit(DialogEvents.NEW_MESSAGE, message)
-
-            this.server.emit(DialogEvents.DIALOG_SHORT_UPDATED, updatedDialogShort)
+            // @ts-ignore
+            this.server.to(currentDialogWithMessage.id).emit(DialogEvents.NEW_MESSAGE, { dialogId: currentDialogWithMessage.id, message })
 
         } catch (error) {
             console.error(`Ошибка отправки сообщения: ${error.message}`)
             client.emit('error', { message: 'Ошибка отправки сообщения', error: error.message })
+        }
+    }
+
+    /**
+     * Обновляет статус пользователя в диалоге и оповещает других участников
+     */
+    private async updateUserStatus(userId: number, dialogId: string, status: UserStatus) {
+        // Отправляем всем участникам диалога уведомление об изменении статуса
+        this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, { userId, status })
+    }
+
+    /**
+     * Получает список активных (онлайн) участников диалога
+     */
+    private async getActiveParticipants(dialogId: string): Promise<number[]> {
+        const sockets = await this.server.in(dialogId).fetchSockets()
+        // console.log('sockets', sockets)
+        // @ts-ignore
+        return sockets.map(socket => socket.handshake.auth.user_info_id)
+    }
+
+    /**
+     * Обрабатывает отключение клиента
+     */
+    async handleDisconnect(client: AuthenticatedSocket) {
+        const { user_info_id } = client.handshake.auth
+        this.userSockets.delete(user_info_id)
+        await this.handleUserStatusChange(client, UserStatus.Offline)
+    }
+
+
+    private async handleUserStatusChange(client: AuthenticatedSocket, status: UserStatus): Promise<void> {
+        try {
+            const userId = client.data.user_info_id
+        } catch (error) {
+            console.error(`Error handling user status change: ${error.message}`)
+            client.emit('error', { message: 'Failed to update user status', error: error.message })
         }
     }
 
@@ -342,6 +357,11 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             dialogId: payload.dialogId,
             initiatorId: payload.initiatorId
         })
+    }
+
+    @OnEvent(DialogEvents.NEW_DIALOG)
+    createdDialog(payload: { dialogId: string, dialog: any }) {
+        this.sendDialogUpdate(payload.dialogId, DialogEvents.NEW_DIALOG, payload.dialog)
     }
 
     /**

@@ -1,4 +1,7 @@
 export enum DialogEvents {
+    /** Получить краткие диалоги */
+    GET_DIALOGS = 'get_dialogs',
+
     /** Создался диалог */
     NEW_DIALOG = 'new_dialog',
 

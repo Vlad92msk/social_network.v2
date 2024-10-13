@@ -1,8 +1,7 @@
 import { CreatePublication, CreatePublicationContextProps, MyFile } from '@ui/components/create-publication'
-import { MessengerSelectors } from '@ui/modules/messenger/store/messenger.slice'
-import { useSelector } from 'react-redux'
+import { MessengerSelectors, sendMessage } from '@ui/modules/messenger/store/messenger.slice'
+import { useDispatch, useSelector } from 'react-redux'
 import { cn } from './cn'
-import { dialogsApi } from '../../../../../../../../store/api'
 
 // Вспомогательная функция для конвертации File в base64
 function fileToBase64(file: MyFile): Promise<string> {
@@ -15,10 +14,10 @@ function fileToBase64(file: MyFile): Promise<string> {
 }
 
 export function Footer() {
+  const dispatch = useDispatch()
   const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
 
-  const [sendMessage] = dialogsApi.useSendMessageMutation()
 
   const handleSubmit = async (newMessage: CreatePublicationContextProps) => {
     if (!currentDialogId && !selectUser) {
@@ -33,8 +32,7 @@ export function Footer() {
       voices: newMessage.voices ? await Promise.all(newMessage.voices.map(fileToBase64)) : undefined,
       videos: newMessage.videos ? await Promise.all(newMessage.videos.map(fileToBase64)) : undefined,
     }
-
-    sendMessage({ dialogId: currentDialogId, message: messageData })
+    dispatch(sendMessage(currentDialogId, messageData))
   }
 
   return (

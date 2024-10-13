@@ -141,7 +141,11 @@ export class DialogService {
             dialog.image = uploadedFile.meta.src
         }
 
-        return await this.dialogRepository.save(dialog)
+        const f=  await this.dialogRepository.save(dialog)
+        const updatedDialogShort = this.mapToDialogShortDto(dialog, params)
+        this.eventEmitter.emit(DialogEvents.NEW_DIALOG, { dialogId: updatedDialogShort.id,dialog: updatedDialogShort })
+
+        return f
     }
 
     /**
@@ -402,8 +406,8 @@ export class DialogService {
 
     mapToDialogShortDto(dialog: DialogEntity, params: RequestParams): DialogShortDto {
 
-        console.log('dialog', dialog)
-        console.log('params', params)
+        // console.log('dialog', dialog)
+        // console.log('params', params)
         const lastMessage = dialog.last_message
         const [participant] = dialog.participants.filter(({ id }) => id !== params?.user_info_id)
 

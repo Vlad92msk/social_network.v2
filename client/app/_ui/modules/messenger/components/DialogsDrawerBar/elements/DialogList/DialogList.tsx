@@ -1,13 +1,12 @@
-import { useDispatch } from 'react-redux'
-import { useProfile } from '@hooks'
-import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
+import { joinToDialog, MessengerSelectors, MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
-import { cn } from './cn'
+import { useDispatch, useSelector } from 'react-redux'
 import { dialogsApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
+import { cn } from './cn'
 
 interface DialogListProps{
   className?: string;
@@ -16,21 +15,13 @@ interface DialogListProps{
 export function DialogList(props: DialogListProps) {
   const { className } = props
   const dispatch = useDispatch()
-  const { profile } = useProfile()
 
   const drawerStatus = useMessageStore((state) => state.drawerStatus)
   const setChatingPanelStatus = useMessageStore((state) => state.setChatingPanelStatus)
 
-  /**
-   * Получаем краткие диалоги
-   */
-  const { data: viewDialogList } = dialogsApi.useFindByUserShortDialogQuery({
-    userId: profile?.user_info.id as number,
-  }, {
-    skip: !profile?.user_info.id,
-  })
 
-  const [onGetDialog] = dialogsApi.useLazyFindOneQuery()
+  const viewDialogList = useSelector(MessengerSelectors.selectDialogList)
+
   const [onRemoveDialog] = dialogsApi.useRemoveMutation()
   const [onLeaveDialog] = dialogsApi.useLeaveDialogMutation()
   console.log('viewDialogList', viewDialogList)
@@ -56,7 +47,8 @@ export function DialogList(props: DialogListProps) {
             <Button onClick={() => {
               console.log(`Открыл диалог с ID:${id}`)
               setChatingPanelStatus('open')
-              onGetDialog({ id })
+              // joinToDialogAction(id)
+              dispatch(joinToDialog(id))
               dispatch(MessengerSliceActions.setCurrentDialogId(id))
             }}
             >
