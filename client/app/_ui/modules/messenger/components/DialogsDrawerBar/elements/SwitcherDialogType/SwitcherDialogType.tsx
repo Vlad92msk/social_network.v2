@@ -1,4 +1,6 @@
+import { useSelector } from 'react-redux'
 import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { classNames, makeCn } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Text } from 'app/_ui/common/Text'
@@ -13,9 +15,9 @@ interface SwitcherDialogTypeProps {
 
 export function SwitcherDialogType(props: SwitcherDialogTypeProps) {
   const { className } = props
+  const status = useSelector(MessengerSelectors.selectDrawerStatus)
   const selectType = useMessageStore((state) => state.selectType)
   const set = useMessageStore((state) => state.setSelectType)
-  const status = useMessageStore((state) => state.drawerStatus)
 
   return (
     <div className={classNames(cn(), className)}>

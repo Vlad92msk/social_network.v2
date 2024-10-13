@@ -287,8 +287,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     /**
      * Обрабатывает выход пользователя из диалога
-     * @param dialogId ID диалога
-     * @param client Клиент, покидающий диалог
      */
     @SubscribeMessage(DialogEvents.LEAVE_DIALOG)
     async handleLeaveDialog(
@@ -326,12 +324,45 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleStopTyping(
         @MessageBody() dialogId: string,
         @ConnectedSocket() client: AuthenticatedSocket,
-      @WsRequestParams() params: RequestParams,
+        @WsRequestParams() params: RequestParams,
     ) {
         // Оповещаем других участников диалога об окончании набора
         client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: params.user_info_id, isTyping: false })
     }
 
+
+    /**
+     * Удалить диалог
+     */
+    @OnEvent(DialogEvents.REMOVE_DIALOG)
+    handleRemoveDialog(payload: { id: string, participants: number[] }) {
+        const { id, participants } = payload
+        participants.forEach((participantId) => {
+            this.sendToUser(participantId, DialogEvents.REMOVE_DIALOG, id)
+        })
+
+        const sockets = this.server.in(id).fetchSockets()
+
+        sockets.then((connectedSockets) => {
+            connectedSockets.forEach((socket) => {
+                socket.leave(id)
+            })
+        })
+
+        // Удаляем комнату
+        this.server.in(id).socketsLeave(id)
+    }
+
+    /**
+     * Покинуть диалог (вообще)
+     */
+    @OnEvent(DialogEvents.EXIT_DIALOG)
+    handleExitDialog(payload: { id: string, participants: number[] }) {
+        const { id, participants } = payload
+        participants.forEach((participantId) => {
+            this.sendToUser(participantId, DialogEvents.EXIT_DIALOG, id)
+        })
+    }
 
     @OnEvent(DialogEvents.DIALOG_IMAGE_UPDATED)
     handleDialogImageUpdated(payload: { dialogId: string, updatedDialog: DialogEntity }) {
@@ -361,10 +392,10 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         })
     }
 
-    @OnEvent(DialogEvents.NEW_DIALOG)
-    createdDialog(payload: { dialogId: string, dialog: any }) {
-        this.sendDialogUpdate(payload.dialogId, DialogEvents.NEW_DIALOG, payload.dialog)
-    }
+    // @OnEvent(DialogEvents.NEW_DIALOG)
+    // createdDialog(payload: { dialogId: string, dialog: any }) {
+    //     this.sendDialogUpdate(payload.dialogId, DialogEvents.NEW_DIALOG, payload.dialog)
+    // }
 
     /**
      * Отправляет обновление всем клиентам в диалоге

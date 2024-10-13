@@ -1,17 +1,18 @@
 'use client'
 
+import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { Button } from 'app/_ui/common/Button'
+import { useDispatch, useSelector } from 'react-redux'
 import { cn } from './cn'
 import { DialogList, Search, SwitcherDialogType } from './elements'
-import { useMessageStore } from '../../store'
 
 interface MessengerProps {}
 
 export function DialogsDrawerBar(props: MessengerProps) {
-  const status = useMessageStore((state) => state.drawerStatus)
-  const setStatus = useMessageStore((state) => state.setDrawerStatus)
-  const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
-
+  const dispatch = useDispatch()
+  const status = useSelector(MessengerSelectors.selectDrawerStatus)
+  const chatingPanelStatus = useSelector(MessengerSelectors.selectChatingPanelStatus)
   return (
     <div className={cn({ status, hide: chatingPanelStatus === 'open' })}>
 
@@ -21,7 +22,7 @@ export function DialogsDrawerBar(props: MessengerProps) {
 
       <Button
         className={cn('ToggleMenu')}
-        onClick={() => setStatus(status === 'open' ? 'close' : 'open')}
+        onClick={() => dispatch(MessengerSliceActions.setDrawerStatus())}
         size="es"
       />
     </div>

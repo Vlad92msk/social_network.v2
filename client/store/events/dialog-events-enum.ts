@@ -5,11 +5,17 @@ export enum DialogEvents {
     /** Создался диалог */
     NEW_DIALOG = 'new_dialog',
 
+    /** Выход из диалога */
+    REMOVE_DIALOG = 'remove_dialog',
+
     /** Присоединение к диалогу */
     JOIN_DIALOG = 'join_dialog',
 
     /** Выход из диалога */
     LEAVE_DIALOG = 'leave_dialog',
+
+    /** Покинуть диалог (выйти вообще) */
+    EXIT_DIALOG = 'exit_dialog',
 
     /** Обновление краткой информации о диалоге */
     DIALOG_SHORT_UPDATED = 'dialog_short_updated',

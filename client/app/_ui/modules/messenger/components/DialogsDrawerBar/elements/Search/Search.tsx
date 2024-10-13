@@ -23,7 +23,6 @@ export function Search(props: SearchProps) {
   const { className } = props
   const dispatch = useDispatch()
   const set = useMessageStore((state) => state.setFilter)
-  const setChatingPanelStatus = useMessageStore((state) => state.setChatingPanelStatus)
 
   const [isFocus, setFocused] = useState(false)
 
@@ -95,9 +94,8 @@ export function Search(props: SearchProps) {
                       <Button
                         onClick={(event) => {
                           event.stopPropagation()
-                          console.log(`Открыл диалог с ID: ${public_id}`)
                           dispatch(MessengerSliceActions.setTargetUserToDialog(user))
-                          setChatingPanelStatus('open')
+                          dispatch(MessengerSliceActions.setChattingPanelStatus('open'))
                         }}
                       >
                         <Text fs="12">Чат</Text>

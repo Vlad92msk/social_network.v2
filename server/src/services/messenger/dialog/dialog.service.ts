@@ -93,7 +93,7 @@ export class DialogService {
     /**
      * Покинуть диалог
      */
-    async leaveDialog(id: string, userId: number) {
+    async exitFromDialog(id: string, userId: number) {
         const dialog = await this.findOne(id)
 
         if (!dialog.participants.some(participant => participant.id === userId)) {
@@ -117,6 +117,9 @@ export class DialogService {
         }
 
         await this.dialogRepository.save(dialog)
+
+        this.eventEmitter.emit(DialogEvents.EXIT_DIALOG, { id, participants: dialog.participants.map(({ id }) => id)})
+
         return { message: 'Вы успешно покинули диалог' }
     }
 
@@ -141,9 +144,9 @@ export class DialogService {
             dialog.image = uploadedFile.meta.src
         }
 
-        const f=  await this.dialogRepository.save(dialog)
-        const updatedDialogShort = this.mapToDialogShortDto(dialog, params)
-        this.eventEmitter.emit(DialogEvents.NEW_DIALOG, { dialogId: updatedDialogShort.id,dialog: updatedDialogShort })
+        const f =  await this.dialogRepository.save(dialog)
+        // const updatedDialogShort = this.mapToDialogShortDto(dialog, params)
+        // this.eventEmitter.emit(DialogEvents.NEW_DIALOG, { dialogId: updatedDialogShort.id,dialog: updatedDialogShort })
 
         return f
     }
@@ -239,6 +242,7 @@ export class DialogService {
         }
 
         await this.dialogRepository.remove(dialog)
+        this.eventEmitter.emit(DialogEvents.REMOVE_DIALOG, { id, participants: dialog.participants.map(({ id }) => id)})
     }
 
     /**

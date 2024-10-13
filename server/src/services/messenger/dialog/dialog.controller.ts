@@ -113,12 +113,12 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Участник успешно добавлен', type: DialogEntity })
-    addParticipant(
+    async addParticipant(
         @Param('id') id: string,
         @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.addParticipant(id, userId, params)
+        return await this.dialogService.addParticipant(id, userId, params)
     }
 
     @Delete(':id/participants/:user_id')
@@ -126,12 +126,12 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Участник успешно удален', type: DialogEntity })
-    removeParticipant(
+    async removeParticipant(
         @Param('id') id: string,
         @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.removeParticipant(id, userId, params)
+        return await this.dialogService.removeParticipant(id, userId, params)
     }
 
     @Post(':id/admins/:user_id')
@@ -139,12 +139,12 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Администратор успешно добавлен', type: DialogEntity })
-    addAdmin(
+    async addAdmin(
         @Param('id') id: string,
         @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.addAdmin(id, userId, params)
+        return await this.dialogService.addAdmin(id, userId, params)
     }
 
     @Delete(':id/admins/:user_id')
@@ -152,12 +152,12 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'user_id', description: 'ID пользователя' })
     @ApiResponse({ status: 200, description: 'Администратор успешно удален', type: DialogEntity })
-    removeAdmin(
+    async removeAdmin(
         @Param('id') id: string,
         @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.removeAdmin(id, userId, params)
+        return await this.dialogService.removeAdmin(id, userId, params)
     }
 
     @Post(':id/fixed-messenger/:message_id')
@@ -165,12 +165,12 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'message_id', description: 'ID сообщения' })
     @ApiResponse({ status: 200, description: 'Сообщение успешно закреплено', type: DialogEntity })
-    addFixedMessage(
+    async addFixedMessage(
         @Param('id') id: string,
         @Param('message_id') messageId: string,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.addFixedMessage(id, messageId, params)
+        return await this.dialogService.addFixedMessage(id, messageId, params)
     }
 
     @Delete(':id/fixed-messenger/:message_id')
@@ -178,34 +178,34 @@ export class DialogController {
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiParam({ name: 'message_id', description: 'ID сообщения' })
     @ApiResponse({ status: 200, description: 'Сообщение успешно откреплено', type: DialogEntity })
-    removeFixedMessage(
+    async removeFixedMessage(
         @Param('id') id: string,
         @Param('message_id') messageId: string,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.removeFixedMessage(id, messageId, params)
+        return await this.dialogService.removeFixedMessage(id, messageId, params)
     }
 
     @Get(':id/unread-count')
     @ApiOperation({ summary: 'Получить количество непрочитанных сообщений в диалоге' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiResponse({ status: 200, description: 'Количество непрочитанных сообщений', type: Number })
-    getUnreadMessagesCount(
+    async getUnreadMessagesCount(
         @Param('id') id: string,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.getUnreadMessagesCount(id, params.user_info_id)
+        return await this.dialogService.getUnreadMessagesCount(id, params.user_info_id)
     }
 
     @Post(':id/mark-as-read')
     @ApiOperation({ summary: 'Отметить все сообщения в диалоге как прочитанные' })
     @ApiParam({ name: 'id', description: 'ID диалога' })
     @ApiResponse({ status: 200, description: 'Сообщения отмечены как прочитанные', type: DialogEntity })
-    markMessagesAsRead(
+    async markMessagesAsRead(
         @Param('id') id: string,
         @RequestParams() params: RequestParams,
     ) {
-        return this.dialogService.markMessagesAsRead(id, params)
+        return await this.dialogService.markMessagesAsRead(id, params)
     }
 
     @Get(':id/media')
@@ -300,7 +300,7 @@ export class DialogController {
         @Param('id') id: string,
         @RequestParams() params: RequestParams
     ) {
-        return await this.dialogService.leaveDialog(id, params.user_info_id)
+        return await this.dialogService.exitFromDialog(id, params.user_info_id)
     }
 
     @Post(':id/video-conference')

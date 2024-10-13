@@ -54,6 +54,14 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     socket.on(DialogEvents.DIALOG_HISTORY, (history: { dialog: DialogEntity; messages: PaginationResponse<MessageEntity[]>; activeParticipants: number[] }) => {
       store.dispatch(MessengerSliceActions.setDialogHistory(history))
     })
+
+    socket.on(DialogEvents.EXIT_DIALOG, (exitDialogId: string) => {
+      store.dispatch(MessengerSliceActions.exitDialog({ exitDialogId }))
+    })
+
+    socket.on(DialogEvents.REMOVE_DIALOG, (removedDialogId: string) => {
+      store.dispatch(MessengerSliceActions.removeDialog({ removedDialogId }))
+    })
   }
 
   if (!socket) return next(action)

@@ -1,14 +1,15 @@
 import { PayloadAction } from '@reduxjs/toolkit'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userInfo'
-import { dialogsApi } from '../../../../../store/api'
 import { PaginationResponse } from '../../../../../store/types/request'
 import { sliceBuilder } from '../../../../../store/utils/other'
 
 export interface MessengerSliceState {
-  isConnected: boolean;
-  error: string | null;
+  isConnected: boolean
+  error: string | null
 
+  drawerStatus: 'open' | 'close'
+  chatingPanelStatus: 'open' | 'close'
   // ID открытого диалога
   currentDialogId: string
   // Пользователь, который выбран для диалога (с которым еще нет диалога)
@@ -17,14 +18,17 @@ export interface MessengerSliceState {
   shortDialogs?: DialogShortDto[]
 
   messages: Record<string, PaginationResponse<MessageEntity[]>> // Словарь сообщений по диалогам
-  participants: Record<string, any[]>; // Участники по диалогам
-  activeParticipants: Record<string, number[]>; // Активные пользователи
+  participants: Record<string, any[]> // Участники по диалогам
+  activeParticipants: Record<string, number[]> // Активные пользователи
 }
 
 export const messengerInitialState: MessengerSliceState = {
   currentDialogId: '',
   targetNewUserToDialog: undefined,
   currentDialog: undefined,
+
+  chatingPanelStatus: 'close',
+  drawerStatus: 'open',
 
   messages: {},
   participants: {},
@@ -76,23 +80,24 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       setError: (state, action: PayloadAction<string>) => {
         state.error = action.payload
       },
-    },
-    extraReducers: (builder) => {
-      builder
-        // Реагируем на успешное удаление диалога
-        .addMatcher(
-          dialogsApi.endpoints.remove.matchFulfilled,
-          (state, action) => {
-            state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.meta.arg.originalArgs.id)
-          },
-        )
-        // Реагируем на успешное покидание диалога
-        .addMatcher(
-          dialogsApi.endpoints.leaveDialog.matchFulfilled,
-          (state, action) => {
-            state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.meta.arg.originalArgs.id)
-          },
-        )
+      removeDialog: (state, action: PayloadAction<{ removedDialogId: string }>) => {
+        state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.payload.removedDialogId)
+        state.currentDialogId = ''
+        state.currentDialog = undefined
+        state.targetNewUserToDialog = undefined
+        delete state.messages[action.payload.removedDialogId]
+        delete state.participants[action.payload.removedDialogId]
+      },
+      exitDialog: (state, action: PayloadAction<{ exitDialogId: string }>) => {
+        state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.payload.exitDialogId)
+      },
+
+      setChattingPanelStatus: (state, action: PayloadAction<'open' | 'close'>) => {
+        state.chatingPanelStatus = action.payload
+      },
+      setDrawerStatus: (state) => {
+        state.drawerStatus = state.drawerStatus === 'open' ? 'close' : 'open'
+      },
     },
   }),
 )

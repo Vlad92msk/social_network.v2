@@ -14,6 +14,9 @@ export enum DialogEvents {
     /** Выход из диалога */
     REMOVE_DIALOG = 'remove_dialog',
 
+    /** Покинуть диалог (выйти вообще) */
+    EXIT_DIALOG = 'exit_dialog',
+
     /** Отправка сообщения */
     SEND_MESSAGE = 'send_message',
 

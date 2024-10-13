@@ -1,4 +1,5 @@
-import { useMessageStore } from '../../../store'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
+import { useSelector } from 'react-redux'
 import { cn } from '../cn'
 
 interface SkeletonProps {
@@ -10,7 +11,7 @@ interface SkeletonProps {
 
 export function Skeleton(props: SkeletonProps) {
   const { headerComponent, footerComponent, bodyComponent, fixedMessages } = props
-  const chatingPanelStatus = useMessageStore((state) => state.chatingPanelStatus)
+  const chatingPanelStatus = useSelector(MessengerSelectors.selectChatingPanelStatus)
 
   return (
     <div className={cn({ statusVisible: chatingPanelStatus })}>

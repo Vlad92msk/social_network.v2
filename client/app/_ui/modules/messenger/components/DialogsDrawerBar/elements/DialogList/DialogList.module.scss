@@ -75,6 +75,7 @@
       gap: rem(10);
       padding: 2% 10%;
       overflow: hidden;
+      flex-grow: 1;
 
       :is(#{$this}--status_close) & {
         flex-direction: column;
