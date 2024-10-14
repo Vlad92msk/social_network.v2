@@ -534,7 +534,7 @@ export class DialogService {
             per_page: options?.per_page,
             page: options?.page,
             sort_by: 'date_created',
-            sort_direction: SortDirection.ASC
+            sort_direction: SortDirection.DESC
         }, params)
 
         return messages

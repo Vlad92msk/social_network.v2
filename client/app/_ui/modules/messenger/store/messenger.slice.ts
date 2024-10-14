@@ -63,7 +63,7 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
 
       setMessages: (state, action: PayloadAction<{ dialogId: string, message: MessageEntity }>) => {
         const { message, dialogId } = action.payload
-        state.messages[dialogId].data.push(message)
+        state.messages[dialogId].data.unshift(message)
       },
 
       setDialogHistory: (state, action: PayloadAction<{ dialog: DialogEntity, messages: PaginationResponse<MessageEntity[]>, activeParticipants: number[] }>) => {

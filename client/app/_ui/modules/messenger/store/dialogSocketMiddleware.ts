@@ -53,6 +53,8 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     })
 
     socket.on(DialogEvents.DIALOG_HISTORY, (history: { dialog: DialogEntity; messages: PaginationResponse<MessageEntity[]>; activeParticipants: number[] }) => {
+      console.clear()
+      console.log('messages', history.messages)
       store.dispatch(MessengerSliceActions.setDialogHistory(history))
     })
 
