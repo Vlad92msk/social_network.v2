@@ -1,4 +1,5 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
+import { UserStatus } from '../../../../types/user-status'
 import { Socket } from 'socket.io-client'
 import { createSocket } from '@ui/modules/messenger/store/utils'
 import { MessengerSliceActions } from './messenger.slice'
@@ -62,6 +63,10 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     socket.on(DialogEvents.REMOVE_DIALOG, (removedDialogId: string) => {
       store.dispatch(MessengerSliceActions.removeDialog({ removedDialogId }))
     })
+
+    socket.on(DialogEvents.USER_STATUS_CHANGED, (payload: { dialogId: string, userId: number, status: UserStatus }) => {
+      store.dispatch(MessengerSliceActions.exitUpdateUserStatus(payload))
+    })
   }
 
   if (!socket) return next(action)
@@ -73,6 +78,13 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
       break
     }
     case 'WEBSOCKET_JOIN_DIALOG': {
+      const { event, data } = action.payload
+      if (data.dialogId) {
+        socket.emit(event, data)
+      }
+      break
+    }
+    case 'WEBSOCKET_LEAVE_FROM_DIALOG': {
       const { event, data } = action.payload
       if (data.dialogId) {
         socket.emit(event, data)

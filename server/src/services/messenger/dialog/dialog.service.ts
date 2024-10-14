@@ -548,30 +548,6 @@ export class DialogService {
         return dialog.participants
     }
 
-    /**
-     * Обновить статус пользователя в диалоге
-     */
-    async updateUserStatus(dialogId: string, userId: number, status: UserStatus) {
-        const dialog = await this.dialogRepository.findOne({
-            where: { id: dialogId },
-            relations: ['participants']
-        })
-
-        if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${dialogId}" не найден`)
-        }
-
-        const participant = dialog.participants.find(p => p.id === userId)
-        if (!participant) {
-            throw new NotFoundException(`Пользователь с ID "${userId}" не найден в диалоге`)
-        }
-
-        // Обновляем статус пользователя
-        await this.userInfoService.updateUserStatus(userId, status)
-
-        return dialog
-    }
-
     async createVideoConference(dialogId: string, userId: number) {
         const dialog = await this.findOne(dialogId)
         if (!dialog.participants.some(participant => participant.id === userId)) {

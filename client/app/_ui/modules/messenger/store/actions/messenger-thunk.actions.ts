@@ -50,7 +50,7 @@ export const exitFromDialog = (dialogId: string) => ({
 export const leaveFromDialog = (dialogId: string) => ({
   type: 'WEBSOCKET_LEAVE_FROM_DIALOG',
   payload: {
-    event: DialogEvents.EXIT_DIALOG,
+    event: DialogEvents.LEAVE_DIALOG,
     data: { dialogId },
   },
 })

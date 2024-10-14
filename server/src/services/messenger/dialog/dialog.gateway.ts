@@ -142,9 +142,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 this.getActiveParticipants(dialogId)
             ])
 
-            // Обновляем статус пользователя на 'online' в этом диалоге
-            await this.updateUserStatus(params.user_info_id, dialogId, UserStatus.Online)
-
             // Отправляем историю диалога присоединившемуся клиенту
             client.emit(DialogEvents.DIALOG_HISTORY, { dialog, messages, activeParticipants })
 
@@ -152,7 +149,8 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, {
                 userId: params.user_info_id,
                 status: UserStatus.Online,
-                activeParticipants
+                // @ts-ignore
+                dialogId
             })
         } catch (error) {
             console.error('Error in handleJoinDialog:', error)
@@ -253,7 +251,8 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     private async updateUserStatus(userId: number, dialogId: string, status: UserStatus) {
         // Отправляем всем участникам диалога уведомление об изменении статуса
-        this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, { userId, status })
+        // @ts-ignore
+        this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, { dialogId, userId, status })
     }
 
     /**
@@ -290,10 +289,11 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.LEAVE_DIALOG)
     async handleLeaveDialog(
-      @MessageBody() dialogId: string,
+      @MessageBody() data: { dialogId: string },
       @ConnectedSocket() client: AuthenticatedSocket,
       @WsRequestParams() params: RequestParams,
     ) {
+        const { dialogId } = data
         // Отсоединяем клиента от комнаты диалога
         client.leave(dialogId)
         // Обновляем статус пользователя на 'offline' в этом диалоге
@@ -302,8 +302,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     /**
      * Обрабатывает начало набора сообщения пользователем
-     * @param dialogId ID диалога
-     * @param client Клиент, начавший набор
      */
     @SubscribeMessage(DialogEvents.START_TYPING)
     handleStartTyping(
@@ -317,8 +315,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     /**
      * Обрабатывает окончание набора сообщения пользователем
-     * @param dialogId ID диалога
-     * @param client Клиент, закончивший набор
      */
     @SubscribeMessage(DialogEvents.STOP_TYPING)
     handleStopTyping(

@@ -17,7 +17,9 @@ export function ContactInfo(props: ContactInfoProps) {
   const { profile } = useProfile()
   const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
   const currentDialog = useSelector(MessengerSelectors.selectCurrentDialog)
+  const qqq = useSelector(MessengerSelectors.selectCurrentDialogActiveParticipants)
 
+  console.log('qqq', qqq)
   const { status, name, img } = useMemo(() => {
     if (selectUser) {
       return ({
@@ -43,7 +45,7 @@ export function ContactInfo(props: ContactInfoProps) {
 
     if (!currentDialog) return byDefault
 
-    const { type, participants, image, title } = currentDialog
+    const { type, participants, image, title, } = currentDialog
     switch (type) {
       case SelectDialogType.PRIVATE: {
         const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
@@ -57,7 +59,7 @@ export function ContactInfo(props: ContactInfoProps) {
           ),
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
-              {participant.status}
+              {qqq.includes(participant.id) ? 'Online' : 'Offline'}
             </Text>
           ),
         })
@@ -73,14 +75,14 @@ export function ContactInfo(props: ContactInfoProps) {
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
               {`${participants.length} участников,
-              ${participants.filter(({ status: userStatus }) => userStatus === 'online').length} в сети`}
+              ${qqq.length} в сети`}
             </Text>
           ),
         })
       }
       default: return byDefault
     }
-  }, [currentDialog, profile, selectUser])
+  }, [currentDialog, profile, qqq, selectUser])
 
   return (
     <div className={classNames(cn('ContactInfo'), className)}>

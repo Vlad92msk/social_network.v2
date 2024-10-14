@@ -24,10 +24,6 @@ export class UserInfo implements UserInfoType {
     @Column({ nullable: true, type: 'varchar', length: 200, comment: 'Фото профиля' })
     profile_image: string
 
-    @ApiProperty({ description: 'Статус пользователя', enum: UserStatus })
-    @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Offline })
-    status: UserStatus
-
     //__________________
     // Связи
 

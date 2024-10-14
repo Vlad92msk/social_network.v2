@@ -3,6 +3,7 @@ import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../s
 import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userInfo'
 import { PaginationResponse } from '../../../../../store/types/request'
 import { sliceBuilder } from '../../../../../store/utils/other'
+import { UserStatus } from '../../../../types/user-status'
 
 export interface MessengerSliceState {
   isConnected: boolean
@@ -90,6 +91,16 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       },
       exitDialog: (state, action: PayloadAction<{ exitDialogId: string }>) => {
         state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.payload.exitDialogId)
+      },
+
+      exitUpdateUserStatus: (state, action: PayloadAction<{ dialogId: string, userId: number, status: UserStatus }>) => {
+        const { status, userId, dialogId } = action.payload
+        console.log('action.payload', action.payload)
+        if (status === UserStatus.Offline) {
+          state.activeParticipants[dialogId] = state.activeParticipants[dialogId]?.filter((id) => id !== userId)
+        } else {
+          state.activeParticipants[dialogId].push(userId)
+        }
       },
 
       setChattingPanelStatus: (state, action: PayloadAction<'open' | 'close'>) => {
