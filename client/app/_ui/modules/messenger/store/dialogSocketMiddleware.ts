@@ -53,8 +53,6 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     })
 
     socket.on(DialogEvents.DIALOG_HISTORY, (history: { dialog: DialogEntity; messages: PaginationResponse<MessageEntity[]>; activeParticipants: number[] }) => {
-      console.clear()
-      console.log('messages', history.messages)
       store.dispatch(MessengerSliceActions.setDialogHistory(history))
     })
 
@@ -71,6 +69,10 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     })
     socket.on(DialogEvents.USER_TYPING, (payload: { dialogId: string, userId: number, isTyping: boolean }) => {
       store.dispatch(MessengerSliceActions.exitUserTyping(payload))
+    })
+
+    socket.on(DialogEvents.UPDATED_FIXED_MESSAGES, (payload: { dialog_id: string, new_fixed_messages: MessageEntity[]}) => {
+      store.dispatch(MessengerSliceActions.updateFixedMessages(payload))
     })
   }
 

@@ -38,6 +38,9 @@ export enum DialogEvents {
     /** Обновление краткой информации о диалоге */
     DIALOG_SHORT_UPDATED = 'dialog_short_updated',
 
+    /** Обновление закрепленных сообщений */
+    UPDATED_FIXED_MESSAGES = 'updated_fixed_messages',
+
     /** Обновление краткой информации о диалоге */
     DIALOG_UPDATED = 'dialog_updated',
 

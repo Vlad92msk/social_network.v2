@@ -1,13 +1,16 @@
+import { useSelector } from 'react-redux'
 import { useScrollToElement } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { Text } from '@ui/common/Text'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
-import { useSelector } from 'react-redux'
+import { dialogsApi } from '../../../../../../../store/api'
 import { cn } from '../cn'
 
 export function FixedMessages() {
   const fixedMessages = useSelector(MessengerSelectors.selectCurrentDialogFixedMessages)
+  const dialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
+  const [onPin] = dialogsApi.useRemoveFixedMessageMutation()
 
   const scrollToComment = useScrollToElement({
     behavior: 'smooth',
@@ -16,20 +19,25 @@ export function FixedMessages() {
   if (!fixedMessages?.length) return null
   return (
     <div className={cn('FixedMessages')}>
-      {fixedMessages.map(({ id, text, reply_to }) => (
-        <div className={cn('FixedMessagesBox')} key={id}>
+      {fixedMessages.map(({ id, text }) => (
+        <div key={id} className={cn('FixedMessagesBox')}>
           <Button
             className={cn('FixedMessagesContent')}
             onClick={() => {
               scrollToComment({
-                targetElementId: reply_to?.id,
+                targetElementId: id,
               })
             }}
           >
             <Text weight="bold" fs="12">Закрепленное сообщение</Text>
             <Text fs="12">{text}</Text>
           </Button>
-          <Button className={cn('FixedMessagesButtonRemove')} onClick={() => console.log('remove', id)}>
+          <Button
+            className={cn('FixedMessagesButtonRemove')}
+            onClick={() => {
+              onPin({ id: dialogId, message_id: id })
+            }}
+          >
             <Icon name="close" />
           </Button>
         </div>

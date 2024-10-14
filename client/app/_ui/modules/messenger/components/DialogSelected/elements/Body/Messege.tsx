@@ -1,9 +1,12 @@
 import { useProfile } from '@hooks'
 import { Publication } from '@ui/components/Publication'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
+import { selectCurrentDialogId } from '@ui/modules/messenger/store/selectors/messenger.selectors'
 import { get, groupBy } from 'lodash'
 import { useMemo } from 'react'
+import { useSelector } from 'react-redux'
 import { MessageEntity } from '../../../../../../../../../swagger/messages/interfaces-messages'
-import { postsApi } from '../../../../../../../../store/api'
+import { dialogsApi, postsApi } from '../../../../../../../../store/api'
 import { cn } from './cn'
 
 interface MessageProps {
@@ -13,17 +16,17 @@ interface MessageProps {
 export function Message(props: MessageProps) {
   const { message } = props
   const { profile } = useProfile()
-  // console.log('message__', message)
+  const dialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const gropedMediaByType = useMemo(() => groupBy(message.media, 'meta.type'), [message.media])
 
   const [onRemove] = postsApi.useRemoveMutation()
   const [onUpdate] = postsApi.useUpdateMutation()
-  const [onPin] = postsApi.useTogglePinPostMutation()
+  const [onPin] = dialogsApi.useAddFixedMessageMutation()
 
   const from = profile?.user_info.id === message.author?.id ? 'me' : 'other'
   return (
     <div
-      id={`dialog-message-${message.id}`}
+      id={`${message.id}`}
       className={cn('Message', { from })}
     >
       <Publication
@@ -61,7 +64,7 @@ export function Message(props: MessageProps) {
           }}
         // Закрепить пост
           onPin={(id) => {
-            // onPin({ id })
+            onPin({ id: dialogId, message_id: id })
           }}
         />
         <Publication.MediaContainer
@@ -77,7 +80,7 @@ export function Message(props: MessageProps) {
         {/*   entity_id={post.id} */}
         {/*   entity_type="post" */}
         {/* /> */}
-        <Publication.DateCreated dateCreated={new Date(message.date_created)} />
+        <Publication.DateCreated dateCreated={message.date_created} />
       </Publication>
     </div>
   )

@@ -7,6 +7,7 @@ import {
     WebSocketGateway,
     WebSocketServer
 } from '@nestjs/websockets'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { Server, Socket } from 'socket.io'
 import { DialogService } from './dialog.service'
 import { MessageService } from '../message/message.service'
@@ -365,6 +366,13 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @OnEvent(DialogEvents.DIALOG_IMAGE_UPDATED)
     handleDialogImageUpdated(payload: { dialogId: string, updatedDialog: DialogEntity }) {
         this.sendDialogUpdate(payload.dialogId, DialogEvents.DIALOG_UPDATED, payload.updatedDialog)
+    }
+
+    @OnEvent(DialogEvents.UPDATED_FIXED_MESSAGES)
+    handleUpdateFixedMessages(payload: { dialog_id: string, new_fixed_messages: MessageEntity[] }) {
+        const { dialog_id } = payload
+        // @ts-ignore
+        this.server.to(dialog_id).emit(DialogEvents.UPDATED_FIXED_MESSAGES, payload)
     }
 
     @OnEvent(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED)

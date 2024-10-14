@@ -56,6 +56,7 @@ export class MessageService {
             author,
             text: createMessageDto.text,
             is_forwarded: createMessageDto.is_forwarded,
+            date_updated: null
         })
 
         if (media) {

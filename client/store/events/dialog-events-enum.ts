@@ -35,9 +35,11 @@ export enum DialogEvents {
     /** История диалога (сообщения и участники) */
     DIALOG_HISTORY = 'dialog_history',
 
+    /** Обновление закрепленных сообщений */
+    UPDATED_FIXED_MESSAGES = 'updated_fixed_messages',
+
     /** Новое сообщение */
     NEW_MESSAGE = 'new_message',
-
 
     /** Обновление краткой информации о диалоге */
     DIALOG_UPDATED = 'dialog_updated',

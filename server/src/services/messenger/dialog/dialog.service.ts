@@ -216,6 +216,7 @@ export class DialogService {
                 'participants',
                 'admins',
                 'messages',
+                'fixed_messages',
                 'messages.author',
                 'messages.voices',
                 'messages.videos',
@@ -337,7 +338,7 @@ export class DialogService {
         if (!dialog.fixed_messages.some(fixedMessage => fixedMessage.id === messageId)) {
             dialog.fixed_messages.push(message)
             await this.dialogRepository.save(dialog)
-            this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
+            this.eventEmitter.emit(DialogEvents.UPDATED_FIXED_MESSAGES, { dialog_id: dialogId, new_fixed_messages: dialog.fixed_messages })
         }
 
         return dialog
@@ -355,7 +356,7 @@ export class DialogService {
 
         dialog.fixed_messages = dialog.fixed_messages.filter(message => message.id !== messageId)
         await this.dialogRepository.save(dialog)
-
+        this.eventEmitter.emit(DialogEvents.UPDATED_FIXED_MESSAGES, { dialog_id: dialogId, new_fixed_messages: dialog.fixed_messages })
         return dialog
     }
 

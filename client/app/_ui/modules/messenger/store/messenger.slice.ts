@@ -103,6 +103,13 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
         }
       },
 
+      updateFixedMessages: (state, action: PayloadAction<{ dialog_id: string, new_fixed_messages: MessageEntity[] }>) => {
+        const { new_fixed_messages } = action.payload
+        if (state.currentDialog) {
+          state.currentDialog.fixed_messages = new_fixed_messages
+        }
+      },
+
       exitUpdateUserStatus: (state, action: PayloadAction<{ dialogId: string, userId: number, status: UserStatus }>) => {
         const { status, userId, dialogId } = action.payload
         if (status === UserStatus.Offline) {
