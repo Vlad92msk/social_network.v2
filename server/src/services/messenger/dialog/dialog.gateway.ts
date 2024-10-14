@@ -305,12 +305,13 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.START_TYPING)
     handleStartTyping(
-        @MessageBody() dialogId: string,
+        @MessageBody() data: { dialogId: string },
         @ConnectedSocket() client: AuthenticatedSocket,
       @WsRequestParams() params: RequestParams,
     ) {
+        const { dialogId } = data
         // Оповещаем других участников диалога о начале набора
-        client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: params.user_info_id, isTyping: true })
+        client.to(dialogId).emit(DialogEvents.USER_TYPING, { dialogId, userId: params.user_info_id, isTyping: true })
     }
 
     /**
@@ -318,12 +319,13 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.STOP_TYPING)
     handleStopTyping(
-        @MessageBody() dialogId: string,
+        @MessageBody() data: { dialogId: string },
         @ConnectedSocket() client: AuthenticatedSocket,
         @WsRequestParams() params: RequestParams,
     ) {
+        const { dialogId } = data
         // Оповещаем других участников диалога об окончании набора
-        client.to(dialogId).emit(DialogEvents.USER_TYPING, { userId: params.user_info_id, isTyping: false })
+        client.to(dialogId).emit(DialogEvents.USER_TYPING, { dialogId, userId: params.user_info_id, isTyping: false })
     }
 
 

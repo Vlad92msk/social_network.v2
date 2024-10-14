@@ -54,3 +54,18 @@ export const leaveFromDialog = (dialogId: string) => ({
     data: { dialogId },
   },
 })
+
+export const startTyping = (dialogId: string) => ({
+  type: 'WEBSOCKET_START_TYPING_TO_DIALOG',
+  payload: {
+    event: DialogEvents.START_TYPING,
+    data: { dialogId },
+  },
+})
+export const stopTyping = (dialogId: string) => ({
+  type: 'WEBSOCKET_STOP_TYPING_TO_DIALOG',
+  payload: {
+    event: DialogEvents.STOP_TYPING,
+    data: { dialogId },
+  },
+})

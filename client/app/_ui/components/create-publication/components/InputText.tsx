@@ -5,10 +5,12 @@ import { useCreatePublicationCtxSelect, useCreatePublicationCtxUpdate } from '..
 
 interface InputTextProps {
   placeholder: string
+  onStartTyping?: VoidFunction
+  onStopTyping?: VoidFunction
 }
 
 export function InputText(props: InputTextProps) {
-  const { placeholder } = props
+  const { placeholder, onStopTyping, onStartTyping } = props
   const text = useCreatePublicationCtxSelect((ctx) => ctx.text)
   const update = useCreatePublicationCtxUpdate()
 
@@ -17,6 +19,8 @@ export function InputText(props: InputTextProps) {
       className={cn('AddCommentInput')}
       placeholder={placeholder}
       value={text}
+      onStartTyping={onStartTyping}
+      onStopTyping={onStopTyping}
       onValueChange={(value) => {
         update((ctx) => setImmutable(ctx, 'text', value))
       }}

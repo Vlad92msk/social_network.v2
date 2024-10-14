@@ -25,3 +25,8 @@ export const selectCurrentDialogActiveParticipants = createSelector(
   [selectSelf, selectCurrentDialogId],
   (messenger, id) => messenger.activeParticipants[id],
 )
+
+export const selectCurrentDialogUsersTyping = createSelector(
+  [selectSelf, selectCurrentDialogId],
+  (messenger, id) => messenger.typing[id] || {},
+)

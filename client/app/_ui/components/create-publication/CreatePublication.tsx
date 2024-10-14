@@ -44,6 +44,8 @@ export const {
 export interface CreatePublicationProps {
   onSubmit: (data?: CreatePublicationContextProps) => void
   onReset?: VoidFunction
+  onStartTyping?: VoidFunction
+  onStopTyping?: VoidFunction
   title?: string
   className?: string
 }
@@ -53,6 +55,8 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
     className,
     onSubmit,
     onReset,
+    onStartTyping,
+    onStopTyping,
     title,
   } = props
 
@@ -64,7 +68,11 @@ export const CreatePublication = contextZustand<CreatePublicationProps, CreatePu
       <AddAttachmentsList />
       <div className={cn('ContentContainer')}>
         <ButtonAttachment />
-        <InputText placeholder="Введите текст" />
+        <InputText
+          onStartTyping={onStartTyping}
+          onStopTyping={onStopTyping}
+          placeholder="Введите текст"
+        />
       </div>
       <div className={cn('SubmitActionsContainer')}>
         <ButtonAddVoice />

@@ -1,3 +1,4 @@
+import { selectCurrentDialogUsersTyping } from '@ui/modules/messenger/store/selectors/messenger.selectors'
 import { useDispatch, useSelector } from 'react-redux'
 import { CreatePublication, CreatePublicationContextProps, MyFile } from '@ui/components/create-publication'
 import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
@@ -39,6 +40,14 @@ export function Footer() {
     <CreatePublication
       className={cn('CreateMessage')}
       onSubmit={handleSubmit}
+      onStartTyping={() => {
+        console.log('Пользователь начал печатать')
+        dispatch(MessengerThunkActions.startTyping(currentDialogId))
+      }}
+      onStopTyping={() => {
+        console.log('Пользователь закончил печатать')
+        dispatch(MessengerThunkActions.stopTyping(currentDialogId))
+      }}
     />
   )
 }

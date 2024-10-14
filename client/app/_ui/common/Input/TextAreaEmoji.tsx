@@ -6,12 +6,16 @@ import { ButtonAddEmoji } from '../ButtonAddEmoji'
 
 interface TextAreaEmojiProps extends InputCommonProps {
   onValueChange?: (value: string) => void
+  onStartTyping?: VoidFunction
+  onStopTyping?: VoidFunction
   value: string
 }
 
 export function TextAreaEmoji(props: TextAreaEmojiProps) {
-  const { value, onChange, onValueChange, ...rest } = props
+  const { value, onChange, onValueChange, onStopTyping, onStartTyping, ...rest } = props
   const [text, setText] = useState(value || '')
+  const [isTyping, setIsTyping] = useState(false) // состояние набора текста
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null) // для сброса таймера
   const [cursorPosition, setCursorPosition] = useState(0)
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -21,12 +25,29 @@ export function TextAreaEmoji(props: TextAreaEmojiProps) {
     }
   }, [value, text])
 
+  const notifyTypingStart = useCallback(() => {
+    if (!isTyping) {
+      setIsTyping(true)
+      onStartTyping?.()
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false)
+      onStopTyping?.()
+    }, 1500) // Ожидание 2 секунды после последнего ввода
+  }, [isTyping, onStartTyping, onStopTyping])
+
   const handleChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = event.target.value
     setText(newValue)
     onChange?.(event)
     onValueChange?.(newValue)
-  }, [onChange, onValueChange])
+    notifyTypingStart() // Запускаем логику отслеживания печати
+  }, [onChange, onValueChange, notifyTypingStart])
 
   const handleSelect = useCallback((event: React.SyntheticEvent<HTMLTextAreaElement>) => {
     setCursorPosition(event.currentTarget.selectionStart)

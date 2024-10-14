@@ -1,5 +1,4 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
-import { UserStatus } from '../../../../types/user-status'
 import { Socket } from 'socket.io-client'
 import { createSocket } from '@ui/modules/messenger/store/utils'
 import { MessengerSliceActions } from './messenger.slice'
@@ -7,6 +6,7 @@ import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../s
 import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
 import { RootReducer } from '../../../../../store/root.reducer'
 import { PaginationResponse } from '../../../../../store/types/request'
+import { UserStatus } from '../../../../types/user-status'
 
 let socket: Socket | null = null
 
@@ -67,6 +67,9 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     socket.on(DialogEvents.USER_STATUS_CHANGED, (payload: { dialogId: string, userId: number, status: UserStatus }) => {
       store.dispatch(MessengerSliceActions.exitUpdateUserStatus(payload))
     })
+    socket.on(DialogEvents.USER_TYPING, (payload: { dialogId: string, userId: number, isTyping: boolean }) => {
+      store.dispatch(MessengerSliceActions.exitUserTyping(payload))
+    })
   }
 
   if (!socket) return next(action)
@@ -85,6 +88,20 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
       break
     }
     case 'WEBSOCKET_LEAVE_FROM_DIALOG': {
+      const { event, data } = action.payload
+      if (data.dialogId) {
+        socket.emit(event, data)
+      }
+      break
+    }
+    case 'WEBSOCKET_START_TYPING_TO_DIALOG': {
+      const { event, data } = action.payload
+      if (data.dialogId) {
+        socket.emit(event, data)
+      }
+      break
+    }
+    case 'WEBSOCKET_STOP_TYPING_TO_DIALOG': {
       const { event, data } = action.payload
       if (data.dialogId) {
         socket.emit(event, data)

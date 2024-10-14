@@ -19,6 +19,7 @@ export interface MessengerSliceState {
   shortDialogs?: DialogShortDto[]
 
   messages: Record<string, PaginationResponse<MessageEntity[]>> // Словарь сообщений по диалогам
+  typing: Record<string, Record<number, boolean>> // Отслеживание печати
   participants: Record<string, any[]> // Участники по диалогам
   activeParticipants: Record<string, number[]> // Активные пользователи
 }
@@ -32,6 +33,7 @@ export const messengerInitialState: MessengerSliceState = {
   drawerStatus: 'open',
 
   messages: {},
+  typing: {},
   participants: {},
   activeParticipants: {},
   isConnected: false,
@@ -93,9 +95,16 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
         state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.payload.exitDialogId)
       },
 
+      exitUserTyping: (state, action: PayloadAction<{ dialogId: string, userId: number, isTyping: boolean }>) => {
+        const { dialogId, userId, isTyping } = action.payload
+        state.typing[dialogId] = {
+          ...state.typing[dialogId],
+          [userId]: isTyping,
+        }
+      },
+
       exitUpdateUserStatus: (state, action: PayloadAction<{ dialogId: string, userId: number, status: UserStatus }>) => {
         const { status, userId, dialogId } = action.payload
-        console.log('action.payload', action.payload)
         if (status === UserStatus.Offline) {
           state.activeParticipants[dialogId] = state.activeParticipants[dialogId]?.filter((id) => id !== userId)
         } else {

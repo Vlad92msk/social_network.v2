@@ -17,9 +17,10 @@ export function ContactInfo(props: ContactInfoProps) {
   const { profile } = useProfile()
   const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
   const currentDialog = useSelector(MessengerSelectors.selectCurrentDialog)
-  const qqq = useSelector(MessengerSelectors.selectCurrentDialogActiveParticipants)
+  const activeParticipants = useSelector(MessengerSelectors.selectCurrentDialogActiveParticipants)
+  const usersTyping = useSelector(MessengerSelectors.selectCurrentDialogUsersTyping)
 
-  console.log('qqq', qqq)
+  console.log('activeParticipants', activeParticipants)
   const { status, name, img } = useMemo(() => {
     if (selectUser) {
       return ({
@@ -45,7 +46,7 @@ export function ContactInfo(props: ContactInfoProps) {
 
     if (!currentDialog) return byDefault
 
-    const { type, participants, image, title, } = currentDialog
+    const { type, participants, image, title } = currentDialog
     switch (type) {
       case SelectDialogType.PRIVATE: {
         const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
@@ -59,7 +60,8 @@ export function ContactInfo(props: ContactInfoProps) {
           ),
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
-              {qqq.includes(participant.id) ? 'Online' : 'Offline'}
+              {activeParticipants.includes(participant.id) ? 'Online' : 'Offline'}
+              {usersTyping[participant.id] && '(печатает)'}
             </Text>
           ),
         })
@@ -75,14 +77,14 @@ export function ContactInfo(props: ContactInfoProps) {
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
               {`${participants.length} участников,
-              ${qqq.length} в сети`}
+              ${activeParticipants.length} в сети`}
             </Text>
           ),
         })
       }
       default: return byDefault
     }
-  }, [currentDialog, profile, qqq, selectUser])
+  }, [selectUser, currentDialog, activeParticipants, usersTyping, profile])
 
   return (
     <div className={classNames(cn('ContactInfo'), className)}>
