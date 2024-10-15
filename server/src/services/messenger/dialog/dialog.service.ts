@@ -513,7 +513,7 @@ export class DialogService {
         const updatedDialog = await this.dialogRepository.save(dialog)
 
         const updatedDialogShort = this.mapToDialogShortDto(updatedDialog, params)
-        this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
+        // this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
 
         return updatedDialog
     }

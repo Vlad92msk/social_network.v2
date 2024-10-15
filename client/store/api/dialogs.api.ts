@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { DialogEntity, DialogShortDto } from '../../../swagger/dialogs/interfaces-dialogs'
+import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
 import { dialogsApiInstance } from '../instance'
 import { RootState } from '../store'
@@ -23,6 +23,13 @@ export const dialogsApi = createApi({
     },
   }),
   endpoints: (builder) => ({
+    sendMessage: builder.mutation<MessageEntity, Parameters<typeof dialogsApiInstance.sendMessage>[0]>({
+      query: (params) => {
+        const { url, init } = dialogsApiInstance.sendMessageInit(params)
+        return { url, ...init }
+      },
+    }),
+
     create: builder.mutation<DialogEntity, Parameters<typeof dialogsApiInstance.create>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.createInit(params)

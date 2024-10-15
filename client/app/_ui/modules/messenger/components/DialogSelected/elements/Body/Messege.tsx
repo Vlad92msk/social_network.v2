@@ -26,7 +26,7 @@ export function Message(props: MessageProps) {
   const from = profile?.user_info.id === message.author?.id ? 'me' : 'other'
   return (
     <div
-      id={`${message.id}`}
+      id={message.id}
       className={cn('Message', { from })}
     >
       <Publication

@@ -20,9 +20,8 @@ export function ContactInfo(props: ContactInfoProps) {
   const activeParticipants = useSelector(MessengerSelectors.selectCurrentDialogActiveParticipants)
   const usersTyping = useSelector(MessengerSelectors.selectCurrentDialogUsersTyping)
 
-  console.log('activeParticipants', activeParticipants)
   const { status, name, img } = useMemo(() => {
-    if (selectUser) {
+    if (selectUser && !currentDialog) {
       return ({
         img: <Image src={selectUser?.profile_image} alt={selectUser?.name} width={50} height={50} />,
         name: (
@@ -31,9 +30,7 @@ export function ContactInfo(props: ContactInfoProps) {
           </Text>
         ),
         status: (
-          <Text className={cn('OnlineStatus')} fs="10">
-            online!
-          </Text>
+          <Text className={cn('OnlineStatus')} fs="10" />
         ),
       })
     }
@@ -60,7 +57,7 @@ export function ContactInfo(props: ContactInfoProps) {
           ),
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
-              {activeParticipants.includes(participant.id) ? 'Online' : 'Offline'}
+              {activeParticipants?.includes(participant.id) ? 'Online' : 'Offline'}
               {usersTyping[participant.id] && '(печатает)'}
             </Text>
           ),
@@ -77,7 +74,7 @@ export function ContactInfo(props: ContactInfoProps) {
           status: (
             <Text className={cn('OnlineStatus')} fs="10">
               {`${participants.length} участников,
-              ${activeParticipants.length} в сети`}
+              ${activeParticipants?.length} в сети`}
             </Text>
           ),
         })

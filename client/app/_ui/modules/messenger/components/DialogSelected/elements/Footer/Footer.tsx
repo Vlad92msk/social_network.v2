@@ -1,39 +1,52 @@
-import { selectCurrentDialogUsersTyping } from '@ui/modules/messenger/store/selectors/messenger.selectors'
-import { useDispatch, useSelector } from 'react-redux'
-import { CreatePublication, CreatePublicationContextProps, MyFile } from '@ui/components/create-publication'
+import { CreatePublication, CreatePublicationContextProps } from '@ui/components/create-publication'
 import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
+import { useDispatch, useSelector } from 'react-redux'
+import { dialogsApi } from '../../../../../../../../store/api'
 import { cn } from './cn'
-
-// Вспомогательная функция для конвертации File в base64
-function fileToBase64(file: MyFile): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file.blob)
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = (error) => reject(error)
-  })
-}
 
 export function Footer() {
   const dispatch = useDispatch()
   const currentDialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const selectUser = useSelector(MessengerSelectors.selectTargetNewUserToDialog)
 
-  const handleSubmit = async (newMessage: CreatePublicationContextProps) => {
+  const [submit, { isLoading: isSubmitting }] = dialogsApi.useSendMessageMutation()
+
+  const handleSubmit = (createdMessage: CreatePublicationContextProps) => {
     if (!currentDialogId && !selectUser) {
       console.error('No dialog or user selected')
       return
     }
 
-    const messageData = {
-      text: newMessage.text,
-      participants: selectUser ? [selectUser.id] : undefined,
-      media: newMessage.media ? await Promise.all(newMessage.media.map(fileToBase64)) : undefined,
-      voices: newMessage.voices ? await Promise.all(newMessage.voices.map(fileToBase64)) : undefined,
-      videos: newMessage.videos ? await Promise.all(newMessage.videos.map(fileToBase64)) : undefined,
+    const formData = new FormData()
+
+    formData.append('text', createdMessage.text)
+
+    // Добавление участников в FormData как массив чисел
+    if (selectUser) {
+      formData.append('participants[]', selectUser.id.toString())
     }
-    dispatch(MessengerThunkActions.sendMessage(currentDialogId, messageData))
+
+    if (createdMessage.media) {
+      Object.values(createdMessage.media).flat().forEach((file) => {
+        formData.append('media', file.blob, file.name)
+      })
+    }
+
+    if (createdMessage.voices) {
+      createdMessage.voices.forEach((file) => {
+        formData.append('voices', file.blob, file.name)
+      })
+    }
+
+    if (createdMessage.videos) {
+      createdMessage.videos.forEach((file) => {
+        formData.append('videos', file.blob, file.name)
+      })
+    }
+
+    // @ts-ignore
+    submit({ dialog_id: currentDialogId || 'new', body: formData })
   }
 
   return (

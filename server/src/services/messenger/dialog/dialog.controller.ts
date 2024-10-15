@@ -1,9 +1,13 @@
 import { ConfigEnum } from '@config/config.enum'
 import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, UploadedFiles, UseInterceptors } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { MediaInfoService } from '@services/media/info/media-info.service'
+import { DialogEvents } from '@services/messenger/dialog/types'
+import { CreateMessageDto } from '@services/messenger/message/dto/create-message.dto'
+import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { MessageService } from '@services/messenger/message/message.service'
 import { UserInfo } from '@services/users/user-info/entities'
 import { RequestParams } from '@shared/decorators'
@@ -24,9 +28,97 @@ export class DialogController {
         private readonly dialogService: DialogService,
         private readonly mediaInfoService: MediaInfoService,
         private readonly configService: ConfigService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private eventEmitter: EventEmitter2,
     ) {
         this.maxStorage = this.configService.get(`${ConfigEnum.MAIN}.maxUserStorage`)
+    }
+
+    @Post('send-message/:dialog_id')
+    @ApiOperation({ summary: 'Отправить сообщение в диалог' })
+    @ApiParam({ name: 'dialog_id', description: 'ID диалога' })
+    @ApiResponse({ status: 200, description: 'Отправляет сообщение в диалог', type: MessageEntity })
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'media', maxCount: 20 },
+        { name: 'voices', maxCount: 5 },
+        { name: 'videos', maxCount: 5 }
+    ]))
+    async sendMessage(
+      @Param('dialog_id') dialogId: string,
+      @Body() data: CreateMessageDto,
+      @UploadedFiles() files: {
+          media?: Express.Multer.File[],
+          voices?: Express.Multer.File[],
+          videos?: Express.Multer.File[]
+      },
+      @RequestParams() params: RequestParams,
+    ) {
+        // Проверяем квоту
+        await this.mediaInfoService.checkStorageLimit(
+          params.user_info_id,
+          [].concat(files?.media, files?.voices, files?.videos).filter(Boolean),
+          this.maxStorage
+        )
+
+        const isNewDialog = dialogId === 'new'
+
+        // console.log('Принимаем такое сообщение', data)
+        let currentDialog: DialogEntity
+
+        // Добавляем сообщение в существующий диалог или создаем новый
+        if (isNewDialog) {
+            // Создаем новый диалог
+            if (data?.participants) {
+                currentDialog = await this.dialogService.create({ query: { participants: data.participants } }, params)
+            } else {
+                currentDialog = await this.dialogService.create(undefined, params)
+            }
+        } else {
+            currentDialog = await this.dialogService.findOne(dialogId)
+        }
+
+
+        if (!currentDialog.participants.some(participant => participant.id === params.user_info_id)) {
+            throw new BadRequestException('Вы не являетесь участником этого диалога')
+        }
+
+        // Создаем сообщение
+        const message = await this.messageService.create(
+          {
+              createMessageDto: data,
+              media: files.media,
+              voices: files.voices,
+              videos: files.videos,
+          },
+          params
+        )
+
+        // Добавляем созданное сообщение в диалог
+        const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
+        // Создаем из него краткую форму
+        const updatedDialogShort = this.dialogService.mapToDialogShortDto(currentDialogWithMessage, params)
+
+
+        // Оповещаем всех участников, что появилось новое сообщение
+        this.eventEmitter.emit(
+         DialogEvents.DIALOG_SHORT_UPDATED,
+         {
+             data: updatedDialogShort,
+             participants: currentDialog.participants.map(({ id }) => id),
+         })
+
+        // Оповещаем всех кто находится в диалоге о новом сообщении
+        this.eventEmitter.emit(
+          DialogEvents.NEW_MESSAGE,
+          {
+              dialogId: updatedDialogShort.id,
+              message,
+              isNewDialog,
+              creator: params
+          })
+
+        return message
     }
 
     @Post('create')

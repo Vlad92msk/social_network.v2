@@ -50,15 +50,21 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
 
       setShortDialogs: setState<MessengerSliceState, DialogShortDto[]>('shortDialogs'),
 
-      receiveNeqDialog: (state, action: PayloadAction<DialogShortDto>) => {
-        state.shortDialogs = (state.shortDialogs || []).concat(action.payload)
-      },
-
       updateShortDialog: (state, action: PayloadAction<DialogShortDto>) => {
-        state.shortDialogs = (state.shortDialogs || []).map((dialog) => {
-          if (dialog.id !== action.payload.id) return dialog
-          return action.payload
-        })
+        if (!state.shortDialogs) {
+          state.shortDialogs = []
+        }
+
+        const findDialog = state.shortDialogs?.find(({ id }) => id === action.payload.id)
+
+        if (!findDialog) {
+          state.shortDialogs.unshift(action.payload)
+        } else {
+          state.shortDialogs = state.shortDialogs.map((dialog) => {
+            if (dialog.id !== action.payload.id) return dialog
+            return action.payload
+          })
+        }
       },
 
       setMessages: (state, action: PayloadAction<{ dialogId: string, message: MessageEntity }>) => {

@@ -40,10 +40,6 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
       store.dispatch(MessengerSliceActions.setShortDialogs(userDialogs))
     })
 
-    socket.on(DialogEvents.NEW_DIALOG, (newDialog: DialogShortDto) => {
-      store.dispatch(MessengerSliceActions.receiveNeqDialog(newDialog))
-    })
-
     socket.on(DialogEvents.DIALOG_SHORT_UPDATED, (updatedDialog: DialogShortDto) => {
       store.dispatch(MessengerSliceActions.updateShortDialog(updatedDialog))
     })

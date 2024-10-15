@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
-import { omit } from 'lodash'
+import { PublicationType } from '@shared/entity/publication.entity'
 import { LessThan, Repository } from 'typeorm'
 import { CreateMessageDto } from './dto/create-message.dto'
 import { UpdateMessageDto } from './dto/update-message.dto'
@@ -15,12 +15,7 @@ import { MediaInfoService } from '@services/media/info/media-info.service'
 import { UserInfoService } from '@services/users/user-info/user-info.service'
 import { RequestParams } from '@shared/decorators'
 import { FindMessageDto } from './dto/find-message.dto'
-import {
-    addMultipleRangeFilters, createPaginationAndOrder,
-    createPaginationQueryOptions,
-    createPaginationResponse,
-    updateEntityParams
-} from '@shared/utils'
+import { createPaginationAndOrder, createPaginationResponse, updateEntityParams } from '@shared/utils'
 import { MessageEntity } from './entity/message.entity'
 import { Cron, CronExpression } from '@nestjs/schedule'
 
@@ -56,7 +51,8 @@ export class MessageService {
             author,
             text: createMessageDto.text,
             is_forwarded: createMessageDto.is_forwarded,
-            date_updated: null
+            date_updated: null,
+            type: PublicationType.MESSAGE,
         })
 
         if (media) {
