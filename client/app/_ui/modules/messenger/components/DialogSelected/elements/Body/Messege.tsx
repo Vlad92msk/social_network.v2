@@ -1,12 +1,11 @@
 import { useProfile } from '@hooks'
 import { Publication } from '@ui/components/Publication'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
-import { selectCurrentDialogId } from '@ui/modules/messenger/store/selectors/messenger.selectors'
 import { get, groupBy } from 'lodash'
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { MessageEntity } from '../../../../../../../../../swagger/messages/interfaces-messages'
-import { dialogsApi, postsApi } from '../../../../../../../../store/api'
+import { dialogsApi, messagesApi } from '../../../../../../../../store/api'
 import { cn } from './cn'
 
 interface MessageProps {
@@ -19,9 +18,9 @@ export function Message(props: MessageProps) {
   const dialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const gropedMediaByType = useMemo(() => groupBy(message.media, 'meta.type'), [message.media])
 
-  const [onRemove] = postsApi.useRemoveMutation()
-  const [onUpdate] = postsApi.useUpdateMutation()
   const [onPin] = dialogsApi.useAddFixedMessageMutation()
+  const [onUpdate] = messagesApi.useUpdateMutation()
+  const [onRemove] = messagesApi.useRemoveMutation()
 
   const from = profile?.user_info.id === message.author?.id ? 'me' : 'other'
   return (
@@ -55,12 +54,12 @@ export function Message(props: MessageProps) {
             if (result?.text) {
               updatePost.body.text = result.text
             }
-            console.log('updatePost', updatePost)
-            // onUpdate(updatePost)
+            console.log('updateMessage', updatePost)
+            onUpdate(updatePost)
           }}
         // Удалить пост
           onRemove={(id) => {
-            // onRemove({ id })
+            onRemove({ id })
           }}
         // Закрепить пост
           onPin={(id) => {

@@ -5,8 +5,10 @@ import {
     Injectable,
     NotFoundException
 } from '@nestjs/common'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
+import { DialogEvents } from '@services/messenger/dialog/types'
 import { PublicationType } from '@shared/entity/publication.entity'
 import { LessThan, Repository } from 'typeorm'
 import { CreateMessageDto } from './dto/create-message.dto'
@@ -30,6 +32,8 @@ export class MessageService {
 
         @Inject(forwardRef(() => UserInfoService))
         private userInfoService: UserInfoService,
+
+        private eventEmitter: EventEmitter2,
     ) {}
 
     /**
@@ -94,15 +98,16 @@ export class MessageService {
               voices: Express.Multer.File[],
               videos: Express.Multer.File[]
           },
-        userId: number
+        params: RequestParams
     ) {
+        const { user_info_id } = params
         const message = await this.messageRepository.findOne({
             where: { id },
-            relations: ['media', 'voices', 'videos', 'author']
+            relations: ['media', 'voices', 'videos', 'author', 'dialog']
         })
 
         if (!message) throw new NotFoundException(`Сообщение с ID "${id}" не найдено`)
-        if (message.author.id !== userId) throw new BadRequestException('Вы не можете обновить чужое сообщение')
+        if (message.author.id !== user_info_id) throw new BadRequestException('Вы не можете обновить чужое сообщение')
 
         updateEntityParams(
             message,
@@ -111,17 +116,17 @@ export class MessageService {
         )
 
         if (media) {
-            const addMedia = await this.mediaInfoService.uploadFiles(media, userId, MediaEntitySourceType.PUBLICATION)
+            const addMedia = await this.mediaInfoService.uploadFiles(media, user_info_id, MediaEntitySourceType.PUBLICATION)
             message.media = [...(message.media || []), ...addMedia]
         }
 
         if (voices) {
-            const addVoices = await this.mediaInfoService.uploadFiles(voices, userId, MediaEntitySourceType.PUBLICATION)
+            const addVoices = await this.mediaInfoService.uploadFiles(voices, user_info_id, MediaEntitySourceType.PUBLICATION)
             message.voices = [...(message.voices || []), ...addVoices]
         }
 
         if (videos) {
-            const addVideos = await this.mediaInfoService.uploadFiles(videos, userId, MediaEntitySourceType.PUBLICATION)
+            const addVideos = await this.mediaInfoService.uploadFiles(videos, user_info_id, MediaEntitySourceType.PUBLICATION)
             message.videos = [...(message.videos || []), ...addVideos]
         }
 
@@ -136,7 +141,11 @@ export class MessageService {
         }
 
         message.is_edited = true
-        return this.messageRepository.save(message)
+
+        const savedMessage = await this.messageRepository.save(message)
+
+        this.eventEmitter.emit(DialogEvents.CHANGED_MESSAGE, { message: savedMessage, creator: params })
+        return savedMessage
     }
 
     /**
@@ -200,7 +209,7 @@ export class MessageService {
     async findOne(id: string) {
         const message = await this.messageRepository.findOne({
             where: { id },
-            relations: ['media', 'voices', 'videos', 'reply_to', 'original_message', 'reactions', 'reactions.reaction']
+            relations: ['media', 'voices', 'videos', 'reply_to', 'original_message', 'reactions', 'reactions.reaction', 'dialog']
         })
         if (!message) {
             throw new NotFoundException(`Сообщение с ID "${id}" не найдено`)
@@ -212,7 +221,13 @@ export class MessageService {
      * Удалить сообщение
      */
     async remove(id: string, params: RequestParams) {
-        const message = await this.findOne(id)
+        const message = await this.messageRepository.findOne({
+            where: { id },
+            relations: ['media', 'voices', 'videos', 'dialog']
+        })
+        if (!message) {
+            throw new NotFoundException(`Сообщение с ID "${id}" не найдено`)
+        }
 
         const allMedia = [
             ...(message.media || []),
@@ -224,6 +239,7 @@ export class MessageService {
             await this.mediaInfoService.deleteFile(media.id, params)
         }
         await this.messageRepository.remove(message)
+        this.eventEmitter.emit(DialogEvents.REMOVE_MESSAGE, { dialogId: message.dialog.id, messageId: id, creator: params })
     }
 
     /**

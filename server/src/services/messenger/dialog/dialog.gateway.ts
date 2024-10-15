@@ -97,12 +97,12 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage(DialogEvents.JOIN_DIALOG)
     async handleJoinDialog(
-        @MessageBody() data: { dialogId: string, per_page?: number, page?: number },
+        @MessageBody() data: { dialogId: string },
         @ConnectedSocket() client: AuthenticatedSocket,
         @WsRequestParams() params: RequestParams,
     ) {
         try {
-            const { dialogId, ...restOptions } = data
+            const { dialogId } = data
             if (!dialogId) return
 
             // Проверяем, является ли пользователь участником диалога
@@ -114,14 +114,11 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             // Присоединяем клиента к комнате диалога
             await client.join(dialogId)
 
-            // Параллельно получаем сообщения, участников и активных пользователей
-            const [messages, activeParticipants] = await Promise.all([
-                this.dialogService.getDialogMessages({ dialogId, ...restOptions }, params),
-                this.getActiveParticipants(dialogId)
-            ])
+            // Получаем активных пользователей
+            const activeParticipants = await this.getActiveParticipants(dialogId)
 
             // Отправляем историю диалога присоединившемуся клиенту
-            client.emit(DialogEvents.DIALOG_HISTORY, { dialog, messages, activeParticipants })
+            client.emit(DialogEvents.DIALOG_HISTORY, { dialog, activeParticipants })
 
             // Оповещаем всех участников диалога о новом активном пользователе
             this.server.to(dialogId).emit(DialogEvents.USER_STATUS_CHANGED, {
@@ -311,6 +308,22 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             this.server.to(dialogId).emit(DialogEvents.NEW_MESSAGE, { dialogId, message })
         }
     }
+
+    @OnEvent(DialogEvents.CHANGED_MESSAGE)
+    async changeMessage(payload: { message: MessageEntity, creator: RequestParams }) {
+        const { message, creator } = payload
+        // @ts-ignore
+        this.server.to(message.dialog.id).emit(DialogEvents.CHANGED_MESSAGE, { dialogId: message.dialog.id, message })
+    }
+
+    @OnEvent(DialogEvents.REMOVE_MESSAGE)
+    async removeMessage(payload: { dialogId: string, messageId: string, creator: RequestParams }) {
+        const { dialogId, messageId, creator } = payload
+        console.log('________removeMessage', dialogId, messageId)
+        // @ts-ignore
+        this.server.to(dialogId).emit(DialogEvents.REMOVE_MESSAGE, { dialogId, messageId })
+    }
+
 
     /**
      * Отправляет обновление всем клиентам в диалоге

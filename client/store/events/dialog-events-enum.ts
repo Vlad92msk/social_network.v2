@@ -32,6 +32,12 @@ export enum DialogEvents {
     /** Изменение статуса пользователя (онлайн/оффлайн) */
     USER_STATUS_CHANGED = 'user_status_changed',
 
+    /** Редактированное сообщение */
+    CHANGED_MESSAGE = 'changed_message',
+
+    /** Редактированное сообщение */
+    REMOVE_MESSAGE = 'remove_message',
+
     /** История диалога (сообщения и участники) */
     DIALOG_HISTORY = 'dialog_history',
 

@@ -21,7 +21,11 @@ export function ChangeContainer(props:ChangeContainerProps) {
   return (
     <div className={cn('ChangeContainer')}>
       <div className={cn('ChangeContainerMainActionList')}>
-        <Button onClick={() => onRemove(publicationId)}>
+        <Button onClick={() => {
+          onRemove(publicationId)
+          handleSetChangeActive(() => ({ isChangeActive: false, status: 'approve' }))
+        }}
+        >
           <Icon name="delete" />
         </Button>
         <Button onClick={() => handleSetChangeActive(() => ({ isChangeActive: true }))}>

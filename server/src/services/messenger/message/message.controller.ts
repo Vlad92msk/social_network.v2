@@ -113,7 +113,7 @@ export class MessageController {
             media: files?.media,
             voices: files?.voices,
             videos: files?.videos
-        }, params.user_info_id)
+        }, params)
     }
 
     @Delete(':id')

@@ -32,6 +32,12 @@ export enum DialogEvents {
     /** История диалога (сообщения и участники) */
     DIALOG_HISTORY = 'dialog_history',
 
+    /** Редактированное сообщение */
+    REMOVE_MESSAGE = 'remove_message',
+
+    /** Редактированное сообщение */
+    CHANGED_MESSAGE = 'changed_message',
+
     /** Новое сообщение */
     NEW_MESSAGE = 'new_message',
 

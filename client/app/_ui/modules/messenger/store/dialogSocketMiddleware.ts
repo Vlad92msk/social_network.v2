@@ -10,6 +10,8 @@ import { UserStatus } from '../../../../types/user-status'
 
 let socket: Socket | null = null
 
+export const getSocket = () => socket
+
 export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (next) => (action: AnyAction) => {
   const { profile } = store.getState().profile
 
@@ -37,6 +39,7 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
 
     // Обработчики событий диалогов
     socket.on(DialogEvents.GET_DIALOGS, (userDialogs: DialogShortDto[]) => {
+      console.log('userDialogs', userDialogs)
       store.dispatch(MessengerSliceActions.setShortDialogs(userDialogs))
     })
 
@@ -44,11 +47,7 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
       store.dispatch(MessengerSliceActions.updateShortDialog(updatedDialog))
     })
 
-    socket.on(DialogEvents.NEW_MESSAGE, ({ dialogId, message }: { dialogId: string; message: MessageEntity }) => {
-      store.dispatch(MessengerSliceActions.setMessages({ dialogId, message }))
-    })
-
-    socket.on(DialogEvents.DIALOG_HISTORY, (history: { dialog: DialogEntity; messages: PaginationResponse<MessageEntity[]>; activeParticipants: number[] }) => {
+    socket.on(DialogEvents.DIALOG_HISTORY, (history: { dialog: DialogEntity; activeParticipants: number[] }) => {
       store.dispatch(MessengerSliceActions.setDialogHistory(history))
     })
 

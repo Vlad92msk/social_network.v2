@@ -58,7 +58,7 @@ export class MessageEntity extends PublicationEntity {
     videos: MediaEntity[]
 
     @ApiProperty({ description: 'Диалог которому принадлежит сообщение', type: () => DialogEntity })
-    @ManyToOne(() => DialogEntity, dialog => dialog.messages, { onDelete: 'CASCADE' })
+    @ManyToOne(() => DialogEntity, dialog => dialog.messages)
     dialog: DialogEntity
 
     @ApiProperty({ description: 'Диалог, в котором это сообщение является последним', type: () => DialogEntity, nullable: true })

@@ -1,7 +1,11 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { getSocket } from '@ui/modules/messenger/store/dialogSocketMiddleware'
+import { without } from 'lodash'
 import { MessageEntity } from '../../../swagger/messages/interfaces-messages'
+import { PostResponseDto } from '../../../swagger/posts/interfaces-posts'
 import { CookieType } from '../../app/types/cookie'
+import { DialogEvents } from '../events/dialog-events-enum'
 import { messagesApiInstance } from '../instance'
 import { RootState, store } from '../store'
 // Тип для результатов запросов
@@ -50,6 +54,71 @@ export const messagesApi = createApi({
       query: (params) => {
         const { url, init } = messagesApiInstance.findAllInit(params)
         return { url, ...init }
+      },
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved },
+      ) {
+        const socket = getSocket()
+
+        if (!socket) {
+          console.error('WebSocket connection not available')
+          return
+        }
+
+        try {
+          // Ждем, пока начальные данные будут загружены
+          await cacheDataLoaded
+
+          // Установка слушателя для новых сообщений
+          const handleNewMessage = ({ dialogId, message }: { dialogId: string; message: MessageEntity }) => {
+            updateCachedData((draft) => {
+              if (dialogId === arg.dialog_id) {
+                // Добавляем новое сообщение в начало массива
+                draft.unshift(message)
+              }
+            })
+          }
+
+          const handleChangedMessage = ({ dialogId, message }: { dialogId: string; message: MessageEntity }) => {
+            updateCachedData((draft) => {
+              if (dialogId === arg.dialog_id) {
+                const index = draft.findIndex((m) => m.id === message.id)
+                if (index !== -1) {
+                  // Обновляем существующее сообщение
+                  draft[index] = message
+                }
+              }
+            })
+          }
+
+          const handleRemovedMessage = ({ dialogId, messageId }: { dialogId: string; messageId: string }) => {
+            updateCachedData((draft) => {
+              if (dialogId === arg.dialog_id) {
+                const messageToRemove = draft.find((m) => m.id === messageId)
+                if (messageToRemove) return without(draft, messageToRemove)
+
+                return draft
+              }
+            })
+          }
+
+          socket.on(DialogEvents.NEW_MESSAGE, handleNewMessage)
+          socket.on(DialogEvents.CHANGED_MESSAGE, handleChangedMessage)
+          socket.on(DialogEvents.REMOVE_MESSAGE, handleRemovedMessage)
+
+          await cacheEntryRemoved
+          socket.off(DialogEvents.NEW_MESSAGE, handleNewMessage)
+          socket.off(DialogEvents.CHANGED_MESSAGE, handleChangedMessage)
+          socket.off(DialogEvents.REMOVE_MESSAGE, handleRemovedMessage)
+        } catch {
+          const currentSocket = getSocket()
+          if (currentSocket) {
+            currentSocket.off(DialogEvents.NEW_MESSAGE)
+            currentSocket.off(DialogEvents.CHANGED_MESSAGE)
+            currentSocket.off(DialogEvents.REMOVE_MESSAGE)
+          }
+        }
       },
     }),
 
@@ -133,34 +202,34 @@ export const messagesApi = createApi({
 })
 
 // Типизированные функции-обертки в объекте
-export const MessagesApiApi = {
-
-  create: (props: Parameters<typeof messagesApiInstance.create>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.create.initiate(props)),
-
-  findAll: (props: Parameters<typeof messagesApiInstance.findAll>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.findAll.initiate(props)),
-
-  findOne: (props: Parameters<typeof messagesApiInstance.findOne>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.findOne.initiate(props)),
-
-  update: (props: Parameters<typeof messagesApiInstance.update>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.update.initiate(props)),
-
-  remove: (props: Parameters<typeof messagesApiInstance.remove>[0]): Promise<QueryResult<any>> => store.dispatch(messagesApi.endpoints.remove.initiate(props)),
-
-  markAsDelivered: (props: Parameters<typeof messagesApiInstance.markAsDelivered>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.markAsDelivered.initiate(props)),
-
-  markAsRead: (props: Parameters<typeof messagesApiInstance.markAsRead>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.markAsRead.initiate(props)),
-
-  forwardMessage: (props: Parameters<typeof messagesApiInstance.forwardMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.forwardMessage.initiate(props)),
-
-  replyToMessage: (props: Parameters<typeof messagesApiInstance.replyToMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.replyToMessage.initiate(props)),
-
-  getAllMediaForMessage: (props: Parameters<typeof messagesApiInstance.getAllMediaForMessage>[0]): Promise<QueryResult<any>> => store.dispatch(messagesApi.endpoints.getAllMediaForMessage.initiate(props)),
-
-  getReplyChain: (props: Parameters<typeof messagesApiInstance.getReplyChain>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.getReplyChain.initiate(props)),
-
-  fullTextSearch: (props: Parameters<typeof messagesApiInstance.fullTextSearch>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.fullTextSearch.initiate(props)),
-
-  createTemporaryMessage: (props: Parameters<typeof messagesApiInstance.createTemporaryMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.createTemporaryMessage.initiate(props)),
-}
-
-// Экспорт типов для использования в других частях приложения
-export type MessagesApiApiType = typeof MessagesApiApi
+// export const MessagesApiApi = {
+//
+//   create: (props: Parameters<typeof messagesApiInstance.create>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.create.initiate(props)),
+//
+//   findAll: (props: Parameters<typeof messagesApiInstance.findAll>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.findAll.initiate(props)),
+//
+//   findOne: (props: Parameters<typeof messagesApiInstance.findOne>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.findOne.initiate(props)),
+//
+//   update: (props: Parameters<typeof messagesApiInstance.update>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.update.initiate(props)),
+//
+//   remove: (props: Parameters<typeof messagesApiInstance.remove>[0]): Promise<QueryResult<any>> => store.dispatch(messagesApi.endpoints.remove.initiate(props)),
+//
+//   markAsDelivered: (props: Parameters<typeof messagesApiInstance.markAsDelivered>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.markAsDelivered.initiate(props)),
+//
+//   markAsRead: (props: Parameters<typeof messagesApiInstance.markAsRead>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.markAsRead.initiate(props)),
+//
+//   forwardMessage: (props: Parameters<typeof messagesApiInstance.forwardMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.forwardMessage.initiate(props)),
+//
+//   replyToMessage: (props: Parameters<typeof messagesApiInstance.replyToMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.replyToMessage.initiate(props)),
+//
+//   getAllMediaForMessage: (props: Parameters<typeof messagesApiInstance.getAllMediaForMessage>[0]): Promise<QueryResult<any>> => store.dispatch(messagesApi.endpoints.getAllMediaForMessage.initiate(props)),
+//
+//   getReplyChain: (props: Parameters<typeof messagesApiInstance.getReplyChain>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.getReplyChain.initiate(props)),
+//
+//   fullTextSearch: (props: Parameters<typeof messagesApiInstance.fullTextSearch>[0]): Promise<QueryResult<MessageEntity[]>> => store.dispatch(messagesApi.endpoints.fullTextSearch.initiate(props)),
+//
+//   createTemporaryMessage: (props: Parameters<typeof messagesApiInstance.createTemporaryMessage>[0]): Promise<QueryResult<MessageEntity>> => store.dispatch(messagesApi.endpoints.createTemporaryMessage.initiate(props)),
+// }
+//
+// // Экспорт типов для использования в других частях приложения
+// export type MessagesApiApiType = typeof MessagesApiApi

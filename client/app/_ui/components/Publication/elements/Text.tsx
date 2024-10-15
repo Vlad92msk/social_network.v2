@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TextArea } from '@ui/common/Input'
 import { classNames, setImmutable } from '@utils/others'
 import { Text as TextComponent } from 'app/_ui/common/Text'
@@ -13,6 +13,11 @@ interface TextProps {
 export function Text(props: TextProps) {
   const { className, text } = props
   const [getText, setText] = useState(text)
+
+  useEffect(() => {
+    setText(text)
+  }, [text])
+
   const isChangeActive = usePublicationCtxSelect((store) => (store.isChangeActive))
   const handleSetChangeActive = usePublicationCtxUpdate()
 

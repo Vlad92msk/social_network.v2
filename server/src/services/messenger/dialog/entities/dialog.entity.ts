@@ -112,7 +112,7 @@ export class DialogEntity {
     messages_not_read: string[]
 
     @ApiProperty({ description: 'Сообщения в диалоге', type: () => [MessageEntity] })
-    @OneToMany(() => MessageEntity, message => message.dialog, { onDelete: 'CASCADE' })
+    @OneToMany(() => MessageEntity, message => message.dialog, { cascade: ['insert', 'update'] })
     messages: MessageEntity[]
 
     @ApiProperty({ description: 'Последнее сообщение в диалоге', type: () => MessageEntity })

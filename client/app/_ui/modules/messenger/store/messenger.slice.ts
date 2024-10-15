@@ -67,18 +67,12 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
         }
       },
 
-      setMessages: (state, action: PayloadAction<{ dialogId: string, message: MessageEntity }>) => {
-        const { message, dialogId } = action.payload
-        state.messages[dialogId].data.unshift(message)
-      },
-
-      setDialogHistory: (state, action: PayloadAction<{ dialog: DialogEntity, messages: PaginationResponse<MessageEntity[]>, activeParticipants: number[] }>) => {
-        const { dialog, messages, activeParticipants } = action.payload
+      setDialogHistory: (state, action: PayloadAction<{ dialog: DialogEntity, activeParticipants: number[] }>) => {
+        const { dialog, activeParticipants } = action.payload
         if (!state.currentDialogId) {
           state.currentDialogId = dialog.id
         }
         state.currentDialog = dialog
-        state.messages[dialog.id] = messages
         state.participants[dialog.id] = dialog.participants
         state.activeParticipants[dialog.id] = activeParticipants
       },
