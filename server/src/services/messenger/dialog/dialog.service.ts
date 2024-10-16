@@ -549,6 +549,7 @@ export class DialogService {
         dialog.messages = [...(dialog.messages || []), message]
 
         const last = await this.getLastMessage(dialogId)
+        console.log('last', last)
         const updatedDialog = await this.dialogRepository.save(dialog)
 
         const updatedDialogShort = this.mapToDialogShortDto({ dialog: updatedDialog, lastMessage: last }, params)
@@ -558,16 +559,19 @@ export class DialogService {
     }
 
     async getLastMessage(dialogId: string): Promise<MessageEntity | undefined> {
-        return await this.dialogRepository
+        const result = await this.dialogRepository
           .createQueryBuilder('dialog')
-          .leftJoinAndSelect('dialog.messages', 'message')
-          .leftJoinAndSelect('message.author', 'author')
           .where('dialog.id = :dialogId', { dialogId })
-          .orderBy('message.date_created', 'DESC')
-          .select(['message', 'author'])
-          .limit(1)
+          .leftJoinAndSelect(
+            'dialog.messages',
+            'message',
+            'message.id = (SELECT m.id FROM messages m WHERE m."dialogId" = dialog.id ORDER BY m.date_created DESC LIMIT 1)'
+          )
+          .leftJoinAndSelect('message.author', 'author')
+          .select(['dialog.id', 'message', 'author'])
           .getOne()
-          .then(result => result?.messages[0])
+
+        return result?.messages[0]
     }
 
     /**

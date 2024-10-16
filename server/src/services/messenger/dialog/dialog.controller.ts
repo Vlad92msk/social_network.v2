@@ -98,6 +98,7 @@ export class DialogController {
         const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
 
         const lastMessage = await this.dialogService.getLastMessage(currentDialog.id)
+        console.log('_____lastMessage', lastMessage)
         // Создаем из него краткую форму
         const updatedDialogShort = this.dialogService.mapToDialogShortDto({dialog: currentDialogWithMessage, lastMessage}, params)
 
