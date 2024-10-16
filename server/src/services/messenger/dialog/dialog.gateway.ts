@@ -98,7 +98,11 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
             if (!dialogId) return
 
             // Проверяем, является ли пользователь участником диалога
-            const dialog = await this.dialogService.findOne(dialogId)
+            const dialog = await this.dialogService.getDialogInfo(
+              dialogId,
+              {
+                  relations: { participants: true, fixed_messages: true, admins: true}
+              })
             if (!dialog.participants.some(participant => participant.id === params.user_info_id)) {
                 throw new BadRequestException('Вы не являетесь участником этого диалога')
             }

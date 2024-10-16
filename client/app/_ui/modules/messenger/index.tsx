@@ -1,6 +1,5 @@
 import { Locale } from '@middlewares/variables'
 import { Messenger as MessengerModule } from '@ui/modules/messenger/components/Messenger'
-import { DialogShortDto } from '../../../../../swagger/dialogs/interfaces-dialogs'
 import { DialogsDrawerBar, DialogSelected } from './components'
 import { UserProfileInfo } from '../../../../../swagger/profile/interfaces-profile'
 

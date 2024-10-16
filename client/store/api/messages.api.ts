@@ -1,8 +1,8 @@
 import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { getSocket } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 import { without } from 'lodash'
-import { MessageEntity } from '../../../swagger/messages/interfaces-messages'
+import { getSocket } from '@ui/modules/messenger/store/dialogSocketMiddleware'
+import { MessageEntity, MessagesResponseDto } from '../../../swagger/messages/interfaces-messages'
 import { PostResponseDto } from '../../../swagger/posts/interfaces-posts'
 import { CookieType } from '../../app/types/cookie'
 import { DialogEvents } from '../events/dialog-events-enum'
@@ -50,10 +50,24 @@ export const messagesApi = createApi({
       },
     }),
 
-    findAll: builder.query<MessageEntity[], Parameters<typeof messagesApiInstance.findAll>[0]>({
+    findAll: builder.query<MessagesResponseDto, Parameters<typeof messagesApiInstance.findAll>[0]>({
       query: (params) => {
         const { url, init } = messagesApiInstance.findAllInit(params)
         return { url, ...init }
+      },
+      serializeQueryArgs: ({ endpointName }) => endpointName,
+      merge: (currentCache, newItems) => {
+        // Убедимся, что мы не добавляем дубликаты сообщений
+        const uniqueNewMessages = newItems.data.filter(
+          (newMsg) => !currentCache.data.some((existingMsg) => existingMsg.id === newMsg.id),
+        )
+        currentCache.data.push(...uniqueNewMessages)
+        currentCache.cursor = newItems.cursor
+        currentCache.has_more = newItems.has_more
+        currentCache.total = newItems.total
+      },
+      forceRefetch({ currentArg, previousArg }) {
+        return JSON.stringify(currentArg) !== JSON.stringify(previousArg)
       },
       async onCacheEntryAdded(
         arg,
@@ -74,8 +88,8 @@ export const messagesApi = createApi({
           const handleNewMessage = ({ dialogId, message }: { dialogId: string; message: MessageEntity }) => {
             updateCachedData((draft) => {
               if (dialogId === arg.dialog_id) {
-                // Добавляем новое сообщение в начало массива
-                draft.unshift(message)
+                draft.data.unshift(message)
+                draft.total += 1
               }
             })
           }
@@ -83,10 +97,9 @@ export const messagesApi = createApi({
           const handleChangedMessage = ({ dialogId, message }: { dialogId: string; message: MessageEntity }) => {
             updateCachedData((draft) => {
               if (dialogId === arg.dialog_id) {
-                const index = draft.findIndex((m) => m.id === message.id)
+                const index = draft.data.findIndex((m) => m.id === message.id)
                 if (index !== -1) {
-                  // Обновляем существующее сообщение
-                  draft[index] = message
+                  draft.data[index] = message
                 }
               }
             })
@@ -95,10 +108,8 @@ export const messagesApi = createApi({
           const handleRemovedMessage = ({ dialogId, messageId }: { dialogId: string; messageId: string }) => {
             updateCachedData((draft) => {
               if (dialogId === arg.dialog_id) {
-                const messageToRemove = draft.find((m) => m.id === messageId)
-                if (messageToRemove) return without(draft, messageToRemove)
-
-                return draft
+                draft.data = draft.data.filter((m) => m.id !== messageId)
+                draft.total -= 1
               }
             })
           }

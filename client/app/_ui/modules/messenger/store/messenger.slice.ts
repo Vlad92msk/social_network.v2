@@ -19,9 +19,7 @@ export interface MessengerSliceState {
   currentDialog?: DialogEntity
   shortDialogs?: DialogShortDto[]
 
-  messages: Record<string, PaginationResponse<MessageEntity[]>> // Словарь сообщений по диалогам
   typing: Record<string, Record<number, boolean>> // Отслеживание печати
-  participants: Record<string, any[]> // Участники по диалогам
   activeParticipants: Record<string, number[]> // Активные пользователи
 }
 
@@ -33,9 +31,7 @@ export const messengerInitialState: MessengerSliceState = {
   chatingPanelStatus: 'close',
   drawerStatus: 'open',
 
-  messages: {},
   typing: {},
-  participants: {},
   activeParticipants: {},
   isConnected: false,
   error: null,
@@ -57,7 +53,6 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
           state.currentDialogId = dialog.id
         }
         state.currentDialog = dialog
-        state.participants[dialog.id] = dialog.participants
         state.activeParticipants[dialog.id] = activeParticipants
       },
 

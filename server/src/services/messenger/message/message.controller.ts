@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { MessagesResponseDto } from '@services/messenger/message/dto/message-response.dto'
 import { MessageService } from './message.service'
 import { CreateMessageDto } from './dto/create-message.dto'
 import { UpdateMessageDto } from './dto/update-message.dto'
@@ -71,16 +72,15 @@ export class MessageController {
 
     @Get()
     @ApiOperation({ summary: 'Получить список сообщений' })
-    @ApiResponse({ status: 200, description: 'Список сообщений успешно получен', type: [MessageEntity] })
+    @ApiResponse({ status: 200, description: 'Список сообщений успешно получен', type: MessagesResponseDto })
     async findAll(
         @Query() query: FindMessageDto,
         @RequestParams() params: RequestParams,
         @Res({ passthrough: true }) response: Response
     ) {
-        const { data, paginationInfo } = await this.messageService.findAll(query, params)
+        const { data, cursor, total, has_more } = await this.messageService.findAll(query, params)
 
-        response.set(createPaginationHeaders(paginationInfo))
-        return data
+        return { data, cursor, total, has_more }
     }
 
     @Get(':id')

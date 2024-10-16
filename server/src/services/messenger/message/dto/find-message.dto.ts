@@ -1,14 +1,8 @@
-import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
-import { IsDate, IsIn, IsNumber, IsOptional, IsString } from 'class-validator'
-import { PaginationAndSortingDto } from '@shared/dto'
 import { ApiPropertyOptional } from '@nestjs/swagger'
-import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { Type } from 'class-transformer'
+import { IsDate, IsIn, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator'
 
-export class FindMessageDto extends IntersectionType(
-    PartialType(PickType(MessageEntity, ['text', 'type', 'id', 'is_forwarded', 'forward_count', 'date_created'])),
-    PaginationAndSortingDto<MessageEntity>
-) {
+export class FindMessageDto {
     @ApiPropertyOptional({ description: 'ID диалога' })
     @IsOptional()
     @IsString()
@@ -32,30 +26,45 @@ export class FindMessageDto extends IntersectionType(
     @ApiPropertyOptional({ description: 'Минимальное количество пересылок' })
     @IsOptional()
     @IsNumber()
-    @Type(() => Number)
     forward_count_min?: number
 
     @ApiPropertyOptional({ description: 'Максимальное количество пересылок' })
     @IsOptional()
     @IsNumber()
-    @Type(() => Number)
     forward_count_max?: number
 
     @ApiPropertyOptional({ description: 'Начальная дата создания' })
     @IsOptional()
     @IsDate()
-    @Type(() => Date)
     date_created_from?: Date
 
     @ApiPropertyOptional({ description: 'Конечная дата создания' })
     @IsOptional()
     @IsDate()
-    @Type(() => Date)
     date_created_to?: Date
 
-    @ApiPropertyOptional({ description: 'Поле для сортировки', enum: ['value', 'name', 'entity_type'] })
+    @ApiPropertyOptional({ description: 'Курсор для пагинации (ID последнего загруженного сообщения)' })
+    @IsOptional()
+    @IsString()
+    cursor?: string
+
+    @ApiPropertyOptional({ description: 'Количество сообщений для загрузки', default: 10 })
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    @Min(1)
+    @Max(100)
+    limit?: number = 10;
+
+    @ApiPropertyOptional({ description: 'Поле для сортировки', enum: ['date_created'] })
     @IsString()
     @IsOptional()
-    @IsIn(['text', 'type', 'is_forwarded', 'forward_count', 'date_created'])
-    sort_by?: 'text' | 'type' | 'is_forwarded' | 'forward_count' | 'date_created'
+    @IsIn(['date_created'])
+    sort_by? = 'date_created'
+
+    @ApiPropertyOptional({ description: 'Направление сортировки', enum: ['DESC', 'ASC'] })
+    @IsString()
+    @IsOptional()
+    @IsIn(['DESC', 'ASC'])
+    sort_direction?: 'DESC' | 'ASC' = 'DESC'
 }

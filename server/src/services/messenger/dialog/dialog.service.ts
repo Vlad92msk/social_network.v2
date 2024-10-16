@@ -15,8 +15,6 @@ import { createPaginationQueryOptions, createPaginationResponse } from '@shared/
 import { DialogShortDto } from '@services/messenger/dialog/dto/dialog-short.dto'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { MessageEntity } from '@services/messenger/message/entity/message.entity'
-import { SortDirection } from '@shared/types'
-import { UserStatus } from '@services/users/_interfaces'
 import { DialogEvents } from './types'
 import { VideoConferenceService } from '@services/messenger/video-conference/video-conference.service'
 import { VideoConferenceEvents } from '@services/messenger/video-conference/types'
@@ -94,7 +92,7 @@ export class DialogService {
     /**
      * Покинуть диалог
      */
-    async exitFromDialog(id: string, userId: number) {
+    async exitFromDialog(id: string, userId: number, paramas: RequestParams) {
         const dialog = await this.findOne(id)
 
         if (!dialog.participants.some(participant => participant.id === userId)) {
@@ -144,11 +142,8 @@ export class DialogService {
             dialog.image = uploadedFile.meta.src
         }
 
-        const f =  await this.dialogRepository.save(dialog)
-        // const updatedDialogShort = this.mapToDialogShortDto(dialog, params)
-        // this.eventEmitter.emit(DialogEvents.NEW_DIALOG, { dialogId: updatedDialogShort.id,dialog: updatedDialogShort })
-
-        return f
+        const createdDialog = await this.dialogRepository.save(dialog)
+        return createdDialog
     }
 
     /**
@@ -204,6 +199,20 @@ export class DialogService {
             relations: ['participants', 'admins'],
         })
         return createPaginationResponse({ data: dialogs, total, query })
+    }
+
+    /**
+     * Получить инф о диалоге для подключившегося пользователя
+     */
+    async getDialogInfo(
+      id: string,
+      options?: { relations?: { participants?: boolean, admins?: boolean, fixed_messages? : boolean } },
+      params?: RequestParams
+    ) {
+        return await this.dialogRepository.findOne({
+            where: { id },
+            relations: options?.relations
+        })
     }
 
     /**
@@ -512,9 +521,6 @@ export class DialogService {
             type: dialog.type,
             last_message: lastMessage,
             unread_count: dialog.messages_not_read.length,
-            //@ts-ignore
-            _admins: dialog.admins,
-            _participants: dialog.participants
         }
     }
 
@@ -549,7 +555,7 @@ export class DialogService {
         dialog.messages = [...(dialog.messages || []), message]
 
         const last = await this.getLastMessage(dialogId)
-        console.log('last', last)
+
         const updatedDialog = await this.dialogRepository.save(dialog)
 
         const updatedDialogShort = this.mapToDialogShortDto({ dialog: updatedDialog, lastMessage: last }, params)
@@ -572,29 +578,6 @@ export class DialogService {
           .getOne()
 
         return result?.messages[0]
-    }
-
-    /**
-     * Получить сообщения диалога
-     */
-    async getDialogMessages(options: { dialogId: string, per_page?: number, page?: number }, params: RequestParams) {
-        const dialog = await this.dialogRepository.findOne({
-            where: { id: options?.dialogId },
-        })
-
-        if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${options?.dialogId}" не найден`)
-        }
-
-        const messages = await this.messageService.findAll({
-            dialog_id: options?.dialogId,
-            per_page: options?.per_page,
-            page: options?.page,
-            sort_by: 'date_created',
-            sort_direction: SortDirection.DESC
-        }, params)
-
-        return messages
     }
 
     /**

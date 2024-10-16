@@ -98,7 +98,7 @@ export class DialogController {
         const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
 
         const lastMessage = await this.dialogService.getLastMessage(currentDialog.id)
-        console.log('_____lastMessage', lastMessage)
+
         // Создаем из него краткую форму
         const updatedDialogShort = this.dialogService.mapToDialogShortDto({dialog: currentDialogWithMessage, lastMessage}, params)
 
@@ -395,7 +395,7 @@ export class DialogController {
         @Param('id') id: string,
         @RequestParams() params: RequestParams
     ) {
-        return await this.dialogService.exitFromDialog(id, params.user_info_id)
+        return await this.dialogService.exitFromDialog(id, params.user_info_id, params)
     }
 
     @Post(':id/video-conference')

@@ -160,49 +160,55 @@ export class MessageService {
             forward_count_max,
             date_created_from,
             date_created_to,
+            cursor,
+            limit,
+            sort_direction,
             ...restQuery
         } = query
 
-        const { page, per_page, sort_by, sort_direction } = query
+        const queryBuilder = this.messageRepository.createQueryBuilder('message')
+          .leftJoinAndSelect('message.media', 'media')
+          .leftJoinAndSelect('message.voices', 'voices')
+          .leftJoinAndSelect('message.videos', 'videos')
+          .leftJoinAndSelect('message.reply_to', 'reply_to')
+          .leftJoinAndSelect('message.author', 'author')
+          .leftJoinAndSelect('message.original_message', 'original_message')
+          .where('message.dialog.id = :dialogId', { dialogId: restQuery.dialog_id })
 
-        const paginationAndOrder = createPaginationAndOrder({
-            page,
-            per_page,
-            sort_by,
-            sort_direction
-        })
+        if (cursor) {
+            const cursorMessage = await this.messageRepository.findOne({ where: { id: cursor } })
+            if (cursorMessage) {
+                queryBuilder.andWhere('message.date_created < :cursorDate', { cursorDate: cursorMessage.date_created })
+            }
+        }
 
-        // const queryOptions = createPaginationQueryOptions<MessageEntity>({
-        //     query: restQuery,
-        //     options: {
-        //         relations: ['media', 'voices', 'videos', 'reply_to', 'original_message']
-        //     }
-        // })
-        //
-        // if (!queryOptions.where) {
-        //     queryOptions.where = {}
-        // }
+        if (forward_count_min !== undefined) {
+            queryBuilder.andWhere('message.forward_count >= :forward_count_min', { forward_count_min })
+        }
 
-        // addMultipleRangeFilters(queryOptions.where, {
-        //     forward_count: { min: forward_count_min, max: forward_count_max },
-        //     date_created: { min: date_created_from, max: date_created_to }
-        // })
+        if (forward_count_max !== undefined) {
+            queryBuilder.andWhere('message.forward_count <= :forward_count_max', { forward_count_max })
+        }
 
-        const [messages, total] = await this.messageRepository.findAndCount({
-            where: {
-                // ...omit(restQuery, 'dialog_id'),
-                dialog: { id: restQuery?.dialog_id }
-            },
-            ...paginationAndOrder,
-            relations: [
-              'media',
-                'voices',
-                'videos',
-                'reply_to',
-                'original_message'
-            ]
-        })
-        return createPaginationResponse({ data: messages, total, query })
+        if (date_created_from) {
+            queryBuilder.andWhere('message.date_created >= :date_created_from', { date_created_from })
+        }
+
+        if (date_created_to) {
+            queryBuilder.andWhere('message.date_created <= :date_created_to', { date_created_to })
+        }
+
+        queryBuilder.orderBy('message.date_created', sort_direction)
+          .take(limit)
+
+        const [messages, total] = await queryBuilder.getManyAndCount()
+
+        return {
+            data: messages,
+            total,
+            cursor: messages.length > 0 ? messages[messages.length - 1].id : null,
+            has_more: messages.length === limit
+        }
     }
 
 
@@ -225,36 +231,36 @@ export class MessageService {
             const message = await manager.findOne(MessageEntity, {
                 where: { id },
                 relations: ['media', 'voices', 'videos', 'dialog']
-            });
+            })
 
             if (!message) {
-                throw new NotFoundException(`Сообщение с ID "${id}" не найдено`);
+                throw new NotFoundException(`Сообщение с ID "${id}" не найдено`)
             }
 
-            const dialogId = message.dialog.id;
-            console.log('Диалог перед удалением сообщения:', await manager.findOne(DialogEntity, { where: { id: dialogId } }));
+            const dialogId = message.dialog.id
+            console.log('Диалог перед удалением сообщения:', await manager.findOne(DialogEntity, { where: { id: dialogId } }))
 
             const allMedia = [
                 ...(message.media || []),
                 ...(message.voices || []),
                 ...(message.videos || [])
-            ];
+            ]
 
             for (const media of allMedia) {
-                await this.mediaInfoService.deleteFile(media.id, params);
+                await this.mediaInfoService.deleteFile(media.id, params)
             }
 
-            await manager.delete(MessageEntity, id); // Удаляем сообщение
+            await manager.delete(MessageEntity, id) // Удаляем сообщение
 
             // Проверяем диалог сразу после удаления сообщения
             const dialogAfterDelete = await manager.findOne(DialogEntity, {
                 where: { id: dialogId }
-            });
+            })
 
-            console.log('Диалог после удаления сообщения:', dialogAfterDelete);
+            console.log('Диалог после удаления сообщения:', dialogAfterDelete)
 
-            this.eventEmitter.emit(DialogEvents.REMOVE_MESSAGE, { dialogId, messageId: id, creator: params });
-        });
+            this.eventEmitter.emit(DialogEvents.REMOVE_MESSAGE, { dialogId, messageId: id, creator: params })
+        })
     }
 
 
