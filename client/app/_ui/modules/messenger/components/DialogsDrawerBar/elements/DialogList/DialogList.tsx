@@ -1,14 +1,15 @@
 import { useDispatch, useSelector } from 'react-redux'
+import { Spinner } from '@ui/common/Spinner'
 import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
 import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
-import { selectDrawerStatus } from '@ui/modules/messenger/store/selectors/messenger.selectors'
 import { classNames } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
+import { ProfileSelectors } from '../../../../../../../../store/profile.slice'
 
 interface DialogListProps{
   className?: string;
@@ -17,17 +18,21 @@ interface DialogListProps{
 export function DialogList(props: DialogListProps) {
   const { className } = props
   const dispatch = useDispatch()
+  const { profile } = useSelector(ProfileSelectors.selectProfile)
 
-  const viewDialogList = useSelector(MessengerSelectors.selectDialogList)
   const drawerStatus = useSelector(MessengerSelectors.selectDrawerStatus)
 
+  const { data: viewDialogList, isLoading } = dialogsApi.useFindByUserShortDialogQuery(
+    { userId: profile?.user_info.id as number },
+    { skip: !profile?.user_info.id },
+  )
   const [onRemoveDialog] = dialogsApi.useRemoveMutation()
   const [onLeaveDialog] = dialogsApi.useLeaveDialogMutation()
 
   return (
     <div className={classNames(cn({ status: drawerStatus }), className)}>
       <Text fs="12">Мои диалоги</Text>
-      {viewDialogList?.map(({
+      {isLoading ? <Spinner /> : viewDialogList?.map(({
         type,
         image,
         title,

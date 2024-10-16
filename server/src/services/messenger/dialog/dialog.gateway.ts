@@ -71,14 +71,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 user_public_id: String(user_public_id),
             }
             this.userSockets.set(user_info_id, client)
-
-
-            // @ts-ignore
-            const shortDialogs = await this.dialogService.findShortByUser(Number(user_info_id), client.handshake.auth)
-
-            client.emit(DialogEvents.GET_DIALOGS, shortDialogs)
-            // await this.handleUserStatusChange(client, UserStatus.Online)
-            // return shortDialogs
         } catch (error) {
             console.error('Ошибка при подключении клиента:', error.message)
             client.disconnect()
@@ -319,7 +311,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @OnEvent(DialogEvents.REMOVE_MESSAGE)
     async removeMessage(payload: { dialogId: string, messageId: string, creator: RequestParams }) {
         const { dialogId, messageId, creator } = payload
-        console.log('________removeMessage', dialogId, messageId)
         // @ts-ignore
         this.server.to(dialogId).emit(DialogEvents.REMOVE_MESSAGE, { dialogId, messageId })
     }

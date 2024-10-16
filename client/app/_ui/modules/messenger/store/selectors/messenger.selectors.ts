@@ -3,6 +3,7 @@ import { RootReducer } from '../../../../../../store/root.reducer'
 
 const selectSelf = (state: RootReducer) => state.messenger
 
+export const selectIsConnected = createSelector(selectSelf, (messenger) => messenger.isConnected)
 export const selectChatingPanelStatus = createSelector(selectSelf, (messenger) => messenger.chatingPanelStatus)
 export const selectDrawerStatus = createSelector(selectSelf, (messenger) => messenger.drawerStatus)
 

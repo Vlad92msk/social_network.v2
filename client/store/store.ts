@@ -56,7 +56,7 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       reactionsApi.middleware,
       effectMiddleware,
       dialogSocketMiddleware,
-      logger,
+      // logger,
     ),
   })
 

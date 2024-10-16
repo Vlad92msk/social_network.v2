@@ -96,8 +96,10 @@ export class DialogController {
 
         // Добавляем созданное сообщение в диалог
         const currentDialogWithMessage = await this.dialogService.addMessageToDialog(currentDialog.id, message, params)
+
+        const lastMessage = await this.dialogService.getLastMessage(currentDialog.id)
         // Создаем из него краткую форму
-        const updatedDialogShort = this.dialogService.mapToDialogShortDto(currentDialogWithMessage, params)
+        const updatedDialogShort = this.dialogService.mapToDialogShortDto({dialog: currentDialogWithMessage, lastMessage}, params)
 
 
         // Оповещаем всех участников, что появилось новое сообщение

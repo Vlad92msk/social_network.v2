@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject 
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
 import { omit } from 'lodash'
-import { Repository } from 'typeorm'
+import { DataSource, Repository } from 'typeorm'
 import { DialogEntity } from './entities/dialog.entity'
 import { CreateDialogDto } from './dto/create-dialog.dto'
 import { UpdateDialogDto } from './dto/update-dialog.dto'
@@ -40,6 +40,7 @@ export class DialogService {
         private videoConferenceService: VideoConferenceService,
 
         private eventEmitter: EventEmitter2,
+      private readonly dataSource: DataSource
     ) {}
 
     /**
@@ -77,7 +78,7 @@ export class DialogService {
     async getDialogsByParticipant(userId: number) {
         return this.dialogRepository.find({
             where: { participants: { id: userId } },
-            relations: ['participants', 'admins', 'last_message'],
+            relations: ['participants', 'admins'],
         })
     }
 
@@ -133,10 +134,9 @@ export class DialogService {
         )
 
         const dialog = this.dialogRepository.create({
-            ...omit(query, ['participants', 'admins', 'last_message']),
+            ...omit(query, ['participants', 'admins']),
             admins: [creator],
             participants: [...participants, creator],
-            last_message: null
         })
 
         if (image) {
@@ -157,7 +157,7 @@ export class DialogService {
     async update(id: string, { query, image }: { query: UpdateDialogDto, image: Express.Multer.File }, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id },
-            relations: ['admins', 'participants', 'last_message']
+            relations: ['admins', 'participants']
         })
 
         if (!dialog) {
@@ -201,7 +201,7 @@ export class DialogService {
                 type: query?.type,
                 participants: { id: query?.participant_id || params.user_info_id }
             },
-            relations: ['participants', 'admins', 'last_message'],
+            relations: ['participants', 'admins'],
         })
         return createPaginationResponse({ data: dialogs, total, query })
     }
@@ -229,22 +229,25 @@ export class DialogService {
      * Удалить диалог
      */
     async remove(id: string, params: RequestParams) {
-        const dialog = await this.dialogRepository.findOne({
-            where: { id },
-            relations: ['admins']
+        return await this.dataSource.transaction(async manager => {
+            const dialog = await manager.findOne(DialogEntity, {
+                where: { id },
+                relations: ['admins', 'messages'] // Важно подгрузить сообщения
+            })
+
+            if (!dialog) {
+                throw new NotFoundException(`Диалог с ID "${id}" не найден`)
+            }
+
+            if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
+                throw new BadRequestException('У вас нет прав для удаления этого диалога')
+            }
+
+            await manager.remove(DialogEntity, dialog) // Удаление диалога с каскадным удалением сообщений
+            this.eventEmitter.emit(DialogEvents.REMOVE_DIALOG, { id, participants: dialog.participants.map(({ id }) => id)})
         })
-
-        if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
-        }
-
-        if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
-            throw new BadRequestException('У вас нет прав для удаления этого диалога')
-        }
-
-        await this.dialogRepository.remove(dialog)
-        this.eventEmitter.emit(DialogEvents.REMOVE_DIALOG, { id, participants: dialog.participants.map(({ id }) => id)})
     }
+
 
     /**
      * Добавить участника в диалог
@@ -395,25 +398,111 @@ export class DialogService {
         dialog.messages_not_read = dialog.messages_not_read.filter(messageId => !messagesToMark.includes(messageId))
 
         const updatedDialog = await this.dialogRepository.save(dialog)
-
-        // Обновляем last_message, если оно изменилось
-        const lastMessage = await this.messageService.findLastMessageForDialog(dialogId)
-
-        if (lastMessage) {
-            updatedDialog.last_message = lastMessage
-            await this.dialogRepository.save(updatedDialog)
-            this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort: await this.findOneShort(dialogId, params) })
-        }
-
         return updatedDialog
     }
 
 
-    mapToDialogShortDto(dialog: DialogEntity, params: RequestParams): DialogShortDto {
+    async findAllShort(query: FindDialogDto, params: RequestParams) {
+        const queryOptions = createPaginationQueryOptions<DialogEntity>({
+            query,
+            options: {
+                relations: ['participants'],
+            }
+        })
 
-        // console.log('dialog', dialog)
-        // console.log('params', params)
-        const lastMessage = dialog.last_message
+        if (query.participant_id) {
+            queryOptions.where = {
+                ...queryOptions.where,
+                participants: { id: query.participant_id },
+            }
+        }
+
+        const [dialogs, total] = await this.dialogRepository.createQueryBuilder('dialog')
+          .leftJoinAndSelect('dialog.participants', 'participant')
+          .leftJoinAndSelect('dialog.messages', 'message')
+          .where(queryOptions.where)
+          .orderBy('dialog.id', 'ASC')
+          .addOrderBy('message.date_created', 'DESC')
+          .skip(queryOptions.skip)
+          .take(queryOptions.take)
+          .select([
+              'dialog',
+              'participant',
+              'message',
+          ])
+          .getManyAndCount()
+
+        console.log('___dialogs', dialogs)
+        const shortDialogs = dialogs.map(dialog => {
+            const lastMessage = dialog.messages.length > 0 ? dialog.messages[0] : undefined
+            return this.mapToDialogShortDto({ dialog, lastMessage }, params)
+        })
+
+        return createPaginationResponse({ data: shortDialogs, total, query })
+    }
+
+    async findOneShort(id: string, params: RequestParams): Promise<DialogShortDto> {
+        const dialog = await this.dialogRepository.findOne({
+            where: { id },
+            relations: ['participants'],
+        })
+
+        if (!dialog) {
+            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
+        }
+
+        const lastMessage = await this.getLastMessage(dialog.id)
+        return this.mapToDialogShortDto({ dialog, lastMessage }, params)
+    }
+
+    async findShortByUser(userId: number, params: RequestParams): Promise<DialogShortDto[]> {
+        const dialogs = await this.dialogRepository.createQueryBuilder('dialog')
+          // Выбираем какие связи нам нужны
+          .leftJoinAndSelect('dialog.participants', 'participants')
+          .leftJoinAndSelect('dialog.admins', 'admins')
+          .leftJoinAndSelect('dialog.fixed_messages', 'fixed_messages')
+          // Из сообщений берем только последнее
+          .leftJoinAndSelect(
+            'dialog.messages',
+            'messages',
+            'messages.id = (SELECT m.id FROM messages m WHERE m."dialogId" = dialog.id ORDER BY m.date_created DESC LIMIT 1)'
+          )
+          // Добавляем к получившемуся сообщение связь с автором
+          .leftJoinAndSelect('messages.author', 'message_author')
+          // Сам запрос диалогов фильтруем только по текущему пользователю (userId)
+          .where(qb => {
+              const subQuery = qb.subQuery()
+                .select('d.id')
+                .from(DialogEntity, 'd')
+                .innerJoin('d.participants', 'p')
+                .where('p.id = :userId')
+                .getQuery()
+              return 'dialog.id IN ' + subQuery
+          })
+          // Устанавливаем значение для userId
+          .setParameter('userId', userId)
+          .addOrderBy('messages.date_created', 'DESC')
+          .select([
+              'dialog',
+              'participants',
+              'admins',
+              'dialog.title',
+              'dialog.image',
+              'dialog.description',
+              'fixed_messages',
+              'messages',
+              'message_author',
+          ])
+          .getMany()
+
+
+        return dialogs.map(dialog => {
+            const lastMessage = dialog.messages && dialog.messages[0]
+            return this.mapToDialogShortDto({ dialog, lastMessage }, params)
+        })
+    }
+
+    mapToDialogShortDto({ dialog, lastMessage }:{ dialog: DialogEntity, lastMessage?: MessageEntity }, params: RequestParams): DialogShortDto {
         const [participant] = dialog.participants.filter(({ id }) => id !== params?.user_info_id)
 
         return {
@@ -427,55 +516,6 @@ export class DialogService {
             _admins: dialog.admins,
             _participants: dialog.participants
         }
-    }
-
-    async findAllShort(query: FindDialogDto, params: RequestParams) {
-        const queryOptions = createPaginationQueryOptions<DialogEntity>({
-            query,
-            options: {
-                relations: ['last_message', 'participants', 'last_message.author'],
-            }
-        })
-
-        if (query.participant_id) {
-            queryOptions.where = {
-                ...queryOptions.where,
-                participants: { id: query.participant_id },
-            }
-        }
-
-        const [dialogs, total] = await this.dialogRepository.findAndCount(queryOptions)
-        const shortDialogs = await Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog, params)))
-        return createPaginationResponse({ data: shortDialogs, total, query })
-    }
-
-    async findOneShort(id: string, params: RequestParams): Promise<DialogShortDto> {
-        const dialog = await this.dialogRepository.findOne({
-            where: { id },
-            relations: ['last_message', 'participants', 'last_message.author'],
-        })
-
-        if (!dialog) {
-            throw new NotFoundException(`Диалог с ID "${id}" не найден`)
-        }
-
-        return this.mapToDialogShortDto(dialog, params)
-    }
-
-    async findShortByUser(userId: number, params: RequestParams): Promise<DialogShortDto[]> {
-        const dialogs = await this.dialogRepository.find({
-            //@ts-ignore
-            where: (qb) => {
-                qb.where('participants.id = :userId', { userId });
-            },
-            relations: {
-                admins: true,
-                participants: true,
-                last_message: true,
-            },
-        });
-
-        return Promise.all(dialogs.map(dialog => this.mapToDialogShortDto(dialog, params)))
     }
 
     async updateDialogImage(dialogId: string, file: Express.Multer.File, params: RequestParams) {
@@ -499,7 +539,7 @@ export class DialogService {
     async addMessageToDialog(dialogId: string, message: MessageEntity, params: RequestParams) {
         const dialog = await this.dialogRepository.findOne({
             where: { id: dialogId },
-            relations: ['messages', 'last_message', 'messages.dialog', 'last_message.author']
+            relations: ['messages', 'messages.dialog']
         })
         if (!dialog) {
             throw new NotFoundException(`Диалог с ID ${dialogId} не найден`)
@@ -508,14 +548,26 @@ export class DialogService {
         // Добавляем новое сообщение в массив сообщений диалога
         dialog.messages = [...(dialog.messages || []), message]
 
-        dialog.last_message = message
-
+        const last = await this.getLastMessage(dialogId)
         const updatedDialog = await this.dialogRepository.save(dialog)
 
-        const updatedDialogShort = this.mapToDialogShortDto(updatedDialog, params)
-        // this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
+        const updatedDialogShort = this.mapToDialogShortDto({ dialog: updatedDialog, lastMessage: last }, params)
+        this.eventEmitter.emit(DialogEvents.DIALOG_LAST_MESSAGE_UPDATED, { dialogId, updatedDialogShort })
 
         return updatedDialog
+    }
+
+    async getLastMessage(dialogId: string): Promise<MessageEntity | undefined> {
+        return await this.dialogRepository
+          .createQueryBuilder('dialog')
+          .leftJoinAndSelect('dialog.messages', 'message')
+          .leftJoinAndSelect('message.author', 'author')
+          .where('dialog.id = :dialogId', { dialogId })
+          .orderBy('message.date_created', 'DESC')
+          .select(['message', 'author'])
+          .limit(1)
+          .getOne()
+          .then(result => result?.messages[0])
     }
 
     /**

@@ -1,8 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
+import { without } from 'lodash'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../swagger/dialogs/interfaces-dialogs'
 import { CookieType } from '../../app/types/cookie'
+import { DialogEvents } from '../events/dialog-events-enum'
 import { dialogsApiInstance } from '../instance'
 import { RootState } from '../store'
+import { getSocket } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 
 export const dialogsApi = createApi({
   reducerPath: 'API_dialogs',
@@ -55,6 +59,72 @@ export const dialogsApi = createApi({
       query: (params) => {
         const { url, init } = dialogsApiInstance.findByUserShortDialogInit(params)
         return { url, ...init }
+      },
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch },
+      ) {
+        const socket = getSocket()
+        if (!socket) {
+          console.error('WebSocket connection not available')
+          return
+        }
+
+        try {
+          await cacheDataLoaded
+
+          // Обновить/добавить диалог
+          const handleShortDialogUpdate = (updatedDialog: DialogShortDto) => {
+            updateCachedData((draft) => {
+              const index = draft.findIndex(dialog => dialog.id === updatedDialog.id)
+              if (index === -1) {
+                // Если диалог не найден, добавляем его в начало списка
+                draft.unshift(updatedDialog)
+              } else {
+                // Если диалог найден, обновляем его
+                draft[index] = updatedDialog
+              }
+            })
+          }
+
+          // Выйти из диалога
+          const handleExitDialog = (exitDialogId: string) => {
+            updateCachedData((draft) => {
+              const dialogToRemove = draft.find((m) => m.id === exitDialogId)
+              if (dialogToRemove) return without(draft, dialogToRemove)
+
+              return draft
+            })
+            dispatch(MessengerSliceActions.setChattingPanelStatus('close'))
+          }
+
+          // Диалог был удален
+          const handlRemoveDialog = (removedDialogId: string) => {
+            updateCachedData((draft) => {
+              const dialogToRemove = draft.find((m) => m.id === removedDialogId)
+              if (dialogToRemove) return without(draft, dialogToRemove)
+
+              return draft
+            })
+            dispatch(MessengerSliceActions.setChattingPanelStatus('close'))
+          }
+
+          socket.on(DialogEvents.DIALOG_SHORT_UPDATED, handleShortDialogUpdate)
+          socket.on(DialogEvents.EXIT_DIALOG, handleExitDialog)
+          socket.on(DialogEvents.REMOVE_DIALOG, handlRemoveDialog)
+
+          await cacheEntryRemoved
+          socket.off(DialogEvents.DIALOG_SHORT_UPDATED, handleShortDialogUpdate)
+          socket.off(DialogEvents.EXIT_DIALOG, handleExitDialog)
+          socket.off(DialogEvents.REMOVE_DIALOG, handlRemoveDialog)
+        } catch {
+          const currentSocket = getSocket()
+          if (currentSocket) {
+            currentSocket.off(DialogEvents.DIALOG_SHORT_UPDATED)
+            currentSocket.off(DialogEvents.EXIT_DIALOG)
+            currentSocket.off(DialogEvents.REMOVE_DIALOG)
+          }
+        }
       },
     }),
 

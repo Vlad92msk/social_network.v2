@@ -8,9 +8,10 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
+import { DialogEntity } from '@services/messenger/dialog/entities/dialog.entity'
 import { DialogEvents } from '@services/messenger/dialog/types'
 import { PublicationType } from '@shared/entity/publication.entity'
-import { LessThan, Repository } from 'typeorm'
+import { DataSource, LessThan, Repository } from 'typeorm'
 import { CreateMessageDto } from './dto/create-message.dto'
 import { UpdateMessageDto } from './dto/update-message.dto'
 import { MediaInfoService } from '@services/media/info/media-info.service'
@@ -34,6 +35,8 @@ export class MessageService {
         private userInfoService: UserInfoService,
 
         private eventEmitter: EventEmitter2,
+      private readonly dataSource: DataSource
+
     ) {}
 
     /**
@@ -217,30 +220,45 @@ export class MessageService {
         return message
     }
 
-    /**
-     * Удалить сообщение
-     */
     async remove(id: string, params: RequestParams) {
-        const message = await this.messageRepository.findOne({
-            where: { id },
-            relations: ['media', 'voices', 'videos', 'dialog']
-        })
-        if (!message) {
-            throw new NotFoundException(`Сообщение с ID "${id}" не найдено`)
-        }
+        return await this.dataSource.transaction(async manager => {
+            const message = await manager.findOne(MessageEntity, {
+                where: { id },
+                relations: ['media', 'voices', 'videos', 'dialog']
+            });
 
-        const allMedia = [
-            ...(message.media || []),
-            ...(message.voices || []),
-            ...(message.videos || [])
-        ]
+            if (!message) {
+                throw new NotFoundException(`Сообщение с ID "${id}" не найдено`);
+            }
 
-        for (const media of allMedia) {
-            await this.mediaInfoService.deleteFile(media.id, params)
-        }
-        await this.messageRepository.remove(message)
-        this.eventEmitter.emit(DialogEvents.REMOVE_MESSAGE, { dialogId: message.dialog.id, messageId: id, creator: params })
+            const dialogId = message.dialog.id;
+            console.log('Диалог перед удалением сообщения:', await manager.findOne(DialogEntity, { where: { id: dialogId } }));
+
+            const allMedia = [
+                ...(message.media || []),
+                ...(message.voices || []),
+                ...(message.videos || [])
+            ];
+
+            for (const media of allMedia) {
+                await this.mediaInfoService.deleteFile(media.id, params);
+            }
+
+            await manager.delete(MessageEntity, id); // Удаляем сообщение
+
+            // Проверяем диалог сразу после удаления сообщения
+            const dialogAfterDelete = await manager.findOne(DialogEntity, {
+                where: { id: dialogId }
+            });
+
+            console.log('Диалог после удаления сообщения:', dialogAfterDelete);
+
+            this.eventEmitter.emit(DialogEvents.REMOVE_MESSAGE, { dialogId, messageId: id, creator: params });
+        });
     }
+
+
+
 
     /**
      * Отметить сообщение как доставленное

@@ -58,12 +58,8 @@ export class MessageEntity extends PublicationEntity {
     videos: MediaEntity[]
 
     @ApiProperty({ description: 'Диалог которому принадлежит сообщение', type: () => DialogEntity })
-    @ManyToOne(() => DialogEntity, dialog => dialog.messages)
+    @ManyToOne(() => DialogEntity, dialog => dialog.messages, { onDelete: 'SET NULL' })
     dialog: DialogEntity
-
-    @ApiProperty({ description: 'Диалог, в котором это сообщение является последним', type: () => DialogEntity, nullable: true })
-    @OneToOne(() => DialogEntity, dialog => dialog.last_message, { lazy: true })
-    last_message_in_dialog: Promise<DialogEntity | null>
 
     @ApiProperty({ description: 'Файлы, приложенные к сообщению', type: () => [MediaEntity] })
     @ManyToMany(() => MediaEntity, (media) => media.messagesRef, { onDelete: 'CASCADE' })

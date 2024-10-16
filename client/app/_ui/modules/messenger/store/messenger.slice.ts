@@ -1,6 +1,7 @@
 import { PayloadAction } from '@reduxjs/toolkit'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userInfo'
+import { dialogsApi, userInfoApi } from '../../../../../store/api'
 import { PaginationResponse } from '../../../../../store/types/request'
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { UserStatus } from '../../../../types/user-status'
@@ -46,26 +47,9 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
     initialState: messengerInitialState,
     reducers: {
       setCurrentDialogId: setState<MessengerSliceState, string>('currentDialogId'),
-      setTargetUserToDialog: setState<MessengerSliceState, UserInfoDto>('targetNewUserToDialog'),
+      setTargetUserToDialog: setState<MessengerSliceState, UserInfoDto | undefined>('targetNewUserToDialog'),
 
       setShortDialogs: setState<MessengerSliceState, DialogShortDto[]>('shortDialogs'),
-
-      updateShortDialog: (state, action: PayloadAction<DialogShortDto>) => {
-        if (!state.shortDialogs) {
-          state.shortDialogs = []
-        }
-
-        const findDialog = state.shortDialogs?.find(({ id }) => id === action.payload.id)
-
-        if (!findDialog) {
-          state.shortDialogs.unshift(action.payload)
-        } else {
-          state.shortDialogs = state.shortDialogs.map((dialog) => {
-            if (dialog.id !== action.payload.id) return dialog
-            return action.payload
-          })
-        }
-      },
 
       setDialogHistory: (state, action: PayloadAction<{ dialog: DialogEntity, activeParticipants: number[] }>) => {
         const { dialog, activeParticipants } = action.payload
@@ -82,17 +66,6 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       },
       setError: (state, action: PayloadAction<string>) => {
         state.error = action.payload
-      },
-      removeDialog: (state, action: PayloadAction<{ removedDialogId: string }>) => {
-        state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.payload.removedDialogId)
-        state.currentDialogId = ''
-        state.currentDialog = undefined
-        state.targetNewUserToDialog = undefined
-        delete state.messages[action.payload.removedDialogId]
-        delete state.participants[action.payload.removedDialogId]
-      },
-      exitDialog: (state, action: PayloadAction<{ exitDialogId: string }>) => {
-        state.shortDialogs = state.shortDialogs?.filter(({ id }) => id !== action.payload.exitDialogId)
       },
 
       exitUserTyping: (state, action: PayloadAction<{ dialogId: string, userId: number, isTyping: boolean }>) => {
@@ -121,6 +94,11 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
 
       setChattingPanelStatus: (state, action: PayloadAction<'open' | 'close'>) => {
         state.chatingPanelStatus = action.payload
+        if (action.payload === 'close') {
+          state.currentDialogId = ''
+          state.currentDialog = undefined
+          state.targetNewUserToDialog = undefined
+        }
       },
       setDrawerStatus: (state) => {
         state.drawerStatus = state.drawerStatus === 'open' ? 'close' : 'open'

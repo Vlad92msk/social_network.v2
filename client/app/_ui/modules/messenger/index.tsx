@@ -11,15 +11,14 @@ interface MessengerProps {
   }
   searchParams: {}
   profile: UserProfileInfo | undefined
-  dialogs: DialogShortDto[]
 }
 
 export async function Messenger(props: MessengerProps) {
-  const { params, dialogs, profile } = props
+  const { params, profile } = props
   // await sleep(1000)
 
   return (
-    <MessengerModule dialogsShort={dialogs}>
+    <MessengerModule>
       <DialogsDrawerBar />
       <DialogSelected />
     </MessengerModule>

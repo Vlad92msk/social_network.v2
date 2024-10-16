@@ -38,10 +38,10 @@ export default async function UserPage(props: UserPageProps) {
    */
   if (!checkedUser) redirect(`/${locale}/${profile?.user_info.public_id}/profile`)
 
-  const data = await getDialogsShortQuery({
-    userInfoIdCookie: cookieStore.get(CookieType.USER_INFO_ID),
-    profileIdCookie: cookieStore.get(CookieType.USER_PROFILE_ID),
-  })
+  // const data = await getDialogsShortQuery({
+  //   userInfoIdCookie: cookieStore.get(CookieType.USER_INFO_ID),
+  //   profileIdCookie: cookieStore.get(CookieType.USER_PROFILE_ID),
+  // })
 
   return (
     <Layout
@@ -57,7 +57,7 @@ export default async function UserPage(props: UserPageProps) {
                 params={props.params}
                 searchParams={props.searchParams}
                 profile={profile}
-                dialogs={data}
+                // dialogs={data}
               />
             </Suspense>
           </ContentArea>

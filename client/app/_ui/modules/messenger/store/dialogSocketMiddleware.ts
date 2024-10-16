@@ -1,12 +1,11 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
-import { Socket } from 'socket.io-client'
 import { createSocket } from '@ui/modules/messenger/store/utils'
-import { MessengerSliceActions } from './messenger.slice'
-import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
+import { Socket } from 'socket.io-client'
+import { DialogEntity, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
 import { RootReducer } from '../../../../../store/root.reducer'
-import { PaginationResponse } from '../../../../../store/types/request'
 import { UserStatus } from '../../../../types/user-status'
+import { MessengerSliceActions } from './messenger.slice'
 
 let socket: Socket | null = null
 
@@ -37,26 +36,8 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
       store.dispatch(MessengerSliceActions.setError('Socket connection error'))
     })
 
-    // Обработчики событий диалогов
-    socket.on(DialogEvents.GET_DIALOGS, (userDialogs: DialogShortDto[]) => {
-      console.log('userDialogs', userDialogs)
-      store.dispatch(MessengerSliceActions.setShortDialogs(userDialogs))
-    })
-
-    socket.on(DialogEvents.DIALOG_SHORT_UPDATED, (updatedDialog: DialogShortDto) => {
-      store.dispatch(MessengerSliceActions.updateShortDialog(updatedDialog))
-    })
-
     socket.on(DialogEvents.DIALOG_HISTORY, (history: { dialog: DialogEntity; activeParticipants: number[] }) => {
       store.dispatch(MessengerSliceActions.setDialogHistory(history))
-    })
-
-    socket.on(DialogEvents.EXIT_DIALOG, (exitDialogId: string) => {
-      store.dispatch(MessengerSliceActions.exitDialog({ exitDialogId }))
-    })
-
-    socket.on(DialogEvents.REMOVE_DIALOG, (removedDialogId: string) => {
-      store.dispatch(MessengerSliceActions.removeDialog({ removedDialogId }))
     })
 
     socket.on(DialogEvents.USER_STATUS_CHANGED, (payload: { dialogId: string, userId: number, status: UserStatus }) => {
