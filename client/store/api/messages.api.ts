@@ -76,7 +76,7 @@ export const messagesApi = createApi({
         const socket = getSocket()
 
         if (!socket) {
-          console.error('WebSocket connection not available')
+          console.error('Нет сокет соединения')
           return
         }
 

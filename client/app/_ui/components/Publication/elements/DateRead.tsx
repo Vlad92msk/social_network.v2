@@ -12,7 +12,10 @@ export function DateRead(props: DateDeliveryProps) {
     <div className={cn('DateRead')}>
       {
         (dateDeliver && dateRead) && (
-          <Icon name={isPast(dateDeliver) ? 'check' : 'checkmark'} className={cn('DateReadIcon', { readable: isPast(dateRead) })} />
+          <Icon
+            name={isPast(new Date(dateDeliver)) ? 'check' : 'checkmark'}
+            className={cn('DateReadIcon', { readable: isPast(new Date(dateRead)) })}
+          />
         )
       }
     </div>

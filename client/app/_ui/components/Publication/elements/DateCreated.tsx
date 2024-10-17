@@ -15,10 +15,10 @@ export function DateCreated(props: DateCreatedProps) {
   const dateUpdate = usePublicationCtxSelect((store) => store.dateChanged)
 
   return (
-    <Text className={cn('DateCreated')} fs="12" letterSpacing={0.18}>
-      {dateUpdate && !isNull(dateUpdate) ? `${format(dateUpdate, 'HH:mm', { locale: ru })} (изменено)`
+    <Text className={cn('DateCreated')} fs="10" letterSpacing={0.18} nowrap>
+      {dateUpdate && !isNull(dateUpdate) ? `${format(new Date(dateUpdate), 'HH:mm', { locale: ru })} (изменено)`
         : (
-          dateCreated ? `${format(dateCreated, 'HH:mm', { locale: ru })}` : null
+          dateCreated ? `${format(new Date(dateCreated), 'HH:mm', { locale: ru })}` : null
         )}
     </Text>
   )

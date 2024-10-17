@@ -19,29 +19,34 @@ export function FixedMessages() {
   if (!fixedMessages?.length) return null
   return (
     <div className={cn('FixedMessages')}>
-      {fixedMessages.map(({ id, text }) => (
-        <div key={id} className={cn('FixedMessagesBox')}>
-          <Button
-            className={cn('FixedMessagesContent')}
-            onClick={() => {
-              scrollToComment({
-                targetElementId: id,
-              })
-            }}
-          >
-            <Text weight="bold" fs="12">Закрепленное сообщение</Text>
-            <Text fs="12">{text}</Text>
-          </Button>
-          <Button
-            className={cn('FixedMessagesButtonRemove')}
-            onClick={() => {
-              onPin({ id: dialogId, message_id: id })
-            }}
-          >
-            <Icon name="close" />
-          </Button>
-        </div>
-      ))}
+      <div className={cn('FixedMessagesSticks')}>
+        {fixedMessages.map(({ id }) => <span key={id} className={cn('FixedMessagesStickElement')} />)}
+      </div>
+      <div className={cn('FixedMessagesList')}>
+        {fixedMessages.map(({ id, text }) => (
+          <div key={id} className={cn('FixedMessagesBox')}>
+            <Button
+              className={cn('FixedMessagesContent')}
+              onClick={() => {
+                scrollToComment({
+                  targetElementId: id,
+                })
+              }}
+            >
+              <Text weight="bold" fs="12">Закрепленное сообщение</Text>
+              <Text fs="12">{text}</Text>
+            </Button>
+            <Button
+              className={cn('FixedMessagesButtonRemove')}
+              onClick={() => {
+                onPin({ id: dialogId, message_id: id })
+              }}
+            >
+              <Icon name="close" />
+            </Button>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

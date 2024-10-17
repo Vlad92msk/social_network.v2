@@ -29,7 +29,7 @@ export function Message(props: MessageProps) {
       className={cn('Message', { from })}
     >
       <Publication
-        contextProps={{ id: message.id, dateChanged: message.date_updated }}
+        contextProps={{ id: message.id, dateChanged: message.is_edited ? message.date_updated : undefined }}
         className={cn('MessageItem')}
         authorPosition="right"
         onRead={() => {

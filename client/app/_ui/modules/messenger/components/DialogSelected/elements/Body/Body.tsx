@@ -53,7 +53,6 @@ export function Body() {
   const messages = useMemo(() => messagesData?.data || [], [messagesData])
   const hasMore = useMemo(() => messagesData?.has_more || false, [messagesData])
 
-
   return (
     <div className={cn()}>
       {isLoading ? (
