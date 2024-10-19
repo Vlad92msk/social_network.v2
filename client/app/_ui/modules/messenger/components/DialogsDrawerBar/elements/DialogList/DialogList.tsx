@@ -1,3 +1,5 @@
+import { Locale } from '@middlewares/variables'
+import { useParams, useRouter } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import { Spinner } from '@ui/common/Spinner'
 import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
@@ -17,6 +19,8 @@ interface DialogListProps{
 
 export function DialogList(props: DialogListProps) {
   const { className } = props
+  const { locale, userId } = useParams<{locale: Locale, userId: string}>()
+  const router = useRouter()
   const dispatch = useDispatch()
   const { profile } = useSelector(ProfileSelectors.selectProfile)
 
@@ -59,7 +63,7 @@ export function DialogList(props: DialogListProps) {
             >
               <Text fs="12">Чат</Text>
             </Button>
-            {/* <Button> */}
+            {/* <Button onClick={() => {router.push(`/${locale}/${participant.public_id}/profile`)}}> */}
             {/*   <Text fs="12">К контакту</Text> */}
             {/* </Button> */}
             <Button onClick={() => {

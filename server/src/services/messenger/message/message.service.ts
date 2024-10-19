@@ -172,6 +172,9 @@ export class MessageService {
           .leftJoinAndSelect('message.videos', 'videos')
           .leftJoinAndSelect('message.reply_to', 'reply_to')
           .leftJoinAndSelect('message.author', 'author')
+          .leftJoinAndSelect('media.meta', 'media_meta')
+          .leftJoinAndSelect('voices.meta', 'voices_meta')
+          .leftJoinAndSelect('videos.meta', 'videos_meta')
           .leftJoinAndSelect('message.original_message', 'original_message')
           .where('message.dialog.id = :dialogId', { dialogId: restQuery.dialog_id })
 

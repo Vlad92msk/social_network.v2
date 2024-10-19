@@ -1,12 +1,12 @@
-import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
-import { useMemo } from 'react'
-import { useSelector } from 'react-redux'
 import { useProfile } from '@hooks'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
-import { cn } from './cn'
+import { useMemo } from 'react'
+import { useSelector } from 'react-redux'
 import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
+import { cn } from './cn'
 
 interface ContactInfoProps {
   className?: string

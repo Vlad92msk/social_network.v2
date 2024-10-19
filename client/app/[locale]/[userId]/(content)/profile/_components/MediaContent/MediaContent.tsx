@@ -12,7 +12,7 @@ import { Text } from '@ui/common/Text'
 import { cn } from './cn'
 import { AlbumContainer, ItemElement, SortableItem } from './elements'
 import { MediaMetadata, MediaResponseDto } from '../../../../../../../../swagger/media/interfaces-media'
-import { mediaApi, userInfoApi } from '../../../../../../../store/api'
+import { mediaApi } from '../../../../../../../store/api'
 import { FILE_FORMAT_AUDIO, FILE_FORMAT_IMAGE, FILE_FORMAT_VIDEO } from '../../../../../../types/fileFormats'
 import { UserPageProps } from '../../page'
 
@@ -86,14 +86,25 @@ export function MediaContent(props: MyPhotoProps) {
 
   const handleDragOver = useCallback((event) => {
     const { active, over } = event
-    if (!over) return
+
+    setOverItemId(over ? over.id : null)
+
+    if (!over) {
+      // Если перетаскиваем "в никуда", готовимся к разгруппировке
+      setPotentialNewAlbum(null)
+      return
+    }
 
     const activeItem = items.find((item) => item.id === active.id)
+    if (!activeItem) return
+
     const overItem = items.find((item) => item.id === over.id)
 
-    setOverItemId(over.id)
-
-    if (!activeItem?.album_name && !overItem?.album_name && active.id !== over.id) {
+    if (overItem?.album_name && overItem.album_name !== activeItem.album_name) {
+      // Если перетаскиваем над другим альбомом
+      setPotentialNewAlbum(overItem.album_name)
+    } else if (!overItem?.album_name && !activeItem.album_name && active.id !== over.id) {
+      // Если перетаскиваем над одиночным элементом для создания нового альбома
       setPotentialNewAlbum(generateRandomAlbum())
     } else {
       setPotentialNewAlbum(null)
@@ -102,26 +113,40 @@ export function MediaContent(props: MyPhotoProps) {
 
   const handleDragEnd = useCallback((event) => {
     const { active, over } = event
-    if (!over) return
 
     const updatedItems: MediaResponseDto[] = []
 
     setItems((prevItems) => {
       const activeItem = prevItems.find((item) => item.id === active.id)
-      const overItem = prevItems.find((item) => item.id === over.id)
-
-      if (!activeItem || !overItem) return prevItems
+      if (!activeItem) return prevItems
 
       let newAlbum: string | undefined
 
-      if (overItem.album_name) {
-        newAlbum = overItem.album_name
-      } else if (!activeItem.album_name && !overItem.album_name && active.id !== over.id) {
-        newAlbum = potentialNewAlbum || generateRandomAlbum()
+      if (!over) {
+        // Если перетащили "в никуда", разгруппируем элемент
+        newAlbum = undefined
+      } else {
+        const overItem = prevItems.find((item) => item.id === over.id)
+        if (overItem?.album_name) {
+          // Если перетаскиваем в существующий альбом
+          newAlbum = overItem.album_name
+        } else if (!overItem?.album_name && !activeItem.album_name && active.id !== over.id) {
+          // Если создаем новый альбом из двух одиночных элементов
+          newAlbum = potentialNewAlbum || generateRandomAlbum()
+        } else {
+          // Если перетаскиваем в ту же область, оставляем как есть
+          newAlbum = activeItem.album_name
+        }
       }
 
       return prevItems.map((item) => {
-        if (item.id === active.id || (item.id === over.id && !overItem.album_name && !activeItem.album_name && active.id !== over.id)) {
+        if (item.id === active.id) {
+          const result = { ...item, album_name: newAlbum }
+          updatedItems.push(result)
+          return result
+        }
+        if (over && newAlbum && item.id === over.id && !item.album_name) {
+          // Если создаем новый альбом, добавляем и перетаскиваемый элемент, и элемент, над которым он находится
           const result = { ...item, album_name: newAlbum }
           updatedItems.push(result)
           return result
@@ -129,19 +154,23 @@ export function MediaContent(props: MyPhotoProps) {
         return item
       })
     })
+
     const uniqItems = uniqBy(updatedItems, 'id')
-    onMediaUpdate({ body: {
-      target_ids: uniqItems.map(({ id }) => id),
-      // @ts-ignore
-      album_name: uniqItems[0]?.album_name || null,
-    } })
+    onMediaUpdate({
+      body: {
+        target_ids: uniqItems.map(({ id }) => id),
+        // @ts-ignore
+        album_name: uniqItems[0]?.album_name || null,
+      },
+    })
+
     setActiveId(null)
     setOverItemId(null)
     setPotentialNewAlbum(null)
   }, [onMediaUpdate, potentialNewAlbum])
 
   return (
-    <div className={cn()}>
+    <div className={cn()} data-dnd-id="ungroup-area">
       { isLoading ? <Spinner /> : (
         <DndContext
           sensors={sensors}

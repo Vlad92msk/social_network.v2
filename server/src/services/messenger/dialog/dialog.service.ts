@@ -360,16 +360,22 @@ export class DialogService {
      * Открепить сообщение в диалоге
      */
     async removeFixedMessage(dialogId: string, messageId: string, params: RequestParams) {
-        const dialog = await this.findOne(dialogId)
+        const dialog = await this.dialogRepository.findOne({
+            where: { id: dialogId },
+            relations: {
+                admins: true,
+                fixed_messages: true
+            }
+        })
 
         if (!dialog.admins.some(admin => admin.id === params.user_info_id)) {
             throw new BadRequestException('У вас нет прав для открепления сообщений в этом диалоге')
         }
 
         dialog.fixed_messages = dialog.fixed_messages.filter(message => message.id !== messageId)
-        await this.dialogRepository.save(dialog)
-        this.eventEmitter.emit(DialogEvents.UPDATED_FIXED_MESSAGES, { dialog_id: dialogId, new_fixed_messages: dialog.fixed_messages })
-        return dialog
+        const updatedDialog = await this.dialogRepository.save(dialog)
+        this.eventEmitter.emit(DialogEvents.UPDATED_FIXED_MESSAGES, { dialog_id: dialogId, new_fixed_messages: updatedDialog.fixed_messages })
+        return updatedDialog
     }
 
 

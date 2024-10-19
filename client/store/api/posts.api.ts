@@ -51,7 +51,7 @@ export const postsApi = createApi({
         try {
           const { data: createdPost } = await queryFulfilled
           dispatch(
-            postsApi.util.updateQueryData('findAll', {}, (draft) => {
+            postsApi.util.updateQueryData('findAll', { owner_public_id: createdPost.author.public_id }, (draft) => {
               draft.push(createdPost)
             }),
           )
@@ -107,9 +107,12 @@ export const postsApi = createApi({
         const { url, init } = postsApiInstance.removeInit(params)
         return { url, ...init }
       },
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+      async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
+        const state = getState() as RootState
+        const userInfoId = state.profile?.profile?.user_info?.public_id
+
         const patchResult = dispatch(
-          postsApi.util.updateQueryData('findAll', {}, (draft) => {
+          postsApi.util.updateQueryData('findAll', { owner_public_id: userInfoId }, (draft) => {
             const postToRemove = draft.find((post) => post.id === arg?.id)
             if (postToRemove) return without(draft, postToRemove) as PostResponseDto[]
 
