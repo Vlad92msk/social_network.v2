@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit'
 import { uniq } from 'lodash'
+import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { RootReducer } from '../../../../../../store/root.reducer'
 
 const selectSelf = (state: RootReducer) => state.messenger
@@ -13,6 +14,13 @@ export const selectCurrentDialogId = createSelector(selectSelf, (messenger) => m
 export const selectTargetNewUserToDialog = createSelector(selectSelf, (messenger) => messenger.targetNewUserToDialog)
 export const selectCurrentDialog = createSelector(selectSelf, (messenger) => messenger.currentDialog)
 export const selectCurrentDialogFixedMessages = createSelector(selectCurrentDialog, (currentDialog) => currentDialog?.fixed_messages || [])
+export const selectCurrentDialogParticipants = createSelector(selectCurrentDialog, (currentDialog) => {
+  const participantsMap = new Map<number, UserInfo>()
+  currentDialog?.participants.forEach((participant) => {
+    participantsMap.set(participant.id, participant)
+  })
+  return participantsMap
+})
 
 export const selectCurrentDialogActiveParticipants = createSelector(
   [selectSelf, selectCurrentDialogId],

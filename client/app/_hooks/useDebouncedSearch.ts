@@ -3,14 +3,14 @@ import { BehaviorSubject } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
 interface SearchInput {
-  name?: string;
-  value?: string;
+  name?: string
+  value?: string
 }
 
 interface UseDebouncedSearchProps {
-  initialValue?: string;
-  onSearch: (value?: string, name?: string) => void;
-  debounceMs?: number;
+  initialValue?: string
+  onSearch: (value?: string, name?: string) => void
+  debounceMs?: number
 }
 
 /**
@@ -37,7 +37,7 @@ export const useDebouncedSearch = (props: UseDebouncedSearchProps) => {
       })
 
     return () => subscription.unsubscribe()
-  }, [onSearch, debounceMs])
+  }, [debounceMs])
 
   const handleChange = useCallback((value?: string, name?: string) => {
     setInput(value)

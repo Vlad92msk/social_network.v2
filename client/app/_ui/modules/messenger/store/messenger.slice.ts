@@ -1,8 +1,6 @@
 import { PayloadAction } from '@reduxjs/toolkit'
 import { DialogEntity, DialogShortDto, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userInfo'
-import { dialogsApi, userInfoApi } from '../../../../../store/api'
-import { PaginationResponse } from '../../../../../store/types/request'
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { UserStatus } from '../../../../types/user-status'
 

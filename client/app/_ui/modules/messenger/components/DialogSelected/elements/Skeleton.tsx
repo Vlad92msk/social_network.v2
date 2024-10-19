@@ -1,5 +1,5 @@
-import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { useSelector } from 'react-redux'
+import { MessengerSelectors } from '../../../store/selectors'
 import { cn } from '../cn'
 
 interface SkeletonProps {
@@ -7,10 +7,11 @@ interface SkeletonProps {
   bodyComponent: React.ReactNode
   footerComponent: React.ReactNode
   fixedMessages: React.ReactNode
+  usersTyping: React.ReactNode
 }
 
 export function Skeleton(props: SkeletonProps) {
-  const { headerComponent, footerComponent, bodyComponent, fixedMessages } = props
+  const { headerComponent, footerComponent, bodyComponent, fixedMessages, usersTyping } = props
   const chatingPanelStatus = useSelector(MessengerSelectors.selectChatingPanelStatus)
 
   return (
@@ -23,6 +24,9 @@ export function Skeleton(props: SkeletonProps) {
           {fixedMessages}
           <div className={cn('Body')}>
             {bodyComponent}
+            <div className={cn('BodyUsersTyping')}>
+              {usersTyping}
+            </div>
           </div>
           <div className={cn('Footer')}>
             {footerComponent}

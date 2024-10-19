@@ -6,7 +6,7 @@ import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { classNames, makeCn } from '@utils/others'
 import style from './Messenger.module.scss'
 import { MessageProvider } from '../store'
-import { MessengerState } from '../store/message.store'
+import { MessengerState } from '../store/message.ctx'
 
 export const cn = makeCn('Messenger', style)
 

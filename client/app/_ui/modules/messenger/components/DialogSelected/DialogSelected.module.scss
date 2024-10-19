@@ -49,6 +49,28 @@
     overflow-y: auto;
     position: relative;
     flex-direction: column;
+
+    &UsersTyping {
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      gap: rem(5);
+
+      &Box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: rem(5);
+        padding: rem(5);
+      }
+      &ImgBox {
+        width: rem(20);
+        height: rem(20);
+        border-radius: 50%;
+        overflow: hidden;
+      }
+    }
+
   }
 
   &-FixedMessages {

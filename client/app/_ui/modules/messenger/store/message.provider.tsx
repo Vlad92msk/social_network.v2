@@ -2,7 +2,7 @@
 
 import { createContext, use, useRef } from 'react'
 import { StoreApi, useStore } from 'zustand'
-import { createMessengerStore, MessengerState } from './message.store'
+import { createMessengerStore, MessengerState } from './message.ctx'
 
 const Context = createContext<StoreApi<MessengerState> | null>(null)
 

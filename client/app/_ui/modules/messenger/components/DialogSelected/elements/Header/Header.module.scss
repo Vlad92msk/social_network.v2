@@ -30,19 +30,36 @@
   &-Info {
     display: flex;
     flex-direction: column;
-    gap: rem(5);
   }
   &-InfoName {
     width: 100%;
   }
   &-OnlineStatus {
     width: 100%;
+    display: flex;
+    gap: rem(3);
+    align-items: center;
+
+    &Indicator {
+      width: rem(5);
+      height: rem(5);
+      border-radius: 50%;
+      flex-shrink: 0;
+
+      &--status {
+        &_Online {
+          background: var(--Palette--BrightGreen--100--opacity-1);
+        }
+        &_Offline {
+          background: var(--Palette--LightGrey--100--opacity-1);
+        }
+      }
+    }
   }
 
   &-CallButtons {
     display: flex;
     gap: rem(10);
     color: var(--Color-Text--root--theme-default);
-
   }
 }
