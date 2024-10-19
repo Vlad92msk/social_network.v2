@@ -1,12 +1,10 @@
 'use client'
 
 import {
-  Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton, UsersTyping
+  Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton, UsersTyping,
 } from './elements'
 
-interface ChatProps {}
-
-export function DialogSelected(props: ChatProps) {
+export function DialogSelected() {
   return (
     <Skeleton
       headerComponent={(

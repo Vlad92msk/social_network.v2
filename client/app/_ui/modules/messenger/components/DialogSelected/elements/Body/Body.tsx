@@ -22,7 +22,6 @@ export function Body() {
     },
   )
 
-  console.log('messagesData', messagesData?.data)
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current) {
       clearTimeout(loadingTimeoutRef.current)
