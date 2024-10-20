@@ -46,7 +46,9 @@ export function ContactInfo(props: ContactInfoProps) {
     switch (type) {
       case SelectDialogType.PRIVATE: {
         const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
-        const isUserOnline = activeParticipants?.includes(participant.id)
+        const isUserOnline = participant ? activeParticipants?.includes(participant.id) : undefined
+
+        if (!participant) return byDefault
 
         return ({
           img: <Image src={participant.profile_image} alt={participant.name} width={50} height={50} />,

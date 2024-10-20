@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { MediaEntitySourceType } from '@services/media/info/entities/media.entity'
-import { ILike, Repository,  } from 'typeorm'
+import { ILike, In, Repository, } from 'typeorm'
 import { UserInfo } from './entities/user.entity'
 import { GetUsersDto } from './dto/get-users.dto'
 import { RequestParams } from 'src/shared/decorators'
@@ -82,6 +82,14 @@ export class UserInfoService {
 
         return user
     }
+    async getSomeUsersById(ids: number[]) {
+        if (!ids?.length) return []
+        const user = await this.userInfoRepository.find({ where: { id: In(ids) } })
+
+        return user
+    }
+
+
 
     async getUsersByParams(query: GetUsersDto, params?: RequestParams) {
         const { public_id, name } = query

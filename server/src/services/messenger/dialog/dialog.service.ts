@@ -127,9 +127,7 @@ export class DialogService {
      */
     async create({ query, image }: { query?: CreateDialogDto, image?: Express.Multer.File }, params: RequestParams) {
         const creator = await this.userInfoService.getUsersById(params.user_info_id)
-        const participants = await Promise.all(
-            query?.participants?.map(id => this.userInfoService.getUsersById(id))
-        )
+        const participants = await this.userInfoService.getSomeUsersById(query?.participants)
 
         const dialog = this.dialogRepository.create({
             ...omit(query, ['participants', 'admins']),

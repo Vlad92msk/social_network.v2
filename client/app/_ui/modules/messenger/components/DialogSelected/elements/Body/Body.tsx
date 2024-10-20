@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { useSelector } from 'react-redux'
 import { Spinner } from '@ui/common/Spinner'
-import { Message } from '@ui/modules/messenger/components/DialogSelected/elements/Body/Messege'
-import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { cn } from './cn'
+import { Message } from './Messege'
 import { messagesApi } from '../../../../../../../../store/api'
+import { MessengerSelectors } from '../../../../store/selectors'
 
 export function Body() {
   const dialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
@@ -49,6 +49,12 @@ export function Body() {
   }, [inView, loadMore, isLoadingMore])
 
   useEffect(() => () => clearLoadingTimeout(), [clearLoadingTimeout])
+
+  useEffect(() => {
+    // Сбрасываем cursor при смене диалога
+    setCursor(undefined)
+    return () => clearLoadingTimeout()
+  }, [dialogId, clearLoadingTimeout])
 
   const messages = useMemo(() => messagesData?.data || [], [messagesData])
   const hasMore = useMemo(() => messagesData?.has_more || false, [messagesData])

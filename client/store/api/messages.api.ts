@@ -55,19 +55,22 @@ export const messagesApi = createApi({
         const { url, init } = messagesApiInstance.findAllInit(params)
         return { url, ...init }
       },
-      serializeQueryArgs: ({ endpointName }) => endpointName,
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        // Используем только dialog_id для кэширования
+        return { dialog_id: queryArgs.dialog_id }
+      },
       merge: (currentCache, newItems) => {
-        // Убедимся, что мы не добавляем дубликаты сообщений
-        const uniqueNewMessages = newItems.data.filter(
-          (newMsg) => !currentCache.data.some((existingMsg) => existingMsg.id === newMsg.id),
-        )
-        currentCache.data.push(...uniqueNewMessages)
+        currentCache.data.push(...newItems.data)
         currentCache.cursor = newItems.cursor
         currentCache.has_more = newItems.has_more
         currentCache.total = newItems.total
       },
       forceRefetch({ currentArg, previousArg }) {
-        return JSON.stringify(currentArg) !== JSON.stringify(previousArg)
+        // Перезапрашиваем только если изменился dialog_id или cursor
+        return (
+          currentArg?.dialog_id !== previousArg?.dialog_id ||
+          currentArg?.cursor !== previousArg?.cursor
+        )
       },
       async onCacheEntryAdded(
         arg,

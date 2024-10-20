@@ -17,12 +17,12 @@ export class CreateDialogDto {
     @IsString()
     description?: string
 
-    @ApiProperty({ description: 'Тип диалога' })
+    @ApiProperty({ description: 'Тип диалога', required: false })
     @IsEnum(['private', 'public'])
     @IsOptional()
     type?: 'private' | 'public'
 
-    @ApiProperty({ description: 'ID участников диалога', type: [Number] })
+    @ApiProperty({ description: 'ID участников диалога', type: [Number], required: false })
     @IsArray()
     @IsNumber({}, { each: true })
     @IsOptional()

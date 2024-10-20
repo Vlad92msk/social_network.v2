@@ -1,0 +1,8 @@
+@import "@ui/styles/for_components";
+@import "../../../variables";
+
+.CreateDialog {
+  display: flex;
+  place-content: center;
+  border-radius: $border-radius--medium;
+}

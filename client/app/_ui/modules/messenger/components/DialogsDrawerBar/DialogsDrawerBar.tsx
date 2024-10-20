@@ -1,11 +1,11 @@
 'use client'
 
-import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
-import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
-import { Button } from 'app/_ui/common/Button'
 import { useDispatch, useSelector } from 'react-redux'
+import { Button } from 'app/_ui/common/Button'
 import { cn } from './cn'
-import { DialogList, Search, SwitcherDialogType } from './elements'
+import { CreateDialog, DialogList, Search, SwitcherDialogType } from './elements'
+import { MessengerSliceActions } from '../../store/messenger.slice'
+import { MessengerSelectors } from '../../store/selectors'
 
 interface MessengerProps {}
 
@@ -25,6 +25,7 @@ export function DialogsDrawerBar(props: MessengerProps) {
         onClick={() => dispatch(MessengerSliceActions.setDrawerStatus())}
         size="es"
       />
+      <CreateDialog />
     </div>
   )
 }

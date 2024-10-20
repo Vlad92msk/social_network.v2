@@ -17,8 +17,10 @@ export interface MessengerSliceState {
   currentDialog?: DialogEntity
   shortDialogs?: DialogShortDto[]
 
-  typing: Record<string, Record<number, boolean>> // Отслеживание печати
-  activeParticipants: Record<string, number[]> // Активные пользователи
+  // Отслеживание печати
+  typing: Record<string, Record<number, boolean>>
+  // Активные пользователи
+  activeParticipants: Record<string, number[]>
 }
 
 export const messengerInitialState: MessengerSliceState = {

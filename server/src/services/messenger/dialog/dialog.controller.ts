@@ -141,10 +141,24 @@ export class DialogController {
             this.maxStorage
         )
 
-        return this.dialogService.create({
+        const createdDialog = await this.dialogService.create({
             query,
             image: files?.image?.[0]
         }, params)
+
+        // Создаем из него краткую форму
+        const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: createdDialog }, params)
+
+
+        // Оповещаем всех участников, что появилось новое сообщение
+        this.eventEmitter.emit(
+          DialogEvents.DIALOG_SHORT_UPDATED,
+          {
+              data: updatedDialogShort,
+              participants: createdDialog.participants.map(({ id }) => id),
+          })
+
+        return createdDialog
     }
 
     @Get()
