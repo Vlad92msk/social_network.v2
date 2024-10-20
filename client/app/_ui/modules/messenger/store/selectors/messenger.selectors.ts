@@ -8,6 +8,7 @@ const selectSelf = (state: RootReducer) => state.messenger
 export const selectIsConnected = createSelector(selectSelf, (messenger) => messenger.isConnected)
 export const selectChatingPanelStatus = createSelector(selectSelf, (messenger) => messenger.chatingPanelStatus)
 export const selectDrawerStatus = createSelector(selectSelf, (messenger) => messenger.drawerStatus)
+export const selectInfoPanelStatus = createSelector(selectSelf, (messenger) => messenger.infoPanelStatus)
 
 export const selectCurrentDialogId = createSelector(selectSelf, (messenger) => messenger.currentDialogId)
 

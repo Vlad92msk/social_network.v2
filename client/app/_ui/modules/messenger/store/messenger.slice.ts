@@ -10,6 +10,7 @@ export interface MessengerSliceState {
 
   drawerStatus: 'open' | 'close'
   chatingPanelStatus: 'open' | 'close'
+  infoPanelStatus: 'open' | 'close'
   // ID открытого диалога
   currentDialogId: string
   // Пользователь, который выбран для диалога (с которым еще нет диалога)
@@ -30,6 +31,7 @@ export const messengerInitialState: MessengerSliceState = {
 
   chatingPanelStatus: 'close',
   drawerStatus: 'open',
+  infoPanelStatus: 'close',
 
   typing: {},
   activeParticipants: {},
@@ -97,6 +99,9 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       },
       setDrawerStatus: (state) => {
         state.drawerStatus = state.drawerStatus === 'open' ? 'close' : 'open'
+      },
+      setInfoPanelStatus: (state) => {
+        state.infoPanelStatus = state.infoPanelStatus === 'open' ? 'close' : 'open'
       },
     },
   }),

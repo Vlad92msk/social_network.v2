@@ -1,0 +1,67 @@
+@import "@ui/styles/for_components";
+@import "../../../variables";
+
+
+.InfoPanel {
+  isolation: isolate;
+  @include scrollbarMini();
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  background: #2c3156;
+  overflow-y: auto;
+
+  &--status {
+    &_open {
+      transform: translateX(0);
+      transition: transform .5s;
+    }
+    &_close {
+      transform: translateX(100%);
+      transition: transform .5s;
+    }
+  }
+
+  &-Header {
+    display: flex;
+    gap: rem(10);
+    padding: $messenger--padding--small;
+    align-items: center;
+    border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default);
+    height: rem(60);
+  }
+
+  &-CloseButton {
+    color: var(--Color-Text--root--theme-default);
+    height: rem(15);
+
+    svg {
+      height: inherit;
+    }
+  }
+
+
+  &-Description {
+    padding: $paddings--medium;
+    display: flex;
+    flex-direction: column;
+    gap: rem(10);
+  }
+
+  &-Image {
+    display: flex;
+  }
+
+  &-Information {
+    display: flex;
+  }
+
+  &-Media {
+    display: flex;
+    flex-direction: column;
+  }
+}

@@ -61,5 +61,10 @@
     display: flex;
     gap: rem(10);
     color: var(--Color-Text--root--theme-default);
+    margin-left: auto;
+  }
+
+  &-InfoButton {
+    margin-left: auto;
   }
 }

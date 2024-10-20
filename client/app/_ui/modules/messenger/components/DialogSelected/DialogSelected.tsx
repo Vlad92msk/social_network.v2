@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, Skeleton, UsersTyping,
+  Body, ButtonCloseChat, CallButtons, ContactInfo, FixedMessages, Footer, InfoButton, InfoPanel, Skeleton, UsersTyping,
 } from './elements'
 
 export function DialogSelected() {
@@ -11,6 +11,7 @@ export function DialogSelected() {
         <>
           <ContactInfo />
           <CallButtons />
+          <InfoButton />
           <ButtonCloseChat />
         </>
       )}
@@ -18,6 +19,7 @@ export function DialogSelected() {
       footerComponent={<Footer />}
       fixedMessages={<FixedMessages />}
       usersTyping={<UsersTyping />}
+      infoPanel={<InfoPanel />}
     />
   )
 }

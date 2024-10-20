@@ -8,10 +8,11 @@ interface SkeletonProps {
   footerComponent: React.ReactNode
   fixedMessages: React.ReactNode
   usersTyping: React.ReactNode
+  infoPanel: React.ReactNode
 }
 
 export function Skeleton(props: SkeletonProps) {
-  const { headerComponent, footerComponent, bodyComponent, fixedMessages, usersTyping } = props
+  const { headerComponent, footerComponent, bodyComponent, fixedMessages, usersTyping, infoPanel } = props
   const chatingPanelStatus = useSelector(MessengerSelectors.selectChatingPanelStatus)
 
   return (
@@ -33,6 +34,7 @@ export function Skeleton(props: SkeletonProps) {
           </div>
         </>
       )}
+      {infoPanel}
     </div>
   )
 }

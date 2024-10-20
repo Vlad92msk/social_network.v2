@@ -60,7 +60,11 @@ export const messagesApi = createApi({
         return { dialog_id: queryArgs.dialog_id }
       },
       merge: (currentCache, newItems) => {
-        currentCache.data.push(...newItems.data)
+        // Убедимся, что мы не добавляем дубликаты сообщений
+        const uniqueNewMessages = newItems.data.filter(
+          (newMsg) => !currentCache.data.some((existingMsg) => existingMsg.id === newMsg.id),
+        )
+        currentCache.data.push(...uniqueNewMessages)
         currentCache.cursor = newItems.cursor
         currentCache.has_more = newItems.has_more
         currentCache.total = newItems.total

@@ -1,6 +1,7 @@
-export { ButtonCloseChat, CallButtons, ContactInfo } from './Header'
+export { ButtonCloseChat, CallButtons, ContactInfo, InfoButton } from './Header'
 export { Footer } from './Footer'
 export { Body } from './Body'
 export { Skeleton } from './Skeleton'
 export { FixedMessages } from './FixedMessages'
 export { UsersTyping } from './UsersTyping'
+export { InfoPanel } from './InfoPanel'
