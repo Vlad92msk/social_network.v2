@@ -11,6 +11,9 @@ export enum DialogEvents {
     /** Выход из диалога */
     LEAVE_DIALOG = 'leave_dialog',
 
+    /** Обновление информации о диалоге */
+    UPDATE_DIALOG_INFO = 'update_dialog_info',
+
     /** Выход из диалога */
     REMOVE_DIALOG = 'remove_dialog',
 

@@ -20,6 +20,7 @@ type FileUpLoadProps = {
   disabled?: boolean
   availableTypes?: MaterialAttachProps
   isConfirm?: boolean
+  isSingleChoice?: boolean
 }
 
 export function FileUpLoad(props: FileUpLoadProps) {
@@ -28,6 +29,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
     icon,
     disabled,
     isConfirm,
+    isSingleChoice,
     buttonElement,
     availableTypes: { availableTypes, maxFileSize } = {
       availableTypes: availableFormats,
@@ -93,7 +95,7 @@ export function FileUpLoad(props: FileUpLoadProps) {
             className={cn('FileInput')}
             id={inputId}
             onInput={handleAttach}
-            multiple
+            multiple={!isSingleChoice}
             accept={availableTypes.join(',')}
             type="file"
           />

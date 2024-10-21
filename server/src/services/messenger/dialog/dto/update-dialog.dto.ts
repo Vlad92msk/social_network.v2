@@ -17,17 +17,18 @@ export class UpdateDialogDto {
   @IsString()
   description?: string
 
-  @ApiProperty({ description: 'Тип диалога' })
+  @ApiProperty({ description: 'Тип диалога', required: false  })
+  @IsOptional()
   @IsEnum(['private', 'public'])
-  type: 'private' | 'public'
+  type?: 'private' | 'public'
 
-  @ApiProperty({ description: 'ID добавляемых участников', type: [Number] })
+  @ApiProperty({ description: 'ID добавляемых участников', required: false, type: [Number] })
   @IsArray()
   @IsNumber({}, { each: true })
   @IsOptional()
   add_participants?: number[]
 
-  @ApiProperty({ description: 'ID удаляемых участников', type: [Number] })
+  @ApiProperty({ description: 'ID удаляемых участников', required: false, type: [Number] })
   @IsArray()
   @IsNumber({}, { each: true })
   @IsOptional()

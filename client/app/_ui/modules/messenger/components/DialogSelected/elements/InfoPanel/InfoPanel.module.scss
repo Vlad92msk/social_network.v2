@@ -53,12 +53,22 @@
   }
 
   &-Title {
-    width: 100%;
-    text-align: center;
-    padding: $messenger--padding--small;
+    &Container {
+      width: 100%;
+      text-align: center;
+      padding: $messenger--padding--small;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: rem(5);
+    }
   }
 
   &-Image {
+    display: flex;
+  }
+
+  &-UploadFile {
     display: flex;
   }
 
@@ -77,9 +87,19 @@
     padding: $messenger--padding--small;
   }
 
-  &-Information {
-    width: 100%;
-    display: flex;
+  &-Summary{
+    &Container {
+      width: 100%;
+      display: flex;
+      gap: rem(5);
+      align-items: center;
+    }
+    &TextArea {
+      border-radius: $border-radius--super-small;
+      border: rem(1) solid var(--Palette--BrightGreen--120--opacity-1)!important;
+      background: var(--Palette--DarkSlate--100--opacity-1)!important;
+      padding: rem(5);
+    }
   }
 
   &-Media {

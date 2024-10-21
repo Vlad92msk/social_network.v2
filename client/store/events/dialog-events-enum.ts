@@ -44,6 +44,9 @@ export enum DialogEvents {
     /** Обновление закрепленных сообщений */
     UPDATED_FIXED_MESSAGES = 'updated_fixed_messages',
 
+    /** Обновление информации о диалоге */
+    UPDATE_DIALOG_INFO = 'update_dialog_info',
+
     /** Новое сообщение */
     NEW_MESSAGE = 'new_message',
 

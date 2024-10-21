@@ -80,6 +80,15 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
         }
       },
 
+      updateDialogInfo: (state, action: PayloadAction<{ data: DialogEntity }>) => {
+        const { data } = action.payload
+        if (state.currentDialog) {
+          state.currentDialog.title = data.title
+          state.currentDialog.description = data.description
+          state.currentDialog.image = data.image
+        }
+      },
+
       exitUpdateUserStatus: (state, action: PayloadAction<{ dialogId: string, userId: number, status: UserStatus }>) => {
         const { status, userId, dialogId } = action.payload
         if (status === UserStatus.Offline) {

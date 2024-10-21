@@ -63,13 +63,13 @@ export class MessageService {
         })
 
         if (media) {
-            message.media = await this.mediaInfoService.uploadFiles(media, author.id, MediaEntitySourceType.USER_INFO)
+            message.media = await this.mediaInfoService.uploadFiles(media, author.id, MediaEntitySourceType.DIALOG)
         }
         if (voices) {
-            message.voices = await this.mediaInfoService.uploadFiles(voices, author.id, MediaEntitySourceType.USER_INFO)
+            message.voices = await this.mediaInfoService.uploadFiles(voices, author.id, MediaEntitySourceType.DIALOG)
         }
         if (videos) {
-            message.videos = await this.mediaInfoService.uploadFiles(videos, author.id, MediaEntitySourceType.USER_INFO)
+            message.videos = await this.mediaInfoService.uploadFiles(videos, author.id, MediaEntitySourceType.DIALOG)
         }
 
         if (createMessageDto.reply_to_id) {
@@ -119,17 +119,17 @@ export class MessageService {
         )
 
         if (media) {
-            const addMedia = await this.mediaInfoService.uploadFiles(media, user_info_id, MediaEntitySourceType.PUBLICATION)
+            const addMedia = await this.mediaInfoService.uploadFiles(media, user_info_id, MediaEntitySourceType.DIALOG)
             message.media = [...(message.media || []), ...addMedia]
         }
 
         if (voices) {
-            const addVoices = await this.mediaInfoService.uploadFiles(voices, user_info_id, MediaEntitySourceType.PUBLICATION)
+            const addVoices = await this.mediaInfoService.uploadFiles(voices, user_info_id, MediaEntitySourceType.DIALOG)
             message.voices = [...(message.voices || []), ...addVoices]
         }
 
         if (videos) {
-            const addVideos = await this.mediaInfoService.uploadFiles(videos, user_info_id, MediaEntitySourceType.PUBLICATION)
+            const addVideos = await this.mediaInfoService.uploadFiles(videos, user_info_id, MediaEntitySourceType.DIALOG)
             message.videos = [...(message.videos || []), ...addVideos]
         }
 

@@ -297,6 +297,15 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
+    @OnEvent(DialogEvents.UPDATE_DIALOG_INFO)
+    async updatedDialog(payload: { data: DialogEntity, participants: number[] }) {
+        const { data, participants } = payload
+        for (const participantId of participants) {
+            this.sendToUser(participantId, DialogEvents.UPDATE_DIALOG_INFO, { data })
+        }
+    }
+
+
 
     @OnEvent(DialogEvents.NEW_MESSAGE)
     async sendMessage(payload: { dialogId: string, message: MessageEntity, isNewDialog: boolean, creator: RequestParams }) {

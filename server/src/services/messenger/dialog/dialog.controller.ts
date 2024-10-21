@@ -203,10 +203,24 @@ export class DialogController {
             )
         }
 
-        return this.dialogService.update(id, {
+        const updatedDialog = await this.dialogService.update(id, {
             query,
             image: files?.image?.[0]
         }, params)
+
+        // Создаем из него краткую форму
+        const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: updatedDialog }, params)
+
+
+        // Оповещаем всех участников, что появилось новое сообщение
+        this.eventEmitter.emit(
+          DialogEvents.UPDATE_DIALOG_INFO,
+          {
+              data: updatedDialog,
+              participants: updatedDialog.participants.map(({ id }) => id),
+          })
+
+        return updatedDialog
     }
 
     @Delete(':id')

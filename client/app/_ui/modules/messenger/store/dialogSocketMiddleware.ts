@@ -50,6 +50,11 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     socket.on(DialogEvents.UPDATED_FIXED_MESSAGES, (payload: { dialog_id: string, new_fixed_messages: MessageEntity[]}) => {
       store.dispatch(MessengerSliceActions.updateFixedMessages(payload))
     })
+
+    socket.on(DialogEvents.UPDATE_DIALOG_INFO, (payload: { data: DialogEntity }) => {
+      console.log('payload', payload)
+      store.dispatch(MessengerSliceActions.updateDialogInfo(payload))
+    })
   }
 
   if (!socket) return next(action)
