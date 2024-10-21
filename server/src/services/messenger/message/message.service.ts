@@ -340,6 +340,32 @@ export class MessageService {
     }
 
     /**
+     * Получить все медиафайлы, связанные с диалогом
+     */
+    async getAllMediaForDialog(dialogId: string) {
+        const messages = await this.messageRepository
+          .createQueryBuilder('message')
+          .leftJoinAndSelect('message.media', 'media')
+          .leftJoinAndSelect('message.voices', 'voices')
+          .leftJoinAndSelect('message.videos', 'videos')
+          .leftJoinAndSelect('voices.meta', 'voicesMeta')
+          .leftJoinAndSelect('media.meta', 'mediaMeta')
+          .leftJoinAndSelect('videos.meta', 'videosMeta')
+          .leftJoin('message.dialog', 'dialog') // Явное присоединение диалога
+          .where('dialog.id = :dialogId', { dialogId }) // Условие на ID диалога
+          .getMany()
+
+        return messages.reduce((acc, message) => {
+            if (message.media) acc.media.push(...message.media)
+            if (message.voices) acc.voices.push(...message.voices)
+            if (message.videos) acc.videos.push(...message.videos)
+            return acc
+        }, { media: [], voices: [], videos: [] })
+    }
+
+
+
+    /**
      * Получить цепочку ответов на сообщение
      */
     async getReplyChain(messageId: string) {

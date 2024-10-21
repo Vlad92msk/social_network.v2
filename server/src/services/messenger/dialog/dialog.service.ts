@@ -204,14 +204,42 @@ export class DialogService {
      */
     async getDialogInfo(
       id: string,
-      options?: { relations?: { participants?: boolean, admins?: boolean, fixed_messages? : boolean } },
+      options?: {
+          relations?: {
+              participants?: boolean,
+              admins?: boolean,
+              fixed_messages?: boolean,
+              media?: boolean,
+              audio?: boolean,
+              videos?: boolean,
+              messages?: boolean, // Добавляем возможность загрузки сообщений
+          };
+      },
       params?: RequestParams
     ) {
-        return await this.dialogRepository.findOne({
+        const dialog = await this.dialogRepository.findOne({
             where: { id },
-            relations: options?.relations
+            relations: {
+            participants: options?.relations?.participants,
+              admins: options?.relations?.admins,
+              fixed_messages: options?.relations?.fixed_messages,
+              messages: options?.relations?.messages, // Загружаем сообщения, если нужно
+        },
         })
+
+        // Если нужно загрузить медиафайлы (media, audio, videos)
+
+        if (options?.relations?.media || options?.relations?.audio || options?.relations?.videos) {
+            const mediaData = await this.messageService.getAllMediaForDialog(id)
+
+            if (options.relations.media) dialog['media'] = mediaData.media
+            if (options.relations.audio) dialog['voices'] = mediaData.voices
+            if (options.relations.videos) dialog['videos'] = mediaData.videos
+        }
+
+        return dialog
     }
+
 
     /**
      * Найти диалог по ID

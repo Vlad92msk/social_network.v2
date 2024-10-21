@@ -54,33 +54,6 @@ export class DialogEntity {
     })
     admins: UserInfo[]
 
-    @ApiProperty({ description: 'Файлы, приложенные к диалогу' })
-    @ManyToMany(() => MediaEntity)
-    @JoinTable({
-        name: 'dialog_media',
-        joinColumn: { name: 'dialog_id', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'media_id', referencedColumnName: 'id' },
-    })
-    media: MediaEntity[]
-
-    @ApiProperty({ description: 'Аудио файлы в диалоге' })
-    @ManyToMany(() => MediaEntity)
-    @JoinTable({
-        name: 'dialog_audio',
-        joinColumn: { name: 'dialog_id', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'audio_id', referencedColumnName: 'id' },
-    })
-    audio: MediaEntity[]
-
-    @ApiProperty({ description: 'Видео файлы в диалоге' })
-    @ManyToMany(() => MediaEntity)
-    @JoinTable({
-        name: 'dialog_videos',
-        joinColumn: { name: 'dialog_id', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'video_id', referencedColumnName: 'id' },
-    })
-    videos: MediaEntity[]
-
     @ApiProperty({ description: 'Закрепленные сообщения', type: () => [MessageEntity] })
     @ManyToMany(() => MessageEntity, { onDelete: 'CASCADE', cascade: true })
     @JoinTable({

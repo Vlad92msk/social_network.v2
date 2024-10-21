@@ -19,7 +19,7 @@ export function MediaContent(props: MediaImagesProps) {
   const handleSetChangeActive = usePublicationCtxUpdate()
 
   const [usingData, setUsingData] = useState<MediaEntity[]>(data)
-  console.log('usingData', usingData)
+
   const { current = [], other = [] } = Object.groupBy(usingData, (item, indx) => (indx <= 3 ? 'current' : 'other'))
   const [open, handleOpen, handleClose] = useBooleanState(false)
 

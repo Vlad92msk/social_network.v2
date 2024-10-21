@@ -52,16 +52,54 @@
     gap: rem(10);
   }
 
+  &-Title {
+    width: 100%;
+    text-align: center;
+    padding: $messenger--padding--small;
+  }
+
   &-Image {
     display: flex;
   }
 
+  &-ParticipantsOnline {
+    width: 100%;
+    display: flex;
+    gap: rem(50);
+    justify-content: center;
+  }
+
+  &-ActionButtons {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: rem(50);
+    padding: $messenger--padding--small;
+  }
+
   &-Information {
+    width: 100%;
     display: flex;
   }
 
   &-Media {
+    width: 100%;
+    padding: $paddings--medium;
     display: flex;
     flex-direction: column;
+
+    &TabsList {
+      width: 100%!important;
+      gap: rem(5)!important;
+    }
+
+    &Tab {
+      flex-grow: 1;
+      width: auto!important;
+    }
+
+    &TabPanel {
+      margin-top: rem(20) !important;
+    }
   }
 }

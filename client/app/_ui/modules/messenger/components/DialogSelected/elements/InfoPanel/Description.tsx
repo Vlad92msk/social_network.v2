@@ -1,29 +1,31 @@
-
+import { useSelector } from 'react-redux'
 import { Image } from '@ui/common/Image'
 import { Text } from '@ui/common/Text'
+import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { cn } from './cn'
 
+export function Description() {
+  const currentDialog = useSelector(MessengerSelectors.selectCurrentDialog)
+  const active = useSelector(MessengerSelectors.selectCurrentDialogActiveParticipants)
 
-export const Description = () => {
-
-
+  if (!currentDialog) return null
   return (
     <div className={cn('Description')}>
       <div className={cn('Image')}>
-        <Image alt={''} width={20} height={20} />
+        <Image alt="d" width={20} height={20} src={currentDialog.image} />
       </div>
-      <Text weight={'bold'}>Title</Text>
+      <Text className={cn('Title')} weight="bold">{currentDialog.title || 'Нет заголовка'}</Text>
       <div className={cn('ParticipantsOnline')}>
-        <Text>{`${27} участников`}</Text>
-        <Text>{`${27} в сети`}</Text>
+        <Text>{`Участников ${currentDialog.participants.length}`}</Text>
+        <Text>{`В сети ${active.length - 1}`}</Text>
       </div>
       <div className={cn('ActionButtons')}>
-        <button>
-          Добавить
-        </button>
+        <Text as="button" fs="12" uppercase letterSpacing={0.18}>
+          Добавить участника
+        </Text>
       </div>
       <div className={cn('Information')}>
-        <Text>Description</Text>
+        <Text>{currentDialog.description || 'Нет описания'}</Text>
       </div>
     </div>
   )
