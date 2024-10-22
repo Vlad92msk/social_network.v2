@@ -34,13 +34,13 @@ export function ContactInfo(props: ContactInfoProps) {
       })
     }
 
-    const byDefault = {
-      img: <Image alt="contact" width={50} height={50} />,
-      name: <Text className={cn('InfoName')} fs="14" />,
+    const byDefault = ({ img, title }: { img?: string, title?: string }) => ({
+      img: <Image alt="contact" width={50} height={50} src={img} />,
+      name: <Text className={cn('InfoName')} fs="14">{title}</Text>,
       status: <Text className={cn('OnlineStatus')} fs="10" />,
-    }
+    })
 
-    if (!currentDialog) return byDefault
+    if (!currentDialog) return byDefault({})
 
     const { type, participants, image, title } = currentDialog
     switch (type) {
@@ -48,7 +48,7 @@ export function ContactInfo(props: ContactInfoProps) {
         const [participant] = participants.filter(({ id }) => id !== profile?.user_info.id)
         const isUserOnline = participant ? activeParticipants?.includes(participant.id) : undefined
 
-        if (!participant) return byDefault
+        if (!participant) return byDefault({ img: image, title })
 
         return ({
           img: <Image src={participant.profile_image} alt={participant.name} width={50} height={50} />,
@@ -83,7 +83,7 @@ export function ContactInfo(props: ContactInfoProps) {
           ),
         })
       }
-      default: return byDefault
+      default: return byDefault({})
     }
   }, [selectUser, currentDialog, activeParticipants, profile])
 

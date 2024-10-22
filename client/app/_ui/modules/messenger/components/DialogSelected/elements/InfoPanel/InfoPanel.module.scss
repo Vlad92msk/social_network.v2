@@ -33,6 +33,14 @@
     align-items: center;
     border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default);
     height: rem(60);
+    justify-content: space-between;
+  }
+
+  &-SwitchDialogType {
+    display: flex;
+    align-items: center;
+    gap: rem(10);
+    margin-inline: auto;
   }
 
   &-CloseButton {
@@ -50,6 +58,7 @@
     display: flex;
     flex-direction: column;
     gap: rem(10);
+    overflow: hidden;
   }
 
   &-Title {
@@ -66,10 +75,22 @@
 
   &-Image {
     display: flex;
+    position: relative;
+    overflow: hidden;
+
+    &:hover .InfoPanel-UploadFile {
+      transform: translateX(0);
+      transition: .5s;
+    }
   }
 
   &-UploadFile {
     display: flex;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translateX(100%);
+    transition: .5s;
   }
 
   &-ParticipantsOnline {
@@ -87,7 +108,7 @@
     padding: $messenger--padding--small;
   }
 
-  &-Summary{
+  &-Summary {
     &Container {
       width: 100%;
       display: flex;

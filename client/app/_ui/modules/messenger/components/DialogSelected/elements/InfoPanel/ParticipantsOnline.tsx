@@ -10,8 +10,8 @@ export function ParticipantsOnline() {
   if (!currentDialog) return null
   return (
     <div className={cn('ParticipantsOnline')}>
-      <Text>{`Участников ${currentDialog.participants.length}`}</Text>
-      <Text>{`В сети ${active.length - 1}`}</Text>
+      <Text fs="12">{`Участников ${currentDialog.participants.length}`}</Text>
+      <Text fs="12">{`В сети ${active.length - 1}`}</Text>
     </div>
   )
 }

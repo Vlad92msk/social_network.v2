@@ -208,9 +208,6 @@ export class DialogController {
             image: files?.image?.[0]
         }, params)
 
-        // Создаем из него краткую форму
-        const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: updatedDialog }, params)
-
 
         // Оповещаем всех участников, что появилось новое сообщение
         this.eventEmitter.emit(
@@ -219,6 +216,20 @@ export class DialogController {
               data: updatedDialog,
               participants: updatedDialog.participants.map(({ id }) => id),
           })
+
+
+      if (files?.image?.[0] || query.image || query.title || query.type) {
+          // Создаем из него краткую форму
+          const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: updatedDialog }, params)
+
+          // Оповещаем всех участников, что появилось новое сообщение
+          this.eventEmitter.emit(
+            DialogEvents.DIALOG_SHORT_UPDATED,
+            {
+                data: updatedDialogShort,
+                participants: updatedDialog.participants.map(({ id }) => id),
+            })
+      }
 
         return updatedDialog
     }

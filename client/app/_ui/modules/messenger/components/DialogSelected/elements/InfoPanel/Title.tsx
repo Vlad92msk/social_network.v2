@@ -38,7 +38,7 @@ export function Title(props: TitleProps) {
       {isAlbumChangeTitle ? (
         <Input onChange={(event) => setTitle(event.target.value)} value={getTitle} />
       ) : (
-        <Text fs="12" weight="bold">
+        <Text fs="16" weight="bold">
           {getTitle || 'Нет заголовка'}
         </Text>
       )}

@@ -86,6 +86,7 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
           state.currentDialog.title = data.title
           state.currentDialog.description = data.description
           state.currentDialog.image = data.image
+          state.currentDialog.type = data.type
         }
       },
 

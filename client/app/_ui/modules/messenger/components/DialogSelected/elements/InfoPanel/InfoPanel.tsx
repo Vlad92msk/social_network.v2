@@ -4,6 +4,7 @@ import { CloseButton } from './CloseButton'
 import { cn } from './cn'
 import { Description } from './Description'
 import { Media } from './Media'
+import { SwitchDialogType } from './SwitchDialogType'
 import { MessengerSelectors } from '../../../../store/selectors'
 
 export function InfoPanel() {
@@ -12,8 +13,8 @@ export function InfoPanel() {
   return (
     <div className={cn({ status: infoPanelStatus })}>
       <div className={cn('Header')}>
+        <SwitchDialogType />
         <CloseButton />
-        <Text fs="14">Информация</Text>
       </div>
       <Description />
       <Media />

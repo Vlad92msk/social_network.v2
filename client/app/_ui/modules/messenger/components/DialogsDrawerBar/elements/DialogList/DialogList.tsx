@@ -48,7 +48,7 @@ export function DialogList(props: DialogListProps) {
             <Image src={image} alt={title || ''} width="50" height="50" />
           </div>
           <div className={cn('ContactContentWrapper')}>
-            {type === 'public' && (
+            {title && (
               <Text className={cn('ContactName')} fs="12" weight="bold" textElipsis>{title}</Text>
             )}
             <Text className={cn('ContactLastContactName')} fs="12" weight="bold" textElipsis>{last_message?.author?.name}</Text>

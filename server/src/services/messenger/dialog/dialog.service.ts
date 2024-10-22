@@ -548,8 +548,8 @@ export class DialogService {
 
         return {
             id: dialog.id,
-            title: dialog.type === 'public' ? dialog.title : participant?.name,
-            image: dialog.type === 'public' ? dialog.image : participant?.profile_image,
+            title: dialog.title ?? participant?.name,
+            image: dialog.image ?? participant?.profile_image,
             type: dialog.type,
             last_message: lastMessage,
             unread_count: dialog.messages_not_read.length,
