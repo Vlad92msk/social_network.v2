@@ -1,5 +1,4 @@
 import { useSelector } from 'react-redux'
-import { Text } from '@ui/common/Text'
 import { CloseButton } from './CloseButton'
 import { cn } from './cn'
 import { Description } from './Description'

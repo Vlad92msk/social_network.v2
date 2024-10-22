@@ -174,7 +174,7 @@ export class DialogService {
         // Удаляем участников из диалога
         if (query?.remove_participants) {
             const newParticipants = dialog.participants?.filter(({ id }) => !query.remove_participants.includes(id))
-            dialog.participants = [...(dialog.participants || []), ...newParticipants]
+            dialog.participants = newParticipants
         }
 
         if (image) {

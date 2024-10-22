@@ -1,17 +1,17 @@
-import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
 import { useEffect, useRef, useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { useDebouncedSearch } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Spinner } from '@ui/common/Spinner'
 import { Text } from '@ui/common/Text'
-import { Listitem } from '@ui/modules/messenger/components/DialogsDrawerBar/elements/Listitem'
 import { classNames, makeCn } from '@utils/others'
 import { Icon } from 'app/_ui/common/Icon'
 import { Input, InputGroup } from 'app/_ui/common/Input'
-import { useDispatch } from 'react-redux'
 import style from './Search.module.scss'
 import { userInfoApi } from '../../../../../../../../store/api'
 import { useMessageStore } from '../../../../store'
+import { MessengerSliceActions } from '../../../../store/messenger.slice'
+import { Listitem } from '../Listitem'
 
 export const cn = makeCn('Search', style)
 

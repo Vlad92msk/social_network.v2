@@ -1,8 +1,8 @@
 import { useSelector } from 'react-redux'
 import { Text } from '@ui/common/Text'
-import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { cn } from './cn'
 import { dialogsApi } from '../../../../../../../../store/api'
+import { MessengerSelectors } from '../../../../store/selectors'
 
 export function SwitchDialogType() {
   const dialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
@@ -24,6 +24,7 @@ export function SwitchDialogType() {
           onUpdate({ id: dialogId, body: { type: newType } })
         }}
       />
+      {/* @ts-ignore */}
       <Text as="label" htmlFor="type1" fs="10" uppercase letterSpacing={0.1}>Публичный</Text>
 
       <input
@@ -37,6 +38,7 @@ export function SwitchDialogType() {
           onUpdate({ id: dialogId, body: { type: newType } })
         }}
       />
+      {/* @ts-ignore */}
       <Text as="label" htmlFor="type2" fs="10" uppercase letterSpacing={0.1}>Приватный</Text>
     </div>
   )

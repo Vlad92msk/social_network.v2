@@ -52,13 +52,33 @@
     }
   }
 
+  &-SearchUsers {
+    width: rem(250);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: rem(20);
+
+    &Input {
+      width: 100%;
+      border: 0!important;
+      border-radius: 0!important;
+      border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default) !important;
+    }
+
+    &List {
+      display: flex;
+      flex-direction: column;
+      gap: rem(20);
+    }
+  }
+
 
   &-Description {
     padding: $paddings--medium;
     display: flex;
     flex-direction: column;
-    gap: rem(10);
-    overflow: hidden;
+    gap: rem(30);
   }
 
   &-Title {
@@ -98,6 +118,20 @@
     display: flex;
     gap: rem(50);
     justify-content: center;
+
+    &List {
+      @include scrollbarMini();
+      isolation: isolate;
+      display: flex;
+      flex-direction: column;
+      gap: rem(20);
+      max-height: rem(600);
+      overflow-y: auto;
+      padding: $messenger--padding--small;
+      border: rem(1) solid var(--Color-Border--variant-3--theme-default);
+      border-radius: $messenger--border-radius--small;
+      background: var(--Color-Bcg--root--theme-default);
+    }
   }
 
   &-ActionButtons {
@@ -114,6 +148,10 @@
       display: flex;
       gap: rem(5);
       align-items: center;
+      background: var(--Color-Bcg--root--theme-default);
+      padding: $paddings--small;
+      border-radius: $border-radius--small;
+
     }
     &TextArea {
       border-radius: $border-radius--super-small;

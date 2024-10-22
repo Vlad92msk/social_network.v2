@@ -19,6 +19,7 @@
     display: flex;
     gap: rem(5);
     position: relative;
+    align-items: center;
 
     &ImgContainer {
       overflow: hidden;
