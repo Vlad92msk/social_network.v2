@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
+import { dialogKeyboardEventsMiddleware } from '@ui/modules/messenger/store/dialogKeyboardEventsMiddleware'
 import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 import { merge } from 'lodash'
 import logger from 'redux-logger'
@@ -56,6 +57,7 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       reactionsApi.middleware,
       effectMiddleware,
       dialogSocketMiddleware,
+      dialogKeyboardEventsMiddleware,
       logger,
     ),
   })
