@@ -1,11 +1,11 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
-import { createSocket } from '@ui/modules/messenger/store/utils'
 import { Socket } from 'socket.io-client'
+import { createSocket } from '@ui/modules/messenger/store/utils'
+import { MessengerSliceActions } from './messenger.slice'
 import { DialogEntity, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
 import { RootReducer } from '../../../../../store/root.reducer'
 import { UserStatus } from '../../../../types/user-status'
-import { MessengerSliceActions } from './messenger.slice'
 
 let socket: Socket | null = null
 
@@ -60,6 +60,30 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
   if (!socket) return next(action)
 
   switch (action.type) {
+    case MessengerSliceActions.setChattingPanelStatus.type: {
+      if (action.payload === 'open') {
+        store.dispatch(MessengerSliceActions.addUndoAction(MessengerSliceActions.setChattingPanelStatus('close')))
+      } else if (action.payload === 'close') {
+        const stack = store.getState().messenger.undoStack
+
+        const lastUndoAction = stack[stack.length - 1]
+        if (lastUndoAction.type === MessengerSliceActions.setChattingPanelStatus('close').type) {
+          store.dispatch(MessengerSliceActions.removeLastUndoAction())
+        }
+      }
+      break
+    }
+    case MessengerSliceActions.executeLastUndoAction.type: {
+      // Получаем последнее действие отмены из стэка
+      const state = store.getState().messenger
+      const lastUndoAction = state.undoStack[state.undoStack.length - 1]
+      if (lastUndoAction) {
+        // Выполняем последнее действие
+        store.dispatch(lastUndoAction)
+      }
+      break
+    }
+
     case 'WEBSOCKET_SEND_MESSAGE': {
       const { event, data } = action.payload
       socket.emit(event, data)

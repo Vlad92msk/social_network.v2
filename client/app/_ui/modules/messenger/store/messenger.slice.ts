@@ -4,6 +4,12 @@ import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userI
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { UserStatus } from '../../../../types/user-status'
 
+type UndoAction = {
+  id: string;
+  action: PayloadAction<any>;
+  dependsOn?: string; // Опционально, если есть зависимость от другого действия
+};
+
 export interface MessengerSliceState {
   isConnected: boolean
   error: string | null
@@ -22,6 +28,8 @@ export interface MessengerSliceState {
   typing: Record<string, Record<number, boolean>>
   // Активные пользователи
   activeParticipants: Record<string, number[]>
+
+  undoStack: PayloadAction<any>[]; // Стек для хранения отменяющих событий
 }
 
 export const messengerInitialState: MessengerSliceState = {
@@ -37,6 +45,8 @@ export const messengerInitialState: MessengerSliceState = {
   activeParticipants: {},
   isConnected: false,
   error: null,
+
+  undoStack: [],
 }
 
 export const { actions: MessengerSliceActions, reducer: messengerReducer } = sliceBuilder(
@@ -114,6 +124,14 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       setInfoPanelStatus: (state) => {
         state.infoPanelStatus = state.infoPanelStatus === 'open' ? 'close' : 'open'
       },
+
+      addUndoAction: (state, action: PayloadAction<any>) => {
+        state.undoStack.push(action.payload)
+      },
+      removeLastUndoAction: (state) => {
+        state.undoStack.pop()
+      },
+      executeLastUndoAction: (state) => state,
     },
   }),
 )
