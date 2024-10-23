@@ -50,7 +50,6 @@
  ┃  ┃  ┃  ┣ 📁instance (инстансы классов для АПИ типа export const commentsApiInstance = new CommentsApi() и т.д)
  ┃  ┃  ┃  ┣ 📁generated (сгенерированные файлы типа export const commentsApi = createApi({...}))
  ┃  ┃  ┃  ┣ 📁utils (утилиты конкретно для редакса)
- ┃  ┃  ┃  ┣ 📄root.effects.ts
  ┃  ┃  ┃  ┣ 📄root.reducer.ts
  ┃  ┃  ┃  ┣ 📄store.ts
  ┃  ┃  ┃  ┣ 📄[...].slice.ts

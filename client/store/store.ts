@@ -1,45 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { dialogKeyboardEventsMiddleware } from '@ui/modules/messenger/store/dialogKeyboardEventsMiddleware'
-import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 import { merge } from 'lodash'
 import logger from 'redux-logger'
-import { createEpicMiddleware } from 'redux-observable'
-import { commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi, } from './api'
+import { dialogKeyboardEventsMiddleware } from '@ui/modules/messenger/store/dialogKeyboardEventsMiddleware'
+import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 import {
-  commentsApiInstance,
-  dialogsApiInstance,
-  mediaApiInstance,
-  messagesApiInstance,
-  postsApiInstance,
-  profileApiInstance,
-  reactionsApiInstance,
-  tagsApiInstance,
-  userInfoApiInstance,
-} from './instance'
-import { rootEffect } from './root.effects'
+  commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
+} from './api'
 import { rootInitialState, RootReducer, rootReducer } from './root.reducer'
-
-export const ApiService = {
-  tags: tagsApiInstance,
-  comments: commentsApiInstance,
-  messages: messagesApiInstance,
-  dialogs: dialogsApiInstance,
-  media: mediaApiInstance,
-  posts: postsApiInstance,
-  profile: profileApiInstance,
-  userInfo: userInfoApiInstance,
-  reactions: reactionsApiInstance,
-}
-
-export type ApiServiceType = typeof ApiService
 
 export const makeStore = (preloadedState?: Partial<RootReducer>) => {
   const mergedPreloadedState = preloadedState ? merge({}, rootInitialState, preloadedState) : undefined
-
-  const effectMiddleware = createEpicMiddleware<any, any, RootReducer, ApiServiceType>({
-    dependencies: ApiService,
-  })
 
   const store = configureStore({
     reducer: rootReducer,
@@ -55,14 +26,11 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       userInfoApi.middleware,
       userInfoApi.middleware,
       reactionsApi.middleware,
-      effectMiddleware,
       dialogSocketMiddleware,
       dialogKeyboardEventsMiddleware,
       logger,
     ),
   })
-
-  effectMiddleware.run(rootEffect)
 
   return store
 }
