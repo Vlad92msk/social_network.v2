@@ -20,6 +20,7 @@
     "@next/env": "^14.2.11",
     "@reduxjs/toolkit": "^2.2.7",
     "babel-plugin-react-compiler": "^0.0.0-experimental-696af53-20240625",
+    "cheerio": "^1.0.0",
     "clsx": "2.0.0",
     "date-fns": "3.6.0",
     "emoji-picker-react": "^4.11.1",

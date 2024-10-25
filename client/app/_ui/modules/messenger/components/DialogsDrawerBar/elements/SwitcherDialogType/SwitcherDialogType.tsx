@@ -1,11 +1,11 @@
 import { useSelector } from 'react-redux'
-import { SelectDialogType } from '@api/messenger/dialogs/types/dialogs.type'
-import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { classNames, makeCn } from '@utils/others'
 import { Button } from 'app/_ui/common/Button'
 import { Text } from 'app/_ui/common/Text'
 import style from './SwitcherDialogType.module.scss'
 import { useMessageStore } from '../../../../store'
+import { MessengerSelectors } from '../../../../store/selectors'
+import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
 
 export const cn = makeCn('SwitcherDialogType', style)
 
