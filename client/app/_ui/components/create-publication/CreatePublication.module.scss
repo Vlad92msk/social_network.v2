@@ -121,6 +121,12 @@ $audio-height: rem(25);
     }
   }
 
+  &-AddCommentContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
   &-AddCommentInput {
     padding-left: rem(20);
     padding-right: rem(20);

@@ -1,49 +1,43 @@
-import { useLinkPreview } from './hooks/useLinkPreview'
+import { Icon } from '@ui/common/Icon'
+import { Text } from '@ui/common/Text'
+import { cn } from './cn'
+import { useLinkPreview } from './hooks'
 
 interface LinkPreviewProps {
   url: string
+  onRemove?: () => void
 }
 
-export function LinkPreviewComponent(props: LinkPreviewProps) {
-  const { url } = props
+export function LinkPreview(props: LinkPreviewProps) {
+  const { url, onRemove } = props
   const { previewData, isLoading } = useLinkPreview(url)
 
   if (isLoading || !previewData) return null
 
   return (
-    <div>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <div>
-          {previewData.image && (
-            <div>
-              <img
-                src={previewData.image}
-                alt=""
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-            </div>
+    <div className={cn()}>
+      <a className={cn('Link')} href={url} target="_blank" rel="noopener noreferrer">
+        {previewData.image && (
+        <div className={cn('ImageContainer')}>
+          <img
+            src={previewData.image}
+            alt={previewData.title}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        </div>
+        )}
+        <div className={cn('Summary')}>
+          <Text fs="12" weight="bold" nowrap>{previewData.title}</Text>
+          {previewData.description && (
+            <Text fs="10">{previewData.description}</Text>
           )}
-          <div>
-            <h3>
-              {previewData.title}
-            </h3>
-            {previewData.description && (
-              <p>
-                {previewData.description}
-              </p>
-            )}
-            <p>
-              {url}
-            </p>
-          </div>
         </div>
       </a>
+      <button className={cn('ButtonRemove')} onClick={onRemove}>
+        <Icon name="close" />
+      </button>
     </div>
   )
 }

@@ -1,0 +1,51 @@
+@use 'sass:list' as list;
+@import "@ui/styles/for_components";
+
+
+.LinkPreview {
+  display: flex;
+  background: var(--Palette--DarkSlate--80--opacity-1);
+  padding: 5px;
+  border-radius: $border-radius--small;
+  align-items: center;
+
+  &-Link {
+    display: flex;
+    gap: rem(10);
+    height: rem(50);
+    align-items: center;
+  }
+
+  &-ButtonRemove {
+    height: rem(15);
+
+    svg {
+      height: inherit;
+    }
+  }
+
+  &-ImageContainer {
+    display: flex;
+    width: rem(40);
+    height: rem(40);
+    justify-content: center;
+    align-content: center;
+    flex-shrink: 0;
+    position: relative;
+
+    &:before {
+      content: '';
+      height: 100%;
+      width: rem(2);
+      position: absolute;
+      right: 0;
+      background: var(--Palette--LightViolet--100--opacity-1);
+      transform: translateX(rem(5));
+    }
+  }
+
+  &-Summary {
+    display: flex;
+    flex-direction: column;
+  }
+}

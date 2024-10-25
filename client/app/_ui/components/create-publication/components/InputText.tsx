@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { RichTextEditor, TextAreaEmoji } from '@ui/common/Input'
-import { LinkPreviewComponent } from '@ui/common/LinkPreview'
+import { useCallback, useState } from 'react'
+import { RichTextEditor } from '@ui/common/Input'
+import { LinkPreview } from '@ui/common/LinkPreview'
 import { isValidUrl } from '@ui/common/LinkPreview/hooks'
 import { setImmutable } from '@utils/others'
 import { cn } from '../cn'
@@ -25,9 +25,17 @@ export function InputText(props: InputTextProps) {
   const update = useCreatePublicationCtxUpdate()
   const [link, setLink] = useState(null)
 
+  const handleRemoveLink = useCallback(() => {
+    if (link) {
+      const newText = text.replace(link, '').trim()
+      update((ctx) => setImmutable(ctx, 'text', newText))
+      setLink(null)
+    }
+  }, [link, text, update])
+
   return (
-    <>
-      {link && <LinkPreviewComponent url={link} />}
+    <div className={cn('AddCommentContainer')}>
+      {link && <LinkPreview url={link} onRemove={handleRemoveLink} />}
 
       <RichTextEditor
         className={cn('AddCommentInput')}
@@ -43,6 +51,6 @@ export function InputText(props: InputTextProps) {
           }
         }}
       />
-    </>
+    </div>
   )
 }
