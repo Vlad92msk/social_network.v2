@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { RichTextEditor } from '@ui/common/Input'
 import { LinkPreview } from '@ui/common/LinkPreview'
 import { isValidUrl } from '@ui/common/LinkPreview/hooks'
@@ -24,6 +24,12 @@ export function InputText(props: InputTextProps) {
   const text = useCreatePublicationCtxSelect((ctx) => ctx.text)
   const update = useCreatePublicationCtxUpdate()
   const [link, setLink] = useState(null)
+
+  useEffect(() => {
+    if (!text) {
+      setLink(null)
+    }
+  }, [text])
 
   const handleRemoveLink = useCallback(() => {
     if (link) {
