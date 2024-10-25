@@ -19,6 +19,7 @@ export function TextAreaEmoji(props: TextAreaEmojiProps) {
   const [cursorPosition, setCursorPosition] = useState(0)
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
 
+  console.log('text', text)
   useEffect(() => {
     if (value !== text) {
       setText(value)

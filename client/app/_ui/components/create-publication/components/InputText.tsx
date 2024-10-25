@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TextAreaEmoji } from '@ui/common/Input'
+import { RichTextEditor, TextAreaEmoji } from '@ui/common/Input'
 import { LinkPreviewComponent } from '@ui/common/LinkPreview'
 import { isValidUrl } from '@ui/common/LinkPreview/hooks'
 import { setImmutable } from '@utils/others'
@@ -29,10 +29,10 @@ export function InputText(props: InputTextProps) {
     <>
       {link && <LinkPreviewComponent url={link} />}
 
-      <TextAreaEmoji
+      <RichTextEditor
         className={cn('AddCommentInput')}
         placeholder={placeholder}
-        value={text}
+        initialValue={text}
         onStartTyping={onStartTyping}
         onStopTyping={onStopTyping}
         onValueChange={(value) => {
