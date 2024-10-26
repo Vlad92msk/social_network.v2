@@ -8,28 +8,34 @@ import { EventEmitter2 } from '@nestjs/event-emitter'
 
 @Injectable()
 export class ConferenceService {
-    private readonly host: string
-    private readonly port: string
-    private mediasoupWorker: mediasoupTypes.Worker
     // Хранилище для комнат конференций
-    private rooms: Map<string, {
-        router: mediasoupTypes.Router,
-        transports: Map<string, mediasoupTypes.WebRtcTransport>,
-        producers: Map<string, mediasoupTypes.Producer>,
-        consumers: Map<string, mediasoupTypes.Consumer[]>
-    }> = new Map()
+    private rooms: Map<string, Set<string>> = new Map()
 
-    constructor(
-        @Inject(forwardRef(() => DialogService))
-        private dialogService: DialogService,
-        private readonly configService: ConfigService,
-        private eventEmitter: EventEmitter2
-    ) {
-        // Получаем хост и порт из конфигурации
-        this.host = this.configService.get(`${ConfigEnum.MAIN}.host`)
-        this.port = this.configService.get(`${ConfigEnum.MAIN}.port`)
-        // this.initializeMediasoup()
+    // Создание комнаты и добавление пользователя в комнату
+    addUserToRoom(dialogId: string, clientId: string): string[] {
+        if (!this.rooms.has(dialogId)) {
+            this.rooms.set(dialogId, new Set())
+        }
+
+        this.rooms.get(dialogId)?.add(clientId)
+        return Array.from(this.rooms.get(dialogId) || [])
     }
 
+    // Удаление пользователя из комнаты
+    removeUserFromRoom(dialogId: string, clientId: string): boolean {
+        const room = this.rooms.get(dialogId)
+        if (room) {
+            room.delete(clientId)
+            if (room.size === 0) {
+                this.rooms.delete(dialogId) // Удаляем комнату, если она пуста
+            }
+            return true
+        }
+        return false
+    }
 
+    // Получение списка участников комнаты
+    getParticipants(dialogId: string): string[] {
+        return Array.from(this.rooms.get(dialogId) || [])
+    }
 }
