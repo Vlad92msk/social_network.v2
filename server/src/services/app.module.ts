@@ -14,7 +14,8 @@ import { PostModule } from '@services/posts/post/post.module'
 import { ScheduleModule } from '@nestjs/schedule'
 import { DialogModule } from '@services/messenger/dialog/dialog.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
-import { VideoConferenceModule } from '@services/messenger/video-conference/video-conference.module'
+// import { VideoConferenceModule } from '@services/messenger/video-conference/video-conference.module'
+import { ConferenceModule } from '@services/messenger/conference/conference.module'
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { VideoConferenceModule } from '@services/messenger/video-conference/vide
     CommentModule,
     PostModule,
     DialogModule,
-    VideoConferenceModule,
+    ConferenceModule,
     ReactionsModule,
   ],
 })
