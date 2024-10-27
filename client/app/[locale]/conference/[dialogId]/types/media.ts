@@ -1,9 +1,17 @@
 // Все возможные типы сигналов в WebRTC коммуникации
-export type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'stream';
+export type SignalType =
+  | 'ice-candidate'
+  | 'stream'
+  | 'offer'
+  | 'answer'
+  | 'screen-share'
+  | 'moderator-action'
+  | 'user-action'
+  | 'room-action'
 
 // Базовый интерфейс для всех сигналов
 interface BaseSignal {
-  type: SignalType;
+  type: SignalType
 }
 
 // ICE (Interactive Connectivity Establishment) кандидат - это потенциальный путь соединения
@@ -27,13 +35,50 @@ interface SDPSignal extends BaseSignal {
 }
 
 // Объединенный тип для всех возможных сигналов
-export type WebRTCSignal = IceCandidateSignal | StreamSignal | SDPSignal;
+export type WebRTCSignal =
+  | IceCandidateSignal
+  | StreamSignal
+  | SDPSignal
+  | ScreenShareSignal
+  | ModeratorActionSignal
+  | UserActionSignal
+  | RoomActionSignal;
 
 // Информация об участнике конференции
 export interface Participant {
   userId: string;
   peer?: RTCPeerConnection; // WebRTC соединение с этим участником
   stream?: MediaStream; // Медиа поток от этого участника
+}
+
+// Интерфейс для шаринга экрана
+interface ScreenShareSignal extends BaseSignal {
+  type: 'screen-share';
+  action: 'start' | 'stop';
+  stream?: MediaStream;
+}
+
+// Интерфейс для действий модератора
+interface ModeratorActionSignal extends BaseSignal {
+  type: 'moderator-action';
+  action: 'mute' | 'kick';
+  target?: 'audio' | 'video';
+}
+
+// Интерфейс для действий пользователя
+interface UserActionSignal extends BaseSignal {
+  type: 'user-action';
+  action: 'leave' | 'raise-hand';
+  userId: string;
+  timestamp?: number;
+}
+
+// Интерфейс для действий в комнате
+interface RoomActionSignal extends BaseSignal {
+  type: 'room-action';
+  action: 'change-layout' | 'start-recording' | 'stop-recording';
+  layout?: 'grid' | 'presentation' | 'focus';
+  timestamp?: number;
 }
 
 // Пропсы для хука конференции
