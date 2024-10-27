@@ -12,20 +12,19 @@ export class ConferenceService {
     private rooms: Map<string, Set<string>> = new Map()
 
     // Создание комнаты и добавление пользователя в комнату
-    addUserToRoom(dialogId: string, clientId: string): string[] {
+    addUserToRoom(dialogId: string, userId: string): string[] {
         if (!this.rooms.has(dialogId)) {
             this.rooms.set(dialogId, new Set())
         }
 
-        this.rooms.get(dialogId)?.add(clientId)
+        this.rooms.get(dialogId)?.add(userId)
         return Array.from(this.rooms.get(dialogId) || [])
     }
 
-    // Удаление пользователя из комнаты
-    removeUserFromRoom(dialogId: string, clientId: string): boolean {
+    removeUserFromRoom(dialogId: string, userId: string): boolean {
         const room = this.rooms.get(dialogId)
         if (room) {
-            room.delete(clientId)
+            room.delete(userId)
             if (room.size === 0) {
                 this.rooms.delete(dialogId) // Удаляем комнату, если она пуста
             }

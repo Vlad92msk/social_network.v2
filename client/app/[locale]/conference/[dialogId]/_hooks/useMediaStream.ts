@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { MediaStreamState } from '../types/media'
 
 const DEFAULT_MEDIA_STATE: MediaStreamState = {
-  stream: null,
+  stream: undefined,
   isVideoEnabled: false,
-  isAudioEnabled: true,
+  isAudioEnabled: false,
   isScreenSharing: false,
 }
 
@@ -28,8 +28,6 @@ export const useMediaStream = () => {
       setMediaState((prev) => ({
         ...prev,
         stream,
-        isVideoEnabled: true,
-        isAudioEnabled: true,
       }))
     } catch (error) {
       console.error('Error accessing media devices:', error)
@@ -90,6 +88,7 @@ export const useMediaStream = () => {
     return () => cleanup()
   }, [])
 
+  console.log('mediaState', mediaState)
   return {
     ...mediaState,
     toggleVideo,

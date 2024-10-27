@@ -12,16 +12,17 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
     constructor(private readonly conferenceService: ConferenceService) {}
 
     handleConnection(client: Socket) {
-        const { dialogId } = client.handshake.query
+        const { dialogId, userId } = client.handshake.query
 
-        if (typeof dialogId === 'string') {
+        // Проверяем, что оба параметра установлены
+        if (typeof dialogId === 'string' && typeof userId === 'string') {
             client.join(dialogId)
 
             // Добавляем пользователя в комнату через ConferenceService
-            const participants = this.conferenceService.addUserToRoom(dialogId, client.id)
+            const participants = this.conferenceService.addUserToRoom(dialogId, userId)
 
             // Оповещаем других участников о новом пользователе
-            client.to(dialogId).emit('user:joined', client.id)
+            client.to(dialogId).emit('user:joined', userId)
 
             // Отправляем новому пользователю список участников
             client.emit('room:participants', participants)
@@ -29,14 +30,15 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
     }
 
     handleDisconnect(client: Socket) {
-        const { dialogId } = client.handshake.query
+        const { dialogId, userId } = client.handshake.query
 
-        if (typeof dialogId === 'string') {
+        // Проверяем, что оба параметра установлены
+        if (typeof dialogId === 'string' && typeof userId === 'string') {
             // Удаляем пользователя из комнаты через ConferenceService
-            const userRemoved = this.conferenceService.removeUserFromRoom(dialogId, client.id)
+            const userRemoved = this.conferenceService.removeUserFromRoom(dialogId, userId)
 
             if (userRemoved) {
-                client.to(dialogId).emit('user:left', client.id)
+                client.to(dialogId).emit('user:left', userId)
             }
         }
     }

@@ -1,18 +1,28 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import { useState } from 'react'
 import { makeCn } from '@utils/others'
-import { useEffect, useState } from 'react'
-import { useConferenceSocket } from '../../_hooks/useConferenceSocket'
 import style from './Conference.module.scss'
+import { useConferenceSocket } from '../../_hooks/useConferenceSocket'
 import { useMediaStream } from '../../_hooks/useMediaStream'
 import { MediaControls } from '../MediaControls'
 import { VideoView } from '../VideoView'
 
 const cn = makeCn('Conference', style)
 
-export function Conference() {
+interface ConferenceProps {
+  profile: any
+}
+
+export function Conference(props: ConferenceProps) {
+  const { profile } = props
   const { dialogId } = useParams<{ dialogId: string }>()
+
+  // Состояние для хранения стримов участников
+  const [participantStreams, setParticipantStreams] = useState<Map<string, MediaStream>>(new Map())
+  const [participants, setParticipants] = useState<string[]>([])
+
   const {
     stream,
     isVideoEnabled,
@@ -21,42 +31,61 @@ export function Conference() {
     toggleAudio,
   } = useMediaStream()
 
-  // Локальное состояние для участников конференции
-  const [participants, setParticipants] = useState<string[]>([])
-console.log('participants', participants)
-  // Обработчик для добавления нового пользователя
+  // Обработчики событий
   const handleUserJoined = (userId: string) => {
     setParticipants((prev) => [...prev, userId])
   }
 
-  // Обработчик для удаления пользователя
   const handleUserLeft = (userId: string) => {
     setParticipants((prev) => prev.filter((id) => id !== userId))
+    setParticipantStreams((prev) => {
+      const newStreams = new Map(prev)
+      newStreams.delete(userId)
+      return newStreams
+    })
   }
 
-  // Обработчик сигналов (например, WebRTC)
+  // Обработка WebRTC сигналов
   const handleSignal = (userId: string, signal: any) => {
-    console.log(`Received signal from ${userId}`, signal)
-    // Обработка сигнала (например, передача WebRTC offer/answer/ICE)
+    // Если получили медиа стрим от участника
+    if (signal.type === 'stream') {
+      setParticipantStreams((prev) => {
+        const newStreams = new Map(prev)
+        newStreams.set(userId, signal.stream)
+        return newStreams
+      })
+    }
   }
 
-  // Подключаем хук useConferenceSocket
+  // Подключаем WebRTC через хук
   const { sendSignal } = useConferenceSocket({
     dialogId,
+    userId: profile?.user_info.id,
+    stream, // Передаем локальный медиа стрим
     onUserJoined: handleUserJoined,
     onUserLeft: handleUserLeft,
     onSignal: handleSignal,
+    getParticipants: setParticipants,
   })
 
   return (
     <div className={cn()}>
       <div className={cn('ParticipantsContainer')}>
+        {/* Локальное видео */}
+        <div className={cn('Participant')}>
+          <VideoView
+            stream={stream}
+            muted // Локальное видео всегда muted
+            isEnabled={isVideoEnabled}
+          />
+        </div>
+        {/* Видео других участников */}
         {participants.map((participantId) => (
           <div key={participantId} className={cn('Participant')}>
             <VideoView
-              stream={stream}
-              muted={participantId === 'self'}
-              isEnabled={isVideoEnabled}
+              stream={participantStreams.get(participantId)}
+              muted={false}
+              isEnabled
             />
           </div>
         ))}

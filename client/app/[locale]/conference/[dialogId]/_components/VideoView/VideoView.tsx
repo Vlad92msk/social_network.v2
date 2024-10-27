@@ -3,18 +3,18 @@
 import { useEffect, useRef } from 'react'
 
 interface VideoViewProps {
-  stream: MediaStream | null
+  stream?: MediaStream
   muted?: boolean
   isEnabled?: boolean
 }
 
-export function VideoView({ stream, muted = false, isEnabled = true }: VideoViewProps) {
+export function VideoView({ stream, muted = false, isEnabled }: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const previousStream = useRef<MediaStream | null>(null)
+  const previousStream = useRef<MediaStream>(undefined)
 
   useEffect(() => {
     const videoElement = videoRef.current
-    if (!videoElement || !stream) return
+    if (!videoElement || !stream || !isEnabled) return
 
     // Обновляем srcObject только если поток изменился
     if (previousStream.current !== stream) {
@@ -34,9 +34,9 @@ export function VideoView({ stream, muted = false, isEnabled = true }: VideoView
       if (videoElement.srcObject) {
         videoElement.srcObject = null
       }
-      previousStream.current = null
+      previousStream.current = undefined
     }
-  }, [stream])
+  }, [isEnabled, stream])
 
   if (!stream) {
     return <div>No video stream available</div>
