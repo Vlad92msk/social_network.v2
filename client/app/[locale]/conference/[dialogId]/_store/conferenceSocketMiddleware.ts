@@ -1,8 +1,9 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
 import { Socket } from 'socket.io-client'
+import { RootReducer } from '../../../../../store/root.reducer'
+import { handleSignal, initiateConnection } from './actions/conference-thunk.actions'
 import { ConferenceSliceActions } from './conference.slice'
 import { createSocket } from './createSocket.util'
-import { RootReducer } from '../../../../../store/root.reducer'
 
 let socket: Socket | null = null
 
@@ -27,39 +28,38 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
       console.log('disconnected from conference')
       store.dispatch(ConferenceSliceActions.setConnected(false))
     })
+
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error)
       store.dispatch(ConferenceSliceActions.setError('Socket connection error'))
     })
 
-
-
-    // Обработка присоединения нового участника
-    socket.on('user:joined', async (newUserId: string) => {
-      console.log('onUserJoined', newUserId)
-      store.dispatch(ConferenceSliceActions.setUserJoined(newUserId))
-      // Создаем новое соединение и отправляем offer
-    })
-
-    // Обработка ухода участника
     socket.on('user:left', (userId: string) => {
       store.dispatch(ConferenceSliceActions.setUserLeft(userId))
+      store.dispatch(ConferenceSliceActions.closeConnection(userId))
     })
 
-    // Обработка сигналов WebRTC
-    socket.on('signal', ({ userId: id, signal }) => {
-      // store.dispatch(ConferenceSliceActions.setError('Socket connection error'))
-      // handleSignal(id, signal)
+    // Обработка присоединения нового участника (только один обработчик)
+    socket.on('user:joined', (newUserId: string) => {
+      store.dispatch(ConferenceSliceActions.setUserJoined(newUserId))
+      store.dispatch(initiateConnection(newUserId, true))
+    })
+
+    socket.on('signal', ({ userId, signal }) => {
+      store.dispatch(handleSignal(userId, signal))
     })
 
     socket.on('room:participants', (ids: string[]) => {
       store.dispatch(ConferenceSliceActions.setParticipants(ids))
-      // handleSignal(id, signal)
-
     })
   }
 
   if (!socket) return next(action)
+
+  if (action.type === '[CONFERENCE]/SEND_SIGNAL') {
+    const { targetUserId, signal } = action.payload
+    socket.emit('signal', { targetUserId, signal })
+  }
 
   switch (action.type) {
     case '[CONFERENCE]/WEBSOCKET_DISCONNECT': {

@@ -33,7 +33,7 @@ interface StreamSignal extends BaseSignal {
 
 // SDP (Session Description Protocol) - протокол описания сессии
 // Содержит информацию о медиа возможностях пира (кодеки, форматы, и т.д.)
-interface SDPSignal extends BaseSignal {
+export interface SDPSignal extends BaseSignal {
   type: 'offer' | 'answer'; // offer - предложение соединения, answer - ответ на предложение
   sdp: string; // Строка, описывающая параметры соединения
 }
