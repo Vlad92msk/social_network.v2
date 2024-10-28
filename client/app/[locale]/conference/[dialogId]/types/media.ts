@@ -24,7 +24,11 @@ interface IceCandidateSignal extends BaseSignal {
 // Сигнал медиа потока - используется когда один пир получает аудио/видео поток от другого
 interface StreamSignal extends BaseSignal {
   type: 'stream';
-  stream: MediaStream; // Содержит аудио/видео данные
+  stream: MediaStream;
+  mediaState?: {
+    isVideoEnabled: boolean;
+    isAudioEnabled: boolean;
+  };
 }
 
 // SDP (Session Description Protocol) - протокол описания сессии

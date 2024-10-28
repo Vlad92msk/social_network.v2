@@ -1,11 +1,15 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { makeCn } from '@utils/others'
+import { useSelector } from 'react-redux'
+import { ConferenceSelectors } from '../../_store/selectors'
+import { selectUsers } from '../../_store/selectors/conference.selectors'
 import style from './Conference.module.scss'
-import { useConferenceSocket } from '../../_hooks/useConferenceSocket'
+import { useConferenceSocketConnect } from '../../_hooks'
 import { useMediaStream } from '../../_hooks/useMediaStream'
+import { WebRTCSignal } from '../../types/media'
 import { MediaControls } from '../MediaControls'
 import { VideoView } from '../VideoView'
 
@@ -19,9 +23,9 @@ export function Conference(props: ConferenceProps) {
   const { profile } = props
   const { dialogId } = useParams<{ dialogId: string }>()
 
-  // Состояние для хранения стримов участников
-  const [participantStreams, setParticipantStreams] = useState<Map<string, MediaStream>>(new Map())
-  const [participants, setParticipants] = useState<string[]>([])
+  const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
+  const participants = useSelector(ConferenceSelectors.selectUsers)
+  useConferenceSocketConnect({ conferenceId: dialogId })
 
   const {
     stream,
@@ -31,65 +35,38 @@ export function Conference(props: ConferenceProps) {
     toggleAudio,
   } = useMediaStream()
 
-  // Обработчики событий
-  const handleUserJoined = (userId: string) => {
-    setParticipants((prev) => [...prev, userId])
-  }
+  const [participantStreams, setParticipantStreams] = useState<Map<string, MediaStream>>(new Map())
 
-  const handleUserLeft = (userId: string) => {
-    setParticipants((prev) => prev.filter((id) => id !== userId))
-    setParticipantStreams((prev) => {
-      const newStreams = new Map(prev)
-      newStreams.delete(userId)
-      return newStreams
-    })
-  }
-
-  // Обработка WebRTC сигналов
-  const handleSignal = (userId: string, signal: any) => {
-    // Если получили медиа стрим от участника
-    if (signal.type === 'stream') {
-      setParticipantStreams((prev) => {
-        const newStreams = new Map(prev)
-        newStreams.set(userId, signal.stream)
-        return newStreams
-      })
-    }
-  }
-
-  // Подключаем WebRTC через хук
-  const { sendSignal } = useConferenceSocket({
-    dialogId,
-    userId: profile?.user_info.id,
-    stream, // Передаем локальный медиа стрим
-    onUserJoined: handleUserJoined,
-    onUserLeft: handleUserLeft,
-    onSignal: handleSignal,
-    getParticipants: setParticipants,
-  })
-
+  if (!isConnected) return <div>Connecting...</div>
   return (
     <div className={cn()}>
+      {/* Локальное видео */}
       <div className={cn('ParticipantsContainer')}>
-        {/* Локальное видео */}
         <div className={cn('Participant')}>
           <VideoView
             stream={stream}
-            muted // Локальное видео всегда muted
+            muted
             isEnabled={isVideoEnabled}
           />
+          <span>{profile?.user_info.id}</span>
         </div>
+
         {/* Видео других участников */}
-        {participants.map((participantId) => (
+        {participants.filter((id) => id !== profile?.user_info.id).map((participantId) => (
           <div key={participantId} className={cn('Participant')}>
             <VideoView
               stream={participantStreams.get(participantId)}
               muted={false}
-              isEnabled
+              isEnabled // Это состояние нужно будет получать из сигнала
             />
+            <span>
+              User
+              {participantId}
+            </span>
           </div>
         ))}
       </div>
+
       <div className={cn('ActionsContainer')}>
         <MediaControls
           isVideoEnabled={isVideoEnabled}

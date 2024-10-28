@@ -1,6 +1,6 @@
 // hooks/useConnectionManager.ts
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useWebRTCSignal } from './useWebRTCSignal'
 import { SocketService } from '../_services/socket.service'
 import { WebRTCService } from '../_services/webrtc.service'
@@ -55,6 +55,7 @@ export function useConnectionManager(props: UseConnectionManagerProps) {
 
     // Обработка присоединения нового участника
     socket.on('user:joined', async (newUserId: string) => {
+      console.log('onUserJoined', newUserId)
       onUserJoined(newUserId)
       // Создаем новое соединение и отправляем offer
       await createConnection(newUserId, true)
@@ -67,7 +68,10 @@ export function useConnectionManager(props: UseConnectionManagerProps) {
     })
 
     // Обработка сигналов WebRTC
-    socket.on('signal', ({ userId: id, signal }) => handleSignal(id, signal))
+    socket.on('signal', ({ userId: id, signal }) => {
+      console.log('bvbvbvbvbbv')
+      handleSignal(id, signal)
+    })
     socket.on('room:participants', getParticipants)
 
     // eslint-disable-next-line consistent-return

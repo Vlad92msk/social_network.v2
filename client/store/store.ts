@@ -4,6 +4,7 @@ import { merge } from 'lodash'
 import logger from 'redux-logger'
 import { dialogKeyboardEventsMiddleware } from '@ui/modules/messenger/store/dialogKeyboardEventsMiddleware'
 import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogSocketMiddleware'
+import { conferenceSocketMiddleware } from '../app/[locale]/conference/[dialogId]/_store/conferenceSocketMiddleware'
 import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
@@ -28,7 +29,8 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       reactionsApi.middleware,
       dialogSocketMiddleware,
       dialogKeyboardEventsMiddleware,
-      // logger,
+      conferenceSocketMiddleware,
+      logger,
     ),
   })
 

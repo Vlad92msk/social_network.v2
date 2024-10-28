@@ -4,11 +4,6 @@ import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userI
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { UserStatus } from '../../../../types/user-status'
 
-type UndoAction = {
-  id: string;
-  action: PayloadAction<any>;
-  dependsOn?: string; // Опционально, если есть зависимость от другого действия
-};
 
 export interface MessengerSliceState {
   isConnected: boolean

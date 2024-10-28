@@ -10,7 +10,7 @@ export function useConferenceSocket(props: UseConferenceSocketProps) {
   const webRTCService = useRef(new WebRTCService())
   const socketService = useRef(new SocketService())
 
-  // Управление соединениями через отдельный хук
+  // Управление соединениями
   useConnectionManager({
     ...props,
     webRTCService: webRTCService.current,

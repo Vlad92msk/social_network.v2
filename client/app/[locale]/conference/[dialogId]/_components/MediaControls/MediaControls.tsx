@@ -13,7 +13,7 @@ export function MediaControls(props: MediaControlsProps) {
     onToggleAudio,
   } = props
   return (
-    <div className="MediaControls">
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       <button
         onClick={onToggleVideo}
         className="MediaButton"

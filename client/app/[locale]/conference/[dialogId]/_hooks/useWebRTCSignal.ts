@@ -40,6 +40,7 @@ export function useWebRTCSignal(props: UseWebRTCSignalProps) {
     userId: string,
     isInitiator: boolean = false,
   ) => {
+    console.log('____11_____111__')
     const pc = await webRTCService.createPeerConnection(
       userId,
       stream,
@@ -52,6 +53,7 @@ export function useWebRTCSignal(props: UseWebRTCSignalProps) {
       },
       // Callback для обработки входящего медиа потока
       (trackStream) => {
+        console.log('mmmmmmmmm')
         onSignal(userId, {
           type: 'stream',
           stream: trackStream,
@@ -75,6 +77,7 @@ export function useWebRTCSignal(props: UseWebRTCSignalProps) {
   const handleSignal = useCallback(async (userId: string, webRTCSignal: WebRTCSignal) => {
     let pc = webRTCService.getPeerConnection(userId)
 
+console.log('pc___', pc)
     try {
       // Создаем соединение, если его еще нет
       if (!pc) {
@@ -101,7 +104,7 @@ export function useWebRTCSignal(props: UseWebRTCSignalProps) {
     } catch (error) {
       console.error('Error handling signal:', error)
     }
-  }, [webRTCService, createConnection, createSDPSignal])
+  }, [webRTCService, createConnection, socketService, createSDPSignal])
 
   return {
     handleSignal,

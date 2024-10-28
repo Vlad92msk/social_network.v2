@@ -39,6 +39,7 @@ export class WebRTCService {
     }
 
     this.peerConnections.set(targetUserId, pc)
+    console.log('peerConnections____', this.peerConnections)
     return pc
   }
 
