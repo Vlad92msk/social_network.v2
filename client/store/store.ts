@@ -5,7 +5,6 @@ import logger from 'redux-logger'
 import { dialogKeyboardEventsMiddleware } from '@ui/modules/messenger/store/dialogKeyboardEventsMiddleware'
 import { dialogSocketMiddleware } from '@ui/modules/messenger/store/dialogSocketMiddleware'
 import { conferenceSocketMiddleware } from '../app/[locale]/conference/[dialogId]/_store/conferenceSocketMiddleware'
-import { webRTCMiddleware } from '../app/[locale]/conference/[dialogId]/_store/conferenceWebRTCMiddleware'
 import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
@@ -31,7 +30,6 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       dialogSocketMiddleware,
       dialogKeyboardEventsMiddleware,
       conferenceSocketMiddleware,
-      webRTCMiddleware,
       logger,
     ),
   })

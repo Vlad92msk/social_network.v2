@@ -1,7 +1,6 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
 import { Socket } from 'socket.io-client'
 import { RootReducer } from '../../../../../store/root.reducer'
-import { handleSignal, initiateConnection } from './actions/conference-thunk.actions'
 import { ConferenceSliceActions } from './conference.slice'
 import { createSocket } from './createSocket.util'
 
@@ -36,21 +35,19 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
 
     socket.on('user:left', (userId: string) => {
       store.dispatch(ConferenceSliceActions.setUserLeft(userId))
-      store.dispatch(ConferenceSliceActions.closeConnection(userId))
     })
 
     // Обработка присоединения нового участника (только один обработчик)
     socket.on('user:joined', (newUserId: string) => {
       store.dispatch(ConferenceSliceActions.setUserJoined(newUserId))
-      store.dispatch(initiateConnection(newUserId, true))
-    })
-
-    socket.on('signal', ({ userId, signal }) => {
-      store.dispatch(handleSignal(userId, signal))
     })
 
     socket.on('room:participants', (ids: string[]) => {
       store.dispatch(ConferenceSliceActions.setParticipants(ids))
+    })
+
+    socket.on('signal', ({ userId, signal }) => {
+      store.dispatch(ConferenceSliceActions.addSignal({ userId, signal }))
     })
   }
 

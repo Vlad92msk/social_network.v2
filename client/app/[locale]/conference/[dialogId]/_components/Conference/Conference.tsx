@@ -1,17 +1,18 @@
 'use client'
 
-import { makeCn } from '@utils/others'
 import { useParams } from 'next/navigation'
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { makeCn } from '@utils/others'
+import { ConferenceSliceActions } from '../../_store/conference.slice'
+import style from './Conference.module.scss'
+import { useWebRTC } from '../../_context/WebRTCContext'
 import { useConferenceSocketConnect } from '../../_hooks'
 import { useMediaStream } from '../../_hooks/useMediaStream'
-import { handleSignal } from '../../_store/actions/conference-thunk.actions'
-import { ConferenceSliceActions } from '../../_store/conference.slice'
+import { useWebRTCSignal } from '../../_hooks/useWebRTCSignal'
 import { ConferenceSelectors } from '../../_store/selectors'
 import { MediaControls } from '../MediaControls'
 import { VideoView } from '../VideoView'
-import style from './Conference.module.scss'
 
 const cn = makeCn('Conference', style)
 
@@ -25,11 +26,9 @@ export function Conference(props: ConferenceProps) {
   const { dialogId } = useParams<{ dialogId: string }>()
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
   const participants = useSelector(ConferenceSelectors.selectUsers)
-  const streams = useSelector(ConferenceSelectors.selectStreams)
   const signals = useSelector(ConferenceSelectors.selectUserSignals)
 
-  useConferenceSocketConnect({ conferenceId: dialogId })
-
+  const webRTC = useWebRTC()
   const {
     stream: localStream,
     isVideoEnabled,
@@ -38,25 +37,46 @@ export function Conference(props: ConferenceProps) {
     toggleAudio,
   } = useMediaStream()
 
-  // Обработка сигналов с проверкой на изменения
+  // Инициализируем WebRTC обработчик сигналов
+  const { handleSignal } = useWebRTCSignal({
+    stream: localStream,
+    onSignal: (userId, signal) => {
+      if (signal.type === 'stream') {
+        webRTC.addStream(userId, signal.stream)
+      }
+    },
+  })
+
+  useConferenceSocketConnect({ conferenceId: dialogId })
+
+  // Обработка локального стрима
+  useEffect(() => {
+    if (localStream) {
+      webRTC.addStream('local', localStream)
+    }
+  }, [localStream, webRTC])
+
+  // Обработка входящих сигналов
   useEffect(() => {
     const signalEntries = Object.entries(signals)
     if (signalEntries.length > 0) {
       signalEntries.forEach(([userId, { signal }]) => {
         if (signal) {
-          dispatch(handleSignal(userId, signal))
+          handleSignal(userId, signal)
           dispatch(ConferenceSliceActions.clearSignal({ userId }))
         }
       })
     }
-  }, [signals, dispatch])
+  }, [signals, dispatch, handleSignal])
 
-  // Сохраняем локальный стрим в store
-  useEffect(() => {
-    if (localStream) {
-      dispatch(ConferenceSliceActions.addStream({ userId: 'local', stream: localStream }))
-    }
-  }, [localStream, dispatch])
+  // Обработка отключения пользователей
+  useEffect(() => () => {
+    // Очистка при размонтировании
+    participants.forEach((userId) => {
+      webRTC.removeConnection(userId)
+      webRTC.removeStream(userId)
+    })
+  }, [participants, webRTC])
 
   if (!isConnected) return <div>Connecting...</div>
 
@@ -66,7 +86,7 @@ export function Conference(props: ConferenceProps) {
         {/* Локальное видео */}
         <div className={cn('Participant')}>
           <VideoView
-            stream={localStream}
+            stream={webRTC.getStream('local')}
             muted
             isEnabled={isVideoEnabled}
           />
@@ -79,7 +99,7 @@ export function Conference(props: ConferenceProps) {
           .map((participantId) => (
             <div key={participantId} className={cn('Participant')}>
               <VideoView
-                stream={streams[participantId]}
+                stream={webRTC.getStream(participantId)}
                 muted={false}
                 isEnabled
               />
