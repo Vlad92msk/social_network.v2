@@ -3,16 +3,16 @@
 import { useParams } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useMediaStream } from '@ui/components/media-stream/context/MediaStreamContext'
+import { VideoView } from '@ui/components/media-stream/VideoView'
 import { makeCn } from '@utils/others'
 import style from './Conference.module.scss'
 import { useWebRTC } from '../../_context/WebRTCContext'
 import { useConferenceSocketConnect } from '../../_hooks'
-import { useMediaStream } from '../../_hooks/useMediaStream'
 import { useWebRTCSignal } from '../../_hooks/useSignal'
 import { ConferenceSliceActions } from '../../_store/conference.slice'
 import { ConferenceSelectors } from '../../_store/selectors'
 import { MediaControls } from '../MediaControls'
-import { VideoView } from '../VideoView'
 
 const cn = makeCn('Conference', style)
 
@@ -29,13 +29,22 @@ export function Conference({ profile }: ConferenceProps) {
 
   useConferenceSocketConnect({ conferenceId: dialogId })
 
-  const {
-    addStream, getStream, removeStream, removeConnection,
-  } = useWebRTC()
-  const { stream: localStream, isVideoEnabled, isAudioEnabled, toggleVideo, toggleAudio } = useMediaStream()
+  const { addStream, getStream, removeStream, removeConnection } = useWebRTC()
 
+  const {
+    stream: localStream,
+    isVideoEnabled, isAudioEnabled,
+    toggleVideo,
+    toggleAudio,
+  } = useMediaStream()
+
+  console.clear()
+  console.log('localStream', localStream)
+  console.log('isVideoEnabled', isVideoEnabled)
+  console.log('isAudioEnabled', isAudioEnabled)
   // Подключение и создание WebRTC соединений
-  const { handleSignal, createConnection } = useWebRTCSignal()
+  // @ts-ignore
+  const { handleSignal, createConnection } = useWebRTCSignal({ localStream })
 
   // Обработка и установка соединений
   useEffect(() => {
@@ -47,7 +56,8 @@ export function Conference({ profile }: ConferenceProps) {
       const shouldInitiate = profile.user_info.id < participantId
       if (shouldInitiate) {
         try {
-          await createConnection(participantId, true)
+          // Передаем localStream при создании соединения
+          await createConnection(participantId, true, localStream)
         } catch (error) {
           console.error('Error creating connection:', error)
         }
@@ -96,12 +106,12 @@ export function Conference({ profile }: ConferenceProps) {
 
   if (!isConnected) return <div>Connecting...</div>
 
-  console.log('webRTC.getStream(\'local\')', getStream('local'))
+  // console.log('webRTC.getStream(\'local\')', getStream('local'))
   return (
     <div className="conference">
       <div className="ParticipantsContainer">
         <div className="Participant">
-          <VideoView stream={getStream('local')} muted isEnabled={isVideoEnabled} />
+          <VideoView stream={localStream} muted isEnabled={isVideoEnabled} />
           <span>
             {profile?.user_info.id}
             {' '}
@@ -109,7 +119,7 @@ export function Conference({ profile }: ConferenceProps) {
           </span>
         </div>
         {participants
-          .filter((id) => id !== profile?.user_info.id)
+          .filter((id) => id !== String(profile?.user_info.id))
           .map((participantId) => (
             <div key={participantId} className="Participant">
               <VideoView stream={getStream(participantId)} muted={false} isEnabled />

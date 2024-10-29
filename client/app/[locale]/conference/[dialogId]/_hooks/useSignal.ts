@@ -1,3 +1,4 @@
+import { useMediaStream } from '@ui/components/media-stream/context/MediaStreamContext'
 import { useCallback, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useWebRTC } from '../_context/WebRTCContext'
@@ -12,9 +13,9 @@ interface WebRTCSignal {
 }
 
 // Хук для работы с сигналами WebRTC
-export function useWebRTCSignal() {
+export function useWebRTCSignal({ localStream }: { localStream?: MediaStream }) {
   const {
-    addConnection, getConnection, addStream, webRTCService,
+    addConnection, getConnection, addStream, webRTCService
   } = useWebRTC()
   const dispatch = useDispatch()
   const socket = getSocket()
@@ -56,27 +57,29 @@ export function useWebRTCSignal() {
 
   const handleSignal = useCallback(
     async (userId: string, signal: WebRTCSignal) => {
-      // Создаем или получаем существующее соединение, не передавая shouldInitiate (мы уже получили offer, значит не инициатор)
-      const peerConnection = await createConnection(userId, false)
-
       if (signal.type === 'offer') {
-        console.log('Received offer, creating answer...')
-        // Устанавливаем удалённое описание с полученным offer
+        // Создаем соединение только один раз
+        const peerConnection = await createConnection(userId, false, localStream)
+        console.log('Setting remote description for offer:', signal)
         // @ts-ignore
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal))
+        await webRTCService.setRemoteDescription(peerConnection, signal)
         const answer = await webRTCService.createAnswer(peerConnection)
         dispatch(ConferenceSliceActions.sendSignal({ targetUserId: userId, signal: answer }))
-      } else if (signal.type === 'answer') {
-        console.log('Received answer, setting remote description...')
-        // Устанавливаем удалённое описание с полученным answer
-        // @ts-ignore
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal))
-      } else if (signal.type === 'candidate') {
-        console.log('Received ICE candidate, adding to connection...')
-        await peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate))
+      } else {
+        // Используем существующее соединение или создаем новое
+        const peerConnection = await createConnection(userId, false)
+
+        if (signal.type === 'answer') {
+          console.log('Setting remote description for answer:', signal)
+          // @ts-ignore
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(signal))
+        } else if (signal.type === 'candidate') {
+          console.log('Adding ICE candidate:', signal.candidate)
+          await peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate))
+        }
       }
     },
-    [createConnection, webRTCService, dispatch],
+    [createConnection, webRTCService, dispatch, localStream],
   )
 
   // Эффект для обработки сигналов, которые приходят через сокет
