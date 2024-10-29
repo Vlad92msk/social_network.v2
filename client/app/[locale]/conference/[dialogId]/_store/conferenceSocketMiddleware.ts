@@ -1,8 +1,8 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
 import { Socket } from 'socket.io-client'
-import { RootReducer } from '../../../../../store/root.reducer'
 import { ConferenceSliceActions } from './conference.slice'
 import { createSocket } from './createSocket.util'
+import { RootReducer } from '../../../../../store/root.reducer'
 
 let socket: Socket | null = null
 
@@ -19,12 +19,12 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
     store.dispatch(ConferenceSliceActions.setConferenceId(action.payload.conferenceId))
 
     socket.on('connect', () => {
-      console.log('connected to conference')
+      console.log('Connected to conference server')
       store.dispatch(ConferenceSliceActions.setConnected(true))
     })
 
     socket.on('disconnect', () => {
-      console.log('disconnected from conference')
+      console.log('Disconnected from conference server')
       store.dispatch(ConferenceSliceActions.setConnected(false))
     })
 
@@ -34,27 +34,43 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
     })
 
     socket.on('user:left', (userId: string) => {
+      console.log('User left:', userId)
       store.dispatch(ConferenceSliceActions.setUserLeft(userId))
     })
 
-    // Обработка присоединения нового участника (только один обработчик)
     socket.on('user:joined', (newUserId: string) => {
+      console.log('User joined:', newUserId)
       store.dispatch(ConferenceSliceActions.setUserJoined(newUserId))
     })
 
     socket.on('room:participants', (ids: string[]) => {
+      console.log('Room participants:', ids)
       store.dispatch(ConferenceSliceActions.setParticipants(ids))
     })
 
     socket.on('signal', ({ userId, signal }) => {
+      console.log('Received signal:', {
+        from: userId,
+        type: signal.type,
+        timestamp: new Date().toISOString(),
+      })
       store.dispatch(ConferenceSliceActions.addSignal({ userId, signal }))
+    })
+
+    socket.on('signal:sent', (info) => {
+      console.log('Signal sent confirmation:', info)
     })
   }
 
   if (!socket) return next(action)
 
-  if (action.type === '[CONFERENCE]/SEND_SIGNAL') {
+  if (action.type === ConferenceSliceActions.sendSignal.type) {
     const { targetUserId, signal } = action.payload
+    console.log('Sending signal:', {
+      to: targetUserId,
+      type: signal.type,
+      timestamp: new Date().toISOString(),
+    })
     socket.emit('signal', { targetUserId, signal })
   }
 
@@ -65,7 +81,6 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
       store.dispatch(ConferenceSliceActions.setConnected(false))
       break
     }
-    default: return next(action)
   }
 
   return next(action)

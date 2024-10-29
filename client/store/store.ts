@@ -30,7 +30,7 @@ export const makeStore = (preloadedState?: Partial<RootReducer>) => {
       dialogSocketMiddleware,
       dialogKeyboardEventsMiddleware,
       conferenceSocketMiddleware,
-      logger,
+      // logger,
     ),
   })
 

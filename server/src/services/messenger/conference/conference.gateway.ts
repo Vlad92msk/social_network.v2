@@ -14,82 +14,119 @@ interface SignalPayload {
 })
 export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
-    server: Server
+    server: Server;
 
     constructor(private readonly conferenceService: ConferenceService) {}
 
+    @SubscribeMessage('signal')
+    handleSignal(client: Socket, payload: SignalPayload) {
+        const { targetUserId, signal } = payload;
+        const senderId = client.data.userId;
+
+        console.log('Server received signal:', {
+            from: senderId,
+            to: targetUserId,
+            type: signal.type,
+            timestamp: new Date().toISOString()
+        });
+
+        if (!senderId || !targetUserId || !signal) {
+            console.error('Invalid signal payload:', payload);
+            return;
+        }
+
+        // Получаем комнату пользователя
+        const dialogId = client.handshake.query.dialogId as string;
+        if (!dialogId) {
+            console.error('No dialogId found for user:', senderId);
+            return;
+        }
+
+        // Проверяем, что пользователь существует в комнате
+        const participants = this.conferenceService.getParticipants(dialogId);
+        if (!participants.includes(targetUserId)) {
+            console.error('Target user not found in room:', targetUserId);
+            return;
+        }
+
+        console.log('Forwarding signal to target user:', {
+            from: senderId,
+            to: targetUserId,
+            type: signal.type
+        });
+
+        // Отправляем сигнал целевому пользователю
+        this.server.to(targetUserId).emit('signal', {
+            userId: senderId,
+            signal,
+        });
+
+        // Отправляем подтверждение отправителю
+        client.emit('signal:sent', {
+            to: targetUserId,
+            type: signal.type,
+            timestamp: new Date().toISOString()
+        });
+    }
+
     handleConnection(client: Socket) {
-        const { dialogId, userId } = client.handshake.query
+        const { dialogId, userId } = client.handshake.query;
+
+        console.log('Client connecting:', {
+            userId,
+            dialogId,
+            socketId: client.id,
+            timestamp: new Date().toISOString()
+        });
 
         if (typeof dialogId === 'string' && typeof userId === 'string') {
-            // Сохраняем userId в данных сокета для последующего использования
-            client.data.userId = userId
-            client.join([dialogId, userId]) // Подключаем клиента к комнате диалога и его персональной комнате
+            // Сохраняем userId в данных сокета
+            client.data.userId = userId;
 
-            const participants = this.conferenceService.addUserToRoom(dialogId, userId)
+            // Подключаем к комнате диалога и персональной комнате
+            client.join([dialogId, userId]);
 
-            // Оповещаем других участников о новом пользователе
-            client.to(dialogId).emit('user:joined', userId)
+            console.log('Client connected:', {
+                userId,
+                dialogId,
+                socketId: client.id,
+                rooms: Array.from(client.rooms)
+            });
 
-            // Отправляем новому пользователю список текущих участников
-            client.emit('room:participants', participants)
+            const participants = this.conferenceService.addUserToRoom(dialogId, userId);
 
-            // Логируем подключение для отладки
-            console.log(`User ${userId} connected to room ${dialogId}`)
+            // Оповещаем других участников
+            client.to(dialogId).emit('user:joined', userId);
+
+            // Отправляем новому пользователю список участников
+            client.emit('room:participants', participants);
+
+            // Отправляем информацию о комнате
+            const roomInfo = this.conferenceService.getRoomInfo(dialogId);
+            client.emit('room:info', roomInfo);
         } else {
-            client.disconnect()
-            console.error('Invalid connection parameters')
+            console.error('Invalid connection parameters:', {
+                dialogId,
+                userId
+            });
+            client.disconnect();
         }
     }
 
     handleDisconnect(client: Socket) {
-        const { dialogId, userId } = client.handshake.query
+        console.log('Client disconnecting:', {
+            socketId: client.id,
+            userId: client.data.userId,
+            timestamp: new Date().toISOString()
+        });
+
+        const { dialogId, userId } = client.handshake.query;
 
         if (typeof dialogId === 'string' && typeof userId === 'string') {
-            const userRemoved = this.conferenceService.removeUserFromRoom(dialogId, userId)
-
+            const userRemoved = this.conferenceService.removeUserFromRoom(dialogId, userId);
             if (userRemoved) {
-                // Оповещаем оставшихся участников
-                client.to(dialogId).emit('user:left', userId)
-                console.log(`User ${userId} disconnected from room ${dialogId}`)
+                client.to(dialogId).emit('user:left', userId);
             }
-        }
-    }
-
-    @SubscribeMessage('signal')
-    handleSignal(client: Socket, payload: SignalPayload) {
-        const { targetUserId, signal } = payload
-        const senderId = client.data.userId
-
-        if (!senderId || !targetUserId || !signal) {
-            console.error('Invalid signal payload:', payload)
-            return
-        }
-
-        // Проверяем тип сигнала и отправляем его целевому пользователю
-        this.server.to(targetUserId).emit('signal', {
-            userId: senderId,
-            signal,
-        })
-
-        // Логируем для отладки
-        console.log(`Signal ${signal.type} from ${senderId} to ${targetUserId}`)
-    }
-
-    // Новый метод для обработки изменений медиа состояния
-    @SubscribeMessage('media:state')
-    handleMediaState(client: Socket, payload: {
-        isVideoEnabled: boolean;
-        isAudioEnabled: boolean;
-    }) {
-        const { dialogId } = client.handshake.query
-        const userId = client.data.userId
-
-        if (typeof dialogId === 'string' && userId) {
-            client.to(dialogId).emit('user:media', {
-                userId,
-                ...payload,
-            })
         }
     }
 }

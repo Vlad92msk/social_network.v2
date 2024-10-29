@@ -1,60 +1,68 @@
 'use client'
 
-// contexts/WebRTCContext.tsx
-import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react'
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { WebRTCService } from '../_services/webrtc.service'
 
 interface WebRTCContextType {
-  // Методы для управления соединениями
   addConnection: (userId: string, connection: RTCPeerConnection) => void;
   getConnection: (userId: string) => RTCPeerConnection | undefined;
   removeConnection: (userId: string) => void;
-
-  // Методы для управления потоками
   addStream: (userId: string, stream: MediaStream) => void;
   getStream: (userId: string) => MediaStream | undefined;
   removeStream: (userId: string) => void;
-
-  // WebRTC сервис
   webRTCService: WebRTCService;
 }
 
 const WebRTCContext = createContext<WebRTCContextType | null>(null)
 
 export function WebRTCProvider({ children }: { children: React.ReactNode }) {
-  // Используем useRef для хранения соединений и потоков, так как нам не нужен ререндер при их изменении
-  const connectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map())
-  const streamsRef = useRef<Map<string, MediaStream>>(new Map())
+  const connectionsRef = useRef(new Map<string, RTCPeerConnection>())
+  const streamsRef = useRef(new Map<string, MediaStream>())
   const webRTCServiceRef = useRef<WebRTCService>(new WebRTCService())
 
-  // Методы для управления соединениями
-  const addConnection = useCallback((userId: string, connection: RTCPeerConnection) => {
+  const addStream = (userId: string, stream: MediaStream) => {
+    if (streamsRef.current.get(userId)?.id === stream.id) {
+      console.log('Stream already exists, skipping update')
+      return
+    }
+    console.log('Adding stream:', { userId, streamId: stream.id })
+    streamsRef.current.set(userId, stream)
+    console.log('streamsRef', streamsRef.current)
+  }
+
+  const addConnection = (userId: string, connection: RTCPeerConnection) => {
+    console.log('Adding connection:', userId)
     connectionsRef.current.set(userId, connection)
-  }, [])
+  }
 
-  const getConnection = useCallback((userId: string) => connectionsRef.current.get(userId), [])
-
-  const removeConnection = useCallback((userId: string) => {
+  const removeConnection = (userId: string) => {
     const connection = connectionsRef.current.get(userId)
     if (connection) {
       connection.close()
       connectionsRef.current.delete(userId)
+      console.log('Removed connection:', userId)
     }
-  }, [])
+  }
 
-  // Методы для управления потоками
-  const addStream = useCallback((userId: string, stream: MediaStream) => {
-    streamsRef.current.set(userId, stream)
-  }, [])
-
-  const getStream = useCallback((userId: string) => streamsRef.current.get(userId), [])
-
-  const removeStream = useCallback((userId: string) => {
+  const removeStream = (userId: string) => {
     const stream = streamsRef.current.get(userId)
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
       streamsRef.current.delete(userId)
+      console.log('Removed stream:', userId)
     }
+  }
+
+  const getConnection = useCallback((userId: string) => connectionsRef.current.get(userId), [])
+
+  const getStream = useCallback((userId: string) => {
+    const stream = streamsRef.current.get(userId)
+    console.log('WebRTCContext: Getting stream', {
+      userId,
+      exists: !!stream,
+      streamId: stream?.id,
+    })
+    return stream
   }, [])
 
   const value = useMemo(() => ({
@@ -74,7 +82,6 @@ export function WebRTCProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Хук для использования контекста
 export function useWebRTC() {
   const context = useContext(WebRTCContext)
   if (!context) {

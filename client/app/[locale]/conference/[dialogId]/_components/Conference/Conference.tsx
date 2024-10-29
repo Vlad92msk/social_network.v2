@@ -1,15 +1,15 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { makeCn } from '@utils/others'
-import { ConferenceSliceActions } from '../../_store/conference.slice'
 import style from './Conference.module.scss'
 import { useWebRTC } from '../../_context/WebRTCContext'
 import { useConferenceSocketConnect } from '../../_hooks'
 import { useMediaStream } from '../../_hooks/useMediaStream'
-import { useWebRTCSignal } from '../../_hooks/useWebRTCSignal'
+import { useWebRTCSignal } from '../../_hooks/useSignal'
+import { ConferenceSliceActions } from '../../_store/conference.slice'
 import { ConferenceSelectors } from '../../_store/selectors'
 import { MediaControls } from '../MediaControls'
 import { VideoView } from '../VideoView'
@@ -20,89 +20,99 @@ interface ConferenceProps {
   profile: any
 }
 
-export function Conference(props: ConferenceProps) {
-  const { profile } = props
+export function Conference({ profile }: ConferenceProps) {
   const dispatch = useDispatch()
   const { dialogId } = useParams<{ dialogId: string }>()
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
   const participants = useSelector(ConferenceSelectors.selectUsers)
   const signals = useSelector(ConferenceSelectors.selectUserSignals)
 
-  const webRTC = useWebRTC()
-  const {
-    stream: localStream,
-    isVideoEnabled,
-    isAudioEnabled,
-    toggleVideo,
-    toggleAudio,
-  } = useMediaStream()
-
-  // Инициализируем WebRTC обработчик сигналов
-  const { handleSignal } = useWebRTCSignal({
-    stream: localStream,
-    onSignal: (userId, signal) => {
-      if (signal.type === 'stream') {
-        webRTC.addStream(userId, signal.stream)
-      }
-    },
-  })
-
   useConferenceSocketConnect({ conferenceId: dialogId })
 
-  // Обработка локального стрима
+  const {
+    addStream, getStream, removeStream, removeConnection,
+  } = useWebRTC()
+  const { stream: localStream, isVideoEnabled, isAudioEnabled, toggleVideo, toggleAudio } = useMediaStream()
+
+  // Подключение и создание WebRTC соединений
+  const { handleSignal, createConnection } = useWebRTCSignal()
+
+  // Обработка и установка соединений
   useEffect(() => {
-    if (localStream) {
-      webRTC.addStream('local', localStream)
-    }
-  }, [localStream, webRTC])
+    if (!localStream || !profile?.user_info.id) return
+
+    participants.forEach(async (participantId) => {
+      if (participantId === profile.user_info.id) return
+
+      const shouldInitiate = profile.user_info.id < participantId
+      if (shouldInitiate) {
+        try {
+          await createConnection(participantId, true)
+        } catch (error) {
+          console.error('Error creating connection:', error)
+        }
+      }
+    })
+  }, [participants, localStream, profile?.user_info.id, createConnection])
 
   // Обработка входящих сигналов
   useEffect(() => {
-    const signalEntries = Object.entries(signals)
-    if (signalEntries.length > 0) {
-      signalEntries.forEach(([userId, { signal }]) => {
-        if (signal) {
-          handleSignal(userId, signal)
+    Object.entries(signals).forEach(async ([userId, { signal }]) => {
+      if (signal) {
+        try {
+          await handleSignal(userId, signal)
           dispatch(ConferenceSliceActions.clearSignal({ userId }))
+        } catch (error) {
+          console.error('Error handling signal:', error)
         }
-      })
-    }
+      }
+    })
   }, [signals, dispatch, handleSignal])
 
-  // Обработка отключения пользователей
+  // Добавление локального стрима
+  useEffect(() => {
+    if (localStream) {
+      addStream('local', localStream)
+    }
+  }, [localStream, addStream])
+
+  // Очистка соединений при размонтировании
   useEffect(() => () => {
-    // Очистка при размонтировании
     participants.forEach((userId) => {
-      webRTC.removeConnection(userId)
-      webRTC.removeStream(userId)
+      removeConnection(userId)
+      removeStream(userId)
     })
-  }, [participants, webRTC])
+  }, [participants, removeConnection, removeStream])
+
+  // Обновление состояния медиа треков
+  useEffect(() => {
+    if (localStream) {
+      const videoTrack = localStream.getVideoTracks()[0]
+      const audioTrack = localStream.getAudioTracks()[0]
+      if (videoTrack) videoTrack.enabled = isVideoEnabled
+      if (audioTrack) audioTrack.enabled = isAudioEnabled
+    }
+  }, [localStream, isVideoEnabled, isAudioEnabled])
 
   if (!isConnected) return <div>Connecting...</div>
 
+  console.log('webRTC.getStream(\'local\')', getStream('local'))
   return (
-    <div className={cn()}>
-      <div className={cn('ParticipantsContainer')}>
-        {/* Локальное видео */}
-        <div className={cn('Participant')}>
-          <VideoView
-            stream={webRTC.getStream('local')}
-            muted
-            isEnabled={isVideoEnabled}
-          />
-          <span>{profile?.user_info.id}</span>
+    <div className="conference">
+      <div className="ParticipantsContainer">
+        <div className="Participant">
+          <VideoView stream={getStream('local')} muted isEnabled={isVideoEnabled} />
+          <span>
+            {profile?.user_info.id}
+            {' '}
+            (You)
+          </span>
         </div>
-
-        {/* Видео других участников */}
         {participants
           .filter((id) => id !== profile?.user_info.id)
           .map((participantId) => (
-            <div key={participantId} className={cn('Participant')}>
-              <VideoView
-                stream={webRTC.getStream(participantId)}
-                muted={false}
-                isEnabled
-              />
+            <div key={participantId} className="Participant">
+              <VideoView stream={getStream(participantId)} muted={false} isEnabled />
               <span>
                 User
                 {participantId}
@@ -110,8 +120,7 @@ export function Conference(props: ConferenceProps) {
             </div>
           ))}
       </div>
-
-      <div className={cn('ActionsContainer')}>
+      <div className="ActionsContainer">
         <MediaControls
           isVideoEnabled={isVideoEnabled}
           isAudioEnabled={isAudioEnabled}

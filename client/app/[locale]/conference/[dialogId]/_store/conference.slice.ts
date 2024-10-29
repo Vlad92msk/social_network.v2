@@ -47,14 +47,18 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
       },
       // Добавляем новый сигнал
       addSignal: (state, action: PayloadAction<{ userId: string, signal: WebRTCSignal }>) => {
+        // console.clear()
+        console.log('Adding signal:', action.payload); // Добавляем лог
         state.userSignals[action.payload.userId] = {
           userId: action.payload.userId,
           signal: action.payload.signal,
-        }
+        };
       },
-      // Очищаем сигнал после его обработки
+      sendSignal: (state, action: PayloadAction<{ targetUserId: string, signal: any }>) => state,
+
       clearSignal: (state, action: PayloadAction<{ userId: string }>) => {
-        delete state.userSignals[action.payload.userId]
+        console.log('Clearing signal for:', action.payload.userId); // Добавляем лог
+        delete state.userSignals[action.payload.userId];
       },
     },
   }),

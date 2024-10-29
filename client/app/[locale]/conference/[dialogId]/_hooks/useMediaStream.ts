@@ -10,76 +10,71 @@ const DEFAULT_MEDIA_STATE = {
 }
 
 export function useMediaStream() {
-  const [mediaState, setMediaState] = useState(DEFAULT_MEDIA_STATE)
-  const streamInitialized = useRef(false)
-
-  const initializeMedia = useCallback(async () => {
-    if (streamInitialized.current) return
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      })
-
-      // По умолчанию выключаем видео и аудио
-      stream.getVideoTracks().forEach((track) => track.enabled = false)
-      stream.getAudioTracks().forEach((track) => track.enabled = false)
-
-      streamInitialized.current = true
-
-      setMediaState((prev) => ({
-        ...prev,
-        stream,
-        isVideoEnabled: false,
-        isAudioEnabled: false,
-      }))
-    } catch (error) {
-      console.error('Error accessing media devices:', error)
-      setMediaState((prev) => ({
-        ...prev,
-        isVideoEnabled: false,
-        isAudioEnabled: false,
-      }))
-    }
-  }, [])
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
 
   useEffect(() => {
-    initializeMedia()
-    return () => {
-      if (mediaState.stream) {
-        mediaState.stream.getTracks().forEach((track) => track.stop())
+    async function setupMediaStream() {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 }
+          },
+          audio: true
+        });
+
+        console.log('Media stream obtained:', {
+          id: mediaStream.id,
+          tracks: mediaStream.getTracks().map(track => ({
+            kind: track.kind,
+            enabled: track.enabled,
+            settings: track.getSettings()
+          }))
+        });
+
+        setStream(mediaStream);
+      } catch (error) {
+        console.error('Error accessing media devices:', error);
       }
-      streamInitialized.current = false
     }
-  }, [])
+
+    setupMediaStream();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const toggleVideo = useCallback(() => {
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsVideoEnabled(videoTrack.enabled);
+      }
+    }
+  }, [stream]);
+
+  const toggleAudio = useCallback(() => {
+    if (stream) {
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsAudioEnabled(audioTrack.enabled);
+      }
+    }
+  }, [stream]);
 
   return {
-    ...mediaState,
-    toggleVideo: useCallback(() => {
-      if (!mediaState.stream) return
-
-      const videoTrack = mediaState.stream.getVideoTracks()[0]
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled
-        setMediaState((prev) => ({
-          ...prev,
-          isVideoEnabled: videoTrack.enabled,
-        }))
-      }
-    }, [mediaState.stream]),
-
-    toggleAudio: useCallback(() => {
-      if (!mediaState.stream) return
-
-      const audioTrack = mediaState.stream.getAudioTracks()[0]
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled
-        setMediaState((prev) => ({
-          ...prev,
-          isAudioEnabled: audioTrack.enabled,
-        }))
-      }
-    }, [mediaState.stream]),
-  }
+    stream,
+    isVideoEnabled,
+    isAudioEnabled,
+    toggleVideo,
+    toggleAudio,
+  };
 }

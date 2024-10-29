@@ -8,7 +8,7 @@ interface VideoViewProps {
   isEnabled: boolean;
 }
 
-export function VideoView({ stream, muted = false, isEnabled }: VideoViewProps) {
+export function VideoView({ stream, muted, isEnabled }: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const previousStream = useRef<MediaStream | null>(null)
 
@@ -29,37 +29,31 @@ export function VideoView({ stream, muted = false, isEnabled }: VideoViewProps) 
       }
     }
 
-    // Включаем/выключаем видеодорожки
-    stream.getVideoTracks().forEach((track) => {
-      track.enabled = isEnabled
-    })
-
     return () => {
       if (videoElement.srcObject) {
         videoElement.srcObject = null
       }
-      previousStream.current = null
     }
-  }, [stream, isEnabled])
-
-  if (!stream) {
-    return null
-    // return <div>No video stream available</div>
-  }
+  }, [stream])
 
   return (
-    <div className="relative">
+    <div>
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted={muted}
       />
-      {/* {!isEnabled && ( */}
-      {/*   <div className="absolute inset-0 flex items-center justify-center bg-gray-900"> */}
-      {/*     <span className="text-white">Video disabled</span> */}
-      {/*   </div> */}
-      {/* )} */}
+      {!stream && (
+        <div>
+          No video available
+        </div>
+      )}
+      {!isEnabled && (
+        <div>
+          Video disabled
+        </div>
+      )}
     </div>
   )
 }
