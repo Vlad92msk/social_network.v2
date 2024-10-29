@@ -84,7 +84,6 @@ export function MediaStreamProvider(props: MediaStreamProviderProps) {
     toggleAudio,
   }
 
-  console.log('state', state)
   return (
     <MediaStreamContext.Provider value={value}>
       {children}

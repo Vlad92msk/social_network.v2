@@ -8,6 +8,7 @@ export interface ConferenceSliceState {
   conferenceId?: string
   users: string[]
   userSignals: Record<string, { userId: string, signal: WebRTCSignal }>
+  remoteStreams: Record<string, MediaStream>;
 }
 
 const initialState: ConferenceSliceState = {
@@ -16,6 +17,7 @@ const initialState: ConferenceSliceState = {
   conferenceId: undefined,
   users: [],
   userSignals: {},
+  remoteStreams: {}
 }
 
 export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = sliceBuilder(
@@ -23,6 +25,9 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
     name: '[CONFERENCE]',
     initialState,
     reducers: {
+      updateRemoteStream: (state, action: PayloadAction<{ userId: string, stream: MediaStream }>) => {
+        state.remoteStreams[action.payload.userId] = action.payload.stream;
+      },
       setConnected: (state, action: PayloadAction<boolean>) => {
         state.isConnected = action.payload
       },
@@ -39,7 +44,6 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
       },
       setUserLeft: (state, action: PayloadAction<string>) => {
         state.users = state.users.filter((id) => id !== action.payload)
-        // Очищаем сигналы пользователя при его уходе
         delete state.userSignals[action.payload]
       },
       setParticipants: (state, action: PayloadAction<string[]>) => {
@@ -47,8 +51,6 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
       },
       // Добавляем новый сигнал
       addSignal: (state, action: PayloadAction<{ userId: string, signal: WebRTCSignal }>) => {
-        // console.clear()
-        console.log('Adding signal:', action.payload); // Добавляем лог
         state.userSignals[action.payload.userId] = {
           userId: action.payload.userId,
           signal: action.payload.signal,

@@ -1,125 +1,208 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useMediaStream } from '@ui/components/media-stream/context/MediaStreamContext'
-import { VideoView } from '@ui/components/media-stream/VideoView'
-import { makeCn } from '@utils/others'
-import style from './Conference.module.scss'
-import { useWebRTC } from '../../_context/WebRTCContext'
+import { classNames } from '@utils/others'
+import styles from './Conference.module.scss'
+import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
 import { useConferenceSocketConnect } from '../../_hooks'
-import { useWebRTCSignal } from '../../_hooks/useSignal'
-import { ConferenceSliceActions } from '../../_store/conference.slice'
+import { useWebRTCContext } from '../../_services/ConferenceContext'
+import { useWebRTC } from '../../_services/webrtc-utils'
 import { ConferenceSelectors } from '../../_store/selectors'
-import { MediaControls } from '../MediaControls'
-
-const cn = makeCn('Conference', style)
 
 interface ConferenceProps {
-  profile: any
+  profile?: UserProfileInfo;
 }
+
+interface VideoViewProps {
+  stream: MediaStream | null;
+  muted: boolean;
+  isEnabled: boolean;
+}
+
+export const VideoView = React.memo(function VideoView({
+  stream,
+  muted = false,
+  isEnabled = true
+}: VideoViewProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+    if (videoElement && stream) {
+      console.log('Setting video stream:', {
+        tracks: stream.getTracks().map(track => ({
+          kind: track.kind,
+          enabled: track.enabled,
+          id: track.id,
+          muted: track.muted,
+          readyState: track.readyState
+        }))
+      })
+
+      // Создаём новый MediaStream только с нужными треками
+      const videoTracks = stream.getVideoTracks()
+      if (videoTracks.length > 0) {
+        const newStream = new MediaStream([videoTracks[0]])
+        videoElement.srcObject = newStream
+
+        // Обработчик состояния трека
+        videoTracks[0].onended = () => {
+          console.log('Video track ended')
+          if (videoElement.srcObject) {
+            videoElement.srcObject = null
+          }
+        }
+      }
+
+      const playVideo = async () => {
+        try {
+          await videoElement.play()
+          console.log('Video playback started successfully')
+        } catch (error) {
+          console.error('Error playing video:', error)
+          // Пробуем воспроизвести снова через небольшую задержку
+          setTimeout(() => {
+            videoElement.play().catch(console.error)
+          }, 1000)
+        }
+      }
+
+      playVideo()
+    }
+
+    return () => {
+      if (videoElement?.srcObject) {
+        const stream = videoElement.srcObject as MediaStream
+        stream.getTracks().forEach(track => track.stop())
+        videoElement.srcObject = null
+      }
+    }
+  }, [stream])
+
+  // Обновляем enabled состояние треков
+  useEffect(() => {
+    if (stream) {
+      stream.getVideoTracks().forEach(track => {
+        track.enabled = isEnabled
+      })
+    }
+  }, [isEnabled, stream])
+
+  return (
+    <div className={styles.videoContainer}>
+      {!stream && (
+        <div className={styles.noVideoPlaceholder}>
+          Нет видео
+        </div>
+      )}
+      {stream && !isEnabled && (
+        <div className={styles.videoDisabled}>
+          Камера выключена
+        </div>
+      )}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={muted}
+        style={{ display: stream && isEnabled ? 'block' : 'none' }}
+      />
+    </div>
+  )
+})
 
 export function Conference({ profile }: ConferenceProps) {
   const dispatch = useDispatch()
   const { dialogId } = useParams<{ dialogId: string }>()
-  const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
-  const participants = useSelector(ConferenceSelectors.selectUsers)
-  const signals = useSelector(ConferenceSelectors.selectUserSignals)
-
   useConferenceSocketConnect({ conferenceId: dialogId })
 
-  const { stream: localStream, isVideoEnabled, isAudioEnabled } = useMediaStream()
-  const { addStream, getStream, removeStream, removeConnection } = useWebRTC()
-  const { handleSignal, createConnection } = useWebRTCSignal({ localStream })
+  const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
+  const participants = useSelector(ConferenceSelectors.selectUsers)
+  const { getStream } = useWebRTCContext()
 
-  // Обработка и установка соединений
-  useEffect(() => {
-    if (!localStream || !profile?.user_info.id) return
+  const {
+    toggleVideo,
+    toggleAudio,
+    cleanup,
+    isVideoEnabled,
+    isAudioEnabled,
+  } = useWebRTC()
 
-    participants.forEach(async (participantId) => {
-      if (participantId === profile.user_info.id) return
-
-      const shouldInitiate = profile.user_info.id < participantId
-      if (shouldInitiate) {
-        try {
-          // Передаем localStream при создании соединения
-          await createConnection(participantId, true, localStream)
-        } catch (error) {
-          console.error('Error creating connection:', error)
-        }
-      }
-    })
-  }, [participants, localStream, profile?.user_info.id, createConnection])
-
-  // Обработка входящих сигналов
-  useEffect(() => {
-    Object.entries(signals).forEach(async ([userId, { signal }]) => {
-      if (signal) {
-        try {
-          await handleSignal(userId, signal)
-          dispatch(ConferenceSliceActions.clearSignal({ userId }))
-        } catch (error) {
-          console.error('Error handling signal:', error)
-        }
-      }
-    })
-  }, [signals, dispatch, handleSignal])
-
-  // Добавление локального стрима
-  useEffect(() => {
-    if (localStream) {
-      addStream('local', localStream)
-    }
-  }, [localStream, addStream])
-
-  // Очистка соединений при размонтировании
   useEffect(() => () => {
-    participants.forEach((userId) => {
-      removeConnection(userId)
-      removeStream(userId)
-    })
-  }, [participants, removeConnection, removeStream])
+    cleanup()
+  }, [cleanup])
 
-  // Обновление состояния медиа треков
-  useEffect(() => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0]
-      const audioTrack = localStream.getAudioTracks()[0]
-      if (videoTrack) videoTrack.enabled = isVideoEnabled
-      if (audioTrack) audioTrack.enabled = isAudioEnabled
-    }
-  }, [localStream, isVideoEnabled, isAudioEnabled])
+  const handleToggleVideo = useCallback(() => {
+    toggleVideo()
+  }, [toggleVideo])
 
-  if (!isConnected) return <div>Connecting...</div>
+  const handleToggleAudio = useCallback(() => {
+    toggleAudio()
+  }, [toggleAudio])
 
-  console.log('local_stream_____', getStream('local'))
-  console.log('local_stream_____1', localStream)
+  if (!isConnected) {
+    return (
+      <div className={styles.conferenceLoading}>
+        <p>Подключение к конференции...</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="conference">
-      <div className="ParticipantsContainer">
-        <div className="Participant">
-          <VideoView stream={getStream('local')} muted isEnabled={isVideoEnabled} />
-          <span>
+    <div className={styles.conference}>
+      <div className={styles.participantsContainer}>
+        <div className={styles.participant}>
+          <VideoView
+            stream={getStream('local')}
+            muted
+            isEnabled={isVideoEnabled}
+          />
+          <span className={styles.participantName}>
             {profile?.user_info.id}
             {' '}
             (You)
           </span>
         </div>
+
         {participants
           .filter((id) => id !== String(profile?.user_info.id))
           .map((participantId) => (
-            <div key={participantId} className="Participant">
-              <VideoView stream={getStream(participantId)} muted={false} isEnabled />
-              <span>
+            <div key={participantId} className={styles.participant}>
+              <VideoView
+                stream={getStream(participantId)}
+                muted={false}
+                isEnabled
+              />
+              <span className={styles.participantName}>
                 User
+                {' '}
                 {participantId}
               </span>
             </div>
           ))}
       </div>
-      <div className="ActionsContainer">
-        <MediaControls />
+
+      <div className={styles.actionsContainer}>
+        <div className={styles.mediaControls}>
+          <button
+            onClick={handleToggleVideo}
+            className={classNames(styles.controlButton, {
+              [styles.disabled]: !isVideoEnabled,
+            })}
+          >
+            {isVideoEnabled ? 'Выключить камеру' : 'Включить камеру'}
+          </button>
+          <button
+            onClick={handleToggleAudio}
+            className={classNames(styles.controlButton, {
+              [styles.disabled]: !isAudioEnabled,
+            })}
+          >
+            {isAudioEnabled ? 'Выключить микрофон' : 'Включить микрофон'}
+          </button>
+        </div>
       </div>
     </div>
   )
