@@ -29,21 +29,8 @@ export function Conference({ profile }: ConferenceProps) {
 
   useConferenceSocketConnect({ conferenceId: dialogId })
 
+  const { stream: localStream, isVideoEnabled, isAudioEnabled } = useMediaStream()
   const { addStream, getStream, removeStream, removeConnection } = useWebRTC()
-
-  const {
-    stream: localStream,
-    isVideoEnabled, isAudioEnabled,
-    toggleVideo,
-    toggleAudio,
-  } = useMediaStream()
-
-  console.clear()
-  console.log('localStream', localStream)
-  console.log('isVideoEnabled', isVideoEnabled)
-  console.log('isAudioEnabled', isAudioEnabled)
-  // Подключение и создание WebRTC соединений
-  // @ts-ignore
   const { handleSignal, createConnection } = useWebRTCSignal({ localStream })
 
   // Обработка и установка соединений
@@ -106,12 +93,13 @@ export function Conference({ profile }: ConferenceProps) {
 
   if (!isConnected) return <div>Connecting...</div>
 
-  // console.log('webRTC.getStream(\'local\')', getStream('local'))
+  console.log('local_stream_____', getStream('local'))
+  console.log('local_stream_____1', localStream)
   return (
     <div className="conference">
       <div className="ParticipantsContainer">
         <div className="Participant">
-          <VideoView stream={localStream} muted isEnabled={isVideoEnabled} />
+          <VideoView stream={getStream('local')} muted isEnabled={isVideoEnabled} />
           <span>
             {profile?.user_info.id}
             {' '}
@@ -131,12 +119,7 @@ export function Conference({ profile }: ConferenceProps) {
           ))}
       </div>
       <div className="ActionsContainer">
-        <MediaControls
-          isVideoEnabled={isVideoEnabled}
-          isAudioEnabled={isAudioEnabled}
-          onToggleVideo={toggleVideo}
-          onToggleAudio={toggleAudio}
-        />
+        <MediaControls />
       </div>
     </div>
   )

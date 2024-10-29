@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { MediaStreamOptions, SimpleMediaStreamService } from '@ui/components/media-stream/mediaStreamService'
 
 export interface MediaStreamState {
-  stream: MediaStream | null;
+  stream?: MediaStream;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
 }
@@ -16,22 +16,20 @@ export interface MediaStreamContextValue extends MediaStreamState {
   toggleAudio: () => Promise<void>;
 }
 
-const MediaStreamContext = createContext<MediaStreamContextValue | null>(null)
+const MediaStreamContext = createContext<MediaStreamContextValue | undefined>(undefined)
 
 interface MediaStreamProviderProps {
   children: React.ReactNode;
   initialOptions?: MediaStreamOptions;
 }
 
-export function MediaStreamProvider({
-  children,
-  initialOptions,
-}: MediaStreamProviderProps) {
+export function MediaStreamProvider(props: MediaStreamProviderProps) {
+  const { children, initialOptions } = props
   const mediaServiceRef = useRef<SimpleMediaStreamService>(new SimpleMediaStreamService())
   const initializationRef = useRef(false)
 
   const [state, setState] = useState<MediaStreamState>({
-    stream: null,
+    stream: undefined,
     isVideoEnabled: false,
     isAudioEnabled: false,
   })
@@ -46,25 +44,21 @@ export function MediaStreamProvider({
   }
 
   const initialize = async (options?: MediaStreamOptions) => {
-    console.log('Initializing with options:', options)
     await mediaServiceRef.current.initialize(options)
     updateState()
   }
 
   const cleanup = () => {
-    console.log('Cleaning up media stream...')
     mediaServiceRef.current.cleanup()
     updateState()
   }
 
   const toggleVideo = async () => {
-    console.log('Toggling video...')
     await mediaServiceRef.current.toggleVideo()
     updateState()
   }
 
   const toggleAudio = async () => {
-    console.log('Toggling audio...')
     await mediaServiceRef.current.toggleAudio()
     updateState()
   }
@@ -72,13 +66,11 @@ export function MediaStreamProvider({
   useEffect(() => {
     // Предотвращаем повторную инициализацию
     if (!initializationRef.current) {
-      console.log('Initial media stream setup with options:', initialOptions)
       initialize(initialOptions)
       initializationRef.current = true
     }
 
     return () => {
-      console.log('MediaStreamProvider cleanup')
       cleanup()
       initializationRef.current = false
     }
@@ -92,6 +84,7 @@ export function MediaStreamProvider({
     toggleAudio,
   }
 
+  console.log('state', state)
   return (
     <MediaStreamContext.Provider value={value}>
       {children}

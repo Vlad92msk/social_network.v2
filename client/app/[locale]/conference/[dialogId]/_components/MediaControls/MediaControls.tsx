@@ -1,27 +1,22 @@
-interface MediaControlsProps {
-  isVideoEnabled: boolean
-  isAudioEnabled: boolean
-  onToggleVideo: VoidFunction
-  onToggleAudio: VoidFunction
-}
+import { useMediaStream } from '@ui/components/media-stream/context/MediaStreamContext'
 
-export function MediaControls(props: MediaControlsProps) {
+export function MediaControls() {
   const {
-    isVideoEnabled,
-    isAudioEnabled,
-    onToggleVideo,
-    onToggleAudio,
-  } = props
+    isVideoEnabled, isAudioEnabled,
+    toggleVideo,
+    toggleAudio,
+  } = useMediaStream()
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <button
-        onClick={onToggleVideo}
+        onClick={toggleVideo}
         className="MediaButton"
       >
         {isVideoEnabled ? 'Выключить видео' : 'Включить видео'}
       </button>
       <button
-        onClick={onToggleAudio}
+        onClick={toggleAudio}
         className="MediaButton"
       >
         {isAudioEnabled ? 'Выключить микрофон' : 'Включить микрофон'}

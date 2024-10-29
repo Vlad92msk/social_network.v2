@@ -1,4 +1,3 @@
-import { useMediaStream } from '@ui/components/media-stream/context/MediaStreamContext'
 import { useCallback, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useWebRTC } from '../_context/WebRTCContext'
@@ -13,12 +12,13 @@ interface WebRTCSignal {
 }
 
 // Хук для работы с сигналами WebRTC
-export function useWebRTCSignal({ localStream }: { localStream?: MediaStream }) {
-  const {
-    addConnection, getConnection, addStream, webRTCService
-  } = useWebRTC()
+export function useWebRTCSignal(props: { localStream?: MediaStream }) {
+  const { localStream } = props
+
   const dispatch = useDispatch()
   const socket = getSocket()
+
+  const { addConnection, getConnection, addStream, webRTCService } = useWebRTC()
 
   const createConnection = useCallback(
     async (userId: string, shouldInitiate: boolean, stream?: MediaStream) => {
@@ -87,7 +87,7 @@ export function useWebRTCSignal({ localStream }: { localStream?: MediaStream }) 
     if (!socket) return
 
     const handleSocketSignal = ({ userId, signal }: { userId: string, signal: WebRTCSignal }) => {
-      console.log('Received signal via socket:', { userId, signalType: signal.type })
+      // console.log('Received signal via socket:', { userId, signalType: signal.type })
       handleSignal(userId, signal)
     }
 

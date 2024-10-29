@@ -1,6 +1,8 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import React, {
+  createContext, PropsWithChildren, useCallback, useContext, useMemo, useRef, useState,
+} from 'react'
 import { WebRTCService } from '../_services/webrtc.service'
 
 interface WebRTCContextType {
@@ -15,68 +17,56 @@ interface WebRTCContextType {
 
 const WebRTCContext = createContext<WebRTCContextType | null>(null)
 
-export function WebRTCProvider({ children }: { children: React.ReactNode }) {
+export function WebRTCProvider(props: PropsWithChildren) {
+  const { children } = props
+
   const connectionsRef = useRef(new Map<string, RTCPeerConnection>())
   const streamsRef = useRef(new Map<string, MediaStream>())
   const webRTCServiceRef = useRef<WebRTCService>(new WebRTCService())
 
-  const addStream = (userId: string, stream: MediaStream) => {
+  const addStream = useCallback((userId: string, stream: MediaStream) => {
     if (streamsRef.current.get(userId)?.id === stream.id) {
-      console.log('Stream already exists, skipping update')
       return
     }
-    console.log('Adding stream:', { userId, streamId: stream.id })
     streamsRef.current.set(userId, stream)
-    console.log('streamsRef', streamsRef.current)
-  }
+  }, [])
 
-  const addConnection = (userId: string, connection: RTCPeerConnection) => {
-    console.log('Adding connection:', userId)
+  const addConnection = useCallback((userId: string, connection: RTCPeerConnection) => {
     connectionsRef.current.set(userId, connection)
-  }
+  }, [])
 
-  const removeConnection = (userId: string) => {
+  const removeConnection = useCallback((userId: string) => {
     const connection = connectionsRef.current.get(userId)
     if (connection) {
       connection.close()
       connectionsRef.current.delete(userId)
-      console.log('Removed connection:', userId)
     }
-  }
+  }, [])
 
-  const removeStream = (userId: string) => {
+  const removeStream = useCallback((userId: string) => {
     const stream = streamsRef.current.get(userId)
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
       streamsRef.current.delete(userId)
-      console.log('Removed stream:', userId)
     }
-  }
+  }, [])
 
   const getConnection = useCallback((userId: string) => connectionsRef.current.get(userId), [])
 
-  const getStream = useCallback((userId: string) => {
-    const stream = streamsRef.current.get(userId)
-    console.log('WebRTCContext: Getting stream', {
-      userId,
-      exists: !!stream,
-      streamId: stream?.id,
-    })
-    return stream
-  }, [])
-
-  const value = useMemo(() => ({
-    addConnection,
-    getConnection,
-    removeConnection,
-    addStream,
-    getStream,
-    removeStream,
-    webRTCService: webRTCServiceRef.current,
-  }), [addConnection, getConnection, removeConnection, addStream, getStream, removeStream])
+  const getStream = useCallback((userId: string) => streamsRef.current.get(userId), [])
 
   return (
-    <WebRTCContext.Provider value={value}>
+    // eslint-disable-next-line react/jsx-no-constructed-context-values
+    <WebRTCContext.Provider value={{
+      addConnection,
+      getConnection,
+      removeConnection,
+      addStream,
+      getStream,
+      removeStream,
+      webRTCService: webRTCServiceRef.current,
+    }}
+    >
       {children}
     </WebRTCContext.Provider>
   )

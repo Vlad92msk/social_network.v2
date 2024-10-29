@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 interface VideoViewProps {
-  stream: MediaStream | null;
+  stream?: MediaStream;
   isEnabled?: boolean;
   muted?: boolean;
   className?: string;
