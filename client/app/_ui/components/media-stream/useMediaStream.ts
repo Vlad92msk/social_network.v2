@@ -8,7 +8,7 @@ interface MediaStreamOptions {
 }
 
 interface MediaStreamControl {
-  stream: MediaStream | null
+  stream?: MediaStream
   isVideoEnabled: boolean
   isAudioEnabled: boolean
   toggleVideo: () => Promise<void>
@@ -18,8 +18,8 @@ interface MediaStreamControl {
   error: Error | null
 }
 
-export const useMediaStream1 = (options: MediaStreamOptions = { audio: true, video: true }): MediaStreamControl => {
-  const [stream, setStream] = useState<MediaStream | null>(null)
+export const useMediaStream1 = (options: MediaStreamOptions = { audio: false, video: true }): MediaStreamControl => {
+  const [stream, setStream] = useState<MediaStream | undefined>(undefined)
   const [error, setError] = useState<Error | null>(null)
   const [isVideoEnabled, setIsVideoEnabled] = useState(!!options.video)
   const [isAudioEnabled, setIsAudioEnabled] = useState(!!options.audio)
@@ -43,14 +43,14 @@ export const useMediaStream1 = (options: MediaStreamOptions = { audio: true, vid
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to get media stream'))
-      setStream(null)
+      setStream(undefined)
     }
   }
 
   const stopStream = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
+      setStream(undefined)
       setIsVideoEnabled(false)
       setIsAudioEnabled(false)
     }

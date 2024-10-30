@@ -52,17 +52,17 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
 
   if (!socket) return next(action)
 
-  if (action.type === ConferenceSliceActions.sendSignal.type) {
-    const { targetUserId, signal } = action.payload
-
-    socket.emit('signal', { targetUserId, signal })
-  }
-
   switch (action.type) {
     case '[CONFERENCE]/WEBSOCKET_DISCONNECT': {
       socket.disconnect()
       socket = null
       store.dispatch(ConferenceSliceActions.setConnected(false))
+      break
+    }
+    case ConferenceSliceActions.sendSignal.type: {
+      const { targetUserId, signal } = action.payload
+
+      socket.emit('signal', { targetUserId, signal })
       break
     }
     default: return next(action)
