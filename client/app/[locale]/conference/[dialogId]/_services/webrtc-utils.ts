@@ -57,22 +57,6 @@ class WebRTCService {
     this.mediaControls = mediaControls
   }
 
-  private updateTracksForConnection(peerConnection: RTCPeerConnection, userId: string) {
-    // Удаляем старые треки
-    const senders = peerConnection.getSenders()
-    senders.forEach(sender => {
-      peerConnection.removeTrack(sender)
-    })
-
-    // Добавляем новые треки
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => {
-        console.log('Adding track to connection:', track.kind, track.enabled)
-        peerConnection.addTrack(track, this.localStream!)
-      })
-    }
-  }
-
   setLocalStream(stream: MediaStream) {
     console.log('Setting local stream with tracks:', stream.getTracks())
     this.localStream = stream

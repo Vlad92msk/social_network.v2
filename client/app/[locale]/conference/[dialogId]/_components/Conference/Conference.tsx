@@ -1,5 +1,6 @@
 'use client'
 
+import { VideoComponent } from '@ui/components/media-stream/VideoView'
 import { useParams } from 'next/navigation'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -153,6 +154,7 @@ export function Conference({ profile }: ConferenceProps) {
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
+        <VideoComponent />
         <div className={styles.participant}>
           <VideoView
             stream={getStream('local')}
