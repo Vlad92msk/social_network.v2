@@ -1,12 +1,27 @@
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
-import { WebRTCSignal } from '@services/messenger/conference/types/media'
+import {
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    SubscribeMessage,
+    WebSocketGateway,
+    WebSocketServer,
+    MessageBody,
+    ConnectedSocket
+} from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { ConferenceService } from './conference.service'
 
+// Типы сигналов WebRTC
+type SignalType = 'offer' | 'answer' | 'ice-candidate';
+
+interface WebRTCSignal {
+    type: SignalType;
+    payload: any;
+}
 
 interface SignalPayload {
     targetUserId: string;
     signal: WebRTCSignal;
+    dialogId: string;
 }
 
 @WebSocketGateway({
@@ -14,119 +29,129 @@ interface SignalPayload {
 })
 export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
-    server: Server;
+    server: Server
 
     constructor(private readonly conferenceService: ConferenceService) {}
 
     @SubscribeMessage('signal')
-    handleSignal(client: Socket, payload: SignalPayload) {
-        const { targetUserId, signal } = payload;
-        const senderId = client.data.userId;
+    handleSignal(
+      @ConnectedSocket() client: Socket,
+      @MessageBody() payload: SignalPayload
+    ) {
+        const { targetUserId, signal, dialogId } = payload
+        const senderId = client.data.userId
 
-        console.log('Server received signal:', {
-            from: senderId,
-            to: targetUserId,
-            type: signal.type,
-            timestamp: new Date().toISOString()
-        });
-
-        if (!senderId || !targetUserId || !signal) {
-            console.error('Invalid signal payload:', payload);
-            return;
-        }
-
-        // Получаем комнату пользователя
-        const dialogId = client.handshake.query.dialogId as string;
-        if (!dialogId) {
-            console.error('No dialogId found for user:', senderId);
-            return;
+        if (!this.validateSignalPayload(senderId, targetUserId, signal, dialogId)) {
+            return
         }
 
         // Проверяем, что пользователь существует в комнате
-        const participants = this.conferenceService.getParticipants(dialogId);
+        const participants = this.conferenceService.getParticipants(dialogId)
         if (!participants.includes(targetUserId)) {
-            console.error('Target user not found in room:', targetUserId);
-            return;
+            client.emit('error', {
+                message: 'Target user not found in room',
+                code: 'USER_NOT_FOUND'
+            })
+            return
         }
 
-        console.log('Forwarding signal to target user:', {
+        // Отправляем сигнал целевому пользователю
+        this.server.to(targetUserId).emit(signal.type, {
+            userId: senderId,
+            signal: signal.payload,
+        })
+
+        // Логируем успешную отправку
+        this.logSignal(senderId, targetUserId, signal.type)
+    }
+
+    private validateSignalPayload(
+      senderId: string,
+      targetUserId: string,
+      signal: WebRTCSignal,
+      roomId: string
+    ): boolean {
+        if (!senderId || !targetUserId || !signal || !roomId) {
+            console.error('Invalid signal payload:', { senderId, targetUserId, signal, roomId })
+            return false
+        }
+
+        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate']
+        if (!validSignalTypes.includes(signal.type)) {
+            console.error('Invalid signal type:', signal.type)
+            return false
+        }
+
+        return true
+    }
+
+    private logSignal(senderId: string, targetUserId: string, type: SignalType) {
+        console.log(`WebRTC Signal: ${type}`, {
             from: senderId,
             to: targetUserId,
-            type: signal.type
-        });
-
-        // Отправляем сигнал целевому пользователю
-        this.server.to(targetUserId).emit('signal', {
-            userId: senderId,
-            signal,
-        });
-
-        // Отправляем подтверждение отправителю
-        client.emit('signal:sent', {
-            to: targetUserId,
-            type: signal.type,
             timestamp: new Date().toISOString()
-        });
+        })
     }
 
     handleConnection(client: Socket) {
-        const { dialogId, userId } = client.handshake.query;
+        const { dialogId, userId } = client.handshake.query
+        console.log(`Подключается пользователь[${userId}] к диалогу[${dialogId}]`)
 
-        console.log('Client connecting:', {
-            userId,
-            dialogId,
-            socketId: client.id,
-            timestamp: new Date().toISOString()
-        });
-
-        if (typeof dialogId === 'string' && typeof userId === 'string') {
-            // Сохраняем userId в данных сокета
-            client.data.userId = userId;
-
-            // Подключаем к комнате диалога и персональной комнате
-            client.join([dialogId, userId]);
-
-            console.log('Client connected:', {
-                userId,
-                dialogId,
-                socketId: client.id,
-                rooms: Array.from(client.rooms)
-            });
-
-            const participants = this.conferenceService.addUserToRoom(dialogId, userId);
-
-            // Оповещаем других участников
-            client.to(dialogId).emit('user:joined', userId);
-
-            // Отправляем новому пользователю список участников
-            client.emit('room:participants', participants);
-
-            // Отправляем информацию о комнате
-            const roomInfo = this.conferenceService.getRoomInfo(dialogId);
-            client.emit('room:info', roomInfo);
-        } else {
-            console.error('Invalid connection parameters:', {
-                dialogId,
-                userId
-            });
-            client.disconnect();
+        if (typeof dialogId !== 'string' || typeof userId !== 'string') {
+            console.error('Invalid connection parameters')
+            client.disconnect()
+            return
         }
+
+        // Инициализация пользователя
+        this.initializeUser(client, dialogId, userId)
+    }
+
+    private initializeUser(client: Socket, roomId: string, userId: string) {
+        client.data.userId = userId
+        client.join([roomId, userId])
+
+        const participants = this.conferenceService.addUserToRoom(roomId, userId)
+
+        // Оповещаем других участников
+        client.to(roomId).emit('user:joined', {
+            userId,
+            timestamp: new Date().toISOString(),
+            participantsCount: participants.length
+        })
+
+        // Отправляем информацию новому участнику
+        client.emit('room:info', {
+            roomId,
+            participants,
+            joined: new Date().toISOString(),
+            ...this.conferenceService.getRoomInfo(roomId)
+        })
     }
 
     handleDisconnect(client: Socket) {
-        console.log('Client disconnecting:', {
+        const { dialogId, userId } = client.handshake.query
+
+        if (typeof dialogId === 'string' && typeof userId === 'string') {
+            this.handleUserDisconnect(dialogId, userId)
+        }
+
+        console.log('Client disconnected:', {
             socketId: client.id,
             userId: client.data.userId,
             timestamp: new Date().toISOString()
-        });
+        })
+    }
 
-        const { dialogId, userId } = client.handshake.query;
+    private handleUserDisconnect(roomId: string, userId: string) {
+        const userRemoved = this.conferenceService.removeUserFromRoom(roomId, userId)
 
-        if (typeof dialogId === 'string' && typeof userId === 'string') {
-            const userRemoved = this.conferenceService.removeUserFromRoom(dialogId, userId);
-            if (userRemoved) {
-                client.to(dialogId).emit('user:left', userId);
-            }
+        if (userRemoved) {
+            this.server.to(roomId).emit('user:left', {
+                userId,
+                timestamp: new Date().toISOString(),
+                remainingParticipants: this.conferenceService.getParticipants(roomId)
+            })
         }
     }
 }

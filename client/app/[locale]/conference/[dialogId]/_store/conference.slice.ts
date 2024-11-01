@@ -2,13 +2,20 @@ import { PayloadAction } from '@reduxjs/toolkit'
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { WebRTCSignal } from '../types/media'
 
+interface RoomParticipant {
+  userId: string;
+  joinedAt: Date;
+  isVideoEnabled: boolean;
+  isAudioEnabled: boolean;
+}
+
 export interface ConferenceSliceState {
   isConnected: boolean
   error: string | null
   conferenceId?: string
   users: string[]
   userSignals: Record<string, { userId: string, signal: WebRTCSignal }>
-  remoteStreams: Record<string, MediaStream>;
+  roomInfo: { dialogId?: string, participants: RoomParticipant[], participantsCount: number, createdAt?: Date }
 }
 
 const initialState: ConferenceSliceState = {
@@ -17,7 +24,12 @@ const initialState: ConferenceSliceState = {
   conferenceId: undefined,
   users: [],
   userSignals: {},
-  remoteStreams: {}
+  roomInfo: {
+    dialogId: undefined,
+    participants: [],
+    participantsCount: 0,
+    createdAt: undefined
+  },
 }
 
 export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = sliceBuilder(
@@ -25,9 +37,7 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
     name: '[CONFERENCE]',
     initialState,
     reducers: {
-      updateRemoteStream: (state, action: PayloadAction<{ userId: string, stream: MediaStream }>) => {
-        state.remoteStreams[action.payload.userId] = action.payload.stream;
-      },
+
       setConnected: (state, action: PayloadAction<boolean>) => {
         state.isConnected = action.payload
       },
@@ -54,13 +64,16 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
         state.userSignals[action.payload.userId] = {
           userId: action.payload.userId,
           signal: action.payload.signal,
-        };
+        }
       },
-      sendSignal: (state, action: PayloadAction<{ targetUserId: string, signal: any }>) => state,
+      sendSignal: (state, action: PayloadAction<{ targetUserId: string, signal: WebRTCSignal, dialogId: string}>) => state,
+      setRoomInfo: (state, action: PayloadAction<ConferenceSliceState['roomInfo']>) => {
+        state.roomInfo = action.payload
+      },
 
       clearSignal: (state, action: PayloadAction<{ userId: string }>) => {
-        console.log('Clearing signal for:', action.payload.userId); // Добавляем лог
-        delete state.userSignals[action.payload.userId];
+        console.log('Clearing signal for:', action.payload.userId) // Добавляем лог
+        delete state.userSignals[action.payload.userId]
       },
     },
   }),

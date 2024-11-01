@@ -5,12 +5,12 @@ import { WebRTCProvider } from './_services/ConferenceContext'
 
 export default async function ConferencePage() {
   const profile = await getServerProfile()
-
+  // const { stream: localStream } = useMediaStreamContext()
   const userId = profile?.user_info.id || 0
   if (!userId) return null
   return (
     <MediaStreamProvider>
-      <WebRTCProvider>
+      <WebRTCProvider currentUserId={String(userId)}>
         <Conference profile={profile} />
       </WebRTCProvider>
     </MediaStreamProvider>

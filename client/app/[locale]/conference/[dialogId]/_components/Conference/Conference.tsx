@@ -18,7 +18,7 @@ export function Conference({ profile }: ConferenceProps) {
   const { dialogId } = useParams<{ dialogId: string }>()
 
   useConferenceSocketConnect({ conferenceId: dialogId })
-  const { streams, connectionStates } = useWebRTCContext()
+  const { streams } = useWebRTCContext()
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
@@ -42,14 +42,14 @@ export function Conference({ profile }: ConferenceProps) {
           </span>
         </div>
 
-        {Array.from(streams.entries()).map(([userId, stream]) => (
+        {Object.entries(streams).map(([userId, stream]) => (
           <div key={userId} className={styles.participant}>
             <RemoteVideo stream={stream} />
             <span className={styles.participantName}>
               {userId}
               {' '}
               (
-              {connectionStates.get(userId)}
+              {/* {connectionStates[userId]} */}
               )
             </span>
           </div>

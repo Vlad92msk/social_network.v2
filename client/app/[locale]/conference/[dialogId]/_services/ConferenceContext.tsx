@@ -1,197 +1,226 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useMediaStreamContext } from '@ui/components/media-stream/MediaStream'
 import { ConferenceSliceActions } from '../_store/conference.slice'
 import { ConferenceSelectors } from '../_store/selectors'
-
-type ConnectionState = RTCPeerConnectionState
+import { selectConferenceId } from '../_store/selectors/conference.selectors'
 
 interface WebRTCContextValue {
-  connections: Map<string, RTCPeerConnection>
-  streams: Map<string, MediaStream>
-  connectionStates: Map<string, ConnectionState>
-  initiateConnection: (targetUserId: string) => Promise<void>
+  streams: Record<string, MediaStream>;
+  isConnecting: boolean;
+  connectionStatus: Record<string, 'connecting' | 'connected' | 'disconnected'>;
 }
 
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-]
-
-const WebRTCContext = createContext<WebRTCContextValue | null>(null)
-
-const serializeIceCandidate = (candidate: RTCIceCandidate): RTCIceCandidateInit => ({
-  candidate: candidate.candidate,
-  sdpMid: candidate.sdpMid,
-  sdpMLineIndex: candidate.sdpMLineIndex,
-  usernameFragment: candidate.usernameFragment,
+const WebRTCContext = createContext<WebRTCContextValue>({
+  streams: {},
+  isConnecting: false,
+  connectionStatus: {},
 })
 
-export function WebRTCProvider({ children }: { children: React.ReactNode }) {
+// Конфигурация STUN/TURN серверов
+const RTCConfiguration: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+  ],
+}
+
+export function WebRTCProvider({ children, currentUserId }: { children: React.ReactNode; currentUserId: string }) {
   const dispatch = useDispatch()
   const { stream: localStream } = useMediaStreamContext()
+  const [streams, setStreams] = useState<Record<string, MediaStream>>({})
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<Record<string, 'connecting' | 'connected' | 'disconnected'>>({})
+
   const participants = useSelector(ConferenceSelectors.selectUsers)
-  const signals = useSelector(ConferenceSelectors.selectUserSignals)
+  const dialogId = useSelector(ConferenceSelectors.selectConferenceId)
+  console.log('participants', participants)
 
-  const [connections, setConnections] = useState<Map<string, RTCPeerConnection>>(new Map())
-  const [streams, setStreams] = useState<Map<string, MediaStream>>(new Map())
-  const [connectionStates, setConnectionStates] = useState<Map<string, ConnectionState>>(new Map())
-  const [processedSignals] = useState<Set<string>>(new Set())
+  // Храним peer connections в ref чтобы избежать проблем с замыканиями
+  const peerConnections = useRef<Record<string, RTCPeerConnection>>({})
 
-  const updateConnectionState = useCallback((userId: string, state: ConnectionState) => {
-    setConnectionStates((prev) => new Map(prev).set(userId, state))
-  }, [])
-
-  const handleTrack = useCallback((userId: string, event: RTCTrackEvent) => {
-    setStreams((prev) => {
-      const stream = prev.get(userId) || new MediaStream()
-      event.streams[0].getTracks().forEach((track) => stream.addTrack(track))
-      return new Map(prev.set(userId, stream))
-    })
-  }, [])
-
-  const cleanupConnection = useCallback((userId: string) => {
-    setConnections((prev) => {
-      const newConnections = new Map(prev)
-      newConnections.delete(userId)
-      return newConnections
-    })
-    setStreams((prev) => {
-      const newStreams = new Map(prev)
-      newStreams.delete(userId)
-      return newStreams
-    })
-  }, [])
-
-  const createPeerConnection = useCallback((userId: string) => {
-    const connection = new RTCPeerConnection({ iceServers: ICE_SERVERS })
-
-    connection.ontrack = (event) => handleTrack(userId, event)
-
-    connection.onconnectionstatechange = () => {
-      updateConnectionState(userId, connection.connectionState)
-      if (connection.connectionState === 'disconnected') {
-        cleanupConnection(userId)
-      }
+  // Создание нового peer connection
+  const createPeerConnection = useCallback((targetUserId: string) => {
+    if (peerConnections.current[targetUserId]) {
+      return peerConnections.current[targetUserId]
     }
 
-    connection.onicecandidate = (event) => {
+    const peerConnection = new RTCPeerConnection(RTCConfiguration)
+
+    // Добавляем локальные треки
+    if (localStream) {
+      localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream)
+      })
+    }
+
+    console.log('__peerConnection___', peerConnection)
+
+    // Обработка ICE кандидатов
+    peerConnection.onicecandidate = (event) => {
+      console.log('__event.candidate.event___', event)
       if (event.candidate) {
+        console.log('__event.candidate___')
         dispatch(ConferenceSliceActions.sendSignal({
-          targetUserId: userId,
+          targetUserId,
           signal: {
             type: 'ice-candidate',
-            candidate: serializeIceCandidate(event.candidate),
+            // @ts-ignore
+            payload: event.candidate,
           },
+          dialogId,
         }))
       }
     }
 
-    setConnections((prev) => new Map(prev).set(userId, connection))
-    return connection
-  }, [dispatch, handleTrack, updateConnectionState, cleanupConnection])
+    // Обработка изменения состояния соединения
+    peerConnection.onconnectionstatechange = () => {
+      setConnectionStatus((prev) => ({
+        ...prev,
+        [targetUserId]: peerConnection.connectionState as any,
+      }))
+    }
 
-  const addLocalTracks = useCallback((connection: RTCPeerConnection) => {
-    if (!localStream) return
-    localStream.getTracks().forEach((track) => {
-      connection.addTrack(track, localStream)
-    })
-  }, [localStream])
+    // Обработка входящих стримов
+    peerConnection.ontrack = (event) => {
+      setStreams((prev) => ({
+        ...prev,
+        [targetUserId]: event.streams[0],
+      }))
+    }
 
+    peerConnections.current[targetUserId] = peerConnection
+    return peerConnection
+  }, [localStream, dispatch, dialogId])
+
+  // Инициация исходящего соединения
   const initiateConnection = useCallback(async (targetUserId: string) => {
+    console.log('Чтото делаем', targetUserId)
     try {
-      let connection = connections.get(targetUserId)
-      if (!connection || connection.connectionState === 'closed') {
-        connection = createPeerConnection(targetUserId)
-      }
-
-      addLocalTracks(connection)
-
-      const offer = await connection.createOffer()
-      await connection.setLocalDescription(offer)
-
+      setIsConnecting(true)
+      const peerConnection = createPeerConnection(targetUserId)
+      console.log('peerConnection', peerConnection)
+      const offer = await peerConnection.createOffer()
+      await peerConnection.setLocalDescription(offer)
+      console.log('Отправляем офер', {
+        targetUserId,
+        signal: {
+          type: 'offer',
+          // @ts-ignore
+          payload: offer,
+        },
+        dialogId,
+      })
       dispatch(ConferenceSliceActions.sendSignal({
         targetUserId,
-        signal: { type: 'offer', offer },
+        signal: {
+          type: 'offer',
+          // @ts-ignore
+          payload: offer,
+        },
+        dialogId,
       }))
     } catch (error) {
-      console.error('Failed to initiate connection:', error)
+      console.error('Error creating offer:', error)
+    } finally {
+      setIsConnecting(false)
     }
-  }, [connections, createPeerConnection, addLocalTracks, dispatch])
+  }, [createPeerConnection, dialogId, dispatch])
 
-  useEffect(() => {
-    Object.entries(signals).forEach(async ([key, { userId, signal }]) => {
-      if (processedSignals.has(key)) return
+  // Обработка входящих сигналов
+  const handleSignal = useCallback(async (senderId: string, signal: any, targetUserId: string) => {
+    const peerConnection = createPeerConnection(senderId)
 
-      try {
-        let connection = connections.get(userId)
+    try {
+      switch (signal.type) {
+        case 'offer':
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.payload))
+          const answer = await peerConnection.createAnswer()
+          await peerConnection.setLocalDescription(answer)
 
-        switch (signal.type) {
-          case 'offer':
-            connection = createPeerConnection(userId)
-            addLocalTracks(connection)
-            // @ts-ignore
-            await connection.setRemoteDescription(new RTCSessionDescription(signal.offer))
-            const answer = await connection.createAnswer()
-            await connection.setLocalDescription(answer)
-            dispatch(ConferenceSliceActions.sendSignal({
-              targetUserId: userId,
-              signal: { type: 'answer', answer },
-            }))
-            break
-
-          case 'answer':
-            if (connection) {
+          dispatch(ConferenceSliceActions.sendSignal({
+            targetUserId,
+            signal: {
+              type: 'answer',
               // @ts-ignore
-              await connection.setRemoteDescription(new RTCSessionDescription(signal.answer))
-            }
-            break
+              payload: answer,
+            },
+            dialogId,
+          }))
+          break
 
-          case 'ice-candidate':
-            if (connection) {
-              await connection.addIceCandidate(new RTCIceCandidate(signal.candidate))
-            }
-            break
+        case 'answer':
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.payload))
+          break
 
-          default: return
-        }
+        case 'ice-candidate':
+          if (peerConnection.remoteDescription) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(signal.payload))
+          }
+          break
+      }
+    } catch (error) {
+      console.error('Error handling signal:', error)
+    }
+  }, [createPeerConnection, dispatch])
 
-        processedSignals.add(key)
-      } catch (error) {
-        console.error('Signal processing error:', error)
+  // Подключение к новым участникам
+  useEffect(() => {
+    participants.forEach((participant) => {
+      if (participant !== currentUserId && !peerConnections.current[participant]) {
+        console.log('___111___')
+        initiateConnection(participant)
       }
     })
-  }, [signals, connections, createPeerConnection, addLocalTracks, processedSignals, dispatch])
+  }, [participants, currentUserId, initiateConnection])
 
+  // Очистка при отключении участников
   useEffect(() => {
-    if (localStream && participants.length > 0) {
-      participants.forEach((userId) => {
-        if (!connections.has(userId)) {
-          initiateConnection(userId)
-        }
+    Object.keys(peerConnections.current).forEach((participantId) => {
+      if (!participants.find((p) => p === participantId)) {
+        peerConnections.current[participantId]?.close()
+        delete peerConnections.current[participantId]
+
+        setStreams((prev) => {
+          const newStreams = { ...prev }
+          delete newStreams[participantId]
+          return newStreams
+        })
+
+        setConnectionStatus((prev) => {
+          const newStatus = { ...prev }
+          delete newStatus[participantId]
+          return newStatus
+        })
+      }
+    })
+  }, [participants])
+
+  // Обновление локального стрима
+  useEffect(() => {
+    if (localStream) {
+      Object.values(peerConnections.current).forEach((pc) => {
+        pc.getSenders().forEach((sender) => {
+          const track = localStream.getTracks().find((t) => t.kind === sender.track?.kind)
+          if (track) {
+            sender.replaceTrack(track)
+          }
+        })
       })
     }
-  }, [participants, localStream, connections, initiateConnection])
-
-  const value = useMemo(() => ({
-    connections,
-    streams,
-    connectionStates,
-    initiateConnection,
-  }), [connections, streams, connectionStates, initiateConnection])
+  }, [localStream])
 
   return (
-    <WebRTCContext.Provider value={value}>
+    <WebRTCContext.Provider value={{
+      streams,
+      isConnecting,
+      connectionStatus,
+    }}
+    >
       {children}
     </WebRTCContext.Provider>
   )
 }
 
-export const useWebRTCContext = () => {
-  const context = useContext(WebRTCContext)
-  if (!context) {
-    throw new Error('useWebRTCContext must be used within WebRTCProvider')
-  }
-  return context
-}
+export const useWebRTCContext = () => useContext(WebRTCContext)
