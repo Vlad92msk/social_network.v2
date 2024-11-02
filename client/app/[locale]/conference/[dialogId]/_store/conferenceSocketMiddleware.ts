@@ -1,5 +1,6 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
 import { Socket } from 'socket.io-client'
+import { WebRTCSignal } from '../types/media'
 import { ConferenceSliceActions } from './conference.slice'
 import { createSocket } from './createSocket.util'
 import { RootReducer } from '../../../../../store/root.reducer'
@@ -14,6 +15,11 @@ function debugLog(message: string, data?: any) {
   if (DEBUG) {
     console.log(`[WebSocket] ${message}`, data || '')
   }
+}
+
+export const sendSignal = ({ signal, dialogId, targetUserId }: { targetUserId: string, signal: WebRTCSignal, dialogId: string }) => {
+  debugLog('Sending Signal', { to: targetUserId, type: signal.type })
+  socket?.emit('signal', { targetUserId, signal, dialogId })
 }
 
 export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) => (next) => (action: AnyAction) => {
@@ -62,12 +68,8 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
     })
 
     socket.on('signal', ({ userId, signal }) => {
-      debugLog('Received Signal', { from: userId, type: signal.type })
+      debugLog('Получили сигнал', { from: userId, type: signal.type })
       store.dispatch(ConferenceSliceActions.addSignal({ userId, signal }))
-    })
-
-    socket.on('signal:sent', (info) => {
-      debugLog('Signal Sent Confirmation', info)
     })
   }
 
@@ -79,12 +81,6 @@ export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) =
       socket.disconnect()
       socket = null
       store.dispatch(ConferenceSliceActions.setConnected(false))
-      break
-    }
-    case ConferenceSliceActions.sendSignal.type: {
-      const { targetUserId, signal, dialogId } = action.payload
-      debugLog('Sending Signal', { to: targetUserId, type: signal.type })
-      socket.emit('signal', { targetUserId, signal, dialogId })
       break
     }
     default: return next(action)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { CallControls, LocalPreview } from '@ui/components/media-stream/components/components'
 import { RemoteVideo } from '@ui/components/media-stream/components-remote/remoteVideo'
@@ -9,6 +10,7 @@ import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces
 import { useConferenceSocketConnect } from '../../_hooks'
 import { useWebRTCContext } from '../../_services/ConferenceContext'
 import { ConferenceSelectors } from '../../_store/selectors'
+import { useWebRTCSignaling } from '../../_hooks/useWebRTCSignaling'
 
 interface ConferenceProps {
   profile?: UserProfileInfo;
@@ -18,9 +20,21 @@ export function Conference({ profile }: ConferenceProps) {
   const { dialogId } = useParams<{ dialogId: string }>()
 
   useConferenceSocketConnect({ conferenceId: dialogId })
-  const { streams } = useWebRTCContext()
+  const { streams, handleSignal, connectionStatus } = useWebRTCContext()
+
+  // Подключаем обработку WebRTC сигналов
+  useWebRTCSignaling(profile?.user_info.id, handleSignal)
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
+
+  useEffect(() => {
+    console.log('Conference state:', {
+      isConnected,
+      currentUserId: profile?.user_info.id,
+      streamsCount: Object.keys(streams).length,
+      connectionStatuses: connectionStatus
+    })
+  }, [isConnected, profile, streams, connectionStatus])
 
   if (!isConnected) {
     return (
@@ -48,9 +62,7 @@ export function Conference({ profile }: ConferenceProps) {
             <span className={styles.participantName}>
               {userId}
               {' '}
-              (
-              {/* {connectionStates[userId]} */}
-              )
+              ({connectionStatus[userId] || 'connecting'})
             </span>
           </div>
         ))}

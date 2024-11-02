@@ -41,13 +41,26 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const { targetUserId, signal, dialogId } = payload
         const senderId = client.data.userId
 
+        console.log('Received signal:', {
+            type: signal.type,
+            from: senderId,
+            to: targetUserId,
+            dialogId,
+        })
+
         if (!this.validateSignalPayload(senderId, targetUserId, signal, dialogId)) {
+            console.error('Invalid signal payload')
             return
         }
 
         // Проверяем, что пользователь существует в комнате
         const participants = this.conferenceService.getParticipants(dialogId)
         if (!participants.includes(targetUserId)) {
+            console.error('Target user not found in room:', {
+                targetUserId,
+                dialogId,
+                participants
+            })
             client.emit('error', {
                 message: 'Target user not found in room',
                 code: 'USER_NOT_FOUND'
@@ -55,14 +68,101 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             return
         }
 
+        console.log('Emitting signal:', {
+            type: signal.type,
+            to: targetUserId,
+            from: senderId,
+            participants
+        })
+
         // Отправляем сигнал целевому пользователю
         this.server.to(targetUserId).emit(signal.type, {
             userId: senderId,
             signal: signal.payload,
         })
 
-        // Логируем успешную отправку
         this.logSignal(senderId, targetUserId, signal.type)
+    }
+
+    private initializeUser(client: Socket, roomId: string, userId: string) {
+        console.log('Initializing user:', {
+            socketId: client.id,
+            userId,
+            roomId
+        })
+
+        // Сохраняем userId в данных сокета
+        client.data.userId = userId
+
+        // Подключаем к персональной комнате для приема сигналов
+        client.join(userId)
+
+        const participants = this.conferenceService.addUserToRoom(roomId, userId)
+
+        console.log('User initialized:', {
+            userId,
+            roomId,
+            participants,
+            socketRooms: Array.from(client.rooms || [])
+        })
+
+        // Оповещаем других участников
+        client.broadcast.to(roomId).emit('user:joined', userId)
+
+        // Отправляем информацию новому участнику
+        client.emit('room:info', {
+            roomId,
+            joined: new Date().toISOString(),
+            ...this.conferenceService.getRoomInfo(roomId),
+            participants,
+        })
+    }
+
+    handleConnection(client: Socket) {
+        const { dialogId, userId } = client.handshake.query
+        console.log('New connection:', {
+            socketId: client.id,
+            userId,
+            dialogId
+        })
+
+        if (typeof dialogId !== 'string' || typeof userId !== 'string') {
+            console.error('Invalid connection parameters:', {
+                dialogId,
+                userId
+            })
+            client.disconnect()
+            return
+        }
+
+        this.initializeUser(client, dialogId, userId)
+    }
+
+    handleDisconnect(client: Socket) {
+        const { dialogId, userId } = client.handshake.query
+
+        console.log('Client disconnecting:', {
+            socketId: client.id,
+            userId: client.data.userId,
+            query: client.handshake.query
+        })
+
+        if (typeof dialogId === 'string' && typeof userId === 'string') {
+            this.handleUserDisconnect(dialogId, userId)
+        }
+    }
+
+    private handleUserDisconnect(roomId: string, userId: string) {
+        const userRemoved = this.conferenceService.removeUserFromRoom(roomId, userId)
+
+        if (userRemoved) {
+            // Оповещаем остальных участников
+            this.server.emit('user:left', {
+                userId,
+                timestamp: new Date().toISOString(),
+                remainingParticipants: this.conferenceService.getParticipants(roomId)
+            })
+        }
     }
 
     private validateSignalPayload(
@@ -72,7 +172,12 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
       roomId: string
     ): boolean {
         if (!senderId || !targetUserId || !signal || !roomId) {
-            console.error('Invalid signal payload:', { senderId, targetUserId, signal, roomId })
+            console.error('Invalid signal payload:', {
+                senderId,
+                targetUserId,
+                signal,
+                roomId
+            })
             return false
         }
 
@@ -91,67 +196,5 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             to: targetUserId,
             timestamp: new Date().toISOString()
         })
-    }
-
-    handleConnection(client: Socket) {
-        const { dialogId, userId } = client.handshake.query
-        console.log(`Подключается пользователь[${userId}] к диалогу[${dialogId}]`)
-
-        if (typeof dialogId !== 'string' || typeof userId !== 'string') {
-            console.error('Invalid connection parameters')
-            client.disconnect()
-            return
-        }
-
-        // Инициализация пользователя
-        this.initializeUser(client, dialogId, userId)
-    }
-
-    private initializeUser(client: Socket, roomId: string, userId: string) {
-        client.data.userId = userId
-        client.join([roomId, userId])
-
-        const participants = this.conferenceService.addUserToRoom(roomId, userId)
-
-        // Оповещаем других участников
-        client.to(roomId).emit('user:joined', {
-            userId,
-            timestamp: new Date().toISOString(),
-            participantsCount: participants.length
-        })
-
-        // Отправляем информацию новому участнику
-        client.emit('room:info', {
-            roomId,
-            participants,
-            joined: new Date().toISOString(),
-            ...this.conferenceService.getRoomInfo(roomId)
-        })
-    }
-
-    handleDisconnect(client: Socket) {
-        const { dialogId, userId } = client.handshake.query
-
-        if (typeof dialogId === 'string' && typeof userId === 'string') {
-            this.handleUserDisconnect(dialogId, userId)
-        }
-
-        console.log('Client disconnected:', {
-            socketId: client.id,
-            userId: client.data.userId,
-            timestamp: new Date().toISOString()
-        })
-    }
-
-    private handleUserDisconnect(roomId: string, userId: string) {
-        const userRemoved = this.conferenceService.removeUserFromRoom(roomId, userId)
-
-        if (userRemoved) {
-            this.server.to(roomId).emit('user:left', {
-                userId,
-                timestamp: new Date().toISOString(),
-                remainingParticipants: this.conferenceService.getParticipants(roomId)
-            })
-        }
     }
 }

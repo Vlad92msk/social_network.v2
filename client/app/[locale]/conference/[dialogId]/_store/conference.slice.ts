@@ -15,7 +15,7 @@ export interface ConferenceSliceState {
   conferenceId?: string
   users: string[]
   userSignals: Record<string, { userId: string, signal: WebRTCSignal }>
-  roomInfo: { dialogId?: string, participants: RoomParticipant[], participantsCount: number, createdAt?: Date }
+  roomInfo: { dialogId?: string, participants: string[], participantsCount: number, createdAt?: Date }
 }
 
 const initialState: ConferenceSliceState = {
@@ -69,6 +69,7 @@ export const { actions: ConferenceSliceActions, reducer: conferenceReducer } = s
       sendSignal: (state, action: PayloadAction<{ targetUserId: string, signal: WebRTCSignal, dialogId: string}>) => state,
       setRoomInfo: (state, action: PayloadAction<ConferenceSliceState['roomInfo']>) => {
         state.roomInfo = action.payload
+        state.users = action.payload.participants
       },
 
       clearSignal: (state, action: PayloadAction<{ userId: string }>) => {

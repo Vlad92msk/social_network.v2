@@ -24,7 +24,7 @@ export class ConferenceService {
             isVideoEnabled: true,
             isAudioEnabled: true,
         })
-
+console.log('___room', Array.from(room.keys()))
         return Array.from(room.keys())
     }
 
