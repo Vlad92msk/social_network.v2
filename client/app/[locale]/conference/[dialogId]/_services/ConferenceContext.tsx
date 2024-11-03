@@ -20,8 +20,6 @@ const WebRTCContext = createContext<WebRTCContextValue>({
 
 export function WebRTCProvider({ children, currentUserId }: { children: React.ReactNode; currentUserId: string }) {
   const { stream: localStream } = useMediaStreamContext()
-  const manager = useRef<WebRTCManager>(new WebRTCManager(currentUserId, sendSignal))
-
   const participants = useSelector(ConferenceSelectors.selectUsers)
   const dialogId = useSelector(ConferenceSelectors.selectConferenceId)
 
@@ -31,56 +29,60 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
     connectionStatus: {},
   }))
 
+  // Создаем ref без начального значения
+  const manager = useRef<WebRTCManager>(null)
 
-  // Единый эффект для инициализации и обновления менеджера
+  // Инициализируем менеджера в отдельном эффекте
   useEffect(() => {
-    // Устанавливаем начальные значения
+    // Создаем нового менеджера
+    manager.current = new WebRTCManager(currentUserId, sendSignal)
+
+    return () => {
+      // Очищаем при размонтировании
+      if (manager.current) {
+        manager.current.destroy()
+        manager.current = undefined
+      }
+    }
+  }, [currentUserId])
+
+  // Подписываемся на обновления в отдельном эффекте
+  useEffect(() => {
+    if (!manager.current) return
+
+    const unsubscribe = manager.current.subscribe(setState)
+    return () => unsubscribe()
+  }, [currentUserId])
+
+  // Обновляем конфигурацию
+  useEffect(() => {
+    if (!manager.current) return
+
     if (dialogId) {
       manager.current.setDialogId(dialogId)
     }
     if (localStream) {
       manager.current.setLocalStream(localStream)
     }
-
-    // Подписываемся на обновления
-    const unsubscribe = manager.current.subscribe(setState)
-
-    // Если есть участники, обновляем их
     if (participants.length > 0) {
       manager.current.updateParticipants(participants)
     }
+  }, [dialogId, localStream, participants])
 
-    // Очистка при размонтировании или изменении currentUserId
-    return () => {
-      unsubscribe()
-      manager.current?.destroy()
-      // @ts-ignore
-      manager.current = undefined
-    }
-  }, [currentUserId])
-
-  // Эффект для обновления зависимостей менеджера
-  useEffect(() => {
-    if (manager.current) {
-      // Обновляем все зависимости последовательно
-      manager.current.setLocalStream(localStream)
-      if (dialogId) {
-        manager.current.setDialogId(dialogId)
-      }
-      manager.current.updateParticipants(participants)
-    }
-  }, [localStream, dialogId, participants]) // Обновляем при изменении любой зависимости
-
-  // Мемоизируем handleSignal чтобы избежать лишних ререндеров
   const handleSignal = useCallback(async (senderId: string, signal: any) => {
-    await manager.current?.handleSignal(senderId, signal)
-  }, []) // Зависимостей нет, так как используем ref
+    if (!manager.current) return
+    await manager.current.handleSignal(senderId, signal)
+  }, [])
 
-  // Мемоизируем значение контекста
   const contextValue = useMemo(() => ({
     ...state,
     handleSignal,
   }), [state, handleSignal])
+
+  // Не рендерим ничего, пока менеджер не инициализирован
+  if (!manager.current) {
+    return null
+  }
 
   return (
     <WebRTCContext.Provider value={contextValue}>
