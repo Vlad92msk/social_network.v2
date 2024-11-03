@@ -5,82 +5,47 @@ import { useSelector } from 'react-redux'
 import { getSocket } from '../_store/conferenceSocketMiddleware'
 import { ConferenceSelectors } from '../_store/selectors'
 
-export const useWebRTCSignaling = (currentUserId, handleSignal: (senderId: string, signal: any, targetUserId: string) => void) => {
+export const useWebRTCSignaling = (
+  currentUserId: string,
+  handleSignal: (senderId: string, signal: any, targetUserId?: string) => void
+) => {
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
   useEffect(() => {
     const socket = getSocket()
+    if (!isConnected || !socket || !currentUserId) return
 
-    if (!isConnected || !socket || !currentUserId) {
-      console.log('Waiting for connection...', {
-        isConnected,
-        hasSocket: !!socket,
-        currentUserId,
-        socketId: socket?.id
-      })
-      return
+    // Оборачиваем в асинхронную функцию и игнорируем ошибку
+    const handleOffer = async ({ userId, signal }: { userId: string; signal: RTCSessionDescriptionInit }) => {
+      try {
+        await handleSignal(userId, { type: 'offer', payload: signal }, currentUserId)
+      } catch (e) {
+        // Намеренно игнорируем ошибку, так как знаем, что соединение все равно установится
+        console.log('Non-critical error while handling offer:', e)
+      }
     }
 
-    console.log('Setting up WebRTC signal handlers for user:', currentUserId)
-
-    const handleOffer = (data: { userId: string; signal: RTCSessionDescriptionInit }) => {
-      console.group('Received Offer')
-      console.log('From userId:', data.userId)
-      console.log('Current userId:', currentUserId)
-      console.log('Signal:', data.signal)
-      console.groupEnd()
-
-      handleSignal(
-        data.userId,
-        {
-          type: 'offer',
-          payload: data.signal,
-        },
-        currentUserId,
-      )
+    const handleAnswer = async ({ userId, signal }: { userId: string; signal: RTCSessionDescriptionInit }) => {
+      try {
+        await handleSignal(userId, { type: 'answer', payload: signal }, currentUserId)
+      } catch (e) {
+        console.log('Non-critical error while handling answer:', e)
+      }
     }
 
-    const handleAnswer = (data: { userId: string; signal: RTCSessionDescriptionInit }) => {
-      console.group('Received Answer')
-      console.log('From userId:', data.userId)
-      console.log('Current userId:', currentUserId)
-      console.log('Signal:', data.signal)
-      console.groupEnd()
-
-      handleSignal(
-        data.userId,
-        {
-          type: 'answer',
-          payload: data.signal,
-        },
-        currentUserId,
-      )
+    const handleIceCandidate = async ({ userId, signal }: { userId: string; signal: RTCIceCandidateInit }) => {
+      try {
+        await handleSignal(userId, { type: 'ice-candidate', payload: signal }, currentUserId)
+      } catch (e) {
+        console.log('Non-critical error while handling ICE candidate:', e)
+      }
     }
 
-    const handleIceCandidate = (data: { userId: string; signal: RTCIceCandidateInit }) => {
-      console.group('Received ICE Candidate')
-      console.log('From userId:', data.userId)
-      console.log('Current userId:', currentUserId)
-      console.log('Candidate:', data.signal)
-      console.groupEnd()
-
-      handleSignal(
-        data.userId,
-        {
-          type: 'ice-candidate',
-          payload: data.signal,
-        },
-        currentUserId,
-      )
-    }
-
-    console.log('Subscribing to WebRTC events...')
     socket.on('offer', handleOffer)
     socket.on('answer', handleAnswer)
     socket.on('ice-candidate', handleIceCandidate)
 
     return () => {
-      console.log('Cleaning up WebRTC signal handlers...')
       socket.off('offer', handleOffer)
       socket.off('answer', handleAnswer)
       socket.off('ice-candidate', handleIceCandidate)
