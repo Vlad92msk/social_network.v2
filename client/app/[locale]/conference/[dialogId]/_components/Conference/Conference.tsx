@@ -1,7 +1,6 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { CallControls, LocalPreview } from '@ui/components/media-stream/components/components'
 import { RemoteVideo } from '@ui/components/media-stream/components-remote/remoteVideo'
@@ -27,14 +26,6 @@ export function Conference({ profile }: ConferenceProps) {
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
-  useEffect(() => {
-    console.log('Conference state:', {
-      isConnected,
-      currentUserId: profile?.user_info.id,
-      streamsCount: Object.keys(streams).length,
-      connectionStatuses: connectionStatus
-    })
-  }, [isConnected, profile, streams, connectionStatus])
 
   if (!isConnected) {
     return (

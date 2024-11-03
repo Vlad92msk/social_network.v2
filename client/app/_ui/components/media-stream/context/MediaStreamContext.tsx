@@ -1,100 +1,54 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { MediaStreamOptions, SimpleMediaStreamService } from '@ui/components/media-stream/mediaStreamService'
+import { MediaStreamManager, MediaStreamOptions } from '@ui/components/media-stream/context/media-stream.service'
 
-export interface MediaStreamState {
-  stream?: MediaStream;
-  isVideoEnabled: boolean;
-  isAudioEnabled: boolean;
-}
-
-export interface MediaStreamContextValue extends MediaStreamState {
-  initialize: (options?: MediaStreamOptions) => Promise<void>;
-  cleanup: () => void;
-  toggleVideo: () => Promise<void>;
-  toggleAudio: () => Promise<void>;
-}
-
-const MediaStreamContext = createContext<MediaStreamContextValue | undefined>(undefined)
+const MediaStreamContext = createContext<MediaStreamManager | null>(null)
 
 interface MediaStreamProviderProps {
-  children: React.ReactNode;
-  initialOptions?: MediaStreamOptions;
+  children: React.ReactNode
+  options?: MediaStreamOptions
+  autoStart?: boolean
 }
 
-export function MediaStreamProvider(props: MediaStreamProviderProps) {
-  const { children, initialOptions } = props
-  const mediaServiceRef = useRef<SimpleMediaStreamService>(new SimpleMediaStreamService())
-  const initializationRef = useRef(false)
-
-  const [state, setState] = useState<MediaStreamState>({
-    stream: undefined,
-    isVideoEnabled: false,
-    isAudioEnabled: false,
-  })
-
-  const updateState = () => {
-    const currentState = mediaServiceRef.current.getState()
-    setState({
-      stream: mediaServiceRef.current.getStream(),
-      isVideoEnabled: currentState.isVideoEnabled,
-      isAudioEnabled: currentState.isAudioEnabled,
-    })
-  }
-
-  const initialize = async (options?: MediaStreamOptions) => {
-    await mediaServiceRef.current.initialize(options)
-    updateState()
-  }
-
-  const cleanup = () => {
-    mediaServiceRef.current.cleanup()
-    updateState()
-  }
-
-  const toggleVideo = async () => {
-    await mediaServiceRef.current.toggleVideo()
-    updateState()
-  }
-
-  const toggleAudio = async () => {
-    await mediaServiceRef.current.toggleAudio()
-    updateState()
-  }
+export function MediaStreamProvider({ children, options, autoStart = true }: MediaStreamProviderProps) {
+  const manager = useRef(new MediaStreamManager(options))
 
   useEffect(() => {
-    // Предотвращаем повторную инициализацию
-    if (!initializationRef.current) {
-      initialize(initialOptions)
-      initializationRef.current = true
+    if (autoStart) {
+      manager.current.startStream()
     }
 
     return () => {
-      cleanup()
-      initializationRef.current = false
+      manager.current.destroy()
     }
-  }, [])
-
-  const value: MediaStreamContextValue = {
-    ...state,
-    initialize,
-    cleanup,
-    toggleVideo,
-    toggleAudio,
-  }
+  }, [manager, autoStart])
 
   return (
-    <MediaStreamContext.Provider value={value}>
+    <MediaStreamContext.Provider value={manager.current}>
       {children}
     </MediaStreamContext.Provider>
   )
 }
 
-export const useMediaStream = () => {
-  const context = useContext(MediaStreamContext)
-  if (!context) {
-    throw new Error('useMediaStream must be used within a MediaStreamProvider')
+export function useMediaStreamContext() {
+  const manager = useContext(MediaStreamContext)
+  if (!manager) {
+    throw new Error('useMediaStreamContext must be used within MediaStreamProvider')
   }
-  return context
+
+  const [state, setState] = useState(manager.getState())
+
+  useEffect(() => manager.subscribe(setState), [manager])
+
+  return {
+    stream: state.stream,
+    isVideoEnabled: state.isVideoEnabled,
+    isAudioEnabled: state.isAudioEnabled,
+    error: state.error,
+    toggleVideo: () => manager.toggleVideo(),
+    toggleAudio: () => manager.toggleAudio(),
+    startStream: () => manager.startStream(),
+    stopStream: () => manager.stopStream(),
+  }
 }

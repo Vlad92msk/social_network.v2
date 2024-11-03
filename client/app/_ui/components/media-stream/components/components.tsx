@@ -1,8 +1,9 @@
 'use client'
 
-import { MediaStreamProvider, useMediaStreamContext, useVideoStream } from '../MediaStream'
 import { useEffect, useRef } from 'react'
 import styles from './examples.module.scss'
+import { MediaStreamProvider, useMediaStreamContext } from '../context/MediaStreamContext'
+import { useVideoStream } from '../hooks/useVideoStream'
 
 // 1. Базовое использование - простой видеочат
 export function VideoChat() {
@@ -52,7 +53,7 @@ export function CallControls() {
     toggleVideo,
     toggleAudio,
     stopStream,
-  } = useMediaStreamContext();
+  } = useMediaStreamContext()
 
   return (
     <div className={styles.controls}>
@@ -78,7 +79,7 @@ export function CallControls() {
         ❌ Завершить
       </button>
     </div>
-  );
+  )
 }
 
 // 2. Продвинутое использование - множественные превью

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import styles from './examples.module.scss'
 import { RemoteVideo } from './remoteVideo'
-import { useRemoteVideoStream } from '../useRemoteVideoStream'
+import { useRemoteVideoStream } from '../hooks/useRemoteVideoStream'
 
 // export function VideoConference() {
 //   // Пример получения удаленных потоков

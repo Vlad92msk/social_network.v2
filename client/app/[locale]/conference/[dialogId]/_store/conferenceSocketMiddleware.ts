@@ -17,7 +17,7 @@ function debugLog(message: string, data?: any) {
   }
 }
 
-export const sendSignal = ({ signal, dialogId, targetUserId }: { targetUserId: string, signal: WebRTCSignal, dialogId: string }) => {
+export const sendSignal = ({ signal, dialogId, targetUserId }: { targetUserId: string, signal: any, dialogId: string }) => {
   debugLog('Sending Signal', { to: targetUserId, type: signal.type })
   socket?.emit('signal', { targetUserId, signal, dialogId })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { RemoteVideoOptions, useRemoteVideoStream } from '../useRemoteVideoStream'
+import { RemoteVideoOptions, useRemoteVideoStream } from '../hooks/useRemoteVideoStream'
 
 interface RemoteVideoProps extends RemoteVideoOptions {
   className?: string;

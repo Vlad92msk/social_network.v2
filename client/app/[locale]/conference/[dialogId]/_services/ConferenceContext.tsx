@@ -1,8 +1,8 @@
 'use client'
 
+import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useMediaStreamContext } from '@ui/components/media-stream/MediaStream'
 import { sendSignal } from '../_store/conferenceSocketMiddleware'
 import { ConferenceSelectors } from '../_store/selectors'
 
@@ -44,7 +44,7 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
         { urls: 'stun:stun.l.google.com:19302' },
       ],
       // Добавляем обязательные медиа-форматы
-      sdpSemantics: 'unified-plan',
+      // sdpSemantics: 'unified-plan',
     })
 
     // Добавляем логирование состояний
@@ -289,7 +289,7 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
       streams,
       isConnecting,
       connectionStatus,
-      handleSignal, // Экспортируем функцию handleSignal
+      handleSignal,
     }}
     >
       {children}
