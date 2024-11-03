@@ -1,11 +1,13 @@
 'use client'
 
-import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+} from 'react'
 import { useSelector } from 'react-redux'
+import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
+import { WebRTCManager, WebRTCState } from './webrtc.service'
 import { sendSignal } from '../_store/conferenceSocketMiddleware'
 import { ConferenceSelectors } from '../_store/selectors'
-import { WebRTCManager, WebRTCState } from './webrtc.service'
 
 interface WebRTCContextValue extends WebRTCState {
   handleSignal: (senderId: string, signal: any) => Promise<void>;
@@ -23,55 +25,82 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
   const participants = useSelector(ConferenceSelectors.selectUsers)
   const dialogId = useSelector(ConferenceSelectors.selectConferenceId)
 
-  const [state, setState] = useState<WebRTCState>(() => ({
+  const [state, setState] = useState<WebRTCState>({
     streams: {},
     isConnecting: false,
     connectionStatus: {},
-  }))
+  })
 
-  // Создаем ref без начального значения
-  const manager = useRef<WebRTCManager>(null)
+  const manager = useRef<WebRTCManager | undefined>(undefined)
 
-  // Инициализируем менеджера в отдельном эффекте
+  // Инициализация менеджера
   useEffect(() => {
-    // Создаем нового менеджера
     manager.current = new WebRTCManager(currentUserId, sendSignal)
 
+    // Сохраняем ссылку для замыкания
+    const managerInstance = manager.current
+
     return () => {
-      // Очищаем при размонтировании
-      if (manager.current) {
-        manager.current.destroy()
+      if (managerInstance) {
+        managerInstance.destroy()
         manager.current = undefined
       }
     }
   }, [currentUserId])
 
-  // Подписываемся на обновления в отдельном эффекте
+  // Подписка на обновления состояния
   useEffect(() => {
-    if (!manager.current) return
+    const managerInstance = manager.current
+    if (!managerInstance) return
 
-    const unsubscribe = manager.current.subscribe(setState)
-    return () => unsubscribe()
+    const unsubscribe = managerInstance.subscribe(setState)
+    return () => { unsubscribe() }
   }, [currentUserId])
 
-  // Обновляем конфигурацию
+  // Обновление стрима и участников
   useEffect(() => {
-    if (!manager.current) return
+    const managerInstance = manager.current
+    if (!managerInstance) return
 
     if (dialogId) {
-      manager.current.setDialogId(dialogId)
+      managerInstance.setDialogId(dialogId)
     }
     if (localStream) {
-      manager.current.setLocalStream(localStream)
+      managerInstance.setLocalStream(localStream)
     }
     if (participants.length > 0) {
-      manager.current.updateParticipants(participants)
+      managerInstance.updateParticipants(participants)
     }
   }, [dialogId, localStream, participants])
 
+  // Мониторинг состояния соединений
+  useEffect(() => {
+    const managerInstance = manager.current
+    if (!managerInstance) return
+
+    const checkInterval = setInterval(() => {
+      const { streams, connectionStatus } = managerInstance.getState()
+
+      participants.forEach((participantId) => {
+        if (participantId !== currentUserId) {
+          const status = connectionStatus[participantId]
+          const stream = streams[participantId]
+
+          if (status === 'connected' && !stream) {
+            console.log(`Detected connected status without stream for ${participantId}, refreshing`)
+            managerInstance.refreshConnection(participantId)
+          }
+        }
+      })
+    }, 5000)
+
+    return () => clearInterval(checkInterval)
+  }, [participants, currentUserId])
+
   const handleSignal = useCallback(async (senderId: string, signal: any) => {
-    if (!manager.current) return
-    await manager.current.handleSignal(senderId, signal)
+    const managerInstance = manager.current
+    if (!managerInstance) return
+    await managerInstance.handleSignal(senderId, signal)
   }, [])
 
   const contextValue = useMemo(() => ({
@@ -79,7 +108,7 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
     handleSignal,
   }), [state, handleSignal])
 
-  // Не рендерим ничего, пока менеджер не инициализирован
+  // Проверяем наличие manager перед рендерингом
   if (!manager.current) {
     return null
   }
@@ -90,6 +119,5 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
     </WebRTCContext.Provider>
   )
 }
-
 
 export const useWebRTCContext = () => useContext(WebRTCContext)

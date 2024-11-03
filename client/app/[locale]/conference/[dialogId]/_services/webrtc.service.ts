@@ -1,7 +1,7 @@
 export interface WebRTCState {
-  streams: Record<string, MediaStream>;
+  streams: Record<string, MediaStream | undefined>;
   isConnecting: boolean;
-  connectionStatus: Record<string, 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'>;
+  connectionStatus: Record<string, RTCPeerConnectionState>;
 }
 
 export type WebRTCStateListener = (state: WebRTCState) => void;
@@ -53,6 +53,12 @@ export class WebRTCManager {
     if (this.peerConnections[targetUserId]) {
       this.peerConnections[targetUserId].close()
       delete this.peerConnections[targetUserId]
+      this.setState({
+        streams: {
+          ...this.state.streams,
+          [targetUserId]: undefined,
+        },
+      })
     }
 
     const pc = new RTCPeerConnection({
@@ -60,12 +66,34 @@ export class WebRTCManager {
     })
 
     pc.onconnectionstatechange = () => {
+      console.log(`Connection state for ${targetUserId}:`, pc.connectionState)
+
       this.setState({
         connectionStatus: {
           ...this.state.connectionStatus,
-          [targetUserId]: pc.connectionState as any,
+          [targetUserId]: pc.connectionState,
         },
       })
+
+      if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
+        console.log(`Connection ${pc.connectionState} for ${targetUserId}, cleaning up`)
+        pc.close()
+        delete this.peerConnections[targetUserId]
+
+        this.setState({
+          streams: {
+            ...this.state.streams,
+            [targetUserId]: undefined,
+          },
+        })
+
+        setTimeout(() => {
+          if (this.localStream && this.dialogId) {
+            console.log(`Attempting to reconnect with ${targetUserId}`)
+            this.initiateConnection(targetUserId)
+          }
+        }, 1000)
+      }
     }
 
     if (this.localStream) {
@@ -147,6 +175,10 @@ export class WebRTCManager {
           }
           break
         }
+        default: {
+          console.warn('Unknown signal type:', signal.type)
+          break
+        }
       }
     } catch (e) {
       console.warn('Non-critical error handling signal:', e)
@@ -156,14 +188,61 @@ export class WebRTCManager {
   updateParticipants(participants: string[]) {
     if (!this.localStream || !this.dialogId) return
 
+    // Добавляем новых участников
     participants.forEach((participantId) => {
       if (participantId !== this.currentUserId) {
         const pc = this.peerConnections[participantId]
-        if (!pc || ['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
+        if (!pc || !['connected', 'connecting'].includes(pc.connectionState)) {
           this.initiateConnection(participantId)
         }
       }
     })
+
+    // Очищаем отключившихся участников
+    Object.keys(this.peerConnections).forEach((participantId) => {
+      if (!participants.includes(participantId)) {
+        console.log(`Participant ${participantId} left, cleaning up`)
+        if (this.peerConnections[participantId]) {
+          this.peerConnections[participantId].close()
+          delete this.peerConnections[participantId]
+        }
+
+        const newStreams = { ...this.state.streams }
+        delete newStreams[participantId]
+
+        const newStatus = { ...this.state.connectionStatus }
+        delete newStatus[participantId]
+
+        this.setState({
+          streams: newStreams,
+          connectionStatus: newStatus,
+        })
+      }
+    })
+  }
+
+  async refreshConnection(targetUserId: string) {
+    console.log(`Forcing connection refresh for ${targetUserId}`)
+
+    if (this.peerConnections[targetUserId]) {
+      this.peerConnections[targetUserId].close()
+      delete this.peerConnections[targetUserId]
+
+      this.setState({
+        streams: {
+          ...this.state.streams,
+          [targetUserId]: undefined,
+        },
+        connectionStatus: {
+          ...this.state.connectionStatus,
+          [targetUserId]: 'disconnected',
+        },
+      })
+    }
+
+    if (this.localStream && this.dialogId) {
+      await this.initiateConnection(targetUserId)
+    }
   }
 
   subscribe(listener: WebRTCStateListener) {
