@@ -272,13 +272,3 @@ export class WebRTCService1 {
   }
 }
 
-
-export class WebRTCManager {
-  //...
-  private peerManager: PeerConnectionManager
-
-  constructor(config: WebRTCConfig) {
-    this.peerManager = new PeerConnectionManager(config)
-  }
-//...
-}

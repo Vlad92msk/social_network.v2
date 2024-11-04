@@ -1,5 +1,6 @@
 'use client'
 
+import { debounce } from 'lodash'
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react'
@@ -14,10 +15,16 @@ interface WebRTCContextValue extends WebRTCState {
   handleSignal: (senderId: string, signal: any) => Promise<void>;
 }
 
-const WebRTCContext = createContext<WebRTCContextValue>({
+const initialState: WebRTCState = {
+  currentUserId: '',
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
   streams: {},
   isConnecting: false,
   connectionStatus: {},
+}
+
+const WebRTCContext = createContext<WebRTCContextValue>({
+  ...initialState,
   handleSignal: async () => {},
 })
 
@@ -28,22 +35,26 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
   const participants = useSelector(ConferenceSelectors.selectUsers)
 
   const [state, setState] = useState<WebRTCState>({
-    streams: {},
-    isConnecting: false,
-    connectionStatus: {},
+    ...initialState,
+    currentUserId,
+    dialogId,
   })
 
   // Инициализация менеджера
   useEffect(() => {
     manager.current = new WebRTCManager({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       currentUserId,
       dialogId,
+      iceServers: initialState.iceServers,
     }, sendSignal)
 
     const managerInstance = manager.current
 
+    // Подписываемся на обновления состояния
+    const unsubscribe = managerInstance.subscribe(setState)
+
     return () => {
+      unsubscribe()
       if (managerInstance) {
         managerInstance.destroy()
         manager.current = undefined
@@ -51,55 +62,77 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
     }
   }, [currentUserId, dialogId])
 
-
-  // Подписка на обновления состояния
   useEffect(() => {
     const managerInstance = manager.current
     if (!managerInstance) return
 
-    const unsubscribe = managerInstance.subscribe(setState)
-    return () => { unsubscribe() }
-  }, [currentUserId])
+    managerInstance.setDialogId(dialogId)
+  }, [dialogId])
 
-  // Обновление стрима и участников
+  // Обработка изменений localStream и participants
   useEffect(() => {
     const managerInstance = manager.current
     if (!managerInstance) return
 
-    if (dialogId) {
-      managerInstance.setDialogId(dialogId)
-    }
+    // Используем debounce для обновления участников
+    const debouncedUpdate = debounce(() => {
+      if (participants.length > 0) {
+        managerInstance.updateParticipants(participants)
+      }
+    }, 300)
+
     if (localStream) {
       managerInstance.setLocalStream(localStream)
     }
-    if (participants.length > 0) {
-      managerInstance.updateParticipants(participants)
+
+    debouncedUpdate()
+
+    return () => {
+      debouncedUpdate.cancel()
     }
-  }, [dialogId, localStream, participants])
+  }, [localStream, participants])
 
   // Мониторинг состояния соединений
   useEffect(() => {
     const managerInstance = manager.current
     if (!managerInstance) return
 
-    const checkInterval = setInterval(() => {
-      const { streams, connectionStatus } = managerInstance.getState()
+    const checkConnections = () => {
+      const currentState = managerInstance.getState()
 
       participants.forEach((participantId) => {
         if (participantId !== currentUserId) {
-          const status = connectionStatus[participantId]
-          const stream = streams[participantId]
+          const status = currentState.connectionStatus[participantId]
+          const stream = currentState.streams[participantId]
 
           if (status === 'connected' && !stream) {
-            console.log(`Обнаружено подключенное состояние без потока для участника с ID ${participantId}, перезапрашиваем`)
+            console.log(
+              `Обнаружено подключенное состояние без потока для участника с ID ${participantId}, перезапрашиваем`,
+            )
             managerInstance.refreshConnection(participantId)
           }
         }
       })
-    }, 2000)
+    }
+
+    // Используем RAF вместо setInterval для лучшей производительности
+    let animationFrameId: number
+    let lastCheck = 0
+    const INTERVAL = 2000
+
+    const tick = () => {
+      const now = Date.now()
+      if (now - lastCheck >= INTERVAL) {
+        checkConnections()
+        lastCheck = now
+      }
+      animationFrameId = requestAnimationFrame(tick)
+    }
+
+    animationFrameId = requestAnimationFrame(tick)
 
     return () => {
-      clearInterval(checkInterval)
+      cancelAnimationFrame(animationFrameId)
     }
   }, [participants, currentUserId])
 
@@ -109,12 +142,11 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
     await managerInstance.handleSignal(senderId, signal)
   }, [])
 
-  const contextValue = useMemo(() => ({
+  const contextValue = useMemo<WebRTCContextValue>(() => ({
     ...state,
     handleSignal,
   }), [state, handleSignal])
 
-  // Проверяем наличие manager перед рендерингом
   if (!manager.current) {
     return null
   }
@@ -126,4 +158,10 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
   )
 }
 
-export const useWebRTCContext = () => useContext(WebRTCContext)
+export const useWebRTCContext = () => {
+  const context = useContext(WebRTCContext)
+  if (!context) {
+    throw new Error('useWebRTC must be used within WebRTCProvider')
+  }
+  return context
+}
