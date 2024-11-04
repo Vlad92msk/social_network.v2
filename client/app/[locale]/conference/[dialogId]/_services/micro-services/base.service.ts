@@ -27,11 +27,22 @@ export abstract class BaseWebRTCService {
     return this.config.dialogId
   }
 
+  getLocalStream(): MediaStream | undefined {
+    return this.localStream
+  }
+
   setDialogId(dialogId: string) {
     this.config.dialogId = dialogId
+    this.onDialogIdChanged?.(dialogId)
   }
 
   setLocalStream(stream?: MediaStream) {
     this.localStream = stream
+    this.onLocalStreamChanged?.(stream)
   }
+
+  // Защищенные методы для обработки изменений
+  protected onDialogIdChanged?(dialogId: string): void
+
+  protected onLocalStreamChanged?(stream?: MediaStream): void
 }

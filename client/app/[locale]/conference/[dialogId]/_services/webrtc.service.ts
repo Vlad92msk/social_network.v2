@@ -46,17 +46,6 @@ export class WebRTCManager extends BaseWebRTCService {
     })
   }
 
-  override setDialogId(dialogId: string) {
-    super.setDialogId(dialogId)
-    this.peerManager.setDialogId(dialogId)
-    this.signalingHandler.setDialogId(dialogId)
-  }
-
-  override setLocalStream(stream?: MediaStream) {
-    super.setLocalStream(stream)
-    this.peerManager.setLocalStream(stream)
-  }
-
   private setState(newState: Partial<WebRTCState>) {
     this.state = { ...this.state, ...newState }
     this.listeners.forEach((listener) => listener(this.state))
@@ -97,15 +86,33 @@ export class WebRTCManager extends BaseWebRTCService {
     )
   }
 
-  async initiateConnection(targetUserId: string) {
-    if (!this.localStream) return
+  override setLocalStream(stream?: MediaStream) {
+    // Сначала вызываем базовый метод, который вызовет onLocalStreamChanged
+    super.setLocalStream(stream)
+
+    // Также напрямую устанавливаем стрим в peerManager
+    this.peerManager.setLocalStream(stream)
+  }
+
+  override setDialogId(dialogId: string) {
+    super.setDialogId(dialogId)
+    this.peerManager.setDialogId(dialogId)
+    this.signalingHandler.setDialogId(dialogId)
+  }
+
+  private async initiateConnection(targetUserId: string) {
+    const localStream = this.getLocalStream() // Используем getter
+    if (!localStream) return
 
     try {
       this.setState({ isConnecting: true })
       const pc = this.setupPeerConnection(targetUserId)
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
-      this.signalingHandler.sendOffer(targetUserId, offer)
+      const dialogId = this.getDialogId() // Используем getter
+      if (dialogId) {
+        this.signalingHandler.sendOffer(targetUserId, offer)
+      }
     } catch (e) {
       console.warn('Non-critical error in initiateConnection:', e)
     } finally {

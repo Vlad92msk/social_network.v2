@@ -6,8 +6,7 @@ export class PeerConnectionManager extends BaseWebRTCService {
   private connections: Record<string, PeerConnectionState> = {}
 
   // Установка локального стрима
-  override setLocalStream(stream?: MediaStream) {
-    super.setLocalStream(stream)
+  protected override onLocalStreamChanged(stream?: MediaStream) {
     // Обновляем треки во всех существующих соединениях
     Object.values(this.connections).forEach(({ connection }) => {
       connection.getSenders().forEach((sender) => {
@@ -43,9 +42,11 @@ export class PeerConnectionManager extends BaseWebRTCService {
     }
 
     // Добавляем локальные треки
-    if (this.localStream) {
-      this.localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, this.localStream!)
+    // Используем getLocalStream вместо прямого доступа к полю
+    const localStream = this.getLocalStream()
+    if (localStream) {
+      localStream.getTracks().forEach((track) => {
+        pc.addTrack(track, localStream)
       })
     }
 
