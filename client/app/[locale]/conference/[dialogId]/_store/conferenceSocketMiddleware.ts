@@ -22,6 +22,8 @@ export const sendSignal = ({ signal, dialogId, targetUserId }: { targetUserId: s
   socket?.emit('signal', { targetUserId, signal, dialogId })
 }
 
+export type SendSignalType = typeof sendSignal
+
 export const conferenceSocketMiddleware: Middleware<{}, RootReducer> = (store) => (next) => (action: AnyAction) => {
   const { profile } = store.getState().profile
 

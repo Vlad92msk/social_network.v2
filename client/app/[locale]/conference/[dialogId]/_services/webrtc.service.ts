@@ -1,6 +1,7 @@
+import { SendSignalType } from '../_store/conferenceSocketMiddleware'
 import { BaseWebRTCService } from './micro-services/base.service'
 import { PeerConnectionManager } from './micro-services/peer-connection.service'
-import { SignalParams, WebRTCConfig, WebRTCState } from './types'
+import { WebRTCConfig, WebRTCState } from './types'
 
 export class WebRTCManager extends BaseWebRTCService {
   private state: WebRTCState = {
@@ -13,7 +14,7 @@ export class WebRTCManager extends BaseWebRTCService {
 
   private peerManager: PeerConnectionManager
 
-  constructor(config: WebRTCConfig, sendSignal: (params: SignalParams) => void) {
+  constructor(config: WebRTCConfig, sendSignal: SendSignalType) {
     super(config, sendSignal)
     this.peerManager = new PeerConnectionManager(config, sendSignal)
   }

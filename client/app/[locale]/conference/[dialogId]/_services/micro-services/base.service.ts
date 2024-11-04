@@ -1,20 +1,21 @@
 // Базовый класс для общей функциональности WebRTC
-import { SignalParams, WebRTCConfig } from '../types'
+import { SendSignalType } from '../../_store/conferenceSocketMiddleware'
+import { WebRTCConfig } from '../types'
 
 export abstract class BaseWebRTCService {
+  private DEFAULT_ICE_URL = 'stun:stun.l.google.com:19302'
+
   protected config: WebRTCConfig
 
   protected localStream?: MediaStream
 
   constructor(
     config: WebRTCConfig,
-    protected sendSignal: (params: SignalParams) => void,
+    protected sendSignal: SendSignalType,
   ) {
     this.config = {
       ...config,
-      iceServers: config.iceServers || [
-        { urls: 'stun:stun.l.google.com:19302' },
-      ],
+      iceServers: config.iceServers || [{ urls: this.DEFAULT_ICE_URL }],
     }
   }
 

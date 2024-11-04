@@ -1,9 +1,3 @@
-export interface SignalParams {
-  targetUserId: string;
-  signal: any;
-  dialogId: string;
-}
-
 export interface WebRTCConfig {
   currentUserId: string;
   dialogId?: string;
