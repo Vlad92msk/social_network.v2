@@ -7,6 +7,7 @@ export interface SignalParams {
 export interface WebRTCConfig {
   currentUserId: string;
   dialogId?: string;
+  iceServers?: RTCIceServer[];
 }
 
 // Интерфейс состояния WebRTC соединений

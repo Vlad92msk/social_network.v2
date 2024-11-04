@@ -10,7 +10,12 @@ export abstract class BaseWebRTCService {
     config: WebRTCConfig,
     protected sendSignal: (params: SignalParams) => void,
   ) {
-    this.config = config
+    this.config = {
+      ...config,
+      iceServers: config.iceServers || [
+        { urls: 'stun:stun.l.google.com:19302' },
+      ],
+    }
   }
 
   getCurrentUserId(): string {

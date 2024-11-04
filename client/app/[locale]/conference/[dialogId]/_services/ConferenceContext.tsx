@@ -5,7 +5,8 @@ import {
 } from 'react'
 import { useSelector } from 'react-redux'
 import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
-import { WebRTCManager, WebRTCState } from './webrtc.service'
+import { WebRTCState } from './types'
+import { WebRTCManager } from './webrtc.service'
 import { sendSignal } from '../_store/conferenceSocketMiddleware'
 import { ConferenceSelectors } from '../_store/selectors'
 
@@ -35,6 +36,7 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
   // Инициализация менеджера
   useEffect(() => {
     manager.current = new WebRTCManager({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       currentUserId,
       dialogId,
     }, sendSignal)

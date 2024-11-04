@@ -27,7 +27,7 @@ export class PeerConnectionManager extends BaseWebRTCService {
     this.closeConnection(targetUserId)
 
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: this.config.iceServers,
     })
 
     // Отслеживаем изменения состояния
