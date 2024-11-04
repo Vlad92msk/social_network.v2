@@ -1,7 +1,7 @@
 import { ConnectionService } from './micro-services/connection.service'
 import { SignalingService } from './micro-services/signaling.service'
 import { WebRTCStore } from './micro-services/store.service'
-import { WebRTCState } from './types'
+import { WebRTCEventsName, WebRTCState, WebRTCStateChangeType } from './types'
 import { SendSignalType } from '../_store/conferenceSocketMiddleware'
 
 export class WebRTCManager {
@@ -29,15 +29,21 @@ export class WebRTCManager {
   }
 
   setLocalStream(stream?: MediaStream) {
-    this.store.setState({ localStream: stream })
+    this.store.setState(
+      { localStream: stream },
+      WebRTCStateChangeType.STREAM,
+    )
   }
 
   setDialogId(dialogId: string) {
-    this.store.setState({ dialogId })
+    this.store.setState(
+      { dialogId },
+      WebRTCStateChangeType.DIALOG,
+    )
   }
 
   handleSignal(senderId: string, signal: any) {
-    this.store.emit('signal:received', { senderId, signal })
+    this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, { senderId, signal })
   }
 
   updateParticipants(participants: string[]) {
@@ -49,7 +55,7 @@ export class WebRTCManager {
   }
 
   subscribe(listener: (state: WebRTCState) => void) {
-    const unsubscribe = this.store.on('state:changed', () => {
+    const unsubscribe = this.store.on(WebRTCEventsName.STATE_CHANGED, () => {
       listener(this.store.getState())
     })
     // Сразу вызываем listener с текущим состоянием

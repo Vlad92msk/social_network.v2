@@ -1,23 +1,36 @@
 // Менеджер peer-соединений
 import { WebRTCStore } from './store.service'
-import { WebRTCEventsName, WebRTCState } from '../types'
-
-type WebRTCStateChange = {
-  type: 'connection';
-  payload: Partial<WebRTCState>;
-}
-
-function isStateChange(change: any): change is WebRTCStateChange {
-  return change.type === 'connection' && 'payload' in change
-}
+import { WebRTCEventsName, WebRTCStateChangeType } from '../types'
 
 export class ConnectionService {
   private connections: Record<string, RTCPeerConnection> = {}
 
   constructor(private store: WebRTCStore) {
-    this.store.on(WebRTCEventsName.STATE_CHANGED, (changes) => {
-      if (isStateChange(changes) && 'localStream' in changes.payload) {
-        this.updateLocalStream(changes.payload.localStream)
+    this.store.on(WebRTCEventsName.STATE_CHANGED, (event) => {
+      switch (event.type) {
+        case WebRTCStateChangeType.STREAM:
+          if ('localStream' in event.payload) {
+            this.updateLocalStream(event.payload.localStream)
+          }
+          break
+
+        case WebRTCStateChangeType.DIALOG:
+          if ('dialogId' in event.payload) {
+          }
+          break
+
+        case WebRTCStateChangeType.CONNECTION:
+          // Обработка изменений состояния соединения
+          break
+
+        case WebRTCStateChangeType.SIGNAL:
+          // Обработка сигнальных изменений
+          break
+
+        default:
+          // Добавляем default case для ESLint
+          const _exhaustiveCheck: never = event.type
+          break
       }
     })
   }
@@ -35,7 +48,7 @@ export class ConnectionService {
           ...this.store.getState().connectionStatus,
           [targetUserId]: pc.connectionState,
         },
-      })
+      }, WebRTCStateChangeType.CONNECTION)
     }
 
     const { localStream } = state
@@ -52,7 +65,7 @@ export class ConnectionService {
             ...this.store.getState().streams,
             [targetUserId]: event.streams[0],
           },
-        })
+        }, WebRTCStateChangeType.CONNECTION)
       }
     }
 
@@ -71,17 +84,19 @@ export class ConnectionService {
       connection.close()
       delete this.connections[userId]
 
-      // Обновляем состояние
       const { streams, connectionStatus } = this.store.getState()
       const newStreams = { ...streams }
       const newStatus = { ...connectionStatus }
       delete newStreams[userId]
       delete newStatus[userId]
 
-      this.store.setState({
-        streams: newStreams,
-        connectionStatus: newStatus,
-      })
+      this.store.setState(
+        {
+          streams: newStreams,
+          connectionStatus: newStatus,
+        },
+        WebRTCStateChangeType.CONNECTION,
+      )
     }
   }
 

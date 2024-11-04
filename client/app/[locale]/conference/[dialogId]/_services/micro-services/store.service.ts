@@ -1,5 +1,5 @@
 import { TypedEventEmitter } from './typed-event-emitter.service'
-import { WebRTCEvents, WebRTCEventsName, WebRTCState } from '../types'
+import { WebRTCEvents, WebRTCEventsName, WebRTCState, WebRTCStateChangeType } from '../types'
 
 export class WebRTCStore {
   private state: WebRTCState
@@ -28,10 +28,10 @@ export class WebRTCStore {
     return this.state
   }
 
-  setState(newState: Partial<WebRTCState>) {
+  setState(newState: Partial<WebRTCState>, changeType: WebRTCStateChangeType) {
     this.state = { ...this.state, ...newState }
     this.events.emit(WebRTCEventsName.STATE_CHANGED, {
-      type: 'connection',
+      type: changeType,
       payload: newState,
     })
   }
