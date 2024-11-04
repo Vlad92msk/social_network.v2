@@ -18,3 +18,10 @@ export interface PeerConnectionState {
   connection: RTCPeerConnection;
   stream?: MediaStream;
 }
+
+
+export type SignalHandlers = {
+  onOffer: (senderId: string, payload: RTCSessionDescriptionInit) => Promise<void>;
+  onAnswer: (senderId: string, payload: RTCSessionDescriptionInit) => Promise<void>;
+  onIceCandidate: (senderId: string, payload: RTCIceCandidateInit) => Promise<void>;
+};

@@ -22,6 +22,7 @@ export class PeerConnectionManager extends BaseWebRTCService {
     targetUserId: string,
     onStreamUpdate: (userId: string, stream?: MediaStream) => void,
     onStateChange: (userId: string, state: RTCPeerConnectionState) => void,
+    onIceCandidate: (candidate: RTCIceCandidateInit) => void,
   ): RTCPeerConnection {
     // Закрываем существующее соединение
     this.closeConnection(targetUserId)
@@ -50,12 +51,8 @@ export class PeerConnectionManager extends BaseWebRTCService {
 
     // Обработка ICE-кандидатов
     pc.onicecandidate = ({ candidate }) => {
-      if (candidate && this.config.dialogId) {
-        this.sendSignal({
-          targetUserId,
-          signal: { type: 'ice-candidate', payload: candidate },
-          dialogId: this.config.dialogId,
-        })
+      if (candidate) {
+        onIceCandidate(candidate)
       }
     }
 

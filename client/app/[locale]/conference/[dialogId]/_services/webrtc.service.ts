@@ -1,7 +1,8 @@
-import { SendSignalType } from '../_store/conferenceSocketMiddleware'
 import { BaseWebRTCService } from './micro-services/base.service'
 import { PeerConnectionManager } from './micro-services/peer-connection.service'
+import { SignalingHandler } from './micro-services/signaling-handler.service'
 import { WebRTCConfig, WebRTCState } from './types'
+import { SendSignalType } from '../_store/conferenceSocketMiddleware'
 
 export class WebRTCManager extends BaseWebRTCService {
   private state: WebRTCState = {
@@ -12,21 +13,48 @@ export class WebRTCManager extends BaseWebRTCService {
 
   private listeners = new Set<(state: WebRTCState) => void>()
 
+  private signalingHandler: SignalingHandler
+
   private peerManager: PeerConnectionManager
 
   constructor(config: WebRTCConfig, sendSignal: SendSignalType) {
     super(config, sendSignal)
     this.peerManager = new PeerConnectionManager(config, sendSignal)
+    this.signalingHandler = new SignalingHandler(config, sendSignal)
+    this.setupSignalingHandlers()
   }
 
-  override setLocalStream(stream?: MediaStream) {
-    super.setLocalStream(stream)
-    this.peerManager.setLocalStream(stream)
+  private setupSignalingHandlers() {
+    this.signalingHandler.setHandlers({
+      onOffer: async (senderId, payload) => {
+        const pc = this.setupPeerConnection(senderId)
+        await pc.setRemoteDescription(payload)
+        const answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+        this.signalingHandler.sendAnswer(senderId, answer)
+      },
+      onAnswer: async (senderId, payload) => {
+        const pc = this.peerManager.getConnection(senderId)
+        if (pc) await pc.setRemoteDescription(payload)
+      },
+      onIceCandidate: async (senderId, payload) => {
+        const pc = this.peerManager.getConnection(senderId)
+        if (pc?.remoteDescription) {
+          await pc.addIceCandidate(payload)
+        }
+      },
+    })
   }
 
   override setDialogId(dialogId: string) {
     super.setDialogId(dialogId)
     this.peerManager.setDialogId(dialogId)
+    this.signalingHandler.setDialogId(dialogId)
+  }
+
+  override setLocalStream(stream?: MediaStream) {
+    super.setLocalStream(stream)
+    this.peerManager.setLocalStream(stream)
   }
 
   private setState(newState: Partial<WebRTCState>) {
@@ -55,7 +83,6 @@ export class WebRTCManager extends BaseWebRTCService {
           },
         })
 
-        // Обработка разрыва соединения и переподключение
         if (['failed', 'disconnected', 'closed'].includes(connectionState)) {
           setTimeout(() => {
             if (this.localStream) {
@@ -65,6 +92,8 @@ export class WebRTCManager extends BaseWebRTCService {
           }, 1000)
         }
       },
+      // Передаем обработчик ICE кандидатов
+      (candidate) => this.signalingHandler.sendIceCandidate(targetUserId, candidate),
     )
   }
 
@@ -76,15 +105,7 @@ export class WebRTCManager extends BaseWebRTCService {
       const pc = this.setupPeerConnection(targetUserId)
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
-
-      const dialogId = this.getDialogId()
-      if (dialogId) {
-        this.sendSignal({
-          targetUserId,
-          signal: { type: 'offer', payload: offer },
-          dialogId,
-        })
-      }
+      this.signalingHandler.sendOffer(targetUserId, offer)
     } catch (e) {
       console.warn('Non-critical error in initiateConnection:', e)
     } finally {
@@ -92,45 +113,9 @@ export class WebRTCManager extends BaseWebRTCService {
     }
   }
 
+  // Теперь handleSignal просто делегирует обработку в SignalingHandler
   async handleSignal(senderId: string, signal: any) {
-    const dialogId = this.getDialogId()
-    if (!dialogId) return
-
-    try {
-      switch (signal.type) {
-        case 'offer': {
-          const pc = this.setupPeerConnection(senderId)
-          await pc.setRemoteDescription(signal.payload)
-          const answer = await pc.createAnswer()
-          await pc.setLocalDescription(answer)
-
-          this.sendSignal({
-            targetUserId: senderId,
-            signal: { type: 'answer', payload: answer },
-            dialogId,
-          })
-          break
-        }
-        case 'answer': {
-          const pc = this.peerManager.getConnection(senderId)
-          if (pc) await pc.setRemoteDescription(signal.payload)
-          break
-        }
-        case 'ice-candidate': {
-          const pc = this.peerManager.getConnection(senderId)
-          if (pc?.remoteDescription) {
-            await pc.addIceCandidate(signal.payload)
-          }
-          break
-        }
-        default: {
-          console.warn('Неизвестный тип сигнала:', signal.type)
-          break
-        }
-      }
-    } catch (e) {
-      console.warn('Non-critical error handling signal:', e)
-    }
+    await this.signalingHandler.handleSignal(senderId, signal)
   }
 
   updateParticipants(participants: string[]) {
