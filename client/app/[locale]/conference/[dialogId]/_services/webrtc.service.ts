@@ -1,76 +1,36 @@
-// Интерфейс состояния WebRTC соединений
-import { merge } from 'lodash'
-import { PeerConnectionConfig, PeerConnectionManager } from './micro-services/peer-connection.service'
+import { BaseWebRTCService } from './micro-services/base.service'
+import { PeerConnectionManager } from './micro-services/peer-connection.service'
+import { SignalParams, WebRTCConfig, WebRTCState } from './types'
 
-export interface WebRTCState {
-  // Хранит MediaStream для каждого пользователя (ключ - ID пользователя)
-  streams: Record<string, MediaStream | undefined>;
-  // Флаг, указывающий что идет процесс установки соединения
-  isConnecting: boolean;
-  // Статус соединения для каждого пользователя
-  connectionStatus: Record<string, RTCPeerConnectionState>;
-}
-
-// Тип для функции-слушателя изменений состояния
-export type WebRTCStateListener = (state: WebRTCState) => void;
-
-export interface WebRTCConfig {
-  currentUserId: string;
-  dialogId?: string;
-}
-export interface SignalParams {
-  targetUserId: string;
-  signal: any;
-  dialogId: string;
-}
-
-export class WebRTCManager {
-  private mainConfig: WebRTCConfig
-
-  private peerConnectionManagerConfig: PeerConnectionConfig
-
+export class WebRTCManager extends BaseWebRTCService {
   private state: WebRTCState = {
     streams: {},
     isConnecting: false,
     connectionStatus: {},
   }
 
-  private listeners = new Set<WebRTCStateListener>()
-
-  private localStream?: MediaStream
+  private listeners = new Set<(state: WebRTCState) => void>()
 
   private peerManager: PeerConnectionManager
 
-  constructor(
-    config: WebRTCConfig,
-    private sendSignal: (params: SignalParams) => void,
-  ) {
-    this.mainConfig = config
-    this.peerConnectionManagerConfig = {
-      dialogId: config.dialogId,
-      currentUserId: config.currentUserId,
-    }
-
-    this.peerManager = new PeerConnectionManager(
-      this.peerConnectionManagerConfig,
-      sendSignal,
-    )
+  constructor(config: WebRTCConfig, sendSignal: (params: SignalParams) => void) {
+    super(config, sendSignal)
+    this.peerManager = new PeerConnectionManager(config, sendSignal)
   }
 
-  private setState(newState: Partial<WebRTCState>) {
-    this.state = merge({}, this.state, newState)
-    this.listeners.forEach((listener) => listener(this.state))
-  }
-
-  setLocalStream(stream?: MediaStream) {
-    this.localStream = stream
+  override setLocalStream(stream?: MediaStream) {
+    super.setLocalStream(stream)
     this.peerManager.setLocalStream(stream)
   }
 
-  setDialogId(dialogId: string) {
-    this.mainConfig.dialogId = dialogId
-    this.peerConnectionManagerConfig.dialogId = dialogId
+  override setDialogId(dialogId: string) {
+    super.setDialogId(dialogId)
     this.peerManager.setDialogId(dialogId)
+  }
+
+  private setState(newState: Partial<WebRTCState>) {
+    this.state = { ...this.state, ...newState }
+    this.listeners.forEach((listener) => listener(this.state))
   }
 
   private setupPeerConnection(targetUserId: string) {
@@ -116,7 +76,7 @@ export class WebRTCManager {
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
 
-      const dialogId = this.peerManager.getDialogId()
+      const dialogId = this.getDialogId()
       if (dialogId) {
         this.sendSignal({
           targetUserId,
@@ -132,7 +92,7 @@ export class WebRTCManager {
   }
 
   async handleSignal(senderId: string, signal: any) {
-    const dialogId = this.peerManager.getDialogId()
+    const dialogId = this.getDialogId()
     if (!dialogId) return
 
     try {
@@ -173,11 +133,11 @@ export class WebRTCManager {
   }
 
   updateParticipants(participants: string[]) {
-    const dialogId = this.peerManager.getDialogId()
+    const dialogId = this.getDialogId()
     if (!this.localStream || !dialogId) return
 
     participants.forEach((participantId) => {
-      if (participantId !== this.peerManager.getCurrentUserId()) {
+      if (participantId !== this.getCurrentUserId()) {
         const pc = this.peerManager.getConnection(participantId)
         if (!pc || !['connected', 'connecting'].includes(pc.connectionState)) {
           this.initiateConnection(participantId)
@@ -191,11 +151,8 @@ export class WebRTCManager {
         console.log(`Участник с ID ${participantId} вышел`)
         this.peerManager.closeConnection(participantId)
 
-        const newStreams = { ...this.state.streams }
-        delete newStreams[participantId]
-
-        const newStatus = { ...this.state.connectionStatus }
-        delete newStatus[participantId]
+        const { [participantId]: _, ...newStreams } = this.state.streams
+        const { [participantId]: __, ...newStatus } = this.state.connectionStatus
 
         this.setState({
           streams: newStreams,
@@ -220,12 +177,12 @@ export class WebRTCManager {
       },
     })
 
-    if (this.localStream && this.mainConfig.dialogId) {
+    if (this.localStream && this.getDialogId()) {
       await this.initiateConnection(targetUserId)
     }
   }
 
-  subscribe(listener: WebRTCStateListener) {
+  subscribe(listener: (state: WebRTCState) => void) {
     this.listeners.add(listener)
     listener(this.state)
     return () => this.listeners.delete(listener)

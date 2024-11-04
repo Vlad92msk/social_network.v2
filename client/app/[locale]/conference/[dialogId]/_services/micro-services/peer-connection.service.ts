@@ -1,41 +1,13 @@
-import { SignalParams } from '../webrtc.service'
+// Менеджер peer-соединений
+import { BaseWebRTCService } from './base.service'
+import { PeerConnectionState } from '../types'
 
-export interface PeerConnectionConfig {
-  currentUserId: string;
-  dialogId?: string;
-}
-
-export interface PeerConnectionState {
-  connection: RTCPeerConnection;
-  stream?: MediaStream;
-}
-
-export class PeerConnectionManager {
+export class PeerConnectionManager extends BaseWebRTCService {
   private connections: Record<string, PeerConnectionState> = {}
 
-  private localStream?: MediaStream
-
-  private config: PeerConnectionConfig
-
-  constructor(
-    config: PeerConnectionConfig,
-    private sendSignal: (params: SignalParams) => void,
-  ) {
-    this.config = config
-  }
-
-  // Геттеры для доступа к конфигурации
-  getCurrentUserId(): string {
-    return this.config.currentUserId
-  }
-
-  getDialogId(): string | undefined {
-    return this.config.dialogId
-  }
-
   // Установка локального стрима
-  setLocalStream(stream?: MediaStream) {
-    this.localStream = stream
+  override setLocalStream(stream?: MediaStream) {
+    super.setLocalStream(stream)
     // Обновляем треки во всех существующих соединениях
     Object.values(this.connections).forEach(({ connection }) => {
       connection.getSenders().forEach((sender) => {
@@ -110,11 +82,6 @@ export class PeerConnectionManager {
   // Получение соединения по ID пользователя
   getConnection(userId: string): RTCPeerConnection | undefined {
     return this.connections[userId]?.connection
-  }
-
-  // Установка ID диалога
-  setDialogId(dialogId: string) {
-    this.config.dialogId = dialogId
   }
 
   // Очистка всех соединений
