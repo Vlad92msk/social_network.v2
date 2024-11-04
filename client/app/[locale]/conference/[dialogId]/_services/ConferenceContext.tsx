@@ -20,12 +20,11 @@ const WebRTCContext = createContext<WebRTCContextValue>({
   handleSignal: async () => {},
 })
 
-export function WebRTCProvider({ children, currentUserId }: { children: React.ReactNode; currentUserId: string }) {
+export function WebRTCProvider({ children, currentUserId, dialogId }: { children: React.ReactNode; currentUserId: string, dialogId: string }) {
   const { stream: localStream } = useMediaStreamContext()
   const manager = useRef<WebRTCManager | undefined>(undefined)
 
   const participants = useSelector(ConferenceSelectors.selectUsers)
-  const dialogId = useSelector(ConferenceSelectors.selectConferenceId)
 
   const [state, setState] = useState<WebRTCState>({
     streams: {},
@@ -35,9 +34,11 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
 
   // Инициализация менеджера
   useEffect(() => {
-    manager.current = new WebRTCManager(currentUserId, sendSignal)
+    manager.current = new WebRTCManager({
+      currentUserId,
+      dialogId,
+    }, sendSignal)
 
-    // Сохраняем ссылку для замыкания
     const managerInstance = manager.current
 
     return () => {
@@ -46,7 +47,8 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
         manager.current = undefined
       }
     }
-  }, [currentUserId])
+  }, [currentUserId, dialogId])
+
 
   // Подписка на обновления состояния
   useEffect(() => {
@@ -92,7 +94,7 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
           }
         }
       })
-    }, 5000)
+    }, 2000)
 
     return () => {
       clearInterval(checkInterval)

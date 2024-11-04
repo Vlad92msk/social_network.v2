@@ -10,7 +10,7 @@ export default async function ConferencePage({ params }) {
   if (!userId) return null
   return (
     <MediaStreamProvider>
-      <WebRTCProvider currentUserId={String(userId)}>
+      <WebRTCProvider currentUserId={String(userId)} dialogId={params.dialogId}>
         <Conference profile={profile} />
       </WebRTCProvider>
     </MediaStreamProvider>

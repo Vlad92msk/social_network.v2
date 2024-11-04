@@ -254,7 +254,7 @@ export class WebRTCService extends EventEmitter {
 }
 
 
-export class WebRTCService {
+export class WebRTCService1 {
   private peerManager: PeerConnectionManager
   private signalingHandler: SignalingHandler
 
@@ -270,5 +270,15 @@ export class WebRTCService {
     // Обработчики для peer connections
     this.setupPeerConnectionHandlers()
   }
+}
 
+
+export class WebRTCManager {
+  //...
+  private peerManager: PeerConnectionManager
+
+  constructor(config: WebRTCConfig) {
+    this.peerManager = new PeerConnectionManager(config)
+  }
+//...
 }

@@ -22,7 +22,7 @@ export function Conference({ profile }: ConferenceProps) {
   const { streams, handleSignal, connectionStatus } = useWebRTCContext()
 
   // Подключаем обработку WebRTC сигналов
-  useWebRTCSignaling(profile?.user_info.id, handleSignal)
+  useWebRTCSignaling(String(profile?.user_info.id), handleSignal)
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
