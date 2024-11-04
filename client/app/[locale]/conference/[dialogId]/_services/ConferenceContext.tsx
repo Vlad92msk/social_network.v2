@@ -22,6 +22,8 @@ const WebRTCContext = createContext<WebRTCContextValue>({
 
 export function WebRTCProvider({ children, currentUserId }: { children: React.ReactNode; currentUserId: string }) {
   const { stream: localStream } = useMediaStreamContext()
+  const manager = useRef<WebRTCManager | undefined>(undefined)
+
   const participants = useSelector(ConferenceSelectors.selectUsers)
   const dialogId = useSelector(ConferenceSelectors.selectConferenceId)
 
@@ -30,8 +32,6 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
     isConnecting: false,
     connectionStatus: {},
   })
-
-  const manager = useRef<WebRTCManager | undefined>(undefined)
 
   // Инициализация менеджера
   useEffect(() => {
@@ -87,14 +87,16 @@ export function WebRTCProvider({ children, currentUserId }: { children: React.Re
           const stream = streams[participantId]
 
           if (status === 'connected' && !stream) {
-            console.log(`Detected connected status without stream for ${participantId}, refreshing`)
+            console.log(`Обнаружено подключенное состояние без потока для участника с ID ${participantId}, перезапрашиваем`)
             managerInstance.refreshConnection(participantId)
           }
         }
       })
     }, 5000)
 
-    return () => clearInterval(checkInterval)
+    return () => {
+      clearInterval(checkInterval)
+    }
   }, [participants, currentUserId])
 
   const handleSignal = useCallback(async (senderId: string, signal: any) => {

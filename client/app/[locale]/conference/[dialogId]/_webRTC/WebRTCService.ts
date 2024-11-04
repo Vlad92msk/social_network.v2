@@ -252,3 +252,23 @@ export class WebRTCService extends EventEmitter {
     return 'audio'
   }
 }
+
+
+export class WebRTCService {
+  private peerManager: PeerConnectionManager
+  private signalingHandler: SignalingHandler
+
+  constructor(config: WebRTCConfig) {
+    super()
+    this.peerManager = new PeerConnectionManager(config)
+    this.signalingHandler = new SignalingHandler(this.peerManager)
+
+    this.setupEventHandlers()
+  }
+
+  private setupEventHandlers() {
+    // Обработчики для peer connections
+    this.setupPeerConnectionHandlers()
+  }
+
+}
