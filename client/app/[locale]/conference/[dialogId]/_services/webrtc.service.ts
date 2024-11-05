@@ -14,15 +14,29 @@ interface SignalEvents {
 }
 
 export class WebRTCManager {
-  private store: WebRTCStore
+  private static instance: WebRTCManager
 
-  private connectionService: ConnectionService
+  private store: WebRTCStore | null = null
 
-  private signalingService: SignalingService
+  private connectionService: ConnectionService | null = null
+
+  private signalingService: SignalingService | null = null
 
   private signalHandlers: (() => void)[] = []
 
-  constructor(
+  private initialized = false
+
+  // Приватный конструктор для паттерна Singleton
+  private constructor() {}
+
+  static getInstance(): WebRTCManager {
+    if (!WebRTCManager.instance) {
+      WebRTCManager.instance = new WebRTCManager()
+    }
+    return WebRTCManager.instance
+  }
+
+  init(
     config: {
       currentUserId: string;
       dialogId?: string;
@@ -30,49 +44,56 @@ export class WebRTCManager {
     },
     sendSignal: SendSignalType,
   ) {
+    if (this.initialized) {
+      this.destroy()
+    }
+
     this.store = new WebRTCStore(config)
     this.connectionService = new ConnectionService(this.store)
-    this.signalingService = new SignalingService(this.store, this.connectionService, sendSignal)
+    this.signalingService = new SignalingService(
+      this.store,
+      this.connectionService,
+      sendSignal,
+    )
+    this.initialized = true
+  }
+
+  private assertInitialized() {
+    if (!this.initialized || !this.store || !this.connectionService || !this.signalingService) {
+      throw new Error('WebRTCManager not initialized. Call init() first.')
+    }
   }
 
   getState(): WebRTCState {
-    return this.store.getState()
+    this.assertInitialized()
+    return this.store!.getState()
   }
 
   setLocalStream(stream?: MediaStream) {
-    this.store.setState(
-      WebRTCStateChangeType.STREAM,
-      { localStream: stream },
-    )
+    this.assertInitialized()
+    this.store!.setState(WebRTCStateChangeType.STREAM, { localStream: stream })
   }
 
-  setDialogId(dialogId: string) {
-    this.store.setState(
-      WebRTCStateChangeType.DIALOG,
-      { dialogId },
-    )
-  }
-
-  // Слушаем сокет события
   connectSignaling(socket: Socket<DefaultEventsMap, DefaultEventsMap> | null) {
+    this.assertInitialized()
     if (!socket) return
 
     const handleOffer = ({ userId, signal }: SignalEvents['offer']) => {
-      this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+      this.store!.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
         senderId: userId,
         signal: { type: 'offer', payload: signal },
       })
     }
 
     const handleAnswer = ({ userId, signal }: SignalEvents['answer']) => {
-      this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+      this.store!.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
         senderId: userId,
         signal: { type: 'answer', payload: signal },
       })
     }
 
     const handleIceCandidate = ({ userId, signal }: SignalEvents['ice-candidate']) => {
-      this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+      this.store!.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
         senderId: userId,
         signal: { type: 'ice-candidate', payload: signal },
       })
@@ -95,27 +116,37 @@ export class WebRTCManager {
   }
 
   updateParticipants(participants: string[]) {
-    this.signalingService.updateParticipants(participants)
+    this.assertInitialized()
+    this.signalingService!.updateParticipants(participants)
   }
 
-  refreshConnection(targetUserId: string) {
-    this.signalingService.refreshConnection(targetUserId)
+  async refreshConnection(targetUserId: string) {
+    this.assertInitialized()
+    await this.signalingService!.refreshConnection(targetUserId)
   }
 
   subscribe(listener: (state: WebRTCState) => void) {
-    const unsubscribe = this.store.on(WebRTCEventsName.STATE_CHANGED, () => {
-      listener(this.store.getState())
+    this.assertInitialized()
+    const unsubscribe = this.store!.on(WebRTCEventsName.STATE_CHANGED, () => {
+      listener(this.store!.getState())
     })
     // Сразу вызываем listener с текущим состоянием
-    listener(this.store.getState())
+    listener(this.store!.getState())
     return unsubscribe
   }
 
   destroy() {
-    // Закрываем все соединения
-    const { streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
-    Object.keys(streams).forEach((userId) => {
-      this.connectionService.closeConnection(userId)
-    })
+    if (this.initialized) {
+      const streams = this.store?.getDomainState(WebRTCStateChangeType.STREAM).streams || {}
+      Object.keys(streams).forEach((userId) => {
+        this.connectionService?.closeConnection(userId)
+      })
+      this.store = null
+      this.connectionService = null
+      this.signalingService = null
+      this.initialized = false
+    }
   }
 }
+
+export const webRTCManager = WebRTCManager.getInstance()

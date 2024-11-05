@@ -22,7 +22,6 @@ export function Conference({ profile }: ConferenceProps) {
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
-
   if (!isConnected) {
     return (
       <div className={styles.conferenceLoading}>
