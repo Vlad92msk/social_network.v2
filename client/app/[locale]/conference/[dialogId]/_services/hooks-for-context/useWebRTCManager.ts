@@ -1,4 +1,3 @@
-// Хук для инициализации и управления WebRTC менеджером
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { getSocket, sendSignal } from '../../_store/conferenceSocketMiddleware'
@@ -7,6 +6,7 @@ import { webRTCInitialState } from '../initialState'
 import { WebRTCState, WebRTCStateChangeType } from '../types'
 import { webRTCManager } from '../webrtc.service'
 
+// Хук для инициализации и управления WebRTC менеджером
 export function useWebRTCManager(currentUserId: string, dialogId: string) {
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
   const [state, setState] = useState<WebRTCState>(webRTCInitialState)

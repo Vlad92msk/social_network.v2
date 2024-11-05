@@ -1,5 +1,3 @@
-// hooks/useScreenShare.ts
-
 import { useCallback, useState } from 'react'
 import { WebRTCSignal } from '../types/media'
 

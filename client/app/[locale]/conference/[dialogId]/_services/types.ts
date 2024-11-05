@@ -17,6 +17,12 @@ interface WebRTCStateSignal {
   iceServers: RTCIceServer[]
 }
 
+interface WebRTCStateScreen {
+  isSharing: boolean;
+  localScreenStream?: MediaStream;
+  remoteScreenStreams: Record<string, MediaStream>;
+}
+
 export enum WebRTCStateChangeType {
   /**
    * Используется при изменениях, связанных с медиапотоками:
@@ -49,6 +55,14 @@ export enum WebRTCStateChangeType {
    * - изменения, связанные с процессом установки соединения
    */
   SIGNAL = 'signal',
+
+  /**
+   * Используется при изменениях, связанных с демонстрацией экрана:
+   * - начало/остановка демонстрации
+   * - управление потоками демонстрации экрана
+   * - обновление состояния демонстрации
+   */
+  SCREEN = 'screen',
 }
 
 export interface WebRTCState {
@@ -56,6 +70,7 @@ export interface WebRTCState {
   [WebRTCStateChangeType.DIALOG]: WebRTCStateDialog
   [WebRTCStateChangeType.CONNECTION]: WebRTCStateConnection
   [WebRTCStateChangeType.SIGNAL]: WebRTCStateSignal
+  [WebRTCStateChangeType.SCREEN]: WebRTCStateScreen
 }
 
 export enum WebRTCEventsName {
@@ -64,21 +79,6 @@ export enum WebRTCEventsName {
   SIGNAL_RECEIVED = 'signal:received',
 }
 
-// Обновляем интерфейс событий
-export interface WebRTCEvents1 {
-  [WebRTCEventsName.STATE_CHANGED]: {
-    type: WebRTCStateChangeType
-    payload: Partial<WebRTCState>
-  };
-  [WebRTCEventsName.CONNECTION_CREATED]: {
-    userId: string
-    connection: RTCPeerConnection
-  };
-  [WebRTCEventsName.SIGNAL_RECEIVED]: {
-    senderId: string
-    signal: any
-  };
-}
 
 // Вспомогательный тип для событий изменения состояния
 export type StateChangeEvent = {

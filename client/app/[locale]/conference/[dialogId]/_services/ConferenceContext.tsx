@@ -1,16 +1,19 @@
 'use client'
 
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
 import { useConnectionMonitor, useParticipantsAndStream, useWebRTCManager } from './hooks-for-context'
-import { webRTCInitialState } from './initialState'
 import { WebRTCState } from './types'
 import { ConferenceSelectors } from '../_store/selectors'
 
-type WebRTCContextValue = WebRTCState
+interface WebRTCContextValue extends WebRTCState {
+  startScreenSharing: () => Promise<MediaStream | null>;
+  stopScreenSharing: () => void;
+  isScreenSharingSupported: boolean;
+}
 
-const WebRTCContext = createContext<WebRTCContextValue>(webRTCInitialState)
+const WebRTCContext = createContext<WebRTCContextValue | null>(null)
 
 export function WebRTCProvider({ children, currentUserId, dialogId }: { children: React.ReactNode; currentUserId: string, dialogId: string }) {
   const { stream: localStream } = useMediaStreamContext()
@@ -18,13 +21,25 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
 
   const { state, webRTCManager } = useWebRTCManager(currentUserId, dialogId)
 
+  // Проверяем поддержку screen sharing
+  const isScreenSharingSupported = useMemo(() => typeof navigator !== 'undefined'
+      && 'mediaDevices' in navigator
+      && 'getDisplayMedia' in navigator.mediaDevices, [])
+
   useParticipantsAndStream(webRTCManager, participants, localStream)
   useConnectionMonitor(webRTCManager, participants, currentUserId)
+
+  const contextValue = useMemo(() => ({
+    ...state,
+    isScreenSharingSupported,
+    startScreenSharing: () => webRTCManager.startScreenSharing(),
+    stopScreenSharing: () => webRTCManager.stopScreenSharing(),
+  }), [state, isScreenSharingSupported, webRTCManager])
 
   if (!webRTCManager) return null
 
   return (
-    <WebRTCContext.Provider value={state}>
+    <WebRTCContext.Provider value={contextValue}>
       {children}
     </WebRTCContext.Provider>
   )

@@ -18,7 +18,17 @@ export function Conference({ profile }: ConferenceProps) {
   const { dialogId } = useParams<{ dialogId: string }>()
 
   useConferenceSocketConnect({ conferenceId: dialogId })
-  const { stream, connection } = useWebRTCContext()
+  const {
+    stream,
+    connection,
+    screen: { localScreenStream, remoteScreenStreams, isSharing },
+    startScreenSharing,
+    stopScreenSharing,
+    isScreenSharingSupported,
+  } = useWebRTCContext()
+
+  console.log('isSharing', isSharing)
+  console.log('remoteScreenStreams', remoteScreenStreams)
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
@@ -48,7 +58,21 @@ export function Conference({ profile }: ConferenceProps) {
             <span className={styles.participantName}>
               {userId}
               {' '}
-              ({connection.connectionStatus[userId] || 'connecting'})
+              (
+              {connection.connectionStatus[userId] || 'connecting'}
+              )
+            </span>
+          </div>
+        ))}
+
+        {/* Отображаем стримы screen sharing */}
+        {Object.entries(remoteScreenStreams).map(([userId, stream]) => (
+          <div key={`screen-${userId}`} className={styles.screenShare}>
+            <RemoteVideo stream={stream} />
+            <span className={styles.participantName}>
+              Screen share from
+              {' '}
+              {userId}
             </span>
           </div>
         ))}
@@ -56,6 +80,14 @@ export function Conference({ profile }: ConferenceProps) {
 
       <div className={styles.actionsContainer}>
         <div className={styles.mediaControls}>
+          {isScreenSharingSupported && (
+            <button
+              onClick={isSharing ? stopScreenSharing : startScreenSharing}
+              className={styles.screenShareButton}
+            >
+              {isSharing ? 'Stop Sharing' : 'Share Screen'}
+            </button>
+          )}
           <CallControls />
         </div>
       </div>

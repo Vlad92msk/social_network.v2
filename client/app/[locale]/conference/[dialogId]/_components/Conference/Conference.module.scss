@@ -108,3 +108,39 @@
   background-color: #2c2c2c;
   color: white;
 }
+
+.screenShare {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 1rem auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.screenShareLabel {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.localScreenShare {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 240px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.screenShareButton {
+  /* Стили для кнопки */
+}

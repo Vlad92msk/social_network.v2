@@ -11,7 +11,8 @@ import { Server, Socket } from 'socket.io'
 import { ConferenceService } from './conference.service'
 
 // Типы сигналов WebRTC
-type SignalType = 'offer' | 'answer' | 'ice-candidate';
+type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share';
+
 
 interface WebRTCSignal {
     type: SignalType;
@@ -75,8 +76,11 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             participants
         })
 
+        // Определяем тип события для emit на основе типа сигнала
+        const emitEventType = signal.type === 'screen-share' ? 'screen-share' : signal.type;
+
         // Отправляем сигнал целевому пользователю
-        this.server.to(targetUserId).emit(signal.type, {
+        this.server.to(targetUserId).emit(emitEventType, {
             userId: senderId,
             signal: signal.payload,
         })
@@ -181,7 +185,8 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             return false
         }
 
-        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate']
+        // Добавляем screen-share в список валидных типов сигналов
+        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate', 'screen-share']
         if (!validSignalTypes.includes(signal.type)) {
             console.error('Invalid signal type:', signal.type)
             return false
@@ -194,7 +199,8 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         console.log(`WebRTC Signal: ${type}`, {
             from: senderId,
             to: targetUserId,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            isScreenShare: type === 'screen-share'
         })
     }
 }

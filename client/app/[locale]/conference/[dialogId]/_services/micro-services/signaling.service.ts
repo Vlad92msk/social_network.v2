@@ -7,7 +7,7 @@ export class SignalingService {
   constructor(
     private store: WebRTCStore,
     private connectionService: ConnectionService,
-    private sendSignal: SendSignalType,
+    private sendSignalToServer: SendSignalType,
   ) {
     // Подписываемся на входящие сигналы
     this.store.on(WebRTCEventsName.SIGNAL_RECEIVED, async ({ senderId, signal }) => {
@@ -18,6 +18,24 @@ export class SignalingService {
     this.store.on(WebRTCEventsName.CONNECTION_CREATED, ({ userId, connection }) => {
       this.setupIceCandidateHandling(userId, connection)
     })
+  }
+
+  // Публичный метод для отправки сигналов
+  public async sendSignalToUser(options: {
+    targetUserId: string;
+    signal: any;
+    dialogId: string;
+  }) {
+    return this.sendSignalToServer(options)
+  }
+
+  // Приватный метод для внутреннего использования
+  private async sendSignal(options: {
+    targetUserId: string;
+    signal: any;
+    dialogId: string;
+  }) {
+    return this.sendSignalToServer(options)
   }
 
   private setupIceCandidateHandling(userId: string, connection: RTCPeerConnection) {
@@ -75,6 +93,54 @@ export class SignalingService {
           const pc = this.connectionService.getConnection(senderId)
           if (pc?.remoteDescription) {
             await pc.addIceCandidate(signal.payload as RTCIceCandidateInit)
+          }
+          break
+        }
+
+        case 'screen-share': {
+          const screenState = this.store.getDomainState(WebRTCStateChangeType.SCREEN)
+
+          switch (signal.payload.action) {
+            case 'start': {
+              const pc = this.connectionService.createConnection(senderId)
+              if (signal.payload.offer) {
+                await pc.setRemoteDescription(signal.payload.offer)
+                const answer = await pc.createAnswer()
+                await pc.setLocalDescription(answer)
+
+                this.sendSignal({
+                  targetUserId: senderId,
+                  signal: {
+                    type: 'screen-share',
+                    payload: {
+                      action: 'answer',
+                      answer,
+                    },
+                  },
+                  dialogId: state.dialogId,
+                })
+              }
+              break
+            }
+
+            case 'answer': {
+              const pc = this.connectionService.getConnection(senderId)
+              if (pc && signal.payload.answer) {
+                await pc.setRemoteDescription(signal.payload.answer)
+              }
+              break
+            }
+
+            case 'stop': {
+              const newScreenStreams = { ...screenState.remoteScreenStreams }
+              delete newScreenStreams[senderId]
+
+              this.store.setState(WebRTCStateChangeType.SCREEN, {
+                remoteScreenStreams: newScreenStreams,
+              })
+              this.connectionService.closeConnection(senderId)
+              break
+            }
           }
           break
         }
