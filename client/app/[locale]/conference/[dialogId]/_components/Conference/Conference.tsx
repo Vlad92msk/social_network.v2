@@ -19,7 +19,7 @@ export function Conference({ profile }: ConferenceProps) {
   const { dialogId } = useParams<{ dialogId: string }>()
 
   useConferenceSocketConnect({ conferenceId: dialogId })
-  const { streams, handleSignal, connectionStatus } = useWebRTCContext()
+  const { handleSignal, stream, connection } = useWebRTCContext()
 
   // Подключаем обработку WebRTC сигналов
   useWebRTCSignaling(String(profile?.user_info.id), handleSignal)
@@ -47,13 +47,13 @@ export function Conference({ profile }: ConferenceProps) {
           </span>
         </div>
 
-        {Object.entries(streams).map(([userId, stream]) => (
+        {Object.entries(stream.streams).map(([userId, stream]) => (
           <div key={userId} className={styles.participant}>
             <RemoteVideo stream={stream} />
             <span className={styles.participantName}>
               {userId}
               {' '}
-              ({connectionStatus[userId] || 'connecting'})
+              ({connection.connectionStatus[userId] || 'connecting'})
             </span>
           </div>
         ))}

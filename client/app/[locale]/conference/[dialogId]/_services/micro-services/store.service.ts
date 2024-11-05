@@ -1,5 +1,5 @@
 import { TypedEventEmitter } from './typed-event-emitter.service'
-import { WebRTCEvents, WebRTCEventsName, WebRTCState, WebRTCStateChangeType } from '../types'
+import { StateChangeEvent, WebRTCEvents, WebRTCEventsName, WebRTCState, WebRTCStateChangeType } from '../types'
 
 export class WebRTCStore {
   private state: WebRTCState
@@ -14,12 +14,20 @@ export class WebRTCStore {
     },
   ) {
     this.state = {
-      currentUserId: config.currentUserId,
-      dialogId: config.dialogId,
-      iceServers: config.iceServers || [{ urls: 'stun:stun.l.google.com:19302' }],
-      streams: {},
-      isConnecting: false,
-      connectionStatus: {},
+      [WebRTCStateChangeType.STREAM]: {
+        streams: {},
+      },
+      [WebRTCStateChangeType.DIALOG]: {
+        currentUserId: config.currentUserId,
+        dialogId: config.dialogId,
+      },
+      [WebRTCStateChangeType.CONNECTION]: {
+        isConnecting: false,
+        connectionStatus: {},
+      },
+      [WebRTCStateChangeType.SIGNAL]: {
+        iceServers: config.iceServers || [{ urls: 'stun:stun.l.google.com:19302' }],
+      },
     }
   }
 
@@ -28,12 +36,26 @@ export class WebRTCStore {
     return this.state
   }
 
-  setState(newState: Partial<WebRTCState>, changeType: WebRTCStateChangeType) {
-    this.state = { ...this.state, ...newState }
+  getDomainState<T extends WebRTCStateChangeType>(domain: T): WebRTCState[T] {
+    return this.state[domain]
+  }
+
+  setState<T extends WebRTCStateChangeType>(
+    domain: T,
+    newState: Partial<WebRTCState[T]>,
+  ) {
+    this.state = {
+      ...this.state,
+      [domain]: {
+        ...this.state[domain],
+        ...newState,
+      },
+    }
+
     this.events.emit(WebRTCEventsName.STATE_CHANGED, {
-      type: changeType,
+      type: domain,
       payload: newState,
-    })
+    } as StateChangeEvent);
   }
 
   // Методы для работы с событиями

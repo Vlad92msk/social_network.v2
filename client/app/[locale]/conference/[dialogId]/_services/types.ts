@@ -1,11 +1,20 @@
-export interface WebRTCState {
-  currentUserId: string;
-  dialogId?: string;
-  iceServers: RTCIceServer[];
-  localStream?: MediaStream;
-  streams: Record<string, MediaStream | undefined>;
-  isConnecting: boolean;
-  connectionStatus: Record<string, RTCPeerConnectionState>;
+interface WebRTCStateStream {
+  localStream?: MediaStream
+  streams: Record<string, MediaStream | undefined>
+}
+
+interface WebRTCStateDialog {
+  currentUserId: string
+  dialogId?: string
+}
+
+interface WebRTCStateConnection {
+  isConnecting: boolean
+  connectionStatus: Record<string, RTCPeerConnectionState>
+}
+
+interface WebRTCStateSignal {
+  iceServers: RTCIceServer[]
 }
 
 export enum WebRTCStateChangeType {
@@ -14,9 +23,6 @@ export enum WebRTCStateChangeType {
    * - установка/изменение localStream
    * - обновление списка стримов других участников
    * - добавление/удаление треков
-   * @example
-   * store.setState({ localStream: newStream }, WebRTCStateChangeType.STREAM);
-   * store.setState({ streams: { [userId]: stream } }, WebRTCStateChangeType.STREAM);
    */
   STREAM = 'stream',
 
@@ -25,8 +31,6 @@ export enum WebRTCStateChangeType {
    * - установка нового dialogId
    * - переключение между диалогами
    * - инициализация нового диалога
-   * @example
-   * store.setState({ dialogId: newDialogId }, WebRTCStateChangeType.DIALOG);
    */
   DIALOG = 'dialog',
 
@@ -35,10 +39,6 @@ export enum WebRTCStateChangeType {
    * - изменение статуса соединения (connected, disconnected, etc.)
    * - закрытие соединения
    * - обновление списка активных соединений
-   * @example
-   * store.setState({
-   *   connectionStatus: { [userId]: 'connected' }
-   * }, WebRTCStateChangeType.CONNECTION);
    */
   CONNECTION = 'connection',
 
@@ -47,10 +47,15 @@ export enum WebRTCStateChangeType {
    * - обработка ICE кандидатов
    * - обновление состояния после обмена SDP
    * - изменения, связанные с процессом установки соединения
-   * @example
-   * store.setState({ isConnecting: true }, WebRTCStateChangeType.SIGNAL);
    */
   SIGNAL = 'signal',
+}
+
+export interface WebRTCState {
+  [WebRTCStateChangeType.STREAM]: WebRTCStateStream
+  [WebRTCStateChangeType.DIALOG]: WebRTCStateDialog
+  [WebRTCStateChangeType.CONNECTION]: WebRTCStateConnection
+  [WebRTCStateChangeType.SIGNAL]: WebRTCStateSignal
 }
 
 export enum WebRTCEventsName {
@@ -60,11 +65,32 @@ export enum WebRTCEventsName {
 }
 
 // Обновляем интерфейс событий
-export interface WebRTCEvents {
+export interface WebRTCEvents1 {
   [WebRTCEventsName.STATE_CHANGED]: {
-    type: WebRTCStateChangeType;
-    payload: Partial<WebRTCState>;
+    type: WebRTCStateChangeType
+    payload: Partial<WebRTCState>
   };
+  [WebRTCEventsName.CONNECTION_CREATED]: {
+    userId: string
+    connection: RTCPeerConnection
+  };
+  [WebRTCEventsName.SIGNAL_RECEIVED]: {
+    senderId: string
+    signal: any
+  };
+}
+
+// Вспомогательный тип для событий изменения состояния
+export type StateChangeEvent = {
+  [K in WebRTCStateChangeType]: {
+    type: K;
+    payload: Partial<WebRTCState[K]>;
+  }
+}[WebRTCStateChangeType];
+
+// Обновленный интерфейс событий
+export interface WebRTCEvents {
+  [WebRTCEventsName.STATE_CHANGED]: StateChangeEvent;
   [WebRTCEventsName.CONNECTION_CREATED]: {
     userId: string;
     connection: RTCPeerConnection;

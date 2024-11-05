@@ -1,7 +1,7 @@
 import { ConnectionService } from './connection.service'
 import { WebRTCStore } from './store.service'
 import { SendSignalType } from '../../_store/conferenceSocketMiddleware'
-import { WebRTCEventsName } from '../types'
+import { WebRTCEventsName, WebRTCStateChangeType } from '../types'
 
 export class SignalingService {
   constructor(
@@ -23,7 +23,7 @@ export class SignalingService {
   private setupIceCandidateHandling(userId: string, connection: RTCPeerConnection) {
     connection.onicecandidate = ({ candidate }) => {
       if (candidate) {
-        const state = this.store.getState()
+        const state = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
         const { dialogId } = state
 
         if (dialogId) {
@@ -41,7 +41,7 @@ export class SignalingService {
   }
 
   private async handleSignal(senderId: string, signal: any) {
-    const state = this.store.getState()
+    const state = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
     if (!state.dialogId) return
 
     try {
@@ -91,7 +91,7 @@ export class SignalingService {
 
   // Методы для отправки сигналов
   async sendOffer(targetUserId: string, connection: RTCPeerConnection) {
-    const state = this.store.getState()
+    const state = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
     if (!state.dialogId) return
 
     try {
@@ -113,28 +113,30 @@ export class SignalingService {
 
   // Вспомогательный метод для инициации соединения
   async initiateConnection(targetUserId: string) {
-    const state = this.store.getState()
-    if (!state.localStream || !state.dialogId) return
+    const { dialogId } = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
+    const { localStream } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
+    if (!localStream || !dialogId) return
 
     try {
-      this.store.setState({ isConnecting: true })
+      this.store.setState(WebRTCStateChangeType.CONNECTION, { isConnecting: true })
       const connection = this.connectionService.createConnection(targetUserId)
       await this.sendOffer(targetUserId, connection)
     } catch (e) {
       console.warn('Error initiating connection:', e)
     } finally {
-      this.store.setState({ isConnecting: false })
+      this.store.setState(WebRTCStateChangeType.CONNECTION, { isConnecting: false })
     }
   }
 
   // Метод для обновления участников
   updateParticipants(participants: string[]) {
-    const state = this.store.getState()
-    if (!state.localStream || !state.dialogId) return
+    const { dialogId, currentUserId } = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
+    const { localStream, streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
+    if (!localStream || !dialogId) return
 
     // Инициируем соединения с новыми участниками
     participants.forEach((participantId) => {
-      if (participantId !== state.currentUserId) {
+      if (participantId !== currentUserId) {
         const connection = this.connectionService.getConnection(participantId)
         if (!connection || !['connected', 'connecting'].includes(connection.connectionState)) {
           this.initiateConnection(participantId)
@@ -143,7 +145,7 @@ export class SignalingService {
     })
 
     // Отключаем ушедших участников
-    const currentParticipants = Object.keys(state.streams)
+    const currentParticipants = Object.keys(streams)
     currentParticipants.forEach((participantId) => {
       if (!participants.includes(participantId)) {
         console.log(`Участник с ID ${participantId} вышел`)
@@ -154,12 +156,13 @@ export class SignalingService {
 
   // Метод для принудительного переподключения
   async refreshConnection(targetUserId: string) {
-    const state = this.store.getState()
+    const { dialogId } = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
+    const { localStream } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
     console.log(`Принудительное переподключение с пользователем с ID ${targetUserId}`)
 
     this.connectionService.closeConnection(targetUserId)
 
-    if (state.localStream && state.dialogId) {
+    if (localStream && dialogId) {
       await this.initiateConnection(targetUserId)
     }
   }

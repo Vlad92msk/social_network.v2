@@ -7,6 +7,9 @@ export class ConnectionService {
 
   constructor(private store: WebRTCStore) {
     this.store.on(WebRTCEventsName.STATE_CHANGED, (event) => {
+      if (event.type === WebRTCStateChangeType.STREAM) {
+        console.log('___event', event)
+      }
       switch (event.type) {
         case WebRTCStateChangeType.STREAM:
           if ('localStream' in event.payload) {
@@ -29,29 +32,30 @@ export class ConnectionService {
 
         default:
           // Добавляем default case для ESLint
-          const _exhaustiveCheck: never = event.type
           break
       }
     })
   }
 
   createConnection(targetUserId: string) {
-    const state = this.store.getState()
+    const { localStream, streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
+    const { iceServers } = this.store.getDomainState(WebRTCStateChangeType.SIGNAL)
+    const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
 
-    const pc = new RTCPeerConnection({
-      iceServers: state.iceServers,
-    })
+    const pc = new RTCPeerConnection({ iceServers })
 
     pc.onconnectionstatechange = () => {
-      this.store.setState({
-        connectionStatus: {
-          ...this.store.getState().connectionStatus,
-          [targetUserId]: pc.connectionState,
+      this.store.setState(
+        WebRTCStateChangeType.CONNECTION,
+        {
+          connectionStatus: {
+            ...connectionStatus,
+            [targetUserId]: pc.connectionState,
+          },
         },
-      }, WebRTCStateChangeType.CONNECTION)
+      )
     }
 
-    const { localStream } = state
     if (localStream) {
       localStream.getTracks().forEach((track) => {
         pc.addTrack(track, localStream)
@@ -60,12 +64,12 @@ export class ConnectionService {
 
     pc.ontrack = (event) => {
       if (event.streams?.[0]) {
-        this.store.setState({
+        this.store.setState(WebRTCStateChangeType.STREAM, {
           streams: {
-            ...this.store.getState().streams,
+            ...streams,
             [targetUserId]: event.streams[0],
           },
-        }, WebRTCStateChangeType.CONNECTION)
+        })
       }
     }
 
@@ -84,19 +88,15 @@ export class ConnectionService {
       connection.close()
       delete this.connections[userId]
 
-      const { streams, connectionStatus } = this.store.getState()
+      const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
+      const { streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
       const newStreams = { ...streams }
       const newStatus = { ...connectionStatus }
       delete newStreams[userId]
       delete newStatus[userId]
 
-      this.store.setState(
-        {
-          streams: newStreams,
-          connectionStatus: newStatus,
-        },
-        WebRTCStateChangeType.CONNECTION,
-      )
+      this.store.setState(WebRTCStateChangeType.CONNECTION, { connectionStatus: newStatus })
+      this.store.setState(WebRTCStateChangeType.STREAM, { streams: newStreams })
     }
   }
 

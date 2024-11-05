@@ -1,26 +1,33 @@
 'use client'
 
-import { debounce } from 'lodash'
-import {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
-} from 'react'
-import { useSelector } from 'react-redux'
 import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
-import { WebRTCState } from './types'
-import { WebRTCManager } from './webrtc.service'
+import { debounce } from 'lodash'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { sendSignal } from '../_store/conferenceSocketMiddleware'
 import { ConferenceSelectors } from '../_store/selectors'
+import { WebRTCState, WebRTCStateChangeType } from './types'
+import { WebRTCManager } from './webrtc.service'
 
 interface WebRTCContextValue extends WebRTCState {
   handleSignal: (senderId: string, signal: any) => Promise<void>;
 }
 
 const initialState: WebRTCState = {
-  currentUserId: '',
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-  streams: {},
-  isConnecting: false,
-  connectionStatus: {},
+  [WebRTCStateChangeType.STREAM]: {
+    streams: {},
+  },
+  [WebRTCStateChangeType.DIALOG]: {
+    currentUserId: '',
+    dialogId: '',
+  },
+  [WebRTCStateChangeType.CONNECTION]: {
+    isConnecting: false,
+    connectionStatus: {},
+  },
+  [WebRTCStateChangeType.SIGNAL]: {
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+  },
 }
 
 const WebRTCContext = createContext<WebRTCContextValue>({
@@ -34,18 +41,14 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
 
   const participants = useSelector(ConferenceSelectors.selectUsers)
 
-  const [state, setState] = useState<WebRTCState>({
-    ...initialState,
-    currentUserId,
-    dialogId,
-  })
+  const [state, setState] = useState<WebRTCState>(initialState)
 
   // Инициализация менеджера
   useEffect(() => {
     manager.current = new WebRTCManager({
       currentUserId,
       dialogId,
-      iceServers: initialState.iceServers,
+      iceServers: initialState[WebRTCStateChangeType.SIGNAL].iceServers,
     }, sendSignal)
 
     const managerInstance = manager.current
@@ -102,8 +105,8 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
 
       participants.forEach((participantId) => {
         if (participantId !== currentUserId) {
-          const status = currentState.connectionStatus[participantId]
-          const stream = currentState.streams[participantId]
+          const status = currentState[WebRTCStateChangeType.CONNECTION].connectionStatus[participantId]
+          const stream = currentState[WebRTCStateChangeType.STREAM].streams[participantId]
 
           if (status === 'connected' && !stream) {
             console.log(

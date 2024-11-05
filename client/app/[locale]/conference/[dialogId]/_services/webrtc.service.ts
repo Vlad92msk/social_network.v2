@@ -1,8 +1,8 @@
+import { SendSignalType } from '../_store/conferenceSocketMiddleware'
 import { ConnectionService } from './micro-services/connection.service'
 import { SignalingService } from './micro-services/signaling.service'
 import { WebRTCStore } from './micro-services/store.service'
 import { WebRTCEventsName, WebRTCState, WebRTCStateChangeType } from './types'
-import { SendSignalType } from '../_store/conferenceSocketMiddleware'
 
 export class WebRTCManager {
   private store: WebRTCStore
@@ -30,15 +30,15 @@ export class WebRTCManager {
 
   setLocalStream(stream?: MediaStream) {
     this.store.setState(
-      { localStream: stream },
       WebRTCStateChangeType.STREAM,
+      { localStream: stream },
     )
   }
 
   setDialogId(dialogId: string) {
     this.store.setState(
-      { dialogId },
       WebRTCStateChangeType.DIALOG,
+      { dialogId },
     )
   }
 
@@ -65,8 +65,8 @@ export class WebRTCManager {
 
   destroy() {
     // Закрываем все соединения
-    const state = this.store.getState()
-    Object.keys(state.streams).forEach((userId) => {
+    const { streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
+    Object.keys(streams).forEach((userId) => {
       this.connectionService.closeConnection(userId)
     })
   }
