@@ -15,7 +15,7 @@ export const webRTCInitialState: WebRTCState = {
   [WebRTCStateChangeType.SIGNAL]: {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
   },
-  [WebRTCStateChangeType.SCREEN]: {
+  [WebRTCStateChangeType.SHARING_SCREEN]: {
     localScreenStream: undefined,
     remoteScreenStreams: {},
     isSharing: false,

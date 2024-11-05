@@ -98,7 +98,7 @@ export class SignalingService {
         }
 
         case 'screen-share': {
-          const screenState = this.store.getDomainState(WebRTCStateChangeType.SCREEN)
+          const screenState = this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN)
 
           switch (signal.payload.action) {
             case 'start': {
@@ -135,7 +135,7 @@ export class SignalingService {
               const newScreenStreams = { ...screenState.remoteScreenStreams }
               delete newScreenStreams[senderId]
 
-              this.store.setState(WebRTCStateChangeType.SCREEN, {
+              this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
                 remoteScreenStreams: newScreenStreams,
               })
               this.connectionService.closeConnection(senderId)

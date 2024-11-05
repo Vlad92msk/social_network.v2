@@ -62,7 +62,7 @@ export enum WebRTCStateChangeType {
    * - управление потоками демонстрации экрана
    * - обновление состояния демонстрации
    */
-  SCREEN = 'screen',
+  SHARING_SCREEN = 'screen',
 }
 
 export interface WebRTCState {
@@ -70,7 +70,7 @@ export interface WebRTCState {
   [WebRTCStateChangeType.DIALOG]: WebRTCStateDialog
   [WebRTCStateChangeType.CONNECTION]: WebRTCStateConnection
   [WebRTCStateChangeType.SIGNAL]: WebRTCStateSignal
-  [WebRTCStateChangeType.SCREEN]: WebRTCStateScreen
+  [WebRTCStateChangeType.SHARING_SCREEN]: WebRTCStateScreen
 }
 
 export enum WebRTCEventsName {
