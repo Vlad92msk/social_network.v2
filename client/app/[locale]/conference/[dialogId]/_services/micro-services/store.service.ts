@@ -55,7 +55,7 @@ export class WebRTCStore {
     this.events.emit(WebRTCEventsName.STATE_CHANGED, {
       type: domain,
       payload: newState,
-    } as StateChangeEvent);
+    } as StateChangeEvent)
   }
 
   // Методы для работы с событиями

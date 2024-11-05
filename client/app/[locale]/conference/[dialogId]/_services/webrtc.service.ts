@@ -1,8 +1,17 @@
-import { SendSignalType } from '../_store/conferenceSocketMiddleware'
+import { DefaultEventsMap } from '@socket.io/component-emitter'
+import { Socket } from 'socket.io-client'
 import { ConnectionService } from './micro-services/connection.service'
 import { SignalingService } from './micro-services/signaling.service'
 import { WebRTCStore } from './micro-services/store.service'
 import { WebRTCEventsName, WebRTCState, WebRTCStateChangeType } from './types'
+import { SendSignalType } from '../_store/conferenceSocketMiddleware'
+
+// Типы для сигнальных событий
+interface SignalEvents {
+  offer: { userId: string; signal: RTCSessionDescriptionInit };
+  answer: { userId: string; signal: RTCSessionDescriptionInit };
+  'ice-candidate': { userId: string; signal: RTCIceCandidateInit };
+}
 
 export class WebRTCManager {
   private store: WebRTCStore
@@ -10,6 +19,8 @@ export class WebRTCManager {
   private connectionService: ConnectionService
 
   private signalingService: SignalingService
+
+  private signalHandlers: (() => void)[] = []
 
   constructor(
     config: {
@@ -42,8 +53,45 @@ export class WebRTCManager {
     )
   }
 
-  handleSignal(senderId: string, signal: any) {
-    this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, { senderId, signal })
+  // Слушаем сокет события
+  connectSignaling(socket: Socket<DefaultEventsMap, DefaultEventsMap> | null) {
+    if (!socket) return
+
+    const handleOffer = ({ userId, signal }: SignalEvents['offer']) => {
+      this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+        senderId: userId,
+        signal: { type: 'offer', payload: signal },
+      })
+    }
+
+    const handleAnswer = ({ userId, signal }: SignalEvents['answer']) => {
+      this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+        senderId: userId,
+        signal: { type: 'answer', payload: signal },
+      })
+    }
+
+    const handleIceCandidate = ({ userId, signal }: SignalEvents['ice-candidate']) => {
+      this.store.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+        senderId: userId,
+        signal: { type: 'ice-candidate', payload: signal },
+      })
+    }
+
+    socket.on('offer', handleOffer)
+    socket.on('answer', handleAnswer)
+    socket.on('ice-candidate', handleIceCandidate)
+
+    this.signalHandlers = [
+      () => socket.off('offer', handleOffer),
+      () => socket.off('answer', handleAnswer),
+      () => socket.off('ice-candidate', handleIceCandidate),
+    ]
+
+    return () => {
+      this.signalHandlers.forEach((cleanup) => cleanup())
+      this.signalHandlers = []
+    }
   }
 
   updateParticipants(participants: string[]) {

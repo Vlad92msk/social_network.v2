@@ -1,16 +1,17 @@
 'use client'
 
-import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
 import { debounce } from 'lodash'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+} from 'react'
 import { useSelector } from 'react-redux'
-import { sendSignal } from '../_store/conferenceSocketMiddleware'
-import { ConferenceSelectors } from '../_store/selectors'
+import { useMediaStreamContext } from '@ui/components/media-stream/context/MediaStreamContext'
 import { WebRTCState, WebRTCStateChangeType } from './types'
 import { WebRTCManager } from './webrtc.service'
+import { getSocket, sendSignal } from '../_store/conferenceSocketMiddleware'
+import { ConferenceSelectors } from '../_store/selectors'
 
 interface WebRTCContextValue extends WebRTCState {
-  handleSignal: (senderId: string, signal: any) => Promise<void>;
 }
 
 const initialState: WebRTCState = {
@@ -32,13 +33,12 @@ const initialState: WebRTCState = {
 
 const WebRTCContext = createContext<WebRTCContextValue>({
   ...initialState,
-  handleSignal: async () => {},
 })
 
 export function WebRTCProvider({ children, currentUserId, dialogId }: { children: React.ReactNode; currentUserId: string, dialogId: string }) {
   const { stream: localStream } = useMediaStreamContext()
   const manager = useRef<WebRTCManager | undefined>(undefined)
-
+  const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
   const participants = useSelector(ConferenceSelectors.selectUsers)
 
   const [state, setState] = useState<WebRTCState>(initialState)
@@ -64,6 +64,18 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
       }
     }
   }, [currentUserId, dialogId])
+
+  // Подключаем сигналинг при установке соединения
+  useEffect(() => {
+    const managerInstance = manager.current
+    if (!managerInstance || !isConnected) return
+
+    const socket = getSocket()
+    if (!socket) return
+
+    const disconnect = managerInstance.connectSignaling(socket)
+    return disconnect
+  }, [isConnected])
 
   useEffect(() => {
     const managerInstance = manager.current
@@ -139,23 +151,12 @@ export function WebRTCProvider({ children, currentUserId, dialogId }: { children
     }
   }, [participants, currentUserId])
 
-  const handleSignal = useCallback(async (senderId: string, signal: any) => {
-    const managerInstance = manager.current
-    if (!managerInstance) return
-    await managerInstance.handleSignal(senderId, signal)
-  }, [])
-
-  const contextValue = useMemo<WebRTCContextValue>(() => ({
-    ...state,
-    handleSignal,
-  }), [state, handleSignal])
-
   if (!manager.current) {
     return null
   }
 
   return (
-    <WebRTCContext.Provider value={contextValue}>
+    <WebRTCContext.Provider value={state}>
       {children}
     </WebRTCContext.Provider>
   )

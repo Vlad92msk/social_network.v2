@@ -9,7 +9,6 @@ import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces
 import { useConferenceSocketConnect } from '../../_hooks'
 import { useWebRTCContext } from '../../_services/ConferenceContext'
 import { ConferenceSelectors } from '../../_store/selectors'
-import { useWebRTCSignaling } from '../../_hooks/useWebRTCSignaling'
 
 interface ConferenceProps {
   profile?: UserProfileInfo;
@@ -19,10 +18,7 @@ export function Conference({ profile }: ConferenceProps) {
   const { dialogId } = useParams<{ dialogId: string }>()
 
   useConferenceSocketConnect({ conferenceId: dialogId })
-  const { handleSignal, stream, connection } = useWebRTCContext()
-
-  // Подключаем обработку WebRTC сигналов
-  useWebRTCSignaling(String(profile?.user_info.id), handleSignal)
+  const { stream, connection } = useWebRTCContext()
 
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 

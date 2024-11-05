@@ -1,6 +1,5 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
 import { Socket } from 'socket.io-client'
-import { WebRTCSignal } from '../types/media'
 import { ConferenceSliceActions } from './conference.slice'
 import { createSocket } from './createSocket.util'
 import { RootReducer } from '../../../../../store/root.reducer'
