@@ -21,15 +21,13 @@ export function Conference({ profile }: ConferenceProps) {
   const {
     stream,
     connection,
-    screen: { localScreenStream, remoteScreenStreams, isSharing },
+    screen: { remoteScreenStreams, isSharing },
     startScreenSharing,
     stopScreenSharing,
     isScreenSharingSupported,
   } = useWebRTCContext()
 
-  console.log('isSharing', isSharing)
-  console.log('remoteScreenStreams', remoteScreenStreams)
-
+// console.log('remoteScreenStreams', remoteScreenStreams)
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
   if (!isConnected) {

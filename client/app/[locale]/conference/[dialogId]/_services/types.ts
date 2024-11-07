@@ -77,6 +77,7 @@ export enum WebRTCEventsName {
   STATE_CHANGED = 'state:changed',
   CONNECTION_CREATED = 'connection:created',
   SIGNAL_RECEIVED = 'signal:received',
+  NEGOTIATION_NEEDED = 'negotiation_needed',
 }
 
 
@@ -99,4 +100,8 @@ export interface WebRTCEvents {
     senderId: string;
     signal: any;
   };
+  [WebRTCEventsName.NEGOTIATION_NEEDED]: {
+    targetUserId: string;
+    connection: RTCPeerConnection;
+  }
 }

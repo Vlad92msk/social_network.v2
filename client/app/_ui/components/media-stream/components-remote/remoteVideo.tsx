@@ -8,6 +8,6 @@ interface RemoteVideoProps extends RemoteVideoOptions {
 
 export const RemoteVideo: React.FC<RemoteVideoProps> = ({ className, ...options }) => {
   const videoProps = useRemoteVideoStream(options)
-  console.log('RemoteVideo', videoProps)
+  // console.log('RemoteVideo', videoProps)
   return <video {...videoProps} className={className} />
 }

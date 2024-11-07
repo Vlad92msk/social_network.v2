@@ -12,7 +12,7 @@ const DEBUG = true
 
 function debugLog(message: string, data?: any) {
   if (DEBUG) {
-    console.log(`[WebSocket] ${message}`, data || '')
+    // console.log(`[WebSocket] ${message}`, data || '')
   }
 }
 

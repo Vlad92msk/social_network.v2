@@ -12,15 +12,6 @@ interface SignalEvents {
   offer: { userId: string; signal: RTCSessionDescriptionInit };
   answer: { userId: string; signal: RTCSessionDescriptionInit };
   'ice-candidate': { userId: string; signal: RTCIceCandidateInit };
-  'screen-share': {
-    userId: string;
-    signal: {
-      action: 'start' | 'stop';
-      offer?: RTCSessionDescriptionInit;
-      answer?: RTCSessionDescriptionInit;
-      candidate?: RTCIceCandidateInit;
-    }
-  };
 }
 
 export class WebRTCManager {
@@ -62,8 +53,9 @@ export class WebRTCManager {
 
     this.store = new WebRTCStore(config)
     this.connectionService = new ConnectionService(this.store)
-    this.signalingService = new SignalingService(this.store, this.connectionService, sendSignal)
-    this.screenSharingService = new ScreenSharingService(this.store, this.connectionService, this.signalingService)
+    this.screenSharingService = new ScreenSharingService(this.store, this.connectionService)
+    this.signalingService = new SignalingService(this.store, this.connectionService, sendSignal, this.screenSharingService)
+    this.screenSharingService = new ScreenSharingService(this.store, this.connectionService)
     this.initialized = true
   }
 
@@ -108,23 +100,14 @@ export class WebRTCManager {
       })
     }
 
-    const handleScreenShare = ({ userId, signal }: SignalEvents['screen-share']) => {
-      this.store!.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
-        senderId: userId,
-        signal: { type: 'screen-share', payload: signal },
-      })
-    }
-
     socket.on('offer', handleOffer)
     socket.on('answer', handleAnswer)
     socket.on('ice-candidate', handleIceCandidate)
-    socket.on('screen-share', handleScreenShare)
 
     this.signalHandlers = [
       () => socket.off('offer', handleOffer),
       () => socket.off('answer', handleAnswer),
       () => socket.off('ice-candidate', handleIceCandidate),
-      () => socket.off('screen-share', handleScreenShare),
     ]
 
     return () => {

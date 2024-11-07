@@ -1,4 +1,5 @@
 import { ConnectionService } from './connection.service'
+import { ScreenSharingService } from './screen-share.service'
 import { WebRTCStore } from './store.service'
 import { SendSignalType } from '../../_store/conferenceSocketMiddleware'
 import { WebRTCEventsName, WebRTCStateChangeType } from '../types'
@@ -8,6 +9,7 @@ export class SignalingService {
     private store: WebRTCStore,
     private connectionService: ConnectionService,
     private sendSignalToServer: SendSignalType,
+    private screenSharingService: ScreenSharingService,
   ) {
     // Подписываемся на входящие сигналы
     this.store.on(WebRTCEventsName.SIGNAL_RECEIVED, async ({ senderId, signal }) => {
@@ -17,6 +19,28 @@ export class SignalingService {
     // Подписываемся на создание новых соединений для настройки ICE кандидатов
     this.store.on(WebRTCEventsName.CONNECTION_CREATED, ({ userId, connection }) => {
       this.setupIceCandidateHandling(userId, connection)
+    })
+
+    // Добавляем обработку negotiation needed
+    this.store.on(WebRTCEventsName.NEGOTIATION_NEEDED, async ({ targetUserId, connection }) => {
+      const { dialogId } = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
+      if (!dialogId) return
+
+      try {
+        const offer = await connection.createOffer()
+        await connection.setLocalDescription(offer)
+
+        await this.sendSignal({
+          targetUserId,
+          signal: {
+            type: 'offer',
+            payload: offer,
+          },
+          dialogId,
+        })
+      } catch (e) {
+        console.warn('Error during renegotiation:', e)
+      }
     })
   }
 
@@ -65,12 +89,20 @@ export class SignalingService {
     try {
       switch (signal.type) {
         case 'offer': {
-          const pc = this.connectionService.createConnection(senderId)
-          await pc.setRemoteDescription(signal.payload as RTCSessionDescriptionInit)
+          console.log('Processing offer from:', senderId);
+          let pc = this.connectionService.getConnection(senderId)
+
+          // Если соединение существует, закрываем его и создаем новое
+          if (pc) {
+            pc.close()
+          }
+
+          pc = this.connectionService.createConnection(senderId)
+          await pc.setRemoteDescription(signal.payload)
           const answer = await pc.createAnswer()
           await pc.setLocalDescription(answer)
 
-          this.sendSignal({
+          await this.sendSignal({
             targetUserId: senderId,
             signal: {
               type: 'answer',
@@ -82,9 +114,10 @@ export class SignalingService {
         }
 
         case 'answer': {
+          console.log('Processing answer from:', senderId);
           const pc = this.connectionService.getConnection(senderId)
           if (pc) {
-            await pc.setRemoteDescription(signal.payload as RTCSessionDescriptionInit)
+            await pc.setRemoteDescription(signal.payload)
           }
           break
         }
@@ -93,54 +126,6 @@ export class SignalingService {
           const pc = this.connectionService.getConnection(senderId)
           if (pc?.remoteDescription) {
             await pc.addIceCandidate(signal.payload as RTCIceCandidateInit)
-          }
-          break
-        }
-
-        case 'screen-share': {
-          const screenState = this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN)
-
-          switch (signal.payload.action) {
-            case 'start': {
-              const pc = this.connectionService.createConnection(senderId)
-              if (signal.payload.offer) {
-                await pc.setRemoteDescription(signal.payload.offer)
-                const answer = await pc.createAnswer()
-                await pc.setLocalDescription(answer)
-
-                this.sendSignal({
-                  targetUserId: senderId,
-                  signal: {
-                    type: 'screen-share',
-                    payload: {
-                      action: 'answer',
-                      answer,
-                    },
-                  },
-                  dialogId: state.dialogId,
-                })
-              }
-              break
-            }
-
-            case 'answer': {
-              const pc = this.connectionService.getConnection(senderId)
-              if (pc && signal.payload.answer) {
-                await pc.setRemoteDescription(signal.payload.answer)
-              }
-              break
-            }
-
-            case 'stop': {
-              const newScreenStreams = { ...screenState.remoteScreenStreams }
-              delete newScreenStreams[senderId]
-
-              this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
-                remoteScreenStreams: newScreenStreams,
-              })
-              this.connectionService.closeConnection(senderId)
-              break
-            }
           }
           break
         }
@@ -206,6 +191,9 @@ export class SignalingService {
         const connection = this.connectionService.getConnection(participantId)
         if (!connection || !['connected', 'connecting'].includes(connection.connectionState)) {
           this.initiateConnection(participantId)
+        } else if (connection.connectionState === 'connected') {
+          // Если есть активная трансляция экрана, добавляем её новому участнику
+          this.screenSharingService.handleNewParticipant(participantId)
         }
       }
     })

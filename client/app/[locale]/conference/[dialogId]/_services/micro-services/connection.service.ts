@@ -8,7 +8,7 @@ export class ConnectionService {
   constructor(private store: WebRTCStore) {
     this.store.on(WebRTCEventsName.STATE_CHANGED, (event) => {
       if (event.type === WebRTCStateChangeType.STREAM) {
-        console.log('___event', event)
+        // console.log('___event', event)
       }
       switch (event.type) {
         case WebRTCStateChangeType.STREAM:
@@ -42,9 +42,14 @@ export class ConnectionService {
     const { iceServers } = this.store.getDomainState(WebRTCStateChangeType.SIGNAL)
     const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
 
-    const pc = new RTCPeerConnection({ iceServers })
+    const pc = new RTCPeerConnection({
+      iceServers,
+      iceTransportPolicy: 'all',
+      iceCandidatePoolSize: 10,
+    })
 
     pc.onconnectionstatechange = () => {
+      console.log('Connection state change:', targetUserId, pc.connectionState);
       this.store.setState(
         WebRTCStateChangeType.CONNECTION,
         {
@@ -63,14 +68,48 @@ export class ConnectionService {
     }
 
     pc.ontrack = (event) => {
-      if (event.streams?.[0]) {
+      console.log('Track received:', {
+        kind: event.track.kind,
+        id: event.track.id,
+        streamId: event.streams?.[0]?.id
+      });
+
+      if (!event.streams?.[0]) return;
+
+      const stream = event.streams[0];
+      const existingVideoTracks = pc.getReceivers()
+        .filter(receiver => receiver.track.kind === 'video')
+        .length;
+
+      if (existingVideoTracks > 1 && event.track.kind === 'video') {
+        // Это screen sharing
+        console.log('Adding screen sharing stream from:', targetUserId);
+        this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
+          remoteScreenStreams: {
+            ...this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN).remoteScreenStreams,
+            [targetUserId]: stream
+          }
+        });
+      } else {
+        // Это обычный стрим
+        console.log('Adding regular stream from:', targetUserId);
         this.store.setState(WebRTCStateChangeType.STREAM, {
           streams: {
-            ...streams,
-            [targetUserId]: event.streams[0],
-          },
-        })
+            ...this.store.getDomainState(WebRTCStateChangeType.STREAM).streams,
+            [targetUserId]: stream
+          }
+        });
       }
+    }
+
+    pc.onnegotiationneeded = async () => {
+      // Убираем логику создания offer отсюда,
+      // просто сообщаем о необходимости переговоров
+      console.log('Negotiation needed for:', targetUserId);
+      this.store.emit(WebRTCEventsName.NEGOTIATION_NEEDED, {
+        targetUserId,
+        connection: pc
+      });
     }
 
     this.connections[targetUserId] = pc
