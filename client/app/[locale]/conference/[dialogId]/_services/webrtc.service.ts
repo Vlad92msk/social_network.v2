@@ -55,7 +55,6 @@ export class WebRTCManager {
     this.connectionService = new ConnectionService(this.store)
     this.screenSharingService = new ScreenSharingService(this.store, this.connectionService)
     this.signalingService = new SignalingService(this.store, this.connectionService, sendSignal, this.screenSharingService)
-    this.screenSharingService = new ScreenSharingService(this.store, this.connectionService)
     this.initialized = true
   }
 
@@ -137,7 +136,7 @@ export class WebRTCManager {
   }
 
   // Добавляем методы для управления screen sharing
-  startScreenSharing() {
+  startScreenSharing(): Promise<MediaStream | undefined> {
     this.assertInitialized()
     return this.screenSharingService!.startScreenSharing()
   }
@@ -148,6 +147,7 @@ export class WebRTCManager {
   }
 
   destroy() {
+    if (!this.initialized) return
     if (this.initialized) {
       const streams = this.store?.getDomainState(WebRTCStateChangeType.STREAM).streams || {}
       Object.keys(streams).forEach((userId) => {

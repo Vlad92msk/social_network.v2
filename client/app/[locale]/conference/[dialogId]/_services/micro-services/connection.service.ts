@@ -1,4 +1,3 @@
-// Менеджер peer-соединений
 import { WebRTCStore } from './store.service'
 import { WebRTCEventsName, WebRTCStateChangeType } from '../types'
 
@@ -6,115 +5,91 @@ export class ConnectionService {
   private connections: Record<string, RTCPeerConnection> = {}
 
   constructor(private store: WebRTCStore) {
-    this.store.on(WebRTCEventsName.STATE_CHANGED, (event) => {
-      if (event.type === WebRTCStateChangeType.STREAM) {
-        // console.log('___event', event)
-      }
-      switch (event.type) {
-        case WebRTCStateChangeType.STREAM:
-          if ('localStream' in event.payload) {
-            this.updateLocalStream(event.payload.localStream)
-          }
-          break
+    this.store.on(WebRTCEventsName.STATE_CHANGED, this.handleStateChange.bind(this))
+  }
 
-        case WebRTCStateChangeType.DIALOG:
-          if ('dialogId' in event.payload) {
-          }
-          break
-
-        case WebRTCStateChangeType.CONNECTION:
-          // Обработка изменений состояния соединения
-          break
-
-        case WebRTCStateChangeType.SIGNAL:
-          // Обработка сигнальных изменений
-          break
-
-        default:
-          // Добавляем default case для ESLint
-          break
-      }
-    })
+  private handleStateChange(event: any) {
+    switch (event.type) {
+      case WebRTCStateChangeType.STREAM:
+        if ('localStream' in event.payload) {
+          this.updateLocalStream(event.payload.localStream)
+        }
+        break
+      case WebRTCStateChangeType.DIALOG:
+      case WebRTCStateChangeType.CONNECTION:
+      case WebRTCStateChangeType.SIGNAL:
+        break
+      default:
+        break
+    }
   }
 
   createConnection(targetUserId: string) {
     const { localStream, streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
-    const { iceServers } = this.store.getDomainState(WebRTCStateChangeType.SIGNAL)
-    const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
 
+    // Закрываем существующее соединение, если оно есть
+    const existingConnection = this.connections[targetUserId]
+    if (existingConnection) {
+      existingConnection.close()
+    }
+
+    const { iceServers } = this.store.getDomainState(WebRTCStateChangeType.SIGNAL)
     const pc = new RTCPeerConnection({
       iceServers,
-      iceTransportPolicy: 'all',
-      iceCandidatePoolSize: 10,
+      bundlePolicy: 'balanced',
+      rtcpMuxPolicy: 'require',
+      iceTransportPolicy: 'all' // Добавляем явное указание политики ICE
     })
 
-    pc.onconnectionstatechange = () => {
-      console.log('Connection state change:', targetUserId, pc.connectionState);
-      this.store.setState(
-        WebRTCStateChangeType.CONNECTION,
-        {
-          connectionStatus: {
-            ...connectionStatus,
-            [targetUserId]: pc.connectionState,
-          },
-        },
-      )
-    }
-
-    if (localStream) {
-      localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, localStream)
-      })
-    }
-
-    pc.ontrack = (event) => {
-      console.log('Track received:', {
-        kind: event.track.kind,
-        id: event.track.id,
-        streamId: event.streams?.[0]?.id
-      });
-
-      if (!event.streams?.[0]) return;
-
-      const stream = event.streams[0];
-      const existingVideoTracks = pc.getReceivers()
-        .filter(receiver => receiver.track.kind === 'video')
-        .length;
-
-      if (existingVideoTracks > 1 && event.track.kind === 'video') {
-        // Это screen sharing
-        console.log('Adding screen sharing stream from:', targetUserId);
-        this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
-          remoteScreenStreams: {
-            ...this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN).remoteScreenStreams,
-            [targetUserId]: stream
-          }
-        });
-      } else {
-        // Это обычный стрим
-        console.log('Adding regular stream from:', targetUserId);
-        this.store.setState(WebRTCStateChangeType.STREAM, {
-          streams: {
-            ...this.store.getDomainState(WebRTCStateChangeType.STREAM).streams,
-            [targetUserId]: stream
-          }
-        });
-      }
-    }
-
-    pc.onnegotiationneeded = async () => {
-      // Убираем логику создания offer отсюда,
-      // просто сообщаем о необходимости переговоров
-      console.log('Negotiation needed for:', targetUserId);
-      this.store.emit(WebRTCEventsName.NEGOTIATION_NEEDED, {
-        targetUserId,
-        connection: pc
-      });
-    }
+    pc.onconnectionstatechange = () => this.updateConnectionStatus(targetUserId, pc.connectionState)
+    if (localStream) this.addLocalTracksToConnection(pc, localStream)
+    pc.ontrack = (event) => this.handleTrackEvent(event, targetUserId)
+    pc.onnegotiationneeded = () => this.handleNegotiationNeeded(targetUserId, pc)
+    pc.onsignalingstatechange = () => pc.signalingState === 'stable'
 
     this.connections[targetUserId] = pc
     this.store.emit(WebRTCEventsName.CONNECTION_CREATED, { userId: targetUserId, connection: pc })
     return pc
+  }
+
+  private addLocalTracksToConnection(pc: RTCPeerConnection, stream: MediaStream) {
+    stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+  }
+
+  private handleTrackEvent(event: RTCTrackEvent, targetUserId: string) {
+    const stream = event.streams[0]
+    if (!stream) return
+
+    const currentStreams1 = this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN).remoteScreenStreams
+    const currentStreams = this.store.getDomainState(WebRTCStateChangeType.STREAM).streams
+
+    // console.clear()
+    console.log('event', event)
+    console.log('трансляция', currentStreams1)
+    console.log('камера', currentStreams)
+    console.log('event.track.kind', event.track.kind)
+    const hasExistingStream = currentStreams[targetUserId]
+    const isScreenSharing = hasExistingStream && event.track.kind === 'video'
+
+    const newStreamData = isScreenSharing
+      ? { remoteScreenStreams: { [targetUserId]: stream } }
+      : { streams: { ...currentStreams, [targetUserId]: stream } }
+
+    this.store.setState(isScreenSharing ? WebRTCStateChangeType.SHARING_SCREEN : WebRTCStateChangeType.STREAM, newStreamData)
+  }
+
+  private handleNegotiationNeeded(targetUserId: string, pc: RTCPeerConnection) {
+    this.store.emit(WebRTCEventsName.NEGOTIATION_NEEDED, { targetUserId, connection: pc })
+  }
+
+  private updateConnectionStatus(userId: string, status: RTCPeerConnectionState) {
+    const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
+    this.store.setState(
+      WebRTCStateChangeType.CONNECTION,
+      {
+        connectionStatus: { ...connectionStatus, [userId]: status },
+      },
+    )
   }
 
   getConnection(userId: string): RTCPeerConnection | undefined {
@@ -126,21 +101,23 @@ export class ConnectionService {
     if (connection) {
       connection.close()
       delete this.connections[userId]
-
-      const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
-      const { streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
-      const newStreams = { ...streams }
-      const newStatus = { ...connectionStatus }
-      delete newStreams[userId]
-      delete newStatus[userId]
-
-      this.store.setState(WebRTCStateChangeType.CONNECTION, { connectionStatus: newStatus })
-      this.store.setState(WebRTCStateChangeType.STREAM, { streams: newStreams })
+      this.cleanupStateAfterClosure(userId)
     }
   }
 
+  private cleanupStateAfterClosure(userId: string) {
+    const { connectionStatus } = this.store.getDomainState(WebRTCStateChangeType.CONNECTION)
+    const { streams } = this.store.getDomainState(WebRTCStateChangeType.STREAM)
+    const updatedStreams = { ...streams }
+    const updatedStatus = { ...connectionStatus }
+    delete updatedStreams[userId]
+    delete updatedStatus[userId]
+    this.store.setState(WebRTCStateChangeType.CONNECTION, { connectionStatus: updatedStatus })
+    this.store.setState(WebRTCStateChangeType.STREAM, { streams: updatedStreams })
+  }
+
   private updateLocalStream(stream?: MediaStream) {
-    Object.entries(this.connections).forEach(([_, connection]) => {
+    Object.values(this.connections).forEach((connection) => {
       connection.getSenders().forEach((sender) => {
         const track = stream?.getTracks().find((t) => t.kind === sender.track?.kind)
         if (track) sender.replaceTrack(track)

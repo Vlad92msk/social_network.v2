@@ -27,7 +27,9 @@ export function Conference({ profile }: ConferenceProps) {
     isScreenSharingSupported,
   } = useWebRTCContext()
 
-// console.log('remoteScreenStreams', remoteScreenStreams)
+  console.log('remoteScreenStreams', remoteScreenStreams)
+  console.log('stream.streams', stream.streams)
+  console.log('connection', connection)
   const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
 
   if (!isConnected) {

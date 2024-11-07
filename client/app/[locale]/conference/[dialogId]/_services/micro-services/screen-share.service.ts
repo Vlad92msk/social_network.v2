@@ -22,9 +22,11 @@ export class ScreenSharingService {
       })
 
       // Добавляем обработчик закрытия окна трансляции
-      displayStream.getVideoTracks()[0].onended = () => {
-        console.log('User stopped sharing screen')
-        this.stopScreenSharing()
+      if (displayStream.getVideoTracks().length > 0) {
+        displayStream.getVideoTracks()[0].onended = async () => {
+          console.log('User stopped sharing screen')
+          await this.stopScreenSharing()
+        }
       }
 
       this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
@@ -38,7 +40,11 @@ export class ScreenSharingService {
         if (connection && connection.connectionState === 'connected') {
           // Добавляем трек без сложной логики
           displayStream.getTracks().forEach((track) => {
-            connection.addTrack(track, displayStream)
+            try {
+              connection.addTrack(track, displayStream)
+            } catch (e) {
+              console.error(`Error adding track to ${participantId}:`, e)
+            }
           })
         }
       })
@@ -72,7 +78,11 @@ export class ScreenSharingService {
             const sender = connection.getSenders().find((s) => s.track === track)
             if (sender) {
               console.log('Removing screen track for:', participantId)
-              connection.removeTrack(sender)
+              try {
+                connection.removeTrack(sender)
+              } catch (e) {
+                console.error(`Error removing track from ${participantId}:`, e)
+              }
             }
           }
         }
@@ -100,9 +110,12 @@ export class ScreenSharingService {
   cleanup() {
     const { localScreenStream } = this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN)
     if (localScreenStream) {
-      localScreenStream.getTracks().forEach((track) => {
-        track.stop()
-      })
+      localScreenStream.getTracks().forEach((track) => track.stop())
     }
+    this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
+      isSharing: false,
+      localScreenStream: undefined,
+      remoteScreenStreams: {},
+    })
   }
 }

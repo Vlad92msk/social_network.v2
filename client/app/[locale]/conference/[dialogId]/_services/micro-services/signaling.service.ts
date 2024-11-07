@@ -87,18 +87,27 @@ export class SignalingService {
     if (!state.dialogId) return
 
     try {
+      let pc = this.connectionService.getConnection(senderId)
+
       switch (signal.type) {
         case 'offer': {
-          console.log('Processing offer from:', senderId);
-          let pc = this.connectionService.getConnection(senderId)
+          console.log('Processing offer from:', senderId)
 
-          // Если соединение существует, закрываем его и создаем новое
-          if (pc) {
-            pc.close()
+          if (!pc) {
+            pc = this.connectionService.createConnection(senderId)
           }
 
-          pc = this.connectionService.createConnection(senderId)
-          await pc.setRemoteDescription(signal.payload)
+          // Проверяем состояние signaling
+          if (pc.signalingState !== 'stable') {
+            console.log('Signaling state is not stable, rolling back')
+            await Promise.all([
+              pc.setLocalDescription({type: "rollback"}),
+              pc.setRemoteDescription(signal.payload)
+            ])
+          } else {
+            await pc.setRemoteDescription(signal.payload)
+          }
+
           const answer = await pc.createAnswer()
           await pc.setLocalDescription(answer)
 
@@ -114,24 +123,31 @@ export class SignalingService {
         }
 
         case 'answer': {
-          console.log('Processing answer from:', senderId);
-          const pc = this.connectionService.getConnection(senderId)
-          if (pc) {
+          console.log('Processing answer from:', senderId)
+          if (pc && pc.signalingState !== 'stable') {
             await pc.setRemoteDescription(signal.payload)
           }
           break
         }
 
         case 'ice-candidate': {
-          const pc = this.connectionService.getConnection(senderId)
-          if (pc?.remoteDescription) {
-            await pc.addIceCandidate(signal.payload as RTCIceCandidateInit)
+          if (pc) {
+            try {
+              // Добавляем проверку готовности remoteDescription
+              if (pc.remoteDescription && pc.remoteDescription.type) {
+                await pc.addIceCandidate(signal.payload as RTCIceCandidateInit)
+              } else {
+                console.log('Buffering ICE candidate, remote description not set')
+              }
+            } catch (e) {
+              console.warn('Error adding ice candidate:', e)
+            }
           }
           break
         }
 
         default: {
-          console.warn('Неизвестный тип сигнала:', signal.type)
+          console.warn('Unknown signal type:', signal.type)
           break
         }
       }

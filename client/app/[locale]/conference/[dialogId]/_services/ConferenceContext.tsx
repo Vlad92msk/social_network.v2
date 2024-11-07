@@ -8,7 +8,7 @@ import { WebRTCState } from './types'
 import { ConferenceSelectors } from '../_store/selectors'
 
 interface WebRTCContextValue extends WebRTCState {
-  startScreenSharing: () => Promise<MediaStream | null>;
+  startScreenSharing: () => Promise<MediaStream | undefined>;
   stopScreenSharing: () => void;
   isScreenSharingSupported: boolean;
 }
