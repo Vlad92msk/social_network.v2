@@ -1,3 +1,4 @@
+import { SendSignalType } from '../../_store/conferenceSocketMiddleware'
 import { ConnectionService } from './connection.service'
 import { WebRTCStore } from './store.service'
 import { WebRTCStateChangeType } from '../types'
@@ -6,6 +7,7 @@ export class ScreenSharingService {
   constructor(
     private store: WebRTCStore,
     private connectionService: ConnectionService,
+    private sendSignalToServer: SendSignalType,
   ) {}
 
   async startScreenSharing() {
@@ -21,24 +23,26 @@ export class ScreenSharingService {
         audio: false,
       })
 
-      // Добавляем обработчик закрытия окна трансляции
+      // Обработчик остановки трансляции
       if (displayStream.getVideoTracks().length > 0) {
         displayStream.getVideoTracks()[0].onended = async () => {
           console.log('User stopped sharing screen')
+          await this.notifyScreenSharingStop() // Оповещаем других участников
           await this.stopScreenSharing()
         }
       }
+
+      // Отправляем сигнал о начале трансляции
+      await this.notifyScreenSharingStart()
 
       this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
         isSharing: true,
         localScreenStream: displayStream,
       })
 
-      // Добавляем треки в существующие соединения
       participants.forEach((participantId) => {
         const connection = this.connectionService.getConnection(participantId)
         if (connection && connection.connectionState === 'connected') {
-          // Добавляем трек без сложной логики
           displayStream.getTracks().forEach((track) => {
             try {
               connection.addTrack(track, displayStream)
@@ -93,6 +97,41 @@ export class ScreenSharingService {
       isSharing: false,
       localScreenStream: undefined,
       remoteScreenStreams: {},
+    })
+  }
+
+
+  // Новый метод для отправки сигнала о начале трансляции
+  private async notifyScreenSharingStart() {
+    const { dialogId, currentUserId } = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
+    if (!dialogId) return
+
+    await this.sendSignalToServer({
+      targetUserId: 'all', // Отправляем всем участникам
+      signal: {
+        type: 'screen-sharing-started',
+        payload: {
+          userId: currentUserId,
+        },
+      },
+      dialogId,
+    })
+  }
+
+  // Новый метод для отправки сигнала об остановке трансляции
+  private async notifyScreenSharingStop() {
+    const { dialogId, currentUserId } = this.store.getDomainState(WebRTCStateChangeType.DIALOG)
+    if (!dialogId) return
+
+    await this.sendSignalToServer({
+      targetUserId: 'all',
+      signal: {
+        type: 'screen-sharing-stopped',
+        payload: {
+          userId: currentUserId,
+        },
+      },
+      dialogId,
     })
   }
 

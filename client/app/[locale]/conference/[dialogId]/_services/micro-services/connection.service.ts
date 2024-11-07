@@ -38,7 +38,7 @@ export class ConnectionService {
       iceServers,
       bundlePolicy: 'balanced',
       rtcpMuxPolicy: 'require',
-      iceTransportPolicy: 'all' // Добавляем явное указание политики ICE
+      iceTransportPolicy: 'all', // Добавляем явное указание политики ICE
     })
 
     pc.onconnectionstatechange = () => this.updateConnectionStatus(targetUserId, pc.connectionState)
@@ -60,14 +60,27 @@ export class ConnectionService {
     const stream = event.streams[0]
     if (!stream) return
 
-    const currentStreams1 = this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN).remoteScreenStreams
+    event.track.onended = () => {
+      console.log('Remote track ended:', targetUserId, event.track.kind)
+      if (event.track.kind === 'video') {
+        const currentScreenStreams = this.store.getDomainState(
+          WebRTCStateChangeType.SHARING_SCREEN,
+        ).remoteScreenStreams
+
+        // Если это был поток трансляции экрана, удаляем его
+        if (currentScreenStreams[targetUserId]) {
+          const updatedScreenStreams = { ...currentScreenStreams }
+          delete updatedScreenStreams[targetUserId]
+
+          this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
+            remoteScreenStreams: updatedScreenStreams,
+          })
+        }
+      }
+    }
+
     const currentStreams = this.store.getDomainState(WebRTCStateChangeType.STREAM).streams
 
-    // console.clear()
-    console.log('event', event)
-    console.log('трансляция', currentStreams1)
-    console.log('камера', currentStreams)
-    console.log('event.track.kind', event.track.kind)
     const hasExistingStream = currentStreams[targetUserId]
     const isScreenSharing = hasExistingStream && event.track.kind === 'video'
 

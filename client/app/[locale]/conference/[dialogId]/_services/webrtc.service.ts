@@ -53,7 +53,7 @@ export class WebRTCManager {
 
     this.store = new WebRTCStore(config)
     this.connectionService = new ConnectionService(this.store)
-    this.screenSharingService = new ScreenSharingService(this.store, this.connectionService)
+    this.screenSharingService = new ScreenSharingService(this.store, this.connectionService, sendSignal)
     this.signalingService = new SignalingService(this.store, this.connectionService, sendSignal, this.screenSharingService)
     this.initialized = true
   }
@@ -99,14 +99,33 @@ export class WebRTCManager {
       })
     }
 
+    // Добавляем обработчики для screen sharing сигналов
+    const handleScreenSharingStarted = ({ userId }: { userId: string }) => {
+      this.store!.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+        senderId: userId,
+        signal: { type: 'screen-sharing-started', payload: { userId } },
+      })
+    }
+
+    const handleScreenSharingStopped = ({ userId }: { userId: string }) => {
+      this.store!.emit(WebRTCEventsName.SIGNAL_RECEIVED, {
+        senderId: userId,
+        signal: { type: 'screen-sharing-stopped', payload: { userId } },
+      })
+    }
+
     socket.on('offer', handleOffer)
     socket.on('answer', handleAnswer)
     socket.on('ice-candidate', handleIceCandidate)
+    socket.on('screen-sharing-started', handleScreenSharingStarted)
+    socket.on('screen-sharing-stopped', handleScreenSharingStopped)
 
     this.signalHandlers = [
       () => socket.off('offer', handleOffer),
       () => socket.off('answer', handleAnswer),
       () => socket.off('ice-candidate', handleIceCandidate),
+      () => socket.off('screen-sharing-started', handleScreenSharingStarted),
+      () => socket.off('screen-sharing-stopped', handleScreenSharingStopped),
     ]
 
     return () => {

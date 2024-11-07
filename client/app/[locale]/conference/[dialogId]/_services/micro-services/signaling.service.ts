@@ -90,6 +90,27 @@ export class SignalingService {
       let pc = this.connectionService.getConnection(senderId)
 
       switch (signal.type) {
+        case 'screen-sharing-stopped': {
+          console.log('Remote user stopped screen sharing:', signal.payload.userId)
+          // Очищаем поток трансляции для остановившего показ пользователя
+          const currentScreenStreams = this.store.getDomainState(
+            WebRTCStateChangeType.SHARING_SCREEN,
+          ).remoteScreenStreams
+
+          const updatedScreenStreams = { ...currentScreenStreams }
+          delete updatedScreenStreams[signal.payload.userId]
+
+          this.store.setState(WebRTCStateChangeType.SHARING_SCREEN, {
+            remoteScreenStreams: updatedScreenStreams,
+          })
+          break
+        }
+
+        case 'screen-sharing-started': {
+          console.log('Remote user started screen sharing:', signal.payload.userId)
+          break
+        }
+
         case 'offer': {
           console.log('Processing offer from:', senderId)
 
@@ -101,8 +122,8 @@ export class SignalingService {
           if (pc.signalingState !== 'stable') {
             console.log('Signaling state is not stable, rolling back')
             await Promise.all([
-              pc.setLocalDescription({type: "rollback"}),
-              pc.setRemoteDescription(signal.payload)
+              pc.setLocalDescription({ type: 'rollback' }),
+              pc.setRemoteDescription(signal.payload),
             ])
           } else {
             await pc.setRemoteDescription(signal.payload)
