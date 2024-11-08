@@ -22,7 +22,6 @@ export class ScreenSharingService {
         video: true,
         audio: false,
       })
-
       // Обработчик остановки трансляции
       if (displayStream.getVideoTracks().length > 0) {
         displayStream.getVideoTracks()[0].onended = async () => {

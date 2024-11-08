@@ -1,38 +1,31 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import { useSelector } from 'react-redux'
-import { CallControls, LocalPreview } from '@ui/components/media-stream/components/components'
-import { RemoteVideo } from '@ui/components/media-stream/components-remote/remoteVideo'
+import { useEffect } from 'react'
 import styles from './Conference.module.scss'
 import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
-import { useConferenceSocketConnect } from '../../_hooks'
-import { useWebRTCContext } from '../../_services/ConferenceContext'
-import { ConferenceSelectors } from '../../_store/selectors'
+import { useConference } from '../../_webRTC1/context'
 
 interface ConferenceProps {
   profile?: UserProfileInfo;
 }
 
 export function Conference({ profile }: ConferenceProps) {
-  const { dialogId } = useParams<{ dialogId: string }>()
-
-  useConferenceSocketConnect({ conferenceId: dialogId })
   const {
-    stream,
-    connection,
-    screen: { remoteScreenStreams, isSharing },
-    startScreenSharing,
-    stopScreenSharing,
-    isScreenSharingSupported,
-  } = useWebRTCContext()
+    isInitialized,
+    media,
+    participants,
+    toggleVideo,
+    toggleAudio,
+    startLocalStream,
+    stopLocalStream,
+  } = useConference()
 
-  console.log('remoteScreenStreams', remoteScreenStreams)
-  console.log('stream.streams', stream.streams)
-  console.log('connection', connection)
-  const isConnected = useSelector(ConferenceSelectors.selectIsConnected)
+  useEffect(() => {
+    console.log('Participants changed in component:', participants)
+  }, [participants])
 
-  if (!isConnected) {
+
+  if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
         <p>Подключение к конференции...</p>
@@ -44,51 +37,52 @@ export function Conference({ profile }: ConferenceProps) {
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.participant}>
-          <LocalPreview />
+          {media.stream && (
+            <video
+              ref={(el) => {
+                if (el) el.srcObject = media.stream
+              }}
+              autoPlay
+              muted
+              className="w-64 h-48 bg-black"
+            />
+          )}
           <span className={styles.participantName}>
             {profile?.user_info.id}
             {' '}
             (You)
           </span>
         </div>
-
-        {Object.entries(stream.streams).map(([userId, stream]) => (
-          <div key={userId} className={styles.participant}>
-            <RemoteVideo stream={stream} />
-            <span className={styles.participantName}>
-              {userId}
-              {' '}
-              (
-              {connection.connectionStatus[userId] || 'connecting'}
-              )
-            </span>
-          </div>
-        ))}
-
-        {/* Отображаем стримы screen sharing */}
-        {Object.entries(remoteScreenStreams).map(([userId, stream]) => (
-          <div key={`screen-${userId}`} className={styles.screenShare}>
-            <RemoteVideo stream={stream} />
-            <span className={styles.participantName}>
-              Screen share from
-              {' '}
-              {userId}
-            </span>
-          </div>
-        ))}
       </div>
+
+      <h3>All Participants:</h3>
+      <pre>Debug: {JSON.stringify(participants, null, 2)}</pre>
+      {participants.map((userId) => {
+        console.log('Mapping userId:', userId) // Посмотрим каждую итерацию
+        return (
+          <div key={userId} className={styles.participantItem}>
+            <p>ID: {userId}</p>
+            <p>Is You: {userId === String(profile?.user_info.id) ? 'Yes' : 'No'}</p>
+          </div>
+        )
+      })}
 
       <div className={styles.actionsContainer}>
         <div className={styles.mediaControls}>
-          {isScreenSharingSupported && (
-            <button
-              onClick={isSharing ? stopScreenSharing : startScreenSharing}
-              className={styles.screenShareButton}
-            >
-              {isSharing ? 'Stop Sharing' : 'Share Screen'}
-            </button>
-          )}
-          <CallControls />
+          <button
+            onClick={() => toggleVideo()}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
+            {media.isVideoEnabled ? 'Disable' : 'Enable'}
+            {' '}
+            Video
+          </button>
+          <button
+            onClick={() => toggleAudio()}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
+            {media.isAudioEnabled ? 'Mute' : 'Unmute'}
+          </button>
         </div>
       </div>
     </div>

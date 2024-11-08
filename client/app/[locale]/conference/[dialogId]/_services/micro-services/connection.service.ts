@@ -53,7 +53,7 @@ export class ConnectionService {
   }
 
   private addLocalTracksToConnection(pc: RTCPeerConnection, stream: MediaStream) {
-    stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+    stream.getTracks().forEach((track) => pc.addTransceiver(track, stream))
   }
 
   private handleTrackEvent(event: RTCTrackEvent, targetUserId: string) {
@@ -88,6 +88,9 @@ export class ConnectionService {
       ? { remoteScreenStreams: { [targetUserId]: stream } }
       : { streams: { ...currentStreams, [targetUserId]: stream } }
 
+    console.clear()
+    console.log('___event', event)
+    console.log('targetUserId', targetUserId)
     this.store.setState(isScreenSharing ? WebRTCStateChangeType.SHARING_SCREEN : WebRTCStateChangeType.STREAM, newStreamData)
   }
 

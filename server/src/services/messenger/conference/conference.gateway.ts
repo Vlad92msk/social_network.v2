@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io'
 import { ConferenceService } from './conference.service'
 
 // Типы сигналов WebRTC
-type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share';
+type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share' | 'screen-sharing-started' | 'screen-sharing-stopped';
 
 
 interface WebRTCSignal {
@@ -56,17 +56,19 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
 
         // Проверяем, что пользователь существует в комнате
         const participants = this.conferenceService.getParticipants(dialogId)
-        if (!participants.includes(targetUserId)) {
-            console.error('Target user not found in room:', {
-                targetUserId,
-                dialogId,
-                participants
-            })
-            client.emit('error', {
-                message: 'Target user not found in room',
-                code: 'USER_NOT_FOUND'
-            })
-            return
+        if (targetUserId !== 'all') {
+            if (!participants.includes(targetUserId)) {
+                console.error('Target user not found in room:', {
+                    targetUserId,
+                    dialogId,
+                    participants
+                })
+                client.emit('error', {
+                    message: 'Target user not found in room',
+                    code: 'USER_NOT_FOUND'
+                })
+                return
+            }
         }
 
         console.log('Emitting signal:', {
@@ -76,11 +78,8 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             participants
         })
 
-        // Определяем тип события для emit на основе типа сигнала
-        const emitEventType = signal.type === 'screen-share' ? 'screen-share' : signal.type;
-
         // Отправляем сигнал целевому пользователю
-        this.server.to(targetUserId).emit(emitEventType, {
+        this.server.to(targetUserId).emit(signal.type, {
             userId: senderId,
             signal: signal.payload,
         })
@@ -89,31 +88,39 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
     }
 
     private initializeUser(client: Socket, roomId: string, userId: string) {
-        console.log('Initializing user:', {
+        console.log('=== INITIALIZE USER ===', {
             socketId: client.id,
             userId,
-            roomId
+            roomId,
+            timestamp: new Date().toISOString()
         })
 
-        // Сохраняем userId в данных сокета
         client.data.userId = userId
-
-        // Подключаем к персональной комнате для приема сигналов
         client.join(userId)
+        client.join(roomId)
 
         const participants = this.conferenceService.addUserToRoom(roomId, userId)
 
-        console.log('User initialized:', {
-            userId,
+        // Последовательно логируем и отправляем каждое событие
+        console.log('=== SENDING room:participants ===', {
             roomId,
             participants,
-            socketRooms: Array.from(client.rooms || [])
+            timestamp: new Date().toISOString()
         })
+        this.server.to(roomId).emit('room:participants', participants)
 
-        // Оповещаем других участников
-        client.broadcast.to(roomId).emit('user:joined', userId)
+        console.log('=== SENDING user:joined ===', {
+            roomId,
+            userId,
+            timestamp: new Date().toISOString()
+        })
+        this.server.to(roomId).except(client.id).emit('user:joined', userId)
 
-        // Отправляем информацию новому участнику
+        console.log('=== SENDING room:info ===', {
+            roomId,
+            userId,
+            timestamp: new Date().toISOString()
+        })
         client.emit('room:info', {
             roomId,
             joined: new Date().toISOString(),
@@ -160,12 +167,11 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const userRemoved = this.conferenceService.removeUserFromRoom(roomId, userId)
 
         if (userRemoved) {
-            // Оповещаем остальных участников
-            this.server.emit('user:left', {
-                userId,
-                timestamp: new Date().toISOString(),
-                remainingParticipants: this.conferenceService.getParticipants(roomId)
-            })
+            const participants = this.conferenceService.getParticipants(roomId)
+
+            // Отправляем события только в нужную комнату
+            this.server.to(roomId).emit('user:left', userId)
+            this.server.to(roomId).emit('room:participants', participants)
         }
     }
 
@@ -186,7 +192,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         }
 
         // Добавляем screen-share в список валидных типов сигналов
-        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate', 'screen-share']
+        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate', 'screen-share', 'screen-sharing-started', 'screen-sharing-stopped']
         if (!validSignalTypes.includes(signal.type)) {
             console.error('Invalid signal type:', signal.type)
             return false

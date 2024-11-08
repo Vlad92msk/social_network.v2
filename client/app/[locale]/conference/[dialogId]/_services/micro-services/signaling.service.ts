@@ -88,13 +88,11 @@ export class SignalingService {
 
     try {
       let pc = this.connectionService.getConnection(senderId)
-
       switch (signal.type) {
         case 'screen-sharing-stopped': {
           console.log('Remote user stopped screen sharing:', signal.payload.userId)
           // Очищаем поток трансляции для остановившего показ пользователя
-          const currentScreenStreams = this.store.getDomainState(
-            WebRTCStateChangeType.SHARING_SCREEN,
+          const currentScreenStreams = this.store.getDomainState(WebRTCStateChangeType.SHARING_SCREEN,
           ).remoteScreenStreams
 
           const updatedScreenStreams = { ...currentScreenStreams }
