@@ -8,7 +8,7 @@ export interface SignalingConfig {
 }
 
 /**
- * SignalingService действительно лучше оставить как чистый транспортный слой:
+ * SignalingService чистый транспортный слой:
  *
  * Принимает сигналы от сервера
  * Передает их дальше через события
@@ -65,7 +65,6 @@ export class SignalingService extends EventEmitter {
     })
 
     socket.on('user:joined', (userId: string) => {
-      console.log('userId', userId)
       this.emit('userJoined', userId)
     })
 
@@ -78,7 +77,6 @@ export class SignalingService extends EventEmitter {
     })
 
     socket.on('room:info', (roomInfo: any) => {
-      console.log('roomInfo', roomInfo)
       this.emit('roomInfo', roomInfo)
     })
 
@@ -89,7 +87,7 @@ export class SignalingService extends EventEmitter {
 
   sendSignal(targetUserId: string, signal: any) {
     if (!this.#socket || !this.#config) {
-      throw new Error('SignalingService is not initialized')
+      throw new Error('SignalingService не инициализирован')
     }
 
     this.#socket.emit('signal', {

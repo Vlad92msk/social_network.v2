@@ -7,6 +7,7 @@ export class NotificationManager extends EventEmitter {
   notify(type: string, message: string) {
     const id = crypto.randomUUID()
     this.notifications.set(id, message)
+    console.log('NOTIFICATION', type, message)
     this.emit('notification', { id, type, message })
 
     // Автоматическое удаление уведомления через 5 секунд

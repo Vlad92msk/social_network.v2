@@ -3,7 +3,7 @@ import {
 } from './micro-services'
 
 // Конфигурация для сервисов
-interface ConferenceConfig {
+export interface ConferenceConfig {
   signaling: SignalingConfig
   room?: RoomInfo
   ice?: RTCIceServer[]
@@ -61,7 +61,7 @@ export class ConferenceService {
 
       this.#initialized = true
     } catch (error) {
-      this.#notificationManager.notify('error', 'Failed to initialize conference')
+      this.#notificationManager.notify('error', 'Ошибка инициализации конференции')
       throw error
     }
   }
@@ -78,7 +78,6 @@ export class ConferenceService {
 
   #notifySubscribers() {
     const state = this.getState()
-    console.log('state', state)
     this.#subscribers.forEach((callback) => callback(state))
   }
 
@@ -110,41 +109,40 @@ export class ConferenceService {
   #setupServiceInterconnections() {
     // Обработка событий сигнального сервера
     this.#signalingService.on('connected', () => {
-      this.#notificationManager.notify('info', 'Connected to conference')
+      this.#notificationManager.notify('INFO', 'Подключился к конференции')
       this.#notifySubscribers()
     })
 
     this.#signalingService.on('disconnected', () => {
-      this.#notificationManager.notify('warning', 'Disconnected from conference')
+      this.#notificationManager.notify('WARNING', 'Отключился от конференции')
       this.#notifySubscribers()
     })
 
     this.#signalingService.on('error', (error: Error) => {
-      this.#notificationManager.notify('error', error.message)
+      this.#notificationManager.notify('ERROR', error.message)
       this.#notifySubscribers()
     })
 
     this.#signalingService.on('userJoined', (userId: string) => {
-      console.log('____userId', userId)
       this.#roomService.addParticipant(userId)
-      this.#notificationManager.notify('info', `User ${userId} joined the conference`)
+      this.#notificationManager.notify('INFO', `Пользователь ${userId} присоединился к конференции`)
       this.#notifySubscribers()
     })
 
     this.#signalingService.on('userLeft', (userId: string) => {
       this.#roomService.removeParticipant(userId)
-      this.#notificationManager.notify('info', `User ${userId} left the conference`)
+      this.#notificationManager.notify('INFO', `Пользователь ${userId} покинул конференцию`)
       this.#notifySubscribers()
     })
 
     // Обработка событий медиа стрима
     this.#mediaManager.on('streamStarted', () => {
-      this.#notificationManager.notify('info', 'Local media stream started')
+      this.#notificationManager.notify('INFO', 'Local media stream started')
       this.#notifySubscribers()
     })
 
     this.#mediaManager.on('error', (error: Error) => {
-      this.#notificationManager.notify('error', error.message)
+      this.#notificationManager.notify('ERROR', error.message)
       this.#notifySubscribers()
     })
   }
@@ -153,19 +151,23 @@ export class ConferenceService {
   async startLocalStream() {
     this.#checkInitialized()
     await this.#mediaManager.startStream()
+    this.#notifySubscribers()
   }
 
   stopLocalStream() {
     this.#checkInitialized()
     this.#mediaManager.stopStream()
+    this.#notifySubscribers()
   }
 
   toggleVideo() {
-    return this.#mediaManager.toggleVideo()
+    this.#mediaManager.toggleVideo()
+    this.#notifySubscribers()
   }
 
   toggleAudio() {
-    return this.#mediaManager.toggleAudio()
+    this.#mediaManager.toggleAudio()
+    this.#notifySubscribers()
   }
 
   // Получение текущего состояния
@@ -180,7 +182,7 @@ export class ConferenceService {
   // Проверка инициализации перед выполнением операций
   #checkInitialized() {
     if (!this.#initialized) {
-      throw new Error('ConferenceService is not initialized')
+      throw new Error('ConferenceService не инициализирован')
     }
   }
 

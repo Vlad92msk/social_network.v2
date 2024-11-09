@@ -1,9 +1,12 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { cloneDeep } from 'lodash'
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
+import { InitialState, initialState } from './initial.state'
 
-interface ConferenceContextState {
+export interface ConferenceContextState {
   isInitialized: boolean
   media: {
     stream?: MediaStream
@@ -16,11 +19,10 @@ interface ConferenceContextState {
     error: Error | null
   }
   participants: string[]
-  // Методы управления
-  toggleVideo: () => Promise<void>
-  toggleAudio: () => void
-  startLocalStream: () => Promise<void>
-  stopLocalStream: () => void
+  toggleVideo: VoidFunction
+  toggleAudio: VoidFunction
+  startLocalStream: VoidFunction
+  stopLocalStream: VoidFunction
 }
 
 const ConferenceContext = createContext<ConferenceContextState | null>(null)
@@ -34,65 +36,34 @@ interface ConferenceProviderProps {
 export function ConferenceProvider({ children, currentUserId, dialogId }: ConferenceProviderProps) {
   const conferenceService = useRef(new ConferenceService())
   const [isInitialized, setIsInitialized] = useState(false)
-  const [state, setState] = useState<{
-    media: ConferenceContextState['media']
-    signaling: ConferenceContextState['signaling']
-    participants: string[]
-  }>({
-    media: {
-      isVideoEnabled: false,
-      isAudioEnabled: false,
-      error: null,
-    },
-    signaling: {
-      isConnected: false,
-      error: null,
-    },
-    participants: [],
-  })
+  const [state, setState] = useState<InitialState>(initialState)
 
   // Инициализация сервиса
   useEffect(() => {
     const initializeConference = async () => {
       try {
-        const config = {
-          signaling: {
-            url: 'http://localhost:3001/conference',
-            userId: currentUserId,
-            dialogId,
-          },
-          mediaConstraints: {
-            audio: true,
-            video: true,
-          },
-        }
+        await conferenceService.current.initialize(
+          conferenceConfig({
+            signaling: { userId: currentUserId, dialogId },
+            localVideo: { video: true, audio: true },
+          }),
+        )
 
-        await conferenceService.current.initialize({ ...config, ice: [{ urls: 'stun:stun.l.google.com:19302' }] })
+        // Получаем начальное состояние
+        setState(conferenceService.current.getState())
 
-        // Создаем функцию обновления состояния
-        const handleStateUpdate = (newState: any) => {
-          console.log('Received new state:', newState)
-          setState((prevState) => {
-            const nextState = {
-              ...prevState,
-              ...newState,
-              participants: Array.isArray(newState.participants)
-                ? [...newState.participants]
-                : prevState.participants,
-            }
-            return nextState
-          })
-        }
-
-        // Подписываемся с новой функцией обработки
-        conferenceService.current.subscribe(handleStateUpdate)
+        const unsubscribe = conferenceService.current.subscribe((newState) => {
+          // приходится использовать cloneDeep
+          // потому что дальше в компоненте не обновляется состояние
+          // хотя это странно...
+          setState(cloneDeep(newState))
+        })
 
         setIsInitialized(true)
 
-        // Получаем начальное состояние
-        handleStateUpdate(conferenceService.current.getState())
+        return unsubscribe
       } catch (error) {
-        console.error('Failed to initialize conference:', error)
+        console.error('Ошибка инициализации:', error)
       }
     }
 
@@ -101,16 +72,16 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
     return () => {
       conferenceService.current.destroy()
     }
-  }, [currentUserId, dialogId])
+  }, [currentUserId, dialogId, setState])
 
-  const value: ConferenceContextState = {
+  const value: ConferenceContextState = useMemo(() => ({
     isInitialized,
     ...state,
     toggleVideo: () => conferenceService.current.toggleVideo(),
     toggleAudio: () => conferenceService.current.toggleAudio(),
     startLocalStream: () => conferenceService.current.startLocalStream(),
     stopLocalStream: () => conferenceService.current.stopLocalStream(),
-  }
+  }), [isInitialized, state])
 
   return (
     <ConferenceContext.Provider value={value}>
@@ -122,6 +93,7 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
 // Хук для использования контекста
 export function useConference() {
   const context = useContext(ConferenceContext)
+
   if (!context) {
     throw new Error('useConference must be used within ConferenceProvider')
   }
