@@ -109,8 +109,11 @@ export class ConferenceService {
     })
   }
 
+  /**
+   * Подписки на события всех сервисов
+   */
   #setupServiceInterconnections() {
-    // Обработка событий сигнального сервера
+    // ===== Подписка на события сигнального сервера =====
     this.#signalingService.on('connected', () => {
       this.#notificationManager.notify('INFO', 'Подключился к конференции')
       this.#notifySubscribers()
@@ -138,9 +141,23 @@ export class ConferenceService {
       this.#notifySubscribers()
     })
 
-    // Обработка событий медиа стрима
+    // ===== Подписка на события медиа стрима (камеры) =====
     this.#mediaManager.on('streamStarted', () => {
-      this.#notificationManager.notify('INFO', 'Local media stream started')
+      this.#notificationManager.notify('INFO', 'Началась трансляция с камеры')
+      this.#notifySubscribers()
+    })
+
+    this.#mediaManager.on('streamStopped', () => {
+      this.#notificationManager.notify('INFO', 'Остановилась трансляция с камеры')
+      this.#notifySubscribers()
+    })
+
+    this.#mediaManager.on('videoToggled', (status: boolean) => {
+      this.#notificationManager.notify('INFO', `Переключение видео камеры в режим: ${status}`)
+      this.#notifySubscribers()
+    })
+    this.#mediaManager.on('audioToggled', (status: boolean) => {
+      this.#notificationManager.notify('INFO', `Переключение аудио с камеры в режим: ${status}`)
       this.#notifySubscribers()
     })
 
@@ -149,13 +166,14 @@ export class ConferenceService {
       this.#notifySubscribers()
     })
 
-    // Подписываемся на события трансляции экрана
-    this.#screenShareManager.on('streamStopped', () => {
+    // ===== Подписка на события трансляции экрана =====
+    this.#screenShareManager.on('streamStarted', () => {
+      this.#notificationManager.notify('INFO', 'Началась трансляция экрана')
       this.#notifySubscribers()
     })
 
-    // Можно также подписаться на streamStarted если нужно
-    this.#screenShareManager.on('streamStarted', () => {
+    this.#screenShareManager.on('streamStopped', () => {
+      this.#notificationManager.notify('INFO', 'Остановилась трансляция экрана')
       this.#notifySubscribers()
     })
   }
@@ -164,23 +182,19 @@ export class ConferenceService {
   async startLocalStream() {
     this.#checkInitialized()
     await this.#mediaManager.startStream()
-    this.#notifySubscribers()
   }
 
   stopLocalStream() {
     this.#checkInitialized()
     this.#mediaManager.stopStream()
-    this.#notifySubscribers()
   }
 
   toggleVideo() {
     this.#mediaManager.toggleVideo()
-    this.#notifySubscribers()
   }
 
   toggleAudio() {
     this.#mediaManager.toggleAudio()
-    this.#notifySubscribers()
   }
 
   async startScreenShare() {
