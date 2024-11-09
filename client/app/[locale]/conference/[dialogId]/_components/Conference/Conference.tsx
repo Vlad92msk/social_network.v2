@@ -14,18 +14,11 @@ interface ConferenceProps {
 export function Conference({ profile }: ConferenceProps) {
   const {
     isInitialized,
-    media,
-    participants,
     localScreenShare,
-    toggleVideo,
-    toggleAudio,
     startScreenShare,
     stopScreenShare,
   } = useConference()
 
-  useEffect(() => {
-    console.log('Participants changed in component:', participants)
-  }, [participants])
 
   if (!isInitialized) {
     return (

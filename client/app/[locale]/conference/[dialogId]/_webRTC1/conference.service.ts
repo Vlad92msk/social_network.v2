@@ -1,5 +1,13 @@
 import {
-  ConnectionManager, MediaStreamManager, MediaStreamOptions, NotificationManager, RoomInfo, RoomService, ScreenShareManager, SettingsService, SignalingConfig, SignalingService,
+  ConnectionManager,
+  MediaStreamManager,
+  MediaStreamOptions,
+  NotificationManager,
+  RoomInfo,
+  RoomService,
+  ScreenShareManager,
+  SignalingConfig,
+  SignalingService,
 } from './micro-services'
 
 // Конфигурация для сервисов
@@ -33,18 +41,23 @@ export class ConferenceService {
 
   #signalingService: SignalingService
 
+  #connectionService: ConnectionManager
+
   constructor() {
     this.#notificationManager = new NotificationManager()
     this.#roomService = new RoomService()
     this.#mediaManager = new MediaStreamManager()
     this.#signalingService = new SignalingService()
     this.#screenShareManager = new ScreenShareManager()
+    this.#connectionService = new ConnectionManager()
   }
 
   async initialize(config: ConferenceConfig) {
     try {
       // Инициализируем медиа сразу, так как он не зависит от комнаты
       this.#mediaManager.init(config.mediaConstraints)
+
+      this.#connectionService.init({ iceServers: config.ice })
 
       // Инициализируем соединение с сервером
       this.#signalingService.init({
@@ -176,6 +189,9 @@ export class ConferenceService {
       this.#notificationManager.notify('INFO', 'Остановилась трансляция экрана')
       this.#notifySubscribers()
     })
+
+    // ===== Подписка на события сервиса подключений =====
+    // ...
   }
 
   // Обновляем публичные методы с проверкой инициализации
@@ -214,6 +230,7 @@ export class ConferenceService {
       signaling: this.#signalingService.getState(),
       participants: this.#roomService.getParticipants(),
       localScreenShare: this.#screenShareManager.getState(),
+      connections: this.#connectionService.getAllConnections(),
     }
   }
 
@@ -230,5 +247,6 @@ export class ConferenceService {
     this.#roomService.destroy()
     this.#signalingService.destroy()
     this.#screenShareManager.destroy()
+    this.#connectionService.destroy()
   }
 }
