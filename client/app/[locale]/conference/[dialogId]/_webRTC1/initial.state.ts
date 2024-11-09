@@ -1,9 +1,11 @@
+import { ConferenceService } from './conference.service'
 import { ConferenceContextState } from './context'
 
 export interface InitialState {
   media: ConferenceContextState['media']
   signaling: ConferenceContextState['signaling']
   participants: string[]
+  localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
 }
 
 export const initialState: InitialState = {
@@ -17,4 +19,8 @@ export const initialState: InitialState = {
     error: null,
   },
   participants: [],
+  localScreenShare: {
+    stream: undefined,
+    isVideoEnabled: false,
+  },
 }

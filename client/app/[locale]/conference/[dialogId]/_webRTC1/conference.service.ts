@@ -29,6 +29,8 @@ export class ConferenceService {
 
   #mediaManager: MediaStreamManager
 
+  #screenShareManager: ScreenShareManager
+
   #signalingService: SignalingService
 
   constructor() {
@@ -36,6 +38,7 @@ export class ConferenceService {
     this.#roomService = new RoomService()
     this.#mediaManager = new MediaStreamManager()
     this.#signalingService = new SignalingService()
+    this.#screenShareManager = new ScreenShareManager()
   }
 
   async initialize(config: ConferenceConfig) {
@@ -145,6 +148,16 @@ export class ConferenceService {
       this.#notificationManager.notify('ERROR', error.message)
       this.#notifySubscribers()
     })
+
+    // Подписываемся на события трансляции экрана
+    this.#screenShareManager.on('streamStopped', () => {
+      this.#notifySubscribers()
+    })
+
+    // Можно также подписаться на streamStarted если нужно
+    this.#screenShareManager.on('streamStarted', () => {
+      this.#notifySubscribers()
+    })
   }
 
   // Обновляем публичные методы с проверкой инициализации
@@ -170,12 +183,23 @@ export class ConferenceService {
     this.#notifySubscribers()
   }
 
+  async startScreenShare() {
+    this.#checkInitialized()
+    await this.#screenShareManager.startScreenShare()
+  }
+
+  async stopScreenShare() {
+    this.#checkInitialized()
+    await this.#screenShareManager.stopScreenShare()
+  }
+
   // Получение текущего состояния
   getState() {
     return {
       media: this.#mediaManager.getState(),
       signaling: this.#signalingService.getState(),
       participants: this.#roomService.getParticipants(),
+      localScreenShare: this.#screenShareManager.getState(),
     }
   }
 
@@ -191,5 +215,6 @@ export class ConferenceService {
     this.#mediaManager.destroy()
     this.#roomService.destroy()
     this.#signalingService.destroy()
+    this.#screenShareManager.destroy()
   }
 }

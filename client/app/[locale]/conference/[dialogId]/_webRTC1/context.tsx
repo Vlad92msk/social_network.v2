@@ -8,21 +8,28 @@ import { InitialState, initialState } from './initial.state'
 
 export interface ConferenceContextState {
   isInitialized: boolean
+  signaling: {
+    isConnected: boolean
+    error: Error | null
+  }
+  participants: string[]
+
+  // Видео с камеры
   media: {
     stream?: MediaStream
     isVideoEnabled: boolean
     isAudioEnabled: boolean
     error: Error | null
   }
-  signaling: {
-    isConnected: boolean
-    error: Error | null
-  }
-  participants: string[]
   toggleVideo: VoidFunction
   toggleAudio: VoidFunction
   startLocalStream: VoidFunction
   stopLocalStream: VoidFunction
+
+  // Трансляция экрана
+  localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
+  startScreenShare: VoidFunction
+  stopScreenShare: VoidFunction
 }
 
 const ConferenceContext = createContext<ConferenceContextState | null>(null)
@@ -81,6 +88,8 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
     toggleAudio: () => conferenceService.current.toggleAudio(),
     startLocalStream: () => conferenceService.current.startLocalStream(),
     stopLocalStream: () => conferenceService.current.stopLocalStream(),
+    startScreenShare: () => conferenceService.current.startScreenShare(),
+    stopScreenShare: () => conferenceService.current.stopScreenShare(),
   }), [isInitialized, state])
 
   return (
