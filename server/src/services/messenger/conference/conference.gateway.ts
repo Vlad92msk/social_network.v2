@@ -42,6 +42,12 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const { targetUserId, signal, dialogId } = payload
         const senderId = client.data.userId
 
+        if (signal.type === 'ice-candidate'){
+            console.log(
+              '___payload___', payload
+            )
+        }
+
         console.log('Received signal:', {
             type: signal.type,
             from: senderId,

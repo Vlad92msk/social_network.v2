@@ -9,18 +9,21 @@ export class ConnectionManager extends EventEmitter {
 
   #streamTypes: Map<string, Map<MediaStreamTrack, 'camera' | 'screen'>> = new Map()
 
-  init(options: RTCConfiguration): void {
+  async init(options: RTCConfiguration): Promise<void> {
     if (this.#initialized) {
-      this.destroy()
+      await this.destroy()
     }
 
-    try {
-      this.#configConnection = options
-      this.#initialized = true
-    } catch (error) {
-      this.emit('error', new Error('Failed to initialize ConnectionManager'))
-      throw error
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        this.#configConnection = options
+        this.#initialized = true
+        resolve()
+      } catch (error) {
+        this.emit('error', new Error('Failed to initialize ConnectionManager'))
+        reject(error)
+      }
+    })
   }
 
   private isConnectionActive(userId: string): boolean {
@@ -34,31 +37,15 @@ export class ConnectionManager extends EventEmitter {
     }
 
     try {
-      console.log('Creating new connection for user:', userId)
       const pc = new RTCPeerConnection(this.#configConnection)
 
       pc.onicecandidate = (event) => {
-        console.log('ICE candidate event:', {
-          userId,
-          hasCandidate: !!event.candidate,
-          candidateType: event.candidate?.type,
-          connectionState: pc.connectionState,
-          iceGatheringState: pc.iceGatheringState,
-        })
-
         if (event.candidate) {
           this.emit('iceCandidate', { userId, candidate: event.candidate })
         }
       }
 
       pc.oniceconnectionstatechange = () => {
-        console.log('ICE connection state changed:', {
-          userId,
-          state: pc.iceConnectionState,
-          connectionState: pc.connectionState,
-          iceGatheringState: pc.iceGatheringState,
-        })
-
         this.emit('iceConnectionStateChanged', {
           userId,
           state: pc.iceConnectionState,
@@ -93,7 +80,6 @@ export class ConnectionManager extends EventEmitter {
       }
 
       pc.onconnectionstatechange = () => {
-        console.log('Connection state changed:', pc.connectionState)
         this.emit('connectionStateChanged', {
           userId,
           state: pc.connectionState,
@@ -105,7 +91,6 @@ export class ConnectionManager extends EventEmitter {
       }
 
       pc.onnegotiationneeded = () => {
-        console.log('Negotiation needed for user:', userId)
         this.handleNegotiationNeeded(userId)
       }
 
@@ -150,7 +135,7 @@ export class ConnectionManager extends EventEmitter {
       const tracks = stream.getTracks()
       const userStreamTypes = this.#streamTypes.get(userId)!
 
-      for (const track of tracks) {
+      await Promise.all(tracks.map(async (track) => {
         connection.addTransceiver(track, {
           streams: [stream],
           direction: 'sendonly',
@@ -173,7 +158,7 @@ export class ConnectionManager extends EventEmitter {
           userStreamTypes.delete(track)
           this.emit('trackEnded', { userId, track, type })
         }
-      }
+      }))
     } catch (error) {
       this.emit('error', new Error(`Failed to add stream for user ${userId}`))
       throw error
@@ -181,121 +166,83 @@ export class ConnectionManager extends EventEmitter {
   }
 
   async handleAnswer(userId: string, answer: RTCSessionDescriptionInit): Promise<void> {
-    const connection = this.#peerConnections.get(userId);
+    const connection = this.#peerConnections.get(userId)
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`);
+      throw new Error(`Connection not found for user ${userId}`)
+    }
+
+    if (!this.isConnectionActive(userId)) {
+      throw new Error(`Connection is not active for user ${userId}`)
     }
 
     try {
-      console.log('Handling answer:', {
-        userId,
-        connectionState: connection.connectionState,
-        signalingState: connection.signalingState,
-        iceGatheringState: connection.iceGatheringState,
-        hasRemoteDescription: !!connection.remoteDescription,
-        answerType: answer.type,
-      });
-
-      // Проверяем текущее состояние
       if (connection.signalingState !== 'have-local-offer') {
         console.warn('Unexpected signaling state for handling answer:', {
           currentState: connection.signalingState,
-          expectedState: 'have-local-offer'
-        });
+          expectedState: 'have-local-offer',
+        })
       }
 
-      // Устанавливаем remote description
-      await connection.setRemoteDescription(new RTCSessionDescription(answer));
-
-      console.log('Remote description set successfully:', {
-        newSignalingState: connection.signalingState,
-        newIceGatheringState: connection.iceGatheringState
-      });
-
+      await connection.setRemoteDescription(new RTCSessionDescription(answer))
     } catch (error) {
-      console.error('Error in handleAnswer:', {
-        error,
-        connectionState: connection.connectionState,
-        signalingState: connection.signalingState,
-        iceGatheringState: connection.iceGatheringState
-      });
-
-      throw new Error(`Failed to handle answer for user ${userId}`);
+      throw new Error(`Failed to handle answer for user ${userId}`)
     }
   }
 
   // Также модифицируем handleOffer для полноты картины
   async handleOffer(userId: string, offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-    const connection = this.#peerConnections.get(userId);
+    const connection = this.#peerConnections.get(userId)
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`);
+      throw new Error(`Connection not found for user ${userId}`)
     }
 
     try {
-      console.log('Handling offer:', {
-        userId,
-        connectionState: connection.connectionState,
-        signalingState: connection.signalingState,
-        iceGatheringState: connection.iceGatheringState
-      });
+      await connection.setRemoteDescription(new RTCSessionDescription(offer))
 
-      await connection.setRemoteDescription(new RTCSessionDescription(offer));
-      console.log('Remote description (offer) set');
+      const answer = await connection.createAnswer()
 
-      const answer = await connection.createAnswer();
-      console.log('Answer created');
+      await connection.setLocalDescription(answer)
 
-      await connection.setLocalDescription(answer);
-      console.log('Local description (answer) set');
-
-      return answer;
+      return answer
     } catch (error) {
-      console.error('Error in handleOffer:', error);
-      throw new Error(`Failed to handle offer for user ${userId}`);
+      console.error('Error in handleOffer:', error)
+      throw new Error(`Failed to handle offer for user ${userId}`)
     }
   }
 
   // И createOffer тоже обновим
   async createOffer(userId: string): Promise<RTCSessionDescriptionInit> {
-    const connection = this.#peerConnections.get(userId);
+    const connection = this.#peerConnections.get(userId)
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`);
+      throw new Error(`Connection not found for user ${userId}`)
     }
 
     try {
-      console.log('Creating offer:', {
-        userId,
-        connectionState: connection.connectionState,
-        signalingState: connection.signalingState,
-        iceGatheringState: connection.iceGatheringState
-      });
+      const offer = await connection.createOffer()
+      await connection.setLocalDescription(offer)
 
-      const offer = await connection.createOffer();
-      console.log('Offer created');
-
-      await connection.setLocalDescription(offer);
-      console.log('Local description set:', {
-        signalingState: connection.signalingState,
-        iceGatheringState: connection.iceGatheringState
-      });
-
-      return offer;
+      return offer
     } catch (error) {
-      console.error('Error in createOffer:', error);
-      throw new Error(`Failed to create offer for user ${userId}`);
+      console.error('Error in createOffer:', error)
+      throw new Error(`Failed to create offer for user ${userId}`)
     }
   }
 
-  async addIceCandidate(userId: string, candidate: RTCIceCandidate): Promise<void> {
+  async addIceCandidate(userId: string, candidate: RTCIceCandidate | null): Promise<void> {
     const connection = this.#peerConnections.get(userId)
     if (!connection) {
-      throw new Error(`Не установлено соединение с пользователем ${userId}`)
+      throw new Error(`Connection not found for user ${userId}`)
+    }
+
+    if (!this.isConnectionActive(userId)) {
+      throw new Error(`Connection is not active for user ${userId}`)
     }
 
     try {
+      if (candidate === null) return; // Valid case in WebRTC
       await connection.addIceCandidate(candidate)
     } catch (error) {
-      this.emit('error', new Error(`Ошибка добавления ICE candidate для пользователя ${userId}`))
+      this.emit('error', new Error(`Failed to add ICE candidate for user ${userId}`))
       throw error
     }
   }
@@ -354,11 +301,16 @@ export class ConnectionManager extends EventEmitter {
     }
   }
 
-  destroy(): void {
+  async destroy(): Promise<void> {
     if (this.#initialized) {
-      Array.from(this.#peerConnections.keys()).forEach((userId) => {
-        this.closeConnection(userId)
+      const closePromises = Array.from(this.#peerConnections.keys()).map((userId) => {
+        return new Promise<void>((resolve) => {
+          this.closeConnection(userId)
+          resolve()
+        })
       })
+
+      await Promise.all(closePromises)
 
       this.#peerConnections.clear()
       this.#streamTypes.clear()

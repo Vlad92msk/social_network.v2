@@ -32,43 +32,67 @@ export class SignalingService extends EventEmitter {
 
   #error: Error | null = null
 
-  init(config: SignalingConfig) {
+  async init(config: SignalingConfig): Promise<void> {
     if (this.#socket) {
       this.destroy()
     }
 
-    this.#config = config
-    this.#socket = io(config.url, {
-      path: '/socket.io',
-      query: {
-        userId: config.userId,
-        dialogId: config.dialogId,
-      },
-    })
+    return new Promise((resolve, reject) => {
+      try {
+        this.#config = config
+        this.#socket = io(config.url, {
+          path: '/socket.io',
+          query: {
+            userId: config.userId,
+            dialogId: config.dialogId,
+          },
+        })
 
-    this.#setupSocketListeners()
+        let cleanupFunction: () => void
+
+        // Обработчик успешного подключения
+        const handleConnect = () => {
+          this.#isConnected = true
+          this.emit('connected')
+          this.emit('stateChanged', this.getState())
+          cleanupFunction()
+          resolve()
+        }
+
+        // Обработчик ошибки подключения
+        const handleError = (error: Error) => {
+          this.#error = error
+          this.emit('error', error)
+          this.emit('stateChanged', this.getState())
+          cleanupFunction()
+          reject(error)
+        }
+
+        // Функция очистки временных слушателей
+        cleanupFunction = () => {
+          this.#socket?.off('connect', handleConnect)
+          this.#socket?.off('connect_error', handleError)
+        }
+
+        // Устанавливаем временные слушатели для инициализации
+        this.#socket.once('connect', handleConnect)
+        this.#socket.once('connect_error', handleError)
+
+        // Устанавливаем постоянные слушатели
+        this.#setupSocketListeners()
+      } catch (error) {
+        reject(error)
+      }
+    })
   }
 
   #setupSocketListeners() {
     const socket = this.#socket
     if (!socket) return
 
-    socket.on('connect', () => {
-      if (socket !== this.#socket) return
-
-      this.#isConnected = true
-      this.emit('connected')
-      this.emit('stateChanged', this.getState())
-    })
-
     socket.on('disconnect', () => {
       this.#isConnected = false
       this.emit('disconnected')
-      this.emit('stateChanged', this.getState())
-    })
-    socket.on('connect_error', (error: Error) => {
-      this.#error = error
-      this.emit('error', error)
       this.emit('stateChanged', this.getState())
     })
 
@@ -85,6 +109,7 @@ export class SignalingService extends EventEmitter {
     })
 
     socket.on('room:info', (roomInfo: any) => {
+      console.log('Received room:info', roomInfo)
       this.emit('roomInfo', roomInfo)
     })
 
@@ -92,17 +117,16 @@ export class SignalingService extends EventEmitter {
       userId: string,
       signal: SignalMessage
     }) => {
-      console.log('___offer')
       this.emit('sdp', {
         userId,
         description: signal.payload as RTCSessionDescriptionInit,
       })
     })
+
     socket.on('answer', ({ userId, signal }: {
       userId: string,
       signal: SignalMessage
     }) => {
-      console.log('___answer')
       this.emit('sdp', {
         userId,
         description: signal.payload as RTCSessionDescriptionInit,
@@ -113,7 +137,6 @@ export class SignalingService extends EventEmitter {
       userId: string,
       signal: SignalMessage
     }) => {
-      console.log('___ice-candidate')
       this.emit('iceCandidate', {
         userId,
         candidate: signal.payload as RTCIceCandidateInit,
@@ -155,7 +178,6 @@ export class SignalingService extends EventEmitter {
       payload: candidate,
     })
   }
-
 
   sendSignal(targetUserId: string, signal: any) {
     if (!this.#socket || !this.#config) {
