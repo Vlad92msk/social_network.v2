@@ -81,7 +81,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         // Отправляем сигнал целевому пользователю
         this.server.to(targetUserId).emit(signal.type, {
             userId: senderId,
-            signal: signal.payload,
+            signal,
         })
 
         this.logSignal(senderId, targetUserId, signal.type)

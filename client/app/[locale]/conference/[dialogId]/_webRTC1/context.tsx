@@ -28,6 +28,7 @@ export interface ConferenceContextState {
 
   // Трансляция экрана
   localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
+  streams: ReturnType<ConferenceService['getState']>['streams']
   startScreenShare: VoidFunction
   stopScreenShare: VoidFunction
 }
@@ -57,6 +58,7 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
         )
 
         // Получаем начальное состояние
+        // @ts-ignore
         setState(conferenceService.current.getState())
 
         const unsubscribe = conferenceService.current.subscribe((newState) => {
@@ -92,6 +94,7 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
     stopScreenShare: () => conferenceService.current.stopScreenShare(),
   }), [isInitialized, state])
 
+  // console.log('____value___', value)
   return (
     <ConferenceContext.Provider value={value}>
       {children}

@@ -17,8 +17,12 @@ export function Conference({ profile }: ConferenceProps) {
     localScreenShare,
     startScreenShare,
     stopScreenShare,
+    streams,
+    participants,
   } = useConference()
 
+  // Получаем все потоки участников
+  const remoteStreams = streams || []
 
   if (!isInitialized) {
     return (
@@ -31,6 +35,7 @@ export function Conference({ profile }: ConferenceProps) {
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
+        {/* Локальный пользователь */}
         <div className={styles.participant}>
           <LocalPreview />
           <span className={styles.participantName}>
@@ -39,16 +44,37 @@ export function Conference({ profile }: ConferenceProps) {
             (You)
           </span>
         </div>
+
+        {/* Локальный скриншеринг */}
         {localScreenShare.isVideoEnabled && (
-          <RemoteVideo stream={localScreenShare.stream} />
+          <div className={styles.participant}>
+            <RemoteVideo stream={localScreenShare.stream} />
+            <span className={styles.participantName}>
+              Your Screen Share
+            </span>
+          </div>
         )}
+
+        {/* Потоки других участников */}
+        {remoteStreams.map(({ userId, stream, type }) => (
+          <div
+            key={`${userId}-${type}`}
+            className={styles.participant}
+          >
+            <RemoteVideo stream={stream} />
+            <span className={styles.participantName}>
+              {userId}
+              {type === 'screen' ? ' (Screen)' : ''}
+            </span>
+          </div>
+        ))}
       </div>
 
       <div className={styles.actionsContainer}>
         <div className={styles.mediaControls}>
           <CallControls />
           <button
-            className={styles.button}
+            className={`${styles.button} ${localScreenShare.isVideoEnabled ? styles.buttonActive : ''}`}
             onClick={() => {
               if (localScreenShare.isVideoEnabled) {
                 stopScreenShare()
@@ -57,8 +83,15 @@ export function Conference({ profile }: ConferenceProps) {
               }
             }}
           >
-            {localScreenShare.isVideoEnabled ? '🎥 Выкл трансляцию' : '📵 Вкл трансляцию'}
+            {localScreenShare.isVideoEnabled ? '🎥 Остановить трансляцию' : '📺 Начать трансляцию экрана'}
           </button>
+        </div>
+
+        {/* Можно добавить отображение количества участников */}
+        <div className={styles.participantsInfo}>
+          Участников:
+          {' '}
+          {participants.length || 0}
         </div>
       </div>
     </div>

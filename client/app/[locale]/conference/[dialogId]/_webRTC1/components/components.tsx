@@ -31,7 +31,7 @@ export function CallControls() {
     stopLocalStream,
   } = useConference()
 
-  console.log('isVideoEnabled', isVideoEnabled)
+  // console.log('isVideoEnabled', isVideoEnabled)
   return (
     <div className={styles.controls}>
       <button

@@ -43,6 +43,8 @@ export class ConferenceService {
 
   #connectionService: ConnectionManager
 
+  #reconnectTimeout?: NodeJS.Timeout
+
   constructor() {
     this.#notificationManager = new NotificationManager()
     this.#roomService = new RoomService()
@@ -54,13 +56,21 @@ export class ConferenceService {
 
   async initialize(config: ConferenceConfig) {
     try {
+      if (this.#initialized) {
+        await this.destroy()
+      }
+
       // Инициализируем медиа сразу, так как он не зависит от комнаты
       this.#mediaManager.init(config.mediaConstraints)
 
-      this.#connectionService.init({ iceServers: config.ice })
+      this.#connectionService.init({
+        iceServers: config.ice,
+        iceCandidatePoolSize: 10, // Улучшаем сбор ICE кандидатов
+        iceTransportPolicy: 'all',
+      })
 
       // Инициализируем соединение с сервером
-      this.#signalingService.init({
+      await this.#signalingService.init({
         url: config.signaling.url,
         userId: config.signaling.userId,
         dialogId: config.signaling.dialogId,
@@ -76,6 +86,7 @@ export class ConferenceService {
       this.#setupServiceInterconnections()
 
       this.#initialized = true
+      this.#notifySubscribers()
     } catch (error) {
       this.#notificationManager.notify('error', 'Ошибка инициализации конференции')
       throw error
@@ -126,13 +137,17 @@ export class ConferenceService {
    * Подписки на события всех сервисов
    */
   #setupServiceInterconnections() {
-    // ===== Подписка на события сигнального сервера =====
+    // ===== Сигнальный сервер =====
     this.#signalingService.on('connected', () => {
       this.#notificationManager.notify('INFO', 'Подключился к конференции')
+      if (this.#reconnectTimeout) {
+        clearTimeout(this.#reconnectTimeout)
+        this.#reconnectTimeout = undefined
+      }
       this.#notifySubscribers()
     })
 
-    this.#signalingService.on('disconnected', () => {
+    this.#signalingService.on('disconnected', async () => {
       this.#notificationManager.notify('WARNING', 'Отключился от конференции')
       this.#notifySubscribers()
     })
@@ -142,56 +157,137 @@ export class ConferenceService {
       this.#notifySubscribers()
     })
 
-    this.#signalingService.on('userJoined', (userId: string) => {
-      this.#roomService.addParticipant(userId)
-      this.#notificationManager.notify('INFO', `Пользователь ${userId} присоединился к конференции`)
-      this.#notifySubscribers()
-    })
+    this.#signalingService.on('userJoined', async (userId: string) => {
+      try {
+        this.#roomService.addParticipant(userId);
+        this.#notificationManager.notify('INFO', `Пользователь ${userId} присоединился`);
+
+        // 1. Создаем соединение
+        const pc = await this.#connectionService.createConnection(userId);
+
+        // 2. Добавляем медиа треки
+        await this.#handleStreamUpdate(userId);
+
+        // Проверяем, что треки действительно добавились
+        const senders = pc.getSenders();
+        console.log('Tracks added:', {
+          senderCount: senders.length,
+          trackTypes: senders.map(s => s.track?.kind)
+        });
+
+        // 3. Создаем и отправляем offer
+        const offer = await this.#connectionService.createOffer(userId);
+        this.#signalingService.sendOffer(userId, offer);
+
+        this.#notificationManager.notify('INFO', `Отправлен offer пользователю ${userId}`);
+        this.#notifySubscribers();
+      } catch (error) {
+        console.error('Ошибка присоединения пользователя:', error);
+        this.#notificationManager.notify('ERROR', 'Ошибка подключения пользователя');
+      }
+    });
 
     this.#signalingService.on('userLeft', (userId: string) => {
       this.#roomService.removeParticipant(userId)
+      this.#connectionService.closeConnection(userId)
       this.#notificationManager.notify('INFO', `Пользователь ${userId} покинул конференцию`)
       this.#notifySubscribers()
     })
 
-    // ===== Подписка на события медиа стрима (камеры) =====
-    this.#mediaManager.on('streamStarted', () => {
-      this.#notificationManager.notify('INFO', 'Началась трансляция с камеры')
+    // ===== Медиа события =====
+    const handleMediaChange = async () => {
+      const connections = this.#connectionService.getAllConnections()
+      await Promise.all(
+        Array.from(connections).map(([userId]) => this.#handleStreamUpdate(userId)),
+      )
       this.#notifySubscribers()
+    }
+
+    this.#mediaManager.on('streamStarted', handleMediaChange)
+    this.#mediaManager.on('streamStopped', handleMediaChange)
+    this.#mediaManager.on('videoToggled', handleMediaChange)
+    this.#mediaManager.on('audioToggled', handleMediaChange)
+    this.#screenShareManager.on('streamStarted', handleMediaChange)
+    this.#screenShareManager.on('streamStopped', handleMediaChange)
+
+    // ===== WebRTC события =====
+    this.#connectionService.on('iceCandidate', ({ userId, candidate }) => {
+      this.#signalingService.sendIceCandidate(userId, candidate)
     })
 
-    this.#mediaManager.on('streamStopped', () => {
-      this.#notificationManager.notify('INFO', 'Остановилась трансляция с камеры')
-      this.#notifySubscribers()
+    this.#connectionService.on('iceConnectionStateChanged', async ({ userId, state }) => {
+      if (state === 'failed') {
+        this.#notificationManager.notify('WARNING', `Проблемы с подключением к ${userId}`)
+        await this.#handleStreamUpdate(userId)
+      }
     })
 
-    this.#mediaManager.on('videoToggled', (status: boolean) => {
-      this.#notificationManager.notify('INFO', `Переключение видео камеры в режим: ${status}`)
-      this.#notifySubscribers()
-    })
-    this.#mediaManager.on('audioToggled', (status: boolean) => {
-      this.#notificationManager.notify('INFO', `Переключение аудио с камеры в режим: ${status}`)
-      this.#notifySubscribers()
+    this.#connectionService.on('track', ({ userId, track, streams, type }) => {
+      if (track.kind === 'video') {
+        this.#roomService.addRemoteStream(userId, streams[0], type)
+        this.#notifySubscribers()
+      }
     })
 
-    this.#mediaManager.on('error', (error: Error) => {
-      this.#notificationManager.notify('ERROR', error.message)
-      this.#notifySubscribers()
+    // ===== SDP обмен =====
+    this.#signalingService.on('sdp', async ({ userId, description }) => {
+      try {
+        console.log('___sdp_description', description)
+        if (description.type === 'offer') {
+          if (!this.#connectionService.getConnection(userId)) {
+            await this.#connectionService.createConnection(userId)
+          }
+          await this.#handleStreamUpdate(userId)
+          const answer = await this.#connectionService.handleOffer(userId, description)
+          this.#signalingService.sendAnswer(userId, answer)
+        } else if (description.type === 'answer') {
+          await this.#connectionService.handleAnswer(userId, description)
+        }
+      } catch (error) {
+        console.error('Error handling SDP:', error)
+        this.#notificationManager.notify('ERROR', 'Ошибка обработки медиа данных')
+      }
     })
 
-    // ===== Подписка на события трансляции экрана =====
-    this.#screenShareManager.on('streamStarted', () => {
-      this.#notificationManager.notify('INFO', 'Началась трансляция экрана')
-      this.#notifySubscribers()
+    this.#signalingService.on('iceCandidate', async ({ userId, candidate }) => {
+      try {
+        console.log('userId', userId)
+        console.log('candidate', candidate)
+        await this.#connectionService.addIceCandidate(userId, candidate)
+      } catch (error) {
+        console.error('Ошибка добавления ICE candidate:', error)
+      }
     })
+  }
 
-    this.#screenShareManager.on('streamStopped', () => {
-      this.#notificationManager.notify('INFO', 'Остановилась трансляция экрана')
-      this.#notifySubscribers()
-    })
+  async #handleStreamUpdate(userId: string) {
+    const connection = this.#connectionService.getConnection(userId)
+    if (!connection) return
 
-    // ===== Подписка на события сервиса подключений =====
-    // ...
+    try {
+      // Обновляем медиа потоки
+      const { stream: cameraStream } = this.#mediaManager.getState()
+      const { stream: screenStream } = this.#screenShareManager.getState()
+
+      // Удаляем старые потоки
+      if (cameraStream) {
+        await this.#connectionService.removeStream(userId, cameraStream)
+      }
+      if (screenStream) {
+        await this.#connectionService.removeStream(userId, screenStream)
+      }
+
+      // Добавляем новые потоки
+      if (cameraStream) {
+        await this.#connectionService.addStream(userId, cameraStream, 'camera')
+      }
+      if (screenStream) {
+        await this.#connectionService.addStream(userId, screenStream, 'screen')
+      }
+    } catch (error) {
+      console.error('Error updating streams:', error)
+      this.#notificationManager.notify('ERROR', 'Ошибка обновления медиа потоков')
+    }
   }
 
   // Обновляем публичные методы с проверкой инициализации
@@ -226,9 +322,11 @@ export class ConferenceService {
   // Получение текущего состояния
   getState() {
     return {
+      initialized: this.#initialized,
       media: this.#mediaManager.getState(),
       signaling: this.#signalingService.getState(),
       participants: this.#roomService.getParticipants(),
+      streams: this.#roomService.getStreams(),
       localScreenShare: this.#screenShareManager.getState(),
       connections: this.#connectionService.getAllConnections(),
     }
@@ -241,12 +339,23 @@ export class ConferenceService {
     }
   }
 
-  destroy() {
-    this.#subscribers = []
-    this.#mediaManager.destroy()
-    this.#roomService.destroy()
-    this.#signalingService.destroy()
-    this.#screenShareManager.destroy()
-    this.#connectionService.destroy()
+  async destroy() {
+    if (this.#initialized) {
+      if (this.#reconnectTimeout) {
+        clearTimeout(this.#reconnectTimeout)
+      }
+
+      await Promise.all([
+        this.#mediaManager.destroy(),
+        this.#screenShareManager.destroy(),
+        this.#connectionService.destroy(),
+        this.#signalingService.destroy(),
+        this.#roomService.destroy(),
+      ])
+
+      this.#subscribers = []
+      this.#initialized = false
+      this.#notifySubscribers()
+    }
   }
 }

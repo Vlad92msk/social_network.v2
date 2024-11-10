@@ -23,34 +23,77 @@ export class ConnectionManager extends EventEmitter {
     }
   }
 
+  private isConnectionActive(userId: string): boolean {
+    const pc = this.#peerConnections.get(userId)
+    return pc?.connectionState !== 'closed' && pc?.connectionState !== 'failed'
+  }
+
   async createConnection(userId: string): Promise<RTCPeerConnection> {
     if (!this.#initialized) {
       throw new Error('ConnectionManager not initialized')
     }
 
     try {
+      console.log('Creating new connection for user:', userId)
       const pc = new RTCPeerConnection(this.#configConnection)
 
-      // Создаем Map для хранения типов потоков этого пользователя
-      this.#streamTypes.set(userId, new Map())
-
       pc.onicecandidate = (event) => {
+        console.log('ICE candidate event:', {
+          userId,
+          hasCandidate: !!event.candidate,
+          candidateType: event.candidate?.type,
+          connectionState: pc.connectionState,
+          iceGatheringState: pc.iceGatheringState,
+        })
+
         if (event.candidate) {
           this.emit('iceCandidate', { userId, candidate: event.candidate })
         }
       }
 
+      pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state changed:', {
+          userId,
+          state: pc.iceConnectionState,
+          connectionState: pc.connectionState,
+          iceGatheringState: pc.iceGatheringState,
+        })
+
+        this.emit('iceConnectionStateChanged', {
+          userId,
+          state: pc.iceConnectionState,
+        })
+
+        if (pc.iceConnectionState === 'failed') {
+          pc.restartIce()
+          this.emit('iceRestart', { userId })
+        }
+      }
+
       pc.ontrack = (event) => {
-        const trackType = this.#getTrackType(userId, event.track)
+        const trackType = event.transceiver?.sender?.track?.kind === 'video'
+          ? (event.streams[0]?.getTracks().length > 1 ? 'screen' : 'camera')
+          : 'audio'
+
         this.emit('track', {
           userId,
           track: event.track,
           streams: event.streams,
           type: trackType,
+          transceiver: event.transceiver,
         })
+
+        event.track.onended = () => {
+          this.emit('trackEnded', {
+            userId,
+            track: event.track,
+            type: trackType,
+          })
+        }
       }
 
       pc.onconnectionstatechange = () => {
+        console.log('Connection state changed:', pc.connectionState)
         this.emit('connectionStateChanged', {
           userId,
           state: pc.connectionState,
@@ -61,15 +104,31 @@ export class ConnectionManager extends EventEmitter {
         }
       }
 
-      pc.onnegotiationneeded = async () => {
-        this.emit('negotiationNeeded', { userId })
+      pc.onnegotiationneeded = () => {
+        console.log('Negotiation needed for user:', userId)
+        this.handleNegotiationNeeded(userId)
       }
 
+      this.#streamTypes.set(userId, new Map())
       this.#peerConnections.set(userId, pc)
       return pc
     } catch (error) {
+      console.error('Error creating connection:', error)
       this.emit('error', new Error(`Failed to create connection for user ${userId}`))
       throw error
+    }
+  }
+
+  async handleNegotiationNeeded(userId: string): Promise<void> {
+    const pc = this.#peerConnections.get(userId)
+    if (!pc) return
+
+    try {
+      const offer = await this.createOffer(userId)
+      this.emit('offerCreated', { userId, offer })
+    } catch (error) {
+      console.error('Negotiation failed:', error)
+      this.emit('error', new Error(`Negotiation failed for user ${userId}`))
     }
   }
 
@@ -78,6 +137,10 @@ export class ConnectionManager extends EventEmitter {
     stream: MediaStream,
     type: 'camera' | 'screen',
   ): Promise<void> {
+    if (!this.isConnectionActive(userId)) {
+      throw new Error(`Connection is not active for user ${userId}`)
+    }
+
     const connection = this.#peerConnections.get(userId)
     if (!connection) {
       throw new Error(`Connection not found for user ${userId}`)
@@ -88,27 +151,24 @@ export class ConnectionManager extends EventEmitter {
       const userStreamTypes = this.#streamTypes.get(userId)!
 
       for (const track of tracks) {
-        // Добавляем трек с определенными параметрами в зависимости от типа
-        const transceiver = connection.addTransceiver(track, {
+        connection.addTransceiver(track, {
           streams: [stream],
           direction: 'sendonly',
           sendEncodings: type === 'screen' ? [
             {
-              maxBitrate: 2500000, // Повышенный битрейт для скриншеринга
+              maxBitrate: 2500000,
               maxFramerate: 30,
             },
           ] : [
             {
-              maxBitrate: 1000000, // Стандартный битрейт для камеры
+              maxBitrate: 1000000,
               maxFramerate: 30,
             },
           ],
         })
 
-        // Сохраняем тип потока
         userStreamTypes.set(track, type)
 
-        // Устанавливаем обработчик окончания трека
         track.onended = () => {
           userStreamTypes.delete(track)
           this.emit('trackEnded', { userId, track, type })
@@ -120,63 +180,122 @@ export class ConnectionManager extends EventEmitter {
     }
   }
 
-  async createOffer(userId: string): Promise<RTCSessionDescriptionInit> {
-    const connection = this.#peerConnections.get(userId)
-    if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`)
-    }
-
-    try {
-      const offer = await connection.createOffer()
-      await connection.setLocalDescription(offer)
-      return offer
-    } catch (error) {
-      this.emit('error', new Error(`Failed to create offer for user ${userId}`))
-      throw error
-    }
-  }
-
   async handleAnswer(userId: string, answer: RTCSessionDescriptionInit): Promise<void> {
-    const connection = this.#peerConnections.get(userId)
+    const connection = this.#peerConnections.get(userId);
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`)
+      throw new Error(`Connection not found for user ${userId}`);
     }
 
     try {
-      await connection.setRemoteDescription(answer)
+      console.log('Handling answer:', {
+        userId,
+        connectionState: connection.connectionState,
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState,
+        hasRemoteDescription: !!connection.remoteDescription,
+        answerType: answer.type,
+      });
+
+      // Проверяем текущее состояние
+      if (connection.signalingState !== 'have-local-offer') {
+        console.warn('Unexpected signaling state for handling answer:', {
+          currentState: connection.signalingState,
+          expectedState: 'have-local-offer'
+        });
+      }
+
+      // Устанавливаем remote description
+      await connection.setRemoteDescription(new RTCSessionDescription(answer));
+
+      console.log('Remote description set successfully:', {
+        newSignalingState: connection.signalingState,
+        newIceGatheringState: connection.iceGatheringState
+      });
+
     } catch (error) {
-      this.emit('error', new Error(`Failed to handle answer for user ${userId}`))
-      throw error
+      console.error('Error in handleAnswer:', {
+        error,
+        connectionState: connection.connectionState,
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState
+      });
+
+      throw new Error(`Failed to handle answer for user ${userId}`);
     }
   }
 
+  // Также модифицируем handleOffer для полноты картины
   async handleOffer(userId: string, offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-    const connection = this.#peerConnections.get(userId)
+    const connection = this.#peerConnections.get(userId);
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`)
+      throw new Error(`Connection not found for user ${userId}`);
     }
 
     try {
-      await connection.setRemoteDescription(offer)
-      const answer = await connection.createAnswer()
-      await connection.setLocalDescription(answer)
-      return answer
+      console.log('Handling offer:', {
+        userId,
+        connectionState: connection.connectionState,
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState
+      });
+
+      await connection.setRemoteDescription(new RTCSessionDescription(offer));
+      console.log('Remote description (offer) set');
+
+      const answer = await connection.createAnswer();
+      console.log('Answer created');
+
+      await connection.setLocalDescription(answer);
+      console.log('Local description (answer) set');
+
+      return answer;
     } catch (error) {
-      this.emit('error', new Error(`Failed to handle offer for user ${userId}`))
-      throw error
+      console.error('Error in handleOffer:', error);
+      throw new Error(`Failed to handle offer for user ${userId}`);
+    }
+  }
+
+  // И createOffer тоже обновим
+  async createOffer(userId: string): Promise<RTCSessionDescriptionInit> {
+    const connection = this.#peerConnections.get(userId);
+    if (!connection) {
+      throw new Error(`Connection not found for user ${userId}`);
+    }
+
+    try {
+      console.log('Creating offer:', {
+        userId,
+        connectionState: connection.connectionState,
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState
+      });
+
+      const offer = await connection.createOffer();
+      console.log('Offer created');
+
+      await connection.setLocalDescription(offer);
+      console.log('Local description set:', {
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState
+      });
+
+      return offer;
+    } catch (error) {
+      console.error('Error in createOffer:', error);
+      throw new Error(`Failed to create offer for user ${userId}`);
     }
   }
 
   async addIceCandidate(userId: string, candidate: RTCIceCandidate): Promise<void> {
     const connection = this.#peerConnections.get(userId)
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`)
+      throw new Error(`Не установлено соединение с пользователем ${userId}`)
     }
 
     try {
       await connection.addIceCandidate(candidate)
     } catch (error) {
-      this.emit('error', new Error(`Failed to add ICE candidate for user ${userId}`))
+      this.emit('error', new Error(`Ошибка добавления ICE candidate для пользователя ${userId}`))
       throw error
     }
   }
@@ -184,7 +303,7 @@ export class ConnectionManager extends EventEmitter {
   async removeStream(userId: string, stream: MediaStream): Promise<void> {
     const connection = this.#peerConnections.get(userId)
     if (!connection) {
-      throw new Error(`Connection not found for user ${userId}`)
+      throw new Error(`Не установлено соединение с пользователем  ${userId}`)
     }
 
     try {
@@ -192,23 +311,19 @@ export class ConnectionManager extends EventEmitter {
       const senders = connection.getSenders()
       const userStreamTypes = this.#streamTypes.get(userId)
 
-      for (const track of tracks) {
+      await Promise.all(tracks.map(async (track) => {
         const sender = senders.find((s) => s.track === track)
         if (sender) {
-          await connection.removeTrack(sender)
+          connection.removeTrack(sender)
           if (userStreamTypes) {
             userStreamTypes.delete(track)
           }
         }
-      }
+      }))
     } catch (error) {
       this.emit('error', new Error(`Failed to remove stream for user ${userId}`))
       throw error
     }
-  }
-
-  #getTrackType(userId: string, track: MediaStreamTrack): 'camera' | 'screen' | undefined {
-    return this.#streamTypes.get(userId)?.get(track)
   }
 
   getConnection(userId: string): RTCPeerConnection | undefined {
@@ -216,7 +331,7 @@ export class ConnectionManager extends EventEmitter {
   }
 
   getAllConnections(): Map<string, RTCPeerConnection> {
-    return new Map(this.#peerConnections)
+    return this.#peerConnections
   }
 
   closeConnection(userId: string): void {

@@ -1,6 +1,14 @@
 import { EventEmitter } from 'events'
 import { io, Socket } from 'socket.io-client'
 
+// Типы для сигнальных сообщений
+type SignalType = 'offer' | 'answer' | 'ice-candidate'
+
+interface SignalMessage {
+  type: SignalType
+  payload: RTCSessionDescriptionInit | RTCIceCandidateInit
+}
+
 export interface SignalingConfig {
   userId: string
   dialogId: string
@@ -80,10 +88,74 @@ export class SignalingService extends EventEmitter {
       this.emit('roomInfo', roomInfo)
     })
 
-    socket.on('signal', ({ userId, signal }: { userId: string, signal: any }) => {
-      this.emit('signal', { userId, signal })
+    socket.on('offer', ({ userId, signal }: {
+      userId: string,
+      signal: SignalMessage
+    }) => {
+      console.log('___offer')
+      this.emit('sdp', {
+        userId,
+        description: signal.payload as RTCSessionDescriptionInit,
+      })
+    })
+    socket.on('answer', ({ userId, signal }: {
+      userId: string,
+      signal: SignalMessage
+    }) => {
+      console.log('___answer')
+      this.emit('sdp', {
+        userId,
+        description: signal.payload as RTCSessionDescriptionInit,
+      })
+    })
+
+    socket.on('ice-candidate', ({ userId, signal }: {
+      userId: string,
+      signal: SignalMessage
+    }) => {
+      console.log('___ice-candidate')
+      this.emit('iceCandidate', {
+        userId,
+        candidate: signal.payload as RTCIceCandidateInit,
+      })
     })
   }
+
+  // Базовый метод для отправки сигналов
+  #sendSignal(targetUserId: string, signal: SignalMessage) {
+    if (!this.#socket || !this.#config) {
+      throw new Error('SignalingService not initialized')
+    }
+
+    this.#socket.emit('signal', {
+      targetUserId,
+      signal,
+      dialogId: this.#config.dialogId,
+    })
+  }
+
+  // Разделяем sendSignal на специализированные методы
+  sendOffer(targetUserId: string, offer: RTCSessionDescriptionInit) {
+    this.#sendSignal(targetUserId, {
+      type: 'offer',
+      payload: offer,
+    })
+  }
+
+  sendAnswer(targetUserId: string, answer: RTCSessionDescriptionInit) {
+    this.#sendSignal(targetUserId, {
+      type: 'answer',
+      payload: answer,
+    })
+  }
+
+  sendIceCandidate(targetUserId: string, candidate: RTCIceCandidateInit) {
+    this.#sendSignal(targetUserId, {
+      type: 'ice-candidate',
+      payload: candidate,
+    })
+  }
+
 
   sendSignal(targetUserId: string, signal: any) {
     if (!this.#socket || !this.#config) {
