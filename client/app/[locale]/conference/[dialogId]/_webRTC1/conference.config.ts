@@ -19,5 +19,23 @@ export const conferenceConfig = ({
     dialogId,
   },
   mediaConstraints: localVideo,
-  ice: [{ urls: 'stun:stun.l.google.com:19302' }],
+  ice: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    // Добавьте TURN сервер если соединение через STUN не устанавливается
+  ],
 })
+
+
+const config = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    // Добавьте TURN сервер если соединение через STUN не устанавливается
+  ],
+  iceCandidatePoolSize: 10,
+  bundlePolicy: 'balanced' as RTCBundlePolicy,
+  iceTransportPolicy: 'all' as RTCIceTransportPolicy,
+}

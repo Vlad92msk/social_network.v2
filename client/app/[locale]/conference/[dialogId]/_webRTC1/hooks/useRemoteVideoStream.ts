@@ -1,29 +1,15 @@
 import React from 'react'
 
 export interface RemoteVideoOptions {
-  stream?: MediaStream
+  stream: MediaStream | null | undefined
   enabled?: boolean
   mirror?: boolean
-  onStreamChange?: (stream?: MediaStream) => void
-  // Дополнительные опции, специфичные для удаленного видео
   muted?: boolean
   volume?: number
-  className?: string
+  onStreamChange?: (stream: MediaStream | undefined) => void
+  autoPlay?: boolean
 }
 
-/**
- * Хук для работы с удаленным видеопотоком
- * @example
- * const RemoteVideo = ({ stream }) => {
- *   const videoProps = useRemoteVideoStream({
- *     stream,
- *     mirror: false,
- *     muted: true,
- *     onStreamChange: (stream) => console.log('Remote stream changed:', stream)
- *   });
- *   return <video {...videoProps} className={styles.remoteVideo} />;
- * };
- */
 export function useRemoteVideoStream(options: RemoteVideoOptions) {
   const {
     stream,
@@ -39,7 +25,6 @@ export function useRemoteVideoStream(options: RemoteVideoOptions) {
   React.useEffect(() => {
     const videoElement = videoRef.current
     if (videoElement && stream && enabled) {
-      // Настраиваем видеоэлемент
       videoElement.srcObject = stream
       videoElement.volume = volume
 
@@ -59,7 +44,6 @@ export function useRemoteVideoStream(options: RemoteVideoOptions) {
         }
       }
 
-      // Автоматически возобновляем воспроизведение при паузе
       videoElement.addEventListener('pause', handlePause)
       videoElement.addEventListener('volumechange', handleVolumeChange)
 

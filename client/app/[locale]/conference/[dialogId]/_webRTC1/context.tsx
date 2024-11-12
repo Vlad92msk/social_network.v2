@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
 import { InitialState, initialState } from './initial.state'
+import { Participant } from './micro-services'
 
 export interface ConferenceContextState {
   isInitialized: boolean
@@ -12,7 +13,7 @@ export interface ConferenceContextState {
     isConnected: boolean
     error: Error | null
   }
-  participants: string[]
+  participants: Participant[]
 
   // Видео с камеры
   media: {

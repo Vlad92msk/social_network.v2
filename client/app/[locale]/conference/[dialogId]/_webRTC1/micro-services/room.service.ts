@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 
 // Типы для участника конференции
-interface Participant {
+export interface Participant {
   userId: string
   cameraStream?: MediaStream // Стрим с камеры
   screenStream?: MediaStream // Стрим с экрана

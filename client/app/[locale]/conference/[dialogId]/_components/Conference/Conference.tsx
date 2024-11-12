@@ -21,8 +21,19 @@ export function Conference({ profile }: ConferenceProps) {
     participants,
   } = useConference()
 
-  // Получаем все потоки участников
-  const remoteStreams = streams || []
+
+  useEffect(() => {
+    console.log('Streams debug:', streams?.map(s => ({
+      id: s.stream?.id,
+      active: s.stream?.active,
+      trackCount: s.stream?.getTracks().length,
+      tracks: s.stream?.getTracks().map(t => ({
+        kind: t.kind,
+        enabled: t.enabled,
+        readyState: t.readyState
+      }))
+    })))
+  }, [streams])
 
   if (!isInitialized) {
     return (
@@ -56,15 +67,15 @@ export function Conference({ profile }: ConferenceProps) {
         )}
 
         {/* Потоки других участников */}
-        {remoteStreams.map(({ userId, stream, type }) => (
-          <div
-            key={`${userId}-${type}`}
-            className={styles.participant}
-          >
-            <RemoteVideo stream={stream} />
+        {streams?.map(({ userId, stream, type }) => (
+          <div key={userId} className={styles.participant}>
+            <RemoteVideo
+              stream={stream}
+              className={styles.video}
+            />
             <span className={styles.participantName}>
               {userId}
-              {type === 'screen' ? ' (Screen)' : ''}
+              {type === 'camera' ? ' (camera)' : ' (screen)'}
             </span>
           </div>
         ))}

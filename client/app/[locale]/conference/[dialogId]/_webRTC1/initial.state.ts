@@ -1,10 +1,11 @@
 import { ConferenceService } from './conference.service'
 import { ConferenceContextState } from './context'
+import { Participant } from './micro-services'
 
 export interface InitialState {
   media: ConferenceContextState['media']
   signaling: ConferenceContextState['signaling']
-  participants: string[]
+  participants: Participant[]
   localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
   streams: ReturnType<ConferenceService['getState']>['streams']
 }
