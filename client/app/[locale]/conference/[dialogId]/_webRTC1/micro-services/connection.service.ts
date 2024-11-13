@@ -1,151 +1,118 @@
 import { EventEmitter } from 'events'
 
-type StreamType = 'camera' | 'screen'
-
 interface StreamInfo {
   stream: MediaStream
-  type: StreamType
 }
 
 /**
- * ConnectionManager управляет WebRTC соединениями.
- * Отвечает за:
- * - Создание и управление RTCPeerConnection
- * - Обработку ICE кандидатов
- * - Управление медиа потоками
+ * ConnectionManager отвечает за управление WebRTC соединениями
+ * Основные задачи:
+ * - Создание и закрытие соединений
+ * - Управление медиа потоками (добавление/удаление)
+ * - Обмен SDP (offer/answer)
  */
 export class ConnectionManager extends EventEmitter {
-  #initialized = false
-  #config: RTCConfiguration
   #connections = new Map<string, RTCPeerConnection>()
-  #streams = new Map<string, Map<string, StreamInfo>>() // userId -> streamId -> StreamInfo
 
-  /**
-   * События:
-   * - error: { message: string, userId?: string }
-   * - connectionStateChanged: { userId: string, state: RTCPeerConnectionState }
-   * - iceCandidate: { userId: string, candidate: RTCIceCandidate }
-   * - track: { userId: string, stream: MediaStream, type: StreamType }
-   * - trackEnded: { userId: string, streamId: string, type: StreamType }
-   * - negotiationNeeded: { userId: string, description: RTCSessionDescription }
-   */
+  #streams = new Map<string, Map<string, StreamInfo>>()
+
+  #config: RTCConfiguration
 
   async init(config: RTCConfiguration): Promise<void> {
-    try {
-      this.#config = config
-      this.#initialized = true
-      console.log('🚀 ConnectionManager инициализирован')
-    } catch (error) {
-      const msg = 'Ошибка инициализации ConnectionManager'
-      console.error(msg, error)
-      this.emit('error', { message: msg })
-      throw new Error(msg)
-    }
+    this.#config = config
+    console.log('🚀 ConnectionManager инициализирован')
   }
 
+  /**
+   * Создание нового соединения
+   */
   async createConnection(userId: string): Promise<void> {
-    this.#checkInitialized()
+    console.log(`📞 Создание соединения для ${userId}`)
 
-    try {
-      console.log(`📞 Создаем соединение для пользователя ${userId}`)
-      const connection = new RTCPeerConnection(this.#config)
+    // Закрываем существующее соединение если есть
+    this.closeConnection(userId)
 
-      // Обработка изменения состояния соединения
-      connection.onconnectionstatechange = () => {
-        const state = connection.connectionState
-        console.log(`🔄 Состояние соединения с ${userId}: ${state}`)
+    const connection = new RTCPeerConnection(this.#config)
 
-        this.emit('connectionStateChanged', { userId, state })
-
-        if (state === 'failed') {
-          console.log(`⚠️ Пытаемся перезапустить ICE для ${userId}`)
-          connection.restartIce()
-        }
-      }
-
-      // Обработка ICE кандидатов
-      connection.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          console.log(`🧊 Новый ICE кандидат для ${userId}`)
-          this.emit('iceCandidate', { userId, candidate })
-        }
-      }
-
-      // Обработка новых треков
-      connection.ontrack = (event) => {
-        const stream = event.streams[0]
-        if (!stream) return
-
-        // Определяем тип потока по количеству треков
-        const type: StreamType = event.track.kind === 'video'
-          ? (stream.getVideoTracks().length > 1 ? 'screen' : 'camera')
-          : 'camera'
-
-        console.log(`📡 Получен трек от ${userId}: ${type}`)
-        this.emit('track', { userId, stream, type })
-
-        // Сохраняем информацию о потоке
-        if (!this.#streams.has(userId)) {
-          this.#streams.set(userId, new Map())
-        }
-        this.#streams.get(userId)!.set(stream.id, { stream, type })
-
-        // Отслеживаем завершение трека
-        event.track.onended = () => {
-          console.log(`🛑 Трек завершен: ${userId}, ${type}`)
-          this.#streams.get(userId)?.delete(stream.id)
-          this.emit('trackEnded', { userId, streamId: stream.id, type })
-        }
-      }
-
-      // Обработка необходимости согласования
-      connection.onnegotiationneeded = async () => {
-        try {
-          if (connection.signalingState === 'stable') {
-            const offer = await connection.createOffer()
-            await connection.setLocalDescription(offer)
-            console.log(`📝 Требуется согласование с ${userId}`)
-            this.emit('negotiationNeeded', {
-              userId,
-              description: connection.localDescription!
-            })
-          }
-        } catch (error) {
-          const msg = `Ошибка создания предложения для ${userId}`
-          console.error(msg, error)
-          this.emit('error', { message: msg, userId })
-        }
-      }
-
-      this.#connections.set(userId, connection)
-
-    } catch (error) {
-      const msg = `Ошибка создания соединения для ${userId}`
-      console.error(msg, error)
-      this.emit('error', { message: msg, userId })
-      throw new Error(msg)
+    // Обработка изменения состояния
+    connection.onconnectionstatechange = () => {
+      const state = connection.connectionState
+      console.log(`🔄 Состояние соединения с ${userId}: ${state}`)
+      this.emit('connectionStateChanged', { userId, state })
     }
+
+    // Обработка ICE кандидатов
+    connection.onicecandidate = ({ candidate }) => {
+      if (candidate) {
+        console.log(`🧊 ICE кандидат для ${userId}`)
+        this.emit('iceCandidate', { userId, candidate })
+      }
+    }
+
+    // Обработка входящих треков
+    connection.ontrack = (event) => {
+      const stream = event.streams[0]
+      if (!stream) return
+
+      console.log(`📡 Получен трек от ${userId}`)
+
+      // Сохраняем информацию о потоке
+      if (!this.#streams.has(userId)) {
+        this.#streams.set(userId, new Map())
+      }
+      this.#streams.get(userId)!.set(stream.id, { stream })
+
+      // Оповещаем о новом треке
+      this.emit('track', { userId, stream })
+
+      // Обработка завершения трека
+      event.track.onended = () => {
+        console.log(`🛑 Трек завершен от ${userId}`)
+        this.#streams.get(userId)?.delete(stream.id)
+        this.emit('trackEnded', { userId, streamId: stream.id })
+      }
+    }
+
+    // Обработка необходимости согласования
+    connection.onnegotiationneeded = async () => {
+      try {
+        if (connection.signalingState === 'stable') {
+          const offer = await connection.createOffer()
+          await connection.setLocalDescription(offer)
+          this.emit('negotiationNeeded', {
+            userId,
+            description: connection.localDescription!,
+          })
+        }
+      } catch (error) {
+        console.error(`❌ Ошибка согласования для ${userId}:`, error)
+      }
+    }
+
+    this.#connections.set(userId, connection)
   }
 
-  async addStream(userId: string, stream: MediaStream, type: StreamType): Promise<void> {
-    const connection = this.#getConnection(userId)
+  /**
+   * Добавление медиа потока
+   */
+  async addStream(userId: string, stream: MediaStream): Promise<void> {
+    const connection = this.#connections.get(userId)
+    if (!connection) return
+
+    console.log(`📤 Добавление потока для ${userId}`)
 
     try {
-      console.log(`📤 Добавление ${type} потока для ${userId}`)
+      // Получаем существующие отправители
+      const senders = connection.getSenders()
 
-      // Добавляем треки в соединение
-      const tracks = stream.getTracks()
-      for (const track of tracks) {
-        const sender = connection.addTrack(track, stream)
+      // Добавляем треки
+      for (const track of stream.getTracks()) {
+        const sender = senders.find((s) => s.track?.kind === track.kind)
 
-        // Настраиваем параметры видео
-        if (track.kind === 'video') {
-          const params = sender.getParameters()
-          params.encodings = [{
-            maxBitrate: type === 'screen' ? 2500000 : 1000000,
-            maxFramerate: 30
-          }]
-          await sender.setParameters(params)
+        if (sender) {
+          await sender.replaceTrack(track)
+        } else {
+          connection.addTrack(track, stream)
         }
       }
 
@@ -153,155 +120,130 @@ export class ConnectionManager extends EventEmitter {
       if (!this.#streams.has(userId)) {
         this.#streams.set(userId, new Map())
       }
-      this.#streams.get(userId)!.set(stream.id, { stream, type })
-
+      this.#streams.get(userId)!.set(stream.id, { stream })
     } catch (error) {
-      const msg = `Ошибка добавления ${type} потока для ${userId}`
-      console.error(msg, error)
-      this.emit('error', { message: msg, userId })
-      throw new Error(msg)
+      console.error(`❌ Ошибка добавления потока для ${userId}:`, error)
+      throw error
     }
   }
 
+  /**
+   * Удаление медиа потока
+   */
   async removeStream(userId: string, streamId: string): Promise<void> {
-    const connection = this.#getConnection(userId)
+    const connection = this.#connections.get(userId)
     const streamInfo = this.#streams.get(userId)?.get(streamId)
 
-    if (!streamInfo) {
-      console.warn(`⚠️ Поток ${streamId} не найден для ${userId}`)
-      return
-    }
+    if (!connection || !streamInfo) return
+
+    console.log(`🗑️ Удаление потока для ${userId}`)
 
     try {
-      console.log(`🗑️ Удаление потока ${streamId} для ${userId}`)
-
-      const senders = connection.getSenders()
-      const tracks = streamInfo.stream.getTracks()
-
-      for (const track of tracks) {
-        const sender = senders.find(s => s.track === track)
-        if (sender) {
-          await connection.removeTrack(sender)
+      // Удаляем все отправители
+      connection.getSenders().forEach((sender) => {
+        if (sender.track) {
+          sender.track.stop()
+          connection.removeTrack(sender)
         }
-      }
+      })
 
+      // Удаляем информацию о потоке
       this.#streams.get(userId)?.delete(streamId)
-
     } catch (error) {
-      const msg = `Ошибка удаления потока для ${userId}`
-      console.error(msg, error)
-      this.emit('error', { message: msg, userId })
-      throw new Error(msg)
+      console.error(`❌ Ошибка удаления потока для ${userId}:`, error)
+      throw error
     }
   }
 
+  /**
+   * Обработка входящего offer
+   */
   async handleOffer(userId: string, offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-    const connection = this.#getConnection(userId)
+    const connection = this.#connections.get(userId)
+    if (!connection) throw new Error(`Нет соединения с ${userId}`)
 
-    try {
-      console.log(`📥 Обработка предложения от ${userId}`)
-      await connection.setRemoteDescription(new RTCSessionDescription(offer))
+    console.log(`📥 Обработка offer от ${userId}`)
 
-      const answer = await connection.createAnswer()
-      await connection.setLocalDescription(answer)
+    await connection.setRemoteDescription(new RTCSessionDescription(offer))
+    const answer = await connection.createAnswer()
+    await connection.setLocalDescription(answer)
 
-      return answer
-
-    } catch (error) {
-      const msg = `Ошибка обработки предложения от ${userId}`
-      console.error(msg, error)
-      this.emit('error', { message: msg, userId })
-      throw new Error(msg)
-    }
+    return answer
   }
 
+  /**
+   * Обработка входящего answer
+   */
   async handleAnswer(userId: string, answer: RTCSessionDescriptionInit): Promise<void> {
-    const connection = this.#getConnection(userId)
+    const connection = this.#connections.get(userId)
+    if (!connection) throw new Error(`Нет соединения с ${userId}`)
 
-    try {
-      console.log(`📥 Обработка ответа от ${userId}`)
-      await connection.setRemoteDescription(new RTCSessionDescription(answer))
-
-    } catch (error) {
-      const msg = `Ошибка обработки ответа от ${userId}`
-      console.error(msg, error)
-      this.emit('error', { message: msg, userId })
-      throw new Error(msg)
-    }
+    console.log(`📥 Обработка answer от ${userId}`)
+    await connection.setRemoteDescription(new RTCSessionDescription(answer))
   }
 
+  /**
+   * Добавление ICE кандидата
+   */
   async addIceCandidate(userId: string, candidate: RTCIceCandidate): Promise<void> {
-    const connection = this.#getConnection(userId)
+    const connection = this.#connections.get(userId)
+    if (!connection) return
 
     try {
-      console.log(`🧊 Добавление ICE кандидата для ${userId}`)
       await connection.addIceCandidate(candidate)
-
     } catch (error) {
-      const msg = `Ошибка добавления ICE кандидата для ${userId}`
-      console.error(msg, error)
-      // Не выбрасываем ошибку, так как это нормальная ситуация
-      this.emit('error', { message: msg, userId })
+      console.warn(`⚠️ Ошибка добавления ICE кандидата для ${userId}:`, error)
     }
   }
 
+  /**
+   * Закрытие соединения
+   */
   closeConnection(userId: string): void {
-    try {
-      const connection = this.#connections.get(userId)
-      if (connection) {
-        console.log(`👋 Закрытие соединения с ${userId}`)
+    const connection = this.#connections.get(userId)
+    if (!connection) return
 
-        // Останавливаем все треки
-        connection.getSenders().forEach(sender => {
-          if (sender.track) sender.track.stop()
-        })
+    console.log(`👋 Закрытие соединения с ${userId}`)
 
-        connection.close()
-        this.#connections.delete(userId)
-        this.#streams.delete(userId)
-      }
-    } catch (error) {
-      const msg = `Ошибка закрытия соединения с ${userId}`
-      console.error(msg, error)
-      this.emit('error', { message: msg, userId })
-    }
+    // Останавливаем все треки
+    connection.getSenders().forEach((sender) => {
+      if (sender.track) sender.track.stop()
+    })
+
+    // Закрываем соединение
+    connection.close()
+
+    // Очищаем данные
+    this.#connections.delete(userId)
+    this.#streams.delete(userId)
   }
 
-  getConnection(userId: string): RTCPeerConnection | undefined {
-    return this.#connections.get(userId)
-  }
-
+  /**
+   * Получение списка потоков пользователя
+   */
   getStreams(userId: string): StreamInfo[] {
     return Array.from(this.#streams.get(userId)?.values() || [])
   }
 
+  /**
+   * Получение соединения
+   */
+  getConnection(userId: string): RTCPeerConnection | undefined {
+    return this.#connections.get(userId)
+  }
+
+  /**
+   * Очистка всех ресурсов
+   */
   destroy(): void {
-    if (this.#initialized) {
-      console.log('🧹 Очистка ConnectionManager')
-
-      // Закрываем все соединения
-      for (const userId of this.#connections.keys()) {
-        this.closeConnection(userId)
-      }
-
-      this.#connections.clear()
-      this.#streams.clear()
-      this.removeAllListeners()
-      this.#initialized = false
+    // Закрываем все соединения
+    for (const userId of this.#connections.keys()) {
+      this.closeConnection(userId)
     }
-  }
 
-  #getConnection(userId: string): RTCPeerConnection {
-    const connection = this.#connections.get(userId)
-    if (!connection) {
-      throw new Error(`Соединение не найдено для пользователя ${userId}`)
-    }
-    return connection
-  }
-
-  #checkInitialized(): void {
-    if (!this.#initialized) {
-      throw new Error('ConnectionManager не инициализирован')
-    }
+    // Очищаем все данные
+    this.#connections.clear()
+    this.#streams.clear()
+    this.removeAllListeners()
   }
 }

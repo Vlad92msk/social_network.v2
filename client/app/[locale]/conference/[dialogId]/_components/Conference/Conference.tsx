@@ -22,19 +22,21 @@ export function Conference({ profile }: ConferenceProps) {
   } = useConference()
 
 
-  useEffect(() => {
-    console.log('Streams debug:', streams?.map(s => ({
-      id: s.stream?.id,
-      active: s.stream?.active,
-      trackCount: s.stream?.getTracks().length,
-      tracks: s.stream?.getTracks().map(t => ({
-        kind: t.kind,
-        enabled: t.enabled,
-        readyState: t.readyState
-      }))
-    })))
-  }, [streams])
+  // useEffect(() => {
+  //   console.log('Streams debug:', streams?.map(s => ({
+  //     id: s.stream?.id,
+  //     active: s.stream?.active,
+  //     trackCount: s.stream?.getTracks().length,
+  //     tracks: s.stream?.getTracks().map(t => ({
+  //       kind: t.kind,
+  //       enabled: t.enabled,
+  //       readyState: t.readyState
+  //     }))
+  //   })))
+  // }, [streams])
 
+  console.log('streams', streams)
+  console.log('participants', participants)
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -67,7 +69,7 @@ export function Conference({ profile }: ConferenceProps) {
         )}
 
         {/* Потоки других участников */}
-        {streams?.map(({ userId, stream, type }) => (
+        {streams?.map(({ userId, stream }) => (
           <div key={userId} className={styles.participant}>
             <RemoteVideo
               stream={stream}
@@ -75,7 +77,6 @@ export function Conference({ profile }: ConferenceProps) {
             />
             <span className={styles.participantName}>
               {userId}
-              {type === 'camera' ? ' (camera)' : ' (screen)'}
             </span>
           </div>
         ))}

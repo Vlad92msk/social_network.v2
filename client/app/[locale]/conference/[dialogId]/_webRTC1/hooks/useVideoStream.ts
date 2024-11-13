@@ -10,6 +10,7 @@ export function useVideoStream(options?: {
   const { media: { stream } } = useConference()
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  console.log('localstream', stream)
   useEffect(() => {
     const videoElement = videoRef.current
     if (videoElement && stream && options?.enabled !== false) {
@@ -21,7 +22,7 @@ export function useVideoStream(options?: {
         options?.onStreamChange?.(null)
       }
     }
-  }, [stream, options?.enabled, options?.onStreamChange])
+  }, [stream, options?.enabled, options])
 
   const videoProps = useMemo(() => ({
     ref: videoRef,
