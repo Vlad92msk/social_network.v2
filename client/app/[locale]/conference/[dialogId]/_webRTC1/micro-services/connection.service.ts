@@ -64,7 +64,6 @@ export class ConnectionManager extends EventEmitter {
 
       // Оповещаем о новом треке
       this.emit('track', { userId, stream })
-
       // Обработка завершения трека
       event.track.onended = () => {
         console.log(`🛑 Трек завершен от ${userId}`)

@@ -4,6 +4,13 @@ import { io, Socket } from 'socket.io-client'
 // Типы для сигнальных сообщений
 type SignalType = 'offer' | 'answer' | 'ice-candidate'
 
+export type EventType = {
+  type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off',
+  initiator: string
+  payload: any
+}
+
+
 interface SignalMessage {
   type: SignalType
   payload: RTCSessionDescriptionInit | RTCIceCandidateInit
@@ -113,6 +120,11 @@ export class SignalingService extends EventEmitter {
       this.emit('roomInfo', roomInfo)
     })
 
+    socket.on('user:event', (payload: EventType) => {
+      console.log(`Получено событие от пользователя ${payload.initiator}`, payload)
+      this.emit('userEvent', payload)
+    })
+
     socket.on('offer', ({ userId, signal }: {
       userId: string,
       signal: SignalMessage
@@ -187,6 +199,17 @@ export class SignalingService extends EventEmitter {
     this.#socket.emit('signal', {
       targetUserId,
       signal,
+      dialogId: this.#config.dialogId,
+    })
+  }
+
+  sendEvent(event: { type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off', payload?: any }) {
+    if (!this.#socket || !this.#config) {
+      throw new Error('SignalingService не инициализирован')
+    }
+
+    this.#socket.emit('event', {
+      event,
       dialogId: this.#config.dialogId,
     })
   }

@@ -25,6 +25,14 @@ interface SignalPayload {
     dialogId: string;
 }
 
+interface EventType {
+    event: {
+        type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off'
+        payload: any;
+    },
+    dialogId: string;
+}
+
 @WebSocketGateway({
     namespace: 'conference',
 })
@@ -91,6 +99,22 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         })
 
         this.logSignal(senderId, targetUserId, signal.type)
+    }
+
+    @SubscribeMessage('event')
+    handleEvent(
+      @ConnectedSocket() client: Socket,
+      @MessageBody() payload: EventType
+    ) {
+        const { event, dialogId } = payload
+        const senderId = client.data.userId
+
+        console.log('payload', payload)
+        // Отправляем сигнал целевому пользователю
+        client.to(dialogId).emit('user:event', {
+            initiator: senderId,
+            event,
+        })
     }
 
     private initializeUser(client: Socket, roomId: string, userId: string) {

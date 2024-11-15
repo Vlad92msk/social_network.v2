@@ -1,5 +1,5 @@
 import {
-  ConnectionManager,
+  ConnectionManager, EventType,
   MediaStreamManager,
   MediaStreamOptions,
   NotificationManager,
@@ -70,6 +70,7 @@ export class ConferenceService {
       this.#setupSignalingEvents()
       this.#setupConnectionEvents()
       this.#setupMediaEvents()
+      // this.#setupRoomEvents()
 
       await this.#signalingService.init(config.signaling)
 
@@ -83,6 +84,12 @@ export class ConferenceService {
       throw error
     }
   }
+
+  // #setupRoomEvents(): void {
+  //   this.#roomService.on('#setupRoomEvents', () => {
+  //
+  //   })
+  // }
 
   #setupSignalingEvents(): void {
     this.#signalingService.on('connected', () => {
@@ -140,6 +147,15 @@ export class ConferenceService {
         console.error(`❌ Ошибка при подключении пользователя ${userId}:`, error)
         this.#notificationManager.notify('ERROR', 'Ошибка подключения пользователя')
       }
+    })
+
+    this.#signalingService.on('userEvent', (payload) => {
+      console.log(`Получено событие от пользователя ${payload.initiator}`, payload)
+
+      if (payload.event.type === 'camera-off') {
+        this.#roomService.removeRemoteStream(payload.initiator, payload.event.payload.streamId)
+      }
+      this.#notifySubscribers()
     })
 
     // Упрощенная обработка SDP
@@ -226,37 +242,43 @@ export class ConferenceService {
     // Обработчик камеры
     this.#mediaManager.on('streamStarted', async () => {
       console.log('📹 Камера запущена')
+      this.#signalingService.sendEvent({ type: 'camera-on' })
       await this.#updateStreamsForAllParticipants()
     })
 
-    this.#mediaManager.on('streamStopped', async () => {
+    this.#mediaManager.on('streamStopped', async ({ streamId }: { streamId: string }) => {
       console.log('📹 Камера остановлена')
-      await this.#updateStreamsForAllParticipants()
+      this.#signalingService.sendEvent({ type: 'camera-off', payload: { streamId } })
+      await this.#updateStreamsForAllParticipants(streamId)
     })
 
-    this.#mediaManager.on('videoToggled', async () => {
+    this.#mediaManager.on('videoToggled', async ({ streamId, active }: { active: boolean, streamId: string }) => {
       console.log('📹 Видео переключено')
+      this.#signalingService.sendEvent({ type: active ? 'camera-on' : 'camera-off', payload: { streamId } })
       await this.#updateStreamsForAllParticipants()
     })
 
-    this.#mediaManager.on('audioToggled', async () => {
+    this.#mediaManager.on('audioToggled', async ({ streamId, active }: { active: boolean, streamId: string }) => {
       console.log('🎤 Аудио переключено')
+      this.#signalingService.sendEvent({ type: active ? 'camera-on' : 'mic-off', payload: { streamId } })
       await this.#updateStreamsForAllParticipants()
     })
 
     // Обработчик скриншеринга
-    this.#screenShareManager.on('streamStarted', () => {
+    this.#screenShareManager.on('streamStarted', async () => {
       console.log('🖥️ Скриншеринг запущен')
-      this.#updateStreamsForAllParticipants()
+      this.#signalingService.sendEvent({ type: 'screen-share-on' })
+      await this.#updateStreamsForAllParticipants()
     })
 
-    this.#screenShareManager.on('streamStopped', () => {
+    this.#screenShareManager.on('streamStopped', async ({ streamId }: { streamId: string }) => {
       console.log('🖥️ Скриншеринг остановлен')
-      this.#updateStreamsForAllParticipants()
+      this.#signalingService.sendEvent({ type: 'screen-share-off', payload: { streamId } })
+      await this.#updateStreamsForAllParticipants()
     })
   }
 
-  async #updateStreamsForParticipant(userId: string): Promise<void> {
+  async #updateStreamsForParticipant(userId: string, streamId?: string): Promise<void> {
     try {
       // Получаем активные потоки
       const { stream: cameraStream } = this.#mediaManager.getState()
@@ -270,19 +292,22 @@ export class ConferenceService {
         console.log(`📤 Отправка потока для ${userId}`)
         await this.#connectionManager.addStream(userId, streamToSend)
       }
+      if (streamId) {
+        await this.#connectionManager.removeStream(userId, streamId)
+      }
     } catch (error) {
       console.error(`❌ Ошибка обновления потока для ${userId}:`, error)
       this.#notificationManager.notify('ERROR', `Ошибка обновления потока для ${userId}`)
     }
   }
 
-  async #updateStreamsForAllParticipants(): Promise<void> {
+  async #updateStreamsForAllParticipants(streamId?: string): Promise<void> {
     try {
       const participants = this.#roomService.getParticipants()
         .filter(({ userId }) => userId !== this.#config.signaling.userId)
-console.log('participants', participants)
+
       console.log('🔄 Обновление потоков для участников:', participants.map((p) => p.userId))
-      await Promise.all(participants.map(({ userId }) => this.#updateStreamsForParticipant(userId)))
+      await Promise.all(participants.map(({ userId }) => this.#updateStreamsForParticipant(userId, streamId)))
 
       this.#notifySubscribers()
     } catch (error) {
@@ -331,6 +356,7 @@ console.log('participants', participants)
 
   #notifySubscribers(): void {
     const state = this.getState()
+    console.log('state', state)
     this.#subscribers.forEach((callback) => callback(state))
   }
 

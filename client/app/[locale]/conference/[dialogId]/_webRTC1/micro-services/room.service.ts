@@ -83,13 +83,16 @@ export class RoomService extends EventEmitter {
 
   removeRemoteStream(userId: string, streamId: string): void {
     const participant = this.participants.get(userId)
-    if (!participant || participant.stream?.id !== streamId) return
+    console.log('______participant', participant)
+    console.log('______participant', participant?.stream?.id, streamId, participant?.stream?.id !== streamId)
 
+
+    if (!participant || participant.stream?.id !== streamId) return
     participant.stream = undefined
     participant.hasActiveStream = false
 
     this.participants.set(userId, participant)
-    this.emit('streamRemoved', { userId, streamId })
+    // this.emit('streamRemoved', { userId, streamId })
   }
   /**
    * Получение участника по ID

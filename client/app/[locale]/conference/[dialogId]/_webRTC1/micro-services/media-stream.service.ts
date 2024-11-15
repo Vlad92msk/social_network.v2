@@ -85,12 +85,12 @@ export class MediaStreamManager extends EventEmitter {
 
     if (this.#stream) {
       this.#stream.getTracks().forEach((track) => track.stop())
+      // Уведомляем об остановке стрима
+      this.emit('streamStopped', { streamId: this.#stream.id })
+
       this.#stream = undefined
       this.#isVideoEnabled = false
       this.#isAudioEnabled = false
-
-      // Уведомляем об остановке стрима
-      this.emit('streamStopped')
       this.emit('stateChanged', this.getState())
     }
   }
@@ -109,7 +109,7 @@ export class MediaStreamManager extends EventEmitter {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled
         this.#isVideoEnabled = videoTrack.enabled
-        this.emit('videoToggled', this.#isVideoEnabled)
+        this.emit('videoToggled', { active: this.#isVideoEnabled, streamId: this.#stream.id })
       } else if (!videoTrack && this.#constraints?.video) {
         const newVideoStream = await navigator.mediaDevices.getUserMedia({
           video: this.#constraints.video,
@@ -118,7 +118,7 @@ export class MediaStreamManager extends EventEmitter {
         const newVideoTrack = newVideoStream.getVideoTracks()[0]
         this.#stream.addTrack(newVideoTrack)
         this.#isVideoEnabled = true
-        this.emit('videoToggled', true)
+        this.emit('videoToggled', { active: true, streamId: this.#stream.id })
       }
 
       this.emit('stateChanged', this.getState())
@@ -137,7 +137,7 @@ export class MediaStreamManager extends EventEmitter {
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled
         this.#isAudioEnabled = audioTrack.enabled
-        this.emit('audioToggled', this.#isAudioEnabled)
+        this.emit('audioToggled', { active: this.#isAudioEnabled, streamId: this.#stream.id })
         this.emit('stateChanged', this.getState())
       }
     }

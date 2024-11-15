@@ -32,9 +32,9 @@ export class ScreenShareManager extends EventEmitter {
   stopScreenShare() {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop())
+      this.emit('streamStopped', { streamId: this.stream.id })
       this.stream = undefined
       this.isEnabled = false
-      this.emit('streamStopped', this.stream)
     }
   }
 
