@@ -30,7 +30,7 @@ export class ConnectionManager extends EventEmitter {
       this.close(userId)
 
       const connection = new RTCPeerConnection(this.config)
-
+      console.log('Creating connection for user:', userId)
       connection.onconnectionstatechange = () => {
         this.emit('connectionState', {
           userId,
@@ -59,7 +59,13 @@ export class ConnectionManager extends EventEmitter {
       }
 
       connection.onnegotiationneeded = () => {
-        this.emit('negotiationNeeded', { userId })
+        const state = connection.signalingState
+        console.log(`📣 Сработало negotiationneeded для ${userId}, signalingState: ${state}`)
+        if (state === 'stable') {
+          this.emit('negotiationNeeded', { userId })
+        } else {
+          console.log('⚠️ Пропуск negotiationneeded - состояние:', state)
+        }
       }
 
       this.connections.set(userId, connection)
@@ -135,6 +141,7 @@ export class ConnectionManager extends EventEmitter {
     }
 
     try {
+      console.log(`Adding ${track.kind} track to connection for user ${userId}`)
       const sender = connection.addTrack(track, stream)
 
       if (!this.streams.has(userId)) {
@@ -281,7 +288,9 @@ export class ConnectionManager extends EventEmitter {
 
   isConnected(userId: string): boolean {
     const connection = this.connections.get(userId)
-    return connection?.connectionState === 'connected'
+    return connection?.connectionState !== 'closed'
+      && connection?.connectionState !== 'failed'
+      && connection?.signalingState === 'stable'
   }
 
   close(userId: string): void {
@@ -289,16 +298,18 @@ export class ConnectionManager extends EventEmitter {
     if (!connection) return
 
     try {
+      // Просто очищаем sender'ы, не останавливая треки
       connection.getSenders().forEach((sender) => {
-        if (sender.track) {
-          sender.track.stop()
+        try {
+          connection.removeTrack(sender)
+        } catch (e) {
+          console.warn('Error removing track:', e)
         }
       })
 
       connection.close()
       this.connections.delete(userId)
       this.streams.delete(userId)
-      // Очищаем буфер при закрытии соединения
       this.iceCandidatesBuffer.delete(userId)
     } catch (error) {
       this.emit('error', {

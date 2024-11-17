@@ -86,17 +86,6 @@ export class ConferenceService {
     }
   }
 
-  #waitForRoomInfo(): Promise<RoomInfo> {
-    return new Promise((resolve) => {
-      const handler = (info: RoomInfo) => {
-        this.#signalingService.off('roomInfo', handler)
-        resolve(info)
-      }
-
-      this.#signalingService.on('roomInfo', handler)
-    })
-  }
-
   #setupEvents(): void {
     // 1. События сигнального сервера
     this.#signalingService
@@ -157,10 +146,11 @@ export class ConferenceService {
           console.error('❌ Ошибка при создании соединения:', error)
           this.#notificationManager.notify('error', 'Ошибка подключения участника')
           this.#roomService.removeParticipant(userId)
-          // Возможно стоит также закрыть соединение, если оно было создано
           this.#connectionManager.close(userId)
         }
       })
+
+      // Для динамических изменений
       .on('userLeft', (userId) => {
         console.log('👋 Участник покинул конференцию:', userId)
         // Сначала закрываем соединение
@@ -236,8 +226,7 @@ export class ConferenceService {
         if (!userId || !trackId) return
         const participant = this.#roomService.getParticipant(userId)
         participant?.streams.forEach((stream) => {
-          if (stream.getTracks()
-            .some((track) => track.id === trackId)) {
+          if (stream.getTracks().some((track) => track.id === trackId)) {
             this.#roomService.removeStream(userId, stream.id)
           }
         })
@@ -245,13 +234,19 @@ export class ConferenceService {
       })
       .on('negotiationNeeded', async ({ userId }) => {
         try {
-          if (this.#connectionManager.isConnected(userId)) {
+          const connection = this.#connectionManager.getConnection(userId)
+          if (connection?.signalingState === 'stable' && this.#connectionManager.isConnected(userId)) {
+            console.log('📣 Создаем offer после negotiationneeded')
             const offer = await this.#connectionManager.createOffer(userId)
-            if (offer) await this.#signalingService.sendOffer(userId, offer)
+            if (offer) {
+              await this.#signalingService.sendOffer(userId, offer)
+              console.log('📨 Отправлен offer после negotiationneeded')
+            }
+          } else {
+            console.log('⚠️ Пропуск создания offer - некорректное состояние:', connection?.signalingState)
           }
         } catch (error) {
           console.error('❌ Ошибка создания offer:', error)
-          this.#notificationManager.notify('error', 'Ошибка обновления соединения')
         }
       })
       .on('iceCandidate', async ({ userId, candidate }) => {
@@ -355,6 +350,17 @@ export class ConferenceService {
 
     this.#roomService.on('participantAdded', () => {
       this.#notifySubscribers()
+    })
+  }
+
+  #waitForRoomInfo(): Promise<RoomInfo> {
+    return new Promise((resolve) => {
+      const handler = (info: RoomInfo) => {
+        this.#signalingService.off('roomInfo', handler)
+        resolve(info)
+      }
+
+      this.#signalingService.on('roomInfo', handler)
     })
   }
 
