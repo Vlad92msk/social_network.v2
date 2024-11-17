@@ -22,21 +22,8 @@ export function Conference({ profile }: ConferenceProps) {
   } = useConference()
 
 
-  // useEffect(() => {
-  //   console.log('Streams debug:', streams?.map(s => ({
-  //     id: s.stream?.id,
-  //     active: s.stream?.active,
-  //     trackCount: s.stream?.getTracks().length,
-  //     tracks: s.stream?.getTracks().map(t => ({
-  //       kind: t.kind,
-  //       enabled: t.enabled,
-  //       readyState: t.readyState
-  //     }))
-  //   })))
-  // }, [streams])
-
-  // console.log('streams', streams)
-  // console.log('participants', participants)
+  console.log('streams', streams)
+  console.log('participants', participants)
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -45,6 +32,14 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
+  const ddd = streams?.reduce((acc, user) => {
+    const d = user.streams.map((stream) => ({ userId: user.userId, stream }))
+    // @ts-ignore
+    acc.push(...d)
+    return acc
+  }, [])
+
+  console.log('ddd', ddd)
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
@@ -69,15 +64,13 @@ export function Conference({ profile }: ConferenceProps) {
         )}
 
         {/* Потоки других участников */}
-        {streams?.map(({ userId, streams }) => (
-          <div key={userId} className={styles.participant}>
-            { streams.map((stream) => (
-              <RemoteVideo
-                key={stream.id}
-                stream={stream}
-                className={styles.video}
-              />
-            )) }
+        {ddd?.map(({ userId, stream }) => (
+          //@ts-ignore
+          <div key={stream.id} className={styles.participant}>
+            <RemoteVideo
+              stream={stream}
+              className={styles.video}
+            />
             <span className={styles.participantName}>
               {userId}
             </span>

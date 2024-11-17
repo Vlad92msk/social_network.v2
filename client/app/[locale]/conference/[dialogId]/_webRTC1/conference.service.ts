@@ -235,6 +235,7 @@ export class ConferenceService {
       .on('negotiationNeeded', async ({ userId }) => {
         try {
           const connection = this.#connectionManager.getConnection(userId)
+          console.log('connection', connection?.signalingState)
           if (connection?.signalingState === 'stable' && this.#connectionManager.isConnected(userId)) {
             console.log('📣 Создаем offer после negotiationneeded')
             const offer = await this.#connectionManager.createOffer(userId)
@@ -393,7 +394,7 @@ export class ConferenceService {
     this.#mediaManager.toggleAudio()
   }
 
-  getState(): any {
+  getState() {
     return {
       initialized: this.#initialized,
       media: this.#mediaManager.getState(),
