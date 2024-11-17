@@ -10,7 +10,7 @@ export function LocalPreview() {
   const videoProps = useVideoStream({
     mirror: true,
     onStreamChange: (stream) => {
-      console.log('Stream changed:', stream?.getTracks())
+      // console.log('Stream changed:', stream?.getTracks())
     },
   })
 

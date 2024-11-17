@@ -35,8 +35,8 @@ export function Conference({ profile }: ConferenceProps) {
   //   })))
   // }, [streams])
 
-  console.log('streams', streams)
-  console.log('participants', participants)
+  // console.log('streams', streams)
+  // console.log('participants', participants)
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -69,12 +69,15 @@ export function Conference({ profile }: ConferenceProps) {
         )}
 
         {/* Потоки других участников */}
-        {streams?.map(({ userId, stream }) => (
+        {streams?.map(({ userId, streams }) => (
           <div key={userId} className={styles.participant}>
-            <RemoteVideo
-              stream={stream}
-              className={styles.video}
-            />
+            { streams.map((stream) => (
+              <RemoteVideo
+                key={stream.id}
+                stream={stream}
+                className={styles.video}
+              />
+            )) }
             <span className={styles.participantName}>
               {userId}
             </span>

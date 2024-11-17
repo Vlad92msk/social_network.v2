@@ -116,7 +116,6 @@ export class SignalingService extends EventEmitter {
     })
 
     socket.on('room:info', (roomInfo: any) => {
-      console.log('Received room:info', roomInfo)
       this.emit('roomInfo', roomInfo)
     })
 

@@ -2,8 +2,7 @@ import { EventEmitter } from 'events'
 
 export interface Participant {
   userId: string
-  stream?: MediaStream // Единый стрим для камеры или демонстрации экрана
-  hasActiveStream: boolean // Флаг наличия активного стрима
+  streams: Set<MediaStream>
 }
 
 export interface RoomInfo {
@@ -12,131 +11,190 @@ export interface RoomInfo {
   createdAt: string
 }
 
+/**
+ * RoomService отвечает только за управление участниками и их медиа потоками
+ */
 export class RoomService extends EventEmitter {
-  private room?: RoomInfo
+  #room?: RoomInfo
 
-  private participants: Map<string, Participant> = new Map()
+  #participants = new Map<string, Participant>()
 
   /**
    * Инициализация комнаты
    */
-  initRoom(roomInfo: RoomInfo): RoomInfo {
-    this.room = roomInfo
+  init(info: RoomInfo): void {
+    this.#room = info
+    this.#participants.clear()
 
-    // Создаем начальный список участников
-    this.participants.clear()
-    roomInfo.participants.forEach((userId) => {
-      this.participants.set(userId, {
+    // Создаем начальных участников
+    info.participants.forEach((userId) => {
+      this.#participants.set(userId, {
         userId,
-        hasActiveStream: false,
+        streams: new Set(),
       })
     })
 
-    this.emit('roomCreated', roomInfo)
-    return roomInfo
+    this.emit('initialized', info)
   }
 
   /**
    * Добавление участника
    */
-  addParticipant(userId: string): Participant[] {
-    if (!this.room) return []
+  addParticipant(userId: string): void {
+    if (!this.#room) return
 
-    if (!this.room.participants.includes(userId)) {
-      this.room.participants.push(userId)
-      this.participants.set(userId, {
+    // Добавляем только если участника еще нет
+    if (!this.#participants.has(userId)) {
+      this.#participants.set(userId, {
         userId,
-        hasActiveStream: false,
+        streams: new Set(),
       })
-      this.emit('participantJoined', { userId })
-    }
 
-    return Array.from(this.participants.values())
+      this.#room.participants.push(userId)
+      this.emit('participantAdded', { userId })
+    }
   }
 
   /**
    * Удаление участника
    */
-  removeParticipant(userId: string): Participant[] {
-    if (!this.room) return []
+  removeParticipant(userId: string): void {
+    if (!this.#room) return
 
-    const index = this.room.participants.indexOf(userId)
-    if (index !== -1) {
-      this.room.participants.splice(index, 1)
-      this.participants.delete(userId)
-      this.emit('participantLeft', { userId })
-    }
-
-    return Array.from(this.participants.values())
-  }
-
-  addRemoteStream(userId: string, stream: MediaStream): void {
-    const participant = this.participants.get(userId)
+    const participant = this.#participants.get(userId)
     if (!participant) return
 
-    participant.stream = stream
-    participant.hasActiveStream = true
+    // Очищаем ресурсы участника
+    participant.streams.forEach((stream) => {
+      stream.getTracks().forEach((track) => track.stop())
+    })
 
-    this.participants.set(userId, participant)
-    this.emit('streamAdded', { userId, stream })
+    // Удаляем участника
+    this.#participants.delete(userId)
+    const index = this.#room.participants.indexOf(userId)
+    if (index !== -1) {
+      this.#room.participants.splice(index, 1)
+    }
+
+    this.emit('participantRemoved', { userId })
   }
 
-  removeRemoteStream(userId: string, streamId: string): void {
-    const participant = this.participants.get(userId)
-    console.log('______participant', participant)
-    console.log('______participant', participant?.stream?.id, streamId, participant?.stream?.id !== streamId)
-
-
-    if (!participant || participant.stream?.id !== streamId) return
-    participant.stream = undefined
-    participant.hasActiveStream = false
-
-    this.participants.set(userId, participant)
-    // this.emit('streamRemoved', { userId, streamId })
-  }
   /**
-   * Получение участника по ID
+   * Добавление медиа потока участнику
+   */
+  addStream(userId: string, stream: MediaStream): void {
+    const participant = this.#participants.get(userId)
+    if (!participant) return
+
+    // Добавляем поток если его еще нет
+    if (!participant.streams.has(stream)) {
+      participant.streams.add(stream)
+      this.emit('streamAdded', { userId, stream })
+    }
+  }
+
+  /**
+   * Удаление медиа потока у участника
+   */
+  removeStream(userId: string, streamId: string): void {
+    const participant = this.#participants.get(userId)
+    if (!participant) return
+
+    // Находим и удаляем поток
+    participant.streams.forEach((stream) => {
+      if (stream.id === streamId) {
+        stream.getTracks().forEach((track) => track.stop())
+        participant.streams.delete(stream)
+        this.emit('streamRemoved', { userId, streamId })
+      }
+    })
+  }
+
+  /**
+   * Получение участника
    */
   getParticipant(userId: string): Participant | undefined {
-    return this.participants.get(userId)
+    return this.#participants.get(userId)
   }
 
   /**
    * Получение всех участников
    */
   getParticipants(): Participant[] {
-    return Array.from(this.participants.values())
+    return Array.from(this.#participants.values())
   }
 
   /**
-   * Получение всех активных стримов
+   * Получение активных медиа потоков
    */
-  getStreams(): { userId: string; stream: MediaStream }[] {
-    const streams: { userId: string; stream: MediaStream }[] = []
+  getStreams(): Array<{ userId: string, streams: MediaStream[] }> {
+    const result: Array<{ userId: string, streams: MediaStream[] }> = []
 
-    this.participants.forEach((participant) => {
-      if (participant.stream && participant.hasActiveStream) {
-        streams.push({
-          userId: participant.userId,
-          stream: participant.stream,
+    this.#participants.forEach((participant, userId) => {
+      if (participant.streams.size > 0) {
+        result.push({
+          userId,
+          streams: Array.from(participant.streams),
         })
       }
     })
 
-    return streams
+    return result
+  }
+
+  getRoomInfo(): RoomInfo | undefined {
+    return this.#room
+  }
+
+  getParticipantCount(): number {
+    return this.#participants.size
+  }
+
+  hasParticipant(userId: string): boolean {
+    return this.#participants.has(userId)
+  }
+
+  getParticipantTracks(userId: string, kind?: 'audio' | 'video'): MediaStreamTrack[] {
+    const participant = this.#participants.get(userId)
+    if (!participant) return []
+
+    const tracks: MediaStreamTrack[] = []
+    participant.streams.forEach((stream) => {
+      stream.getTracks().forEach((track) => {
+        if (!kind || track.kind === kind) {
+          tracks.push(track)
+        }
+      })
+    })
+    return tracks
+  }
+
+  muteParticipantAudio(userId: string): void {
+    const audioTracks = this.getParticipantTracks(userId, 'audio')
+    audioTracks.forEach((track) => track.enabled = false)
+    this.emit('participantAudioMuted', { userId })
+  }
+
+  unmuteParticipantAudio(userId: string): void {
+    const audioTracks = this.getParticipantTracks(userId, 'audio')
+    audioTracks.forEach((track) => track.enabled = true)
+    this.emit('participantAudioUnmuted', { userId })
   }
 
   /**
-   * Очистка при уничтожении
+   * Очистка ресурсов
    */
   destroy(): void {
-    // Останавливаем все треки во всех стримах
-    this.participants.forEach((participant) => {
-      participant.stream?.getTracks().forEach((track) => track.stop())
+    // Останавливаем все медиа потоки
+    this.#participants.forEach((participant) => {
+      participant.streams.forEach((stream) => {
+        stream.getTracks().forEach((track) => track.stop())
+      })
     })
 
-    this.participants.clear()
-    this.room = undefined
+    // Очищаем данные
+    this.#participants.clear()
+    this.#room = undefined
     this.removeAllListeners()
   }
 }
