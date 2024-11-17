@@ -42,7 +42,7 @@ export class RoomService extends EventEmitter {
    */
   addParticipant(userId: string): void {
     if (!this.#room) return
-
+console.log('addParticipant', userId)
     // Добавляем только если участника еще нет
     if (!this.#participants.has(userId)) {
       this.#participants.set(userId, {

@@ -62,7 +62,16 @@ export class ConferenceService {
       })
 
       this.#mediaManager.init(config.mediaConstraints)
+      // Сначала настраиваем обработчик
+      const roomInfoPromise = this.#waitForRoomInfo()
+
+      // Потом инициализируем сигнальный сервис
       await this.#signalingService.init(config.signaling)
+
+      // Ждем информацию о комнате
+      const roomInfo = await roomInfoPromise
+
+      this.#roomService.init(roomInfo)
 
       // Связываем события
       this.#setupEvents()
@@ -75,6 +84,17 @@ export class ConferenceService {
       this.#notificationManager.notify('error', 'Ошибка инициализации')
       throw error
     }
+  }
+
+  #waitForRoomInfo(): Promise<RoomInfo> {
+    return new Promise((resolve) => {
+      const handler = (info: RoomInfo) => {
+        this.#signalingService.off('roomInfo', handler)
+        resolve(info)
+      }
+
+      this.#signalingService.on('roomInfo', handler)
+    })
   }
 
   #setupEvents(): void {
@@ -97,17 +117,7 @@ export class ConferenceService {
         this.#notifySubscribers()
       })
 
-      // События комнаты
-      .on('roomInfo', (info) => {
-        console.log('📋 Получена информация о комнате')
-        this.#roomService.init(info)
-        this.#notifySubscribers()
-      })
-      .on('participantsUpdated', (participants) => {
-        console.log('👥 Обновление списка участников:', participants)
-        this.#notifySubscribers()
-      })
-      // События участников
+      // События участниковя
       .on('userJoined', async (userId: string) => {
         console.log('👋 Новый участник:', userId)
         this.#roomService.addParticipant(userId)
@@ -159,6 +169,10 @@ export class ConferenceService {
         this.#roomService.removeParticipant(userId)
         // Возможно очистка медиа-ресурсов
         // this.#mediaManager.cleanupUserResources(userId)
+        this.#notifySubscribers()
+      })
+      .on('participantsUpdated', (participants) => {
+        console.log('👥 Обновление списка участников:', participants)
         this.#notifySubscribers()
       })
       .on('sdp', async ({ userId, description }) => {
@@ -390,7 +404,6 @@ export class ConferenceService {
 
   #notifySubscribers(): void {
     const state = this.getState()
-    console.log('state', state)
     this.#subscribers.forEach((cb) => cb(state))
   }
 
