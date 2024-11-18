@@ -22,8 +22,7 @@ export function Conference({ profile }: ConferenceProps) {
   } = useConference()
 
 
-  console.log('streams', streams)
-  console.log('participants', participants)
+  // console.log('streams', streams)
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -39,7 +38,6 @@ export function Conference({ profile }: ConferenceProps) {
     return acc
   }, [])
 
-  console.log('ddd', ddd)
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>

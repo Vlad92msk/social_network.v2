@@ -31,6 +31,7 @@ export class ConnectionManager extends EventEmitter {
 
       const connection = new RTCPeerConnection(this.config)
       console.log('Creating connection for user:', userId)
+
       connection.onconnectionstatechange = () => {
         this.emit('connectionState', {
           userId,
@@ -58,16 +59,6 @@ export class ConnectionManager extends EventEmitter {
         }
       }
 
-      connection.onnegotiationneeded = () => {
-        const state = connection.signalingState
-        console.log(`📣 Сработало negotiationneeded для ${userId}, signalingState: ${state}`)
-        if (state === 'stable') {
-          this.emit('negotiationNeeded', { userId })
-        } else {
-          console.log('⚠️ Пропуск negotiationneeded - состояние:', state)
-        }
-      }
-
       this.connections.set(userId, connection)
     } catch (error) {
       this.emit('error', {
@@ -88,8 +79,26 @@ export class ConnectionManager extends EventEmitter {
     }
 
     try {
+      // Проверяем текущее состояние
+      if (connection.signalingState !== 'stable') {
+        console.log(`⚠️ Пропуск создания offer - некорректное состояние: ${connection.signalingState}`)
+        return
+      }
+
+      // Проверяем наличие отправляемых треков
+      const senders = connection.getSenders()
+      if (senders.length === 0) {
+        console.log('⚠️ Нет треков для отправки, пропуск создания offer')
+        return
+      }
+
+      console.log(`📝 Создание offer для ${userId}, количество треков: ${senders.length}`)
       const offer = await connection.createOffer()
+      console.log('Offer создан:', offer)
+
       await connection.setLocalDescription(offer)
+      console.log('Local description установлен')
+
       return offer
     } catch (error) {
       this.emit('error', {

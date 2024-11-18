@@ -111,10 +111,10 @@ export class ConferenceService {
         console.log('👋 Новый участник:', userId)
         this.#roomService.addParticipant(userId)
         try {
-          // Сначала создаем соединение
+          // Создаем соединение
           await this.#connectionManager.createConnection(userId)
 
-          // Добавляем локальные медиа потоки, если они есть
+          // Добавляем существующие локальные потоки, если они есть
           const { stream: localStream } = this.#mediaManager.getState()
           const { stream: screenShare } = this.#screenShareManager.getState()
 
@@ -127,7 +127,6 @@ export class ConferenceService {
             )
           }
 
-          // Добавляем треки из обоих потоков, если они существуют
           if (localStream) {
             await addStreamTracks(localStream)
           }
@@ -136,12 +135,14 @@ export class ConferenceService {
             await addStreamTracks(screenShare)
           }
 
-          // Создаем и отправляем offer
-          const offer = await this.#connectionManager.createOffer(userId)
-          if (offer) {
-            await this.#signalingService.sendOffer(userId, offer)
-            console.log('📨 Отправлен offer участнику:', userId)
-          }
+         if (screenShare || localStream) {
+           // Создаем и отправляем offer
+           const offer = await this.#connectionManager.createOffer(userId)
+           if (offer) {
+             await this.#signalingService.sendOffer(userId, offer)
+             console.log('📨 Отправлен offer участнику:', userId)
+           }
+         }
         } catch (error) {
           console.error('❌ Ошибка при создании соединения:', error)
           this.#notificationManager.notify('error', 'Ошибка подключения участника')
@@ -194,9 +195,9 @@ export class ConferenceService {
           try {
             console.log('📨 Получен ICE кандидат для:', userId)
             await this.#connectionManager.addIceCandidate(userId, candidate as RTCIceCandidate)
+            this.#notifySubscribers()
           } catch (error) {
             console.error('❌ Ошибка добавления ICE candidate:', error)
-            // Возможно стоит добавить уведомление
             this.#notificationManager.notify('error', 'Ошибка установки соединения')
           }
         }
@@ -217,37 +218,35 @@ export class ConferenceService {
 
     // 2. События WebRTC соединений
     this.#connectionManager
-      .on('track', ({ userId, stream }) => {
+      .on('track', ({ userId, track, stream }) => {
         if (!userId || !stream) return
+
+        // Добавляем поток в RoomService
         this.#roomService.addStream(userId, stream)
+
+        // Запрашиваем состояние room service после добавления
+        const participant = this.#roomService.getParticipant(userId)
+        console.log('📊 Состояние участника после добавления потока:', {
+          userId,
+          streamsCount: participant?.streams.size,
+          streams: Array.from(participant?.streams || []).map((s) => s.id),
+        })
+
         this.#notifySubscribers()
       })
       .on('trackEnded', ({ userId, trackId }) => {
-        if (!userId || !trackId) return
+        console.log(`🛑 Обработка завершения трека ${trackId} для ${userId}`)
         const participant = this.#roomService.getParticipant(userId)
-        participant?.streams.forEach((stream) => {
-          if (stream.getTracks().some((track) => track.id === trackId)) {
-            this.#roomService.removeStream(userId, stream.id)
-          }
-        })
-        this.#notifySubscribers()
-      })
-      .on('negotiationNeeded', async ({ userId }) => {
-        try {
-          const connection = this.#connectionManager.getConnection(userId)
-          console.log('connection', connection?.signalingState)
-          if (connection?.signalingState === 'stable' && this.#connectionManager.isConnected(userId)) {
-            console.log('📣 Создаем offer после negotiationneeded')
-            const offer = await this.#connectionManager.createOffer(userId)
-            if (offer) {
-              await this.#signalingService.sendOffer(userId, offer)
-              console.log('📨 Отправлен offer после negotiationneeded')
+
+        if (participant) {
+          participant.streams.forEach((stream) => {
+            const hasTrack = stream.getTracks().some((track) => track.id === trackId)
+            if (hasTrack) {
+              console.log(`🗑️ Удаление потока ${stream.id} для трека ${trackId}`)
+              this.#roomService.removeStream(userId, stream.id)
+              this.#notifySubscribers()
             }
-          } else {
-            console.log('⚠️ Пропуск создания offer - некорректное состояние:', connection?.signalingState)
-          }
-        } catch (error) {
-          console.error('❌ Ошибка создания offer:', error)
+          })
         }
       })
       .on('iceCandidate', async ({ userId, candidate }) => {
@@ -262,20 +261,37 @@ export class ConferenceService {
 
     // 3. События медиа
     this.#mediaManager
-      .on('streamStarted', async (stream: MediaStream, type: 'media' | 'screen') => {
+      .on('streamStarted', async (stream: MediaStream) => {
         const participants = this.#roomService.getParticipants()
-        console.log(`📤 Начало трансляции ${type === 'media' ? 'медиа' : 'экрана'}:`, stream.id)
+          .filter(({ userId }) => userId !== this.#config.signaling.userId)
+        console.log('📤 Начало трансляции с камеры:', stream.id)
 
         try {
           await Promise.all(participants.map(async (participant) => {
-            const connection = this.#connectionManager.getConnection(participant.userId)
+            const { userId } = participant
+            console.log(`Обработка подключения для участника ${userId}`)
+
+            // Создаем новое соединение в любом случае
+            console.log(`Создание нового соединения для ${userId}`)
+            await this.#connectionManager.createConnection(userId)
+            const connection = this.#connectionManager.getConnection(userId)
+
             if (connection) {
+              // Добавляем треки
               await Promise.all(
                 stream.getTracks().map((track) => {
-                  console.log(`📤 Добавление трека ${track.kind} для участника:`, participant.userId)
-                  return this.#connectionManager.addTrack(participant.userId, track, stream)
+                  console.log(`📤 Добавление трека ${track.kind} для участника:`, userId)
+                  return this.#connectionManager.addTrack(userId, track, stream)
                 }),
               )
+
+              // Создаем offer
+              console.log(`📣 Создание offer для ${userId}`)
+              const offer = await this.#connectionManager.createOffer(userId)
+              if (offer) {
+                await this.#signalingService.sendOffer(userId, offer)
+                console.log(`📤 Offer отправлен участнику ${userId}`)
+              }
             }
           }))
           this.#notifySubscribers()
@@ -283,7 +299,7 @@ export class ConferenceService {
           console.error('❌ Ошибка добавления медиа треков:', error)
           this.#notificationManager.notify(
             'error',
-            `Ошибка трансляции ${type === 'media' ? 'медиа' : 'экрана'}`,
+            'Ошибка трансляции с камеры',
           )
         }
       })
@@ -306,19 +322,27 @@ export class ConferenceService {
     // 4. События скриншеринга
     this.#screenShareManager
       .on('streamStarted', async (stream: MediaStream) => {
-        const participants = this.#roomService.getParticipants()
+        const participants = this.#roomService.getParticipants().filter(({ userId }) => userId !== this.#config.signaling.userId)
         console.log('🖥️ Начало трансляции экрана:', stream.id)
 
         try {
           await Promise.all(participants.map(async (participant) => {
             const connection = this.#connectionManager.getConnection(participant.userId)
             if (connection) {
+              // Добавляем все треки
               await Promise.all(
                 stream.getTracks().map((track) => {
                   console.log('🖥️ Добавление трека screen для участника:', participant.userId)
                   return this.#connectionManager.addTrack(participant.userId, track, stream)
                 }),
               )
+
+              // Создаем и отправляем offer после добавления треков
+              console.log('📣 Создание offer после добавления треков скриншеринга')
+              const offer = await this.#connectionManager.createOffer(participant.userId)
+              if (offer) {
+                await this.#signalingService.sendOffer(participant.userId, offer)
+              }
             }
           }))
           this.#notifySubscribers()

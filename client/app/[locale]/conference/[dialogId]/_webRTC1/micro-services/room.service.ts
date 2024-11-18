@@ -42,15 +42,18 @@ export class RoomService extends EventEmitter {
    */
   addParticipant(userId: string): void {
     if (!this.#room) return
-console.log('addParticipant', userId)
+
+    console.log('➕ Добавление участника:', userId)
+
     // Добавляем только если участника еще нет
     if (!this.#participants.has(userId)) {
       this.#participants.set(userId, {
         userId,
-        streams: new Set(),
+        streams: new Set<MediaStream>(),
       })
 
       this.#room.participants.push(userId)
+      console.log('✅ Участник добавлен:', userId)
       this.emit('participantAdded', { userId })
     }
   }
@@ -83,13 +86,30 @@ console.log('addParticipant', userId)
    * Добавление медиа потока участнику
    */
   addStream(userId: string, stream: MediaStream): void {
-    const participant = this.#participants.get(userId)
-    if (!participant) return
+    console.log(`➕ Попытка добавить поток ${stream.id} для пользователя ${userId}`);
 
-    // Добавляем поток если его еще нет
-    if (!participant.streams.has(stream)) {
-      participant.streams.add(stream)
-      this.emit('streamAdded', { userId, stream })
+    const participant = this.#participants.get(userId);
+    if (!participant) {
+      console.warn(`⚠️ Участник ${userId} не найден при добавлении потока`);
+      return;
+    }
+
+    // Проверяем наличие треков в потоке
+    const tracks = stream.getTracks();
+    console.log(`📊 Поток содержит ${tracks.length} треков:`,
+      tracks.map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled, muted: t.muted }))
+    );
+
+    // Добавляем поток и проверяем успешность
+    const sizeBefore = participant.streams.size;
+    participant.streams.add(stream);
+    const sizeAfter = participant.streams.size;
+
+    if (sizeAfter > sizeBefore) {
+      console.log(`✅ Поток ${stream.id} успешно добавлен к участнику ${userId}`);
+      this.emit('streamAdded', { userId, stream });
+    } else {
+      console.log(`ℹ️ Поток ${stream.id} уже существует у участника ${userId}`);
     }
   }
 
@@ -97,14 +117,20 @@ console.log('addParticipant', userId)
    * Удаление медиа потока у участника
    */
   removeStream(userId: string, streamId: string): void {
+    console.log(`➖ Попытка удалить поток ${streamId} у участника ${userId}`)
+
     const participant = this.#participants.get(userId)
-    if (!participant) return
+    if (!participant) {
+      console.warn(`⚠️ Участник ${userId} не найден при удалении потока`)
+      return
+    }
 
     // Находим и удаляем поток
     participant.streams.forEach((stream) => {
       if (stream.id === streamId) {
         stream.getTracks().forEach((track) => track.stop())
         participant.streams.delete(stream)
+        console.log(`✅ Поток ${streamId} удален у участника ${userId}`)
         this.emit('streamRemoved', { userId, streamId })
       }
     })
