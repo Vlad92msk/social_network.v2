@@ -236,6 +236,20 @@ export class ConferenceService {
           }
         }
       })
+      .on('connectionLost', async ({ userId }) => {
+        console.log(`❌ Потеряно соединение с ${userId}`);
+
+        // Очищаем ресурсы
+        this.#connectionManager.close(userId);
+        this.#roomService.removeParticipant(userId);
+
+        // Уведомляем сигнальный сервер
+        this.#signalingService.sendEvent({
+          //@ts-ignore
+          type: 'user-disconnected',
+          userId
+        });
+      })
 
     // 3. События медиа
     this.#mediaManager

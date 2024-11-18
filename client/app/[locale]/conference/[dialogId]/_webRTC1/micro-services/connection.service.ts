@@ -35,10 +35,12 @@ export class ConnectionManager extends EventEmitter {
       this.remoteDescriptionSet.set(userId, false)
 
       connection.onconnectionstatechange = () => {
-        this.emit('connectionState', {
-          userId,
-          state: connection.connectionState as ConnectionState,
-        })
+        const state = connection.connectionState as ConnectionState
+        this.emit('connectionState', { userId, state })
+
+        if (state === 'disconnected' || state === 'failed') {
+          this.emit('connectionLost', { userId })
+        }
       }
 
       connection.onicecandidate = ({ candidate }) => {
@@ -277,33 +279,38 @@ export class ConnectionManager extends EventEmitter {
   }
 
   close(userId: string): void {
-    const connection = this.connections.get(userId);
-    if (!connection) return;
+    const connection = this.connections.get(userId)
+    if (!connection) return
 
     try {
-      connection.getSenders().forEach(sender => {
-        if (sender.track) {
-          sender.track.stop();
-          connection.removeTrack(sender);
-        }
-      });
+      // Сначала получаем все sender'ы
+      const senders = connection.getSenders()
+      const receivers = connection.getReceivers()
 
-      connection.getReceivers().forEach(receiver => {
-        if (receiver.track) {
-          receiver.track.stop();
-        }
-      });
+      // Удаляем треки из соединения
+      senders.forEach((sender) => {
+        connection.removeTrack(sender)
+      })
 
-      connection.close();
-      this.connections.delete(userId);
-      this.streams.delete(userId);
-      this.iceCandidatesBuffer.delete(userId);
-      this.remoteDescriptionSet.delete(userId);
+      // Только после этого останавливаем треки
+      senders.forEach((sender) => {
+        if (sender.track) sender.track.stop()
+      })
+
+      receivers.forEach((receiver) => {
+        if (receiver.track) receiver.track.stop()
+      })
+
+      connection.close()
+      this.connections.delete(userId)
+      this.streams.delete(userId)
+      this.iceCandidatesBuffer.delete(userId)
+      this.remoteDescriptionSet.delete(userId)
     } catch (error) {
       this.emit('error', {
         userId,
         error: error instanceof Error ? error : new Error('Failed to close connection'),
-      });
+      })
     }
   }
 
