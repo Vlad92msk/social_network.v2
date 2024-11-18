@@ -14,6 +14,8 @@ export class ConnectionManager extends EventEmitter {
 
   private iceCandidatesBuffer = new Map<string, RTCIceCandidate[]>()
 
+  private remoteDescriptionSet = new Map<string, boolean>()
+
   private config: RTCConfiguration
 
   constructor() {
@@ -30,7 +32,7 @@ export class ConnectionManager extends EventEmitter {
       this.close(userId)
 
       const connection = new RTCPeerConnection(this.config)
-      console.log('Creating connection for user:', userId)
+      this.remoteDescriptionSet.set(userId, false)
 
       connection.onconnectionstatechange = () => {
         this.emit('connectionState', {
@@ -178,8 +180,6 @@ export class ConnectionManager extends EventEmitter {
   }
 
   async handleOffer(userId: string, offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-    console.log('🤝 Обработка offer для:', userId, 'offer:', offer)
-
     const connection = this.connections.get(userId)
     if (!connection) {
       throw new Error(`No connection found for user ${userId}`)
@@ -190,21 +190,13 @@ export class ConnectionManager extends EventEmitter {
         throw new Error('Invalid offer: no SDP')
       }
 
-      const rtcOffer = new RTCSessionDescription({
-        type: 'offer',
-        sdp: offer.sdp,
-      })
+      await connection.setRemoteDescription(new RTCSessionDescription(offer))
+      this.remoteDescriptionSet.set(userId, true)
 
-      console.log('📥 Установка remote description')
-      await connection.setRemoteDescription(rtcOffer)
-
-      // Добавляем буферизованные ICE кандидаты после установки remote description
+      // Добавляем буферизованные кандидаты после установки remote description
       await this.addBufferedCandidates(userId)
 
-      console.log('📝 Создание answer')
       const answer = await connection.createAnswer()
-
-      console.log('📤 Установка local description')
       await connection.setLocalDescription(answer)
 
       if (!answer.sdp) {
@@ -216,11 +208,9 @@ export class ConnectionManager extends EventEmitter {
         sdp: answer.sdp,
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('❌ Ошибка в handleOffer:', errorMessage)
       this.emit('error', {
         userId,
-        error: error instanceof Error ? error : new Error(errorMessage),
+        error: error instanceof Error ? error : new Error('Failed to handle offer'),
       })
       throw error
     }
@@ -229,12 +219,14 @@ export class ConnectionManager extends EventEmitter {
   async handleAnswer(userId: string, answer: RTCSessionDescriptionInit): Promise<void> {
     const connection = this.connections.get(userId)
     if (!connection) {
-      throw new Error(`Нет соединения с пользователем ${userId}`)
+      throw new Error(`No connection found for user ${userId}`)
     }
 
     try {
       await connection.setRemoteDescription(new RTCSessionDescription(answer))
-      // Добавляем буферизованные ICE кандидаты после установки remote description
+      this.remoteDescriptionSet.set(userId, true)
+
+      // Добавляем буферизованные кандидаты после установки remote description
       await this.addBufferedCandidates(userId)
     } catch (error) {
       this.emit('error', {
@@ -246,30 +238,15 @@ export class ConnectionManager extends EventEmitter {
   }
 
   async addIceCandidate(userId: string, candidate: RTCIceCandidate): Promise<void> {
-    const connection = this.connections.get(userId)
-
-    if (!connection) {
-      throw new Error(`Нет соединения с пользователем ${userId}`)
+    // Всегда буферизуем кандидатов
+    if (!this.iceCandidatesBuffer.has(userId)) {
+      this.iceCandidatesBuffer.set(userId, [])
     }
+    this.iceCandidatesBuffer.get(userId)!.push(candidate)
 
-    try {
-      if (connection.remoteDescription) {
-        // Если remote description установлен, добавляем кандидата сразу
-        await connection.addIceCandidate(candidate)
-      } else {
-        // Иначе буферизуем кандидата
-        console.log(`📦 Буферизация ICE кандидата для ${userId}`)
-        if (!this.iceCandidatesBuffer.has(userId)) {
-          this.iceCandidatesBuffer.set(userId, [])
-        }
-        this.iceCandidatesBuffer.get(userId)!.push(candidate)
-      }
-    } catch (error) {
-      this.emit('error', {
-        userId,
-        error: error instanceof Error ? error : new Error('Failed to add ICE candidate'),
-      })
-      throw error
+    // Пытаемся добавить буферизованные кандидаты, если remote description установлен
+    if (this.remoteDescriptionSet.get(userId)) {
+      await this.addBufferedCandidates(userId)
     }
   }
 
@@ -277,15 +254,12 @@ export class ConnectionManager extends EventEmitter {
     const connection = this.connections.get(userId)
     const candidates = this.iceCandidatesBuffer.get(userId) || []
 
-    if (connection && connection.remoteDescription) {
-      console.log(`📥 Добавление ${candidates.length} буферизованных ICE кандидатов для ${userId}`)
-
+    if (connection && this.remoteDescriptionSet.get(userId)) {
       try {
         await Promise.all(
           candidates.map((candidate) => connection.addIceCandidate(candidate)),
         )
-        // Очищаем буфер после успешного добавления
-        this.iceCandidatesBuffer.delete(userId)
+        this.iceCandidatesBuffer.set(userId, []) // Очищаем буфер, сохраняя массив
       } catch (error) {
         this.emit('error', {
           userId,
@@ -303,28 +277,33 @@ export class ConnectionManager extends EventEmitter {
   }
 
   close(userId: string): void {
-    const connection = this.connections.get(userId)
-    if (!connection) return
+    const connection = this.connections.get(userId);
+    if (!connection) return;
 
     try {
-      // Просто очищаем sender'ы, не останавливая треки
-      connection.getSenders().forEach((sender) => {
-        try {
-          connection.removeTrack(sender)
-        } catch (e) {
-          console.warn('Error removing track:', e)
+      connection.getSenders().forEach(sender => {
+        if (sender.track) {
+          sender.track.stop();
+          connection.removeTrack(sender);
         }
-      })
+      });
 
-      connection.close()
-      this.connections.delete(userId)
-      this.streams.delete(userId)
-      this.iceCandidatesBuffer.delete(userId)
+      connection.getReceivers().forEach(receiver => {
+        if (receiver.track) {
+          receiver.track.stop();
+        }
+      });
+
+      connection.close();
+      this.connections.delete(userId);
+      this.streams.delete(userId);
+      this.iceCandidatesBuffer.delete(userId);
+      this.remoteDescriptionSet.delete(userId);
     } catch (error) {
       this.emit('error', {
         userId,
         error: error instanceof Error ? error : new Error('Failed to close connection'),
-      })
+      });
     }
   }
 

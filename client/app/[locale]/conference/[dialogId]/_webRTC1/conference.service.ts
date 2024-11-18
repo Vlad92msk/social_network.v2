@@ -108,43 +108,21 @@ export class ConferenceService {
 
       // События участниковя
       .on('userJoined', async (userId: string) => {
-        console.log('👋 Новый участник:', userId)
-        this.#roomService.addParticipant(userId)
         try {
-          // Создаем соединение
-          await this.#connectionManager.createConnection(userId)
+          this.#roomService.addParticipant(userId)
 
-          // Добавляем существующие локальные потоки, если они есть
           const { stream: localStream } = this.#mediaManager.getState()
           const { stream: screenShare } = this.#screenShareManager.getState()
 
-          // Функция для добавления треков из потока
-          const addStreamTracks = async (stream: MediaStream) => {
-            const tracks = stream.getTracks()
-            console.log(`📤 Добавление ${tracks.length} треков для потока:`, stream.id)
-            await Promise.all(
-              tracks.map((track) => this.#connectionManager.addTrack(userId, track, stream)),
-            )
-          }
-
           if (localStream) {
-            await addStreamTracks(localStream)
+            await this.handleStreamTracks(userId, localStream, this.#connectionManager, this.#signalingService)
           }
 
           if (screenShare) {
-            await addStreamTracks(screenShare)
+            await this.handleStreamTracks(userId, screenShare, this.#connectionManager, this.#signalingService)
           }
-
-         if (screenShare || localStream) {
-           // Создаем и отправляем offer
-           const offer = await this.#connectionManager.createOffer(userId)
-           if (offer) {
-             await this.#signalingService.sendOffer(userId, offer)
-             console.log('📨 Отправлен offer участнику:', userId)
-           }
-         }
         } catch (error) {
-          console.error('❌ Ошибка при создании соединения:', error)
+          console.error('❌ Ошибка при обработке нового участника:', error)
           this.#notificationManager.notify('error', 'Ошибка подключения участника')
           this.#roomService.removeParticipant(userId)
           this.#connectionManager.close(userId)
@@ -264,43 +242,15 @@ export class ConferenceService {
       .on('streamStarted', async (stream: MediaStream) => {
         const participants = this.#roomService.getParticipants()
           .filter(({ userId }) => userId !== this.#config.signaling.userId)
-        console.log('📤 Начало трансляции с камеры:', stream.id)
 
         try {
-          await Promise.all(participants.map(async (participant) => {
-            const { userId } = participant
-            console.log(`Обработка подключения для участника ${userId}`)
-
-            // Создаем новое соединение в любом случае
-            console.log(`Создание нового соединения для ${userId}`)
-            await this.#connectionManager.createConnection(userId)
-            const connection = this.#connectionManager.getConnection(userId)
-
-            if (connection) {
-              // Добавляем треки
-              await Promise.all(
-                stream.getTracks().map((track) => {
-                  console.log(`📤 Добавление трека ${track.kind} для участника:`, userId)
-                  return this.#connectionManager.addTrack(userId, track, stream)
-                }),
-              )
-
-              // Создаем offer
-              console.log(`📣 Создание offer для ${userId}`)
-              const offer = await this.#connectionManager.createOffer(userId)
-              if (offer) {
-                await this.#signalingService.sendOffer(userId, offer)
-                console.log(`📤 Offer отправлен участнику ${userId}`)
-              }
-            }
-          }))
+          await Promise.all(
+            participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
+          )
           this.#notifySubscribers()
         } catch (error) {
           console.error('❌ Ошибка добавления медиа треков:', error)
-          this.#notificationManager.notify(
-            'error',
-            'Ошибка трансляции с камеры',
-          )
+          this.#notificationManager.notify('error', 'Ошибка трансляции с камеры')
         }
       })
       .on('streamStopped', () => {
@@ -322,29 +272,13 @@ export class ConferenceService {
     // 4. События скриншеринга
     this.#screenShareManager
       .on('streamStarted', async (stream: MediaStream) => {
-        const participants = this.#roomService.getParticipants().filter(({ userId }) => userId !== this.#config.signaling.userId)
-        console.log('🖥️ Начало трансляции экрана:', stream.id)
+        const participants = this.#roomService.getParticipants()
+          .filter(({ userId }) => userId !== this.#config.signaling.userId)
 
         try {
-          await Promise.all(participants.map(async (participant) => {
-            const connection = this.#connectionManager.getConnection(participant.userId)
-            if (connection) {
-              // Добавляем все треки
-              await Promise.all(
-                stream.getTracks().map((track) => {
-                  console.log('🖥️ Добавление трека screen для участника:', participant.userId)
-                  return this.#connectionManager.addTrack(participant.userId, track, stream)
-                }),
-              )
-
-              // Создаем и отправляем offer после добавления треков
-              console.log('📣 Создание offer после добавления треков скриншеринга')
-              const offer = await this.#connectionManager.createOffer(participant.userId)
-              if (offer) {
-                await this.#signalingService.sendOffer(participant.userId, offer)
-              }
-            }
-          }))
+          await Promise.all(
+            participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
+          )
           this.#notifySubscribers()
         } catch (error) {
           console.error('❌ Ошибка добавления треков скриншеринга:', error)
@@ -387,6 +321,29 @@ export class ConferenceService {
 
       this.#signalingService.on('roomInfo', handler)
     })
+  }
+
+  private async handleStreamTracks(
+    userId: string,
+    stream: MediaStream,
+    connectionManager: ConnectionManager,
+    signalingService: SignalingService,
+  ): Promise<void> {
+    // Создаем/проверяем соединение
+    if (!connectionManager.getConnection(userId)) {
+      await connectionManager.createConnection(userId)
+    }
+
+    // Добавляем треки
+    await Promise.all(
+      stream.getTracks().map((track) => connectionManager.addTrack(userId, track, stream)),
+    )
+
+    // Создаем offer после добавления всех треков
+    const offer = await connectionManager.createOffer(userId)
+    if (offer) {
+      await signalingService.sendOffer(userId, offer)
+    }
   }
 
   // Публичные методы управления конференцией
