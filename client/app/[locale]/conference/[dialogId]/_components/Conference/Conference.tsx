@@ -50,9 +50,10 @@ export function Conference({ profile }: ConferenceProps) {
     stopScreenShare,
     streams,
     participants,
+    userEvents,
   } = useConference()
 
-  console.log('streams', streams)
+
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -67,8 +68,6 @@ export function Conference({ profile }: ConferenceProps) {
     acc.push(...d)
     return acc
   }, [])
-
-  console.log('ddd', ddd)
 
   return (
     <div className={styles.conference}>
@@ -94,18 +93,27 @@ export function Conference({ profile }: ConferenceProps) {
         )}
 
         {/* Потоки других участников */}
-        {ddd?.map(({ userId, stream }) => (
-          //@ts-ignore
-          <div key={stream.id} className={styles.participant}>
-            <VideoStream
-              stream={stream}
-              className={styles.video}
-            />
-            <span className={styles.participantName}>
-              {userId}
-            </span>
-          </div>
-        ))}
+        {ddd?.map(({ userId, stream }) => {
+          // @ts-ignore
+          const streamType = userEvents[stream.id]?.streamType
+          // @ts-ignore
+          const mickActive = userEvents[stream.id]?.mickActive
+          return (
+            // @ts-ignore
+            <div key={stream.id} className={styles.participant}>
+              <VideoStream
+                stream={stream}
+                className={styles.video}
+              />
+              <span className={styles.participantName}>
+                {`${userId} (${streamType})`}
+              </span>
+              <span className={styles.participantMic}>
+                {streamType === 'camera' ? mickActive && '🎤' : null}
+              </span>
+            </div>
+          )
+        })}
       </div>
 
       <div className={styles.actionsContainer}>

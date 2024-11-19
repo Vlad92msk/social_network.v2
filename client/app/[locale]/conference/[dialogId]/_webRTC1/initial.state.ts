@@ -8,6 +8,7 @@ export interface InitialState {
   participants: Participant[]
   localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
   streams: ReturnType<ConferenceService['getState']>['streams']
+  userEvents: ReturnType<ConferenceService['getState']>['userEvents']
 }
 
 export const initialState: InitialState = {
@@ -26,4 +27,5 @@ export const initialState: InitialState = {
     isVideoEnabled: false,
   },
   streams: [],
+  userEvents: {},
 }

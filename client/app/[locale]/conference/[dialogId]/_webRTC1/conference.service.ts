@@ -194,6 +194,15 @@ export class ConferenceService {
       .on('userEvent', (event) => {
         console.log('👤 Событие участника:', event.event.type, 'от:', event.initiator, event)
         switch (event.event.type) {
+          case 'screen-share-on': {
+            this.#roomService.setUserEvents({
+              streamId: event.event.payload.streamId,
+              payload: {
+                streamType: 'screen',
+              },
+            })
+            break
+          }
           case 'screen-share-off': {
             this.#roomService.removeStream(event.initiator, event.event.payload.streamId)
             break
@@ -202,11 +211,40 @@ export class ConferenceService {
             this.#roomService.removeStream(event.initiator, event.event.payload.streamId)
             break
           }
-          case 'mic-on':
-          case 'mic-off':
-          case 'camera-on':
+          case 'mic-off': {
+            this.#roomService.muteParticipantAudio(event.initiator)
+            this.#roomService.setUserEvents({
+              streamId: event.event.payload.streamId,
+              payload: {
+                mickActive: false,
+              },
+            })
+            break
+          }
+          case 'mic-on': {
+            this.#roomService.unmuteParticipantAudio(event.initiator)
+
+            this.#roomService.setUserEvents({
+              streamId: event.event.payload.streamId,
+              payload: {
+                mickActive: true,
+              },
+            })
+            break
+          }
+          case 'camera-on': {
+            this.#roomService.setUserEvents({
+              streamId: event.event.payload.streamId,
+              payload: {
+                mickActive: true,
+                streamType: 'camera',
+              },
+            })
+            break
+          }
           default:
             console.warn('Неизвестный тип события:', event.type) // Добавлена обработка неизвестных событий
+            break
         }
         this.#notifySubscribers()
       })
@@ -252,6 +290,9 @@ export class ConferenceService {
           userId,
         })
       })
+      .on('trackEnded', async ({ userId, trackId }) => {
+        console.log(`trackEnded ${userId}, ${trackId}`)
+      })
 
     // 3. События медиа
     this.#mediaManager
@@ -263,6 +304,10 @@ export class ConferenceService {
           await Promise.all(
             participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
           )
+          this.#signalingService.sendEvent({
+            type: 'camera-on',
+            payload: { streamId: stream.id },
+          })
         } catch (error) {
           console.error('❌ Ошибка добавления медиа треков:', error)
           this.#notificationManager.notify('error', 'Ошибка трансляции с камеры')
@@ -271,12 +316,6 @@ export class ConferenceService {
       .on('streamStopped', ({ streamId }: { streamId: string }) => {
         this.#signalingService.sendEvent({
           type: 'camera-off',
-          payload: { streamId },
-        })
-      })
-      .on('videoToggled', ({ streamId, active }: { active: boolean, streamId: string }) => {
-        this.#signalingService.sendEvent({
-          type: active ? 'camera-on' : 'camera-off',
           payload: { streamId },
         })
       })
@@ -300,6 +339,10 @@ export class ConferenceService {
           await Promise.all(
             participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
           )
+          this.#signalingService.sendEvent({
+            type: 'screen-share-on',
+            payload: { streamId: stream.id },
+          })
         } catch (error) {
           console.error('❌ Ошибка добавления треков скриншеринга:', error)
           this.#notificationManager.notify('error', 'Ошибка трансляции экрана')
@@ -337,7 +380,7 @@ export class ConferenceService {
     })
   }
 
-  private async handleStreamTracks(
+  async handleStreamTracks(
     userId: string,
     stream: MediaStream,
     connectionManager: ConnectionManager,
@@ -397,6 +440,7 @@ export class ConferenceService {
       participants: this.#roomService.getParticipants(),
       streams: this.#roomService.getStreams(),
       localScreenShare: this.#screenShareManager.getState(),
+      userEvents: this.#roomService.getUserEvents(),
     }
   }
 
@@ -406,7 +450,6 @@ export class ConferenceService {
 
   #notifySubscribers(): void {
     const state = this.getState()
-    console.log('__STATE___', state)
     this.#subscribers.forEach((cb) => cb(state))
   }
 

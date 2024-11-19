@@ -25,7 +25,7 @@ interface SignalPayload {
     dialogId: string;
 }
 
-interface EventType {
+export interface EventType {
     event: {
         type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off'
         payload: any;
@@ -109,7 +109,13 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const { event, dialogId } = payload
         const senderId = client.data.userId
 
-        console.log('payload', payload)
+        if (event.payload.streamId) {
+            this.conferenceService.setUserEvents({
+                streamId: event.payload.streamId,
+                payload: event
+            })
+        }
+
         // Отправляем сигнал целевому пользователю
         client.to(dialogId).emit('user:event', {
             initiator: senderId,

@@ -4,11 +4,16 @@ export interface Participant {
   userId: string
   streams: Set<MediaStream>
 }
+type UserEvent = Record<string, {
+  mickActive?: boolean
+  streamType?: 'camera' | 'screen'
+}>
 
 export interface RoomInfo {
   dialogId: string
   participants: string[]
   createdAt: string
+  userEvents: UserEvent
 }
 
 /**
@@ -17,7 +22,17 @@ export interface RoomInfo {
 export class RoomService extends EventEmitter {
   #room?: RoomInfo
 
+  #userEvents: UserEvent = {}
+
   #participants = new Map<string, Participant>()
+
+  setUserEvents(props: { streamId: string, payload: UserEvent[0] }) {
+    const { streamId, payload } = props
+    this.#userEvents[streamId] = {
+      ...this.#userEvents[streamId],
+      ...payload
+    }
+  }
 
   /**
    * Инициализация комнаты
@@ -33,7 +48,7 @@ export class RoomService extends EventEmitter {
         streams: new Set(),
       })
     })
-
+    this.#userEvents = info.userEvents
     this.emit('initialized', info)
   }
 
@@ -168,6 +183,10 @@ export class RoomService extends EventEmitter {
     return result
   }
 
+  getUserEvents() {
+    return this.#userEvents
+  }
+
   getRoomInfo(): RoomInfo | undefined {
     return this.#room
   }
@@ -220,6 +239,7 @@ export class RoomService extends EventEmitter {
 
     // Очищаем данные
     this.#participants.clear()
+    this.#userEvents = {}
     this.#room = undefined
     this.removeAllListeners()
   }
