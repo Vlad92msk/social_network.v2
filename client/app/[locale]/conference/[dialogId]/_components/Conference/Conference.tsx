@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import styles from './Conference.module.scss'
 import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
 import { CallControls, LocalPreview } from '../../_webRTC1/components/components'
@@ -9,6 +9,37 @@ import { useConference } from '../../_webRTC1/context'
 
 interface ConferenceProps {
   profile?: UserProfileInfo;
+}
+
+interface VideoProps {
+  stream: MediaStream;
+  className?: string;
+}
+
+export function VideoStream({ stream, className }: VideoProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
+    }
+  }, [stream])
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className={className}
+    />
+  )
 }
 
 export function Conference({ profile }: ConferenceProps) {
@@ -21,8 +52,7 @@ export function Conference({ profile }: ConferenceProps) {
     participants,
   } = useConference()
 
-
-  // console.log('streams', streams)
+  console.log('streams', streams)
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -37,6 +67,8 @@ export function Conference({ profile }: ConferenceProps) {
     acc.push(...d)
     return acc
   }, [])
+
+  console.log('ddd', ddd)
 
   return (
     <div className={styles.conference}>
@@ -65,7 +97,7 @@ export function Conference({ profile }: ConferenceProps) {
         {ddd?.map(({ userId, stream }) => (
           //@ts-ignore
           <div key={stream.id} className={styles.participant}>
-            <RemoteVideo
+            <VideoStream
               stream={stream}
               className={styles.video}
             />

@@ -8,6 +8,8 @@ interface StreamInfo {
 type ConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
 
 export class ConnectionManager extends EventEmitter {
+  private trackHandlers = new Map<string, Set<string>>()
+
   private connections = new Map<string, RTCPeerConnection>()
 
   private streams = new Map<string, Map<string, StreamInfo>>()
@@ -30,9 +32,29 @@ export class ConnectionManager extends EventEmitter {
   async createConnection(userId: string): Promise<void> {
     try {
       this.close(userId)
-
+      this.trackHandlers.set(userId, new Set())
       const connection = new RTCPeerConnection(this.config)
       this.remoteDescriptionSet.set(userId, false)
+
+      connection.ontrack = ({ track, streams }) => {
+        const stream = streams[0]
+        if (!stream) {
+          this.emit('error', { userId, error: new Error('No stream received with track') })
+          return
+        }
+
+        // Проверяем, не обрабатывали ли мы уже этот трек
+        const trackHandlers = this.trackHandlers.get(userId)
+        if (!trackHandlers?.has(track.id)) {
+          trackHandlers?.add(track.id)
+          this.emit('track', { userId, track, stream })
+
+          track.onended = () => {
+            trackHandlers?.delete(track.id)
+            this.emit('trackEnded', { userId, trackId: track.id })
+          }
+        }
+      }
 
       connection.onconnectionstatechange = () => {
         const state = connection.connectionState as ConnectionState
@@ -46,20 +68,6 @@ export class ConnectionManager extends EventEmitter {
       connection.onicecandidate = ({ candidate }) => {
         if (candidate) {
           this.emit('iceCandidate', { userId, candidate })
-        }
-      }
-
-      connection.ontrack = ({ track, streams }) => {
-        const stream = streams[0]
-        if (!stream) {
-          this.emit('error', { userId, error: new Error('No stream received with track') })
-          return
-        }
-
-        this.emit('track', { userId, track, stream })
-
-        track.onended = () => {
-          this.emit('trackEnded', { userId, trackId: track.id })
         }
       }
 
@@ -306,6 +314,7 @@ export class ConnectionManager extends EventEmitter {
       this.streams.delete(userId)
       this.iceCandidatesBuffer.delete(userId)
       this.remoteDescriptionSet.delete(userId)
+      this.trackHandlers.delete(userId)
     } catch (error) {
       this.emit('error', {
         userId,

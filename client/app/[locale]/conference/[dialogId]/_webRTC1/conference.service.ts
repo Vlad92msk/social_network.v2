@@ -151,7 +151,6 @@ export class ConferenceService {
           if (description.type === 'offer') {
             console.log('📨 Получен offer от:', userId)
 
-            // Проверяем/создаем соединение
             if (!this.#connectionManager.getConnection(userId)) {
               await this.#connectionManager.createConnection(userId)
             }
@@ -159,6 +158,19 @@ export class ConferenceService {
             const answer = await this.#connectionManager.handleOffer(userId, description)
             await this.#signalingService.sendAnswer(userId, answer)
             console.log('📨 Отправлен answer пользователю:', userId)
+
+            // Только потом отправляем свои стримы
+            const { stream: localStream } = this.#mediaManager.getState()
+            const { stream: screenShare } = this.#screenShareManager.getState()
+
+            if (localStream || screenShare) {
+              if (localStream) {
+                await this.handleStreamTracks(userId, localStream, this.#connectionManager, this.#signalingService)
+              }
+              if (screenShare) {
+                await this.handleStreamTracks(userId, screenShare, this.#connectionManager, this.#signalingService)
+              }
+            }
           } else if (description.type === 'answer') {
             console.log('📨 Получен answer от:', userId)
             await this.#connectionManager.handleAnswer(userId, description)
@@ -181,17 +193,23 @@ export class ConferenceService {
         }
       })
       .on('userEvent', (event) => {
-        console.log('👤 Событие участника:', event.type, 'от:', event.initiator)
-        switch (event.type) {
+        console.log('👤 Событие участника:', event.event.type, 'от:', event.initiator, event)
+        switch (event.event.type) {
+          case 'screen-share-off': {
+            this.#roomService.removeStream(event.initiator, event.event.payload.streamId)
+            break
+          }
+          case 'camera-off': {
+            this.#roomService.removeStream(event.initiator, event.event.payload.streamId)
+            break
+          }
           case 'mic-on':
           case 'mic-off':
           case 'camera-on':
-          case 'camera-off':
-            this.#notifySubscribers()
-            break
           default:
             console.warn('Неизвестный тип события:', event.type) // Добавлена обработка неизвестных событий
         }
+        this.#notifySubscribers()
       })
 
     // 2. События WebRTC соединений
@@ -213,6 +231,7 @@ export class ConferenceService {
         this.#notifySubscribers()
       })
       .on('trackEnded', ({ userId, trackId }) => {
+        console.clear()
         console.log(`🛑 Обработка завершения трека ${trackId} для ${userId}`)
         const participant = this.#roomService.getParticipant(userId)
 
@@ -237,18 +256,18 @@ export class ConferenceService {
         }
       })
       .on('connectionLost', async ({ userId }) => {
-        console.log(`❌ Потеряно соединение с ${userId}`);
+        console.log(`❌ Потеряно соединение с ${userId}`)
 
         // Очищаем ресурсы
-        this.#connectionManager.close(userId);
-        this.#roomService.removeParticipant(userId);
+        this.#connectionManager.close(userId)
+        this.#roomService.removeParticipant(userId)
 
         // Уведомляем сигнальный сервер
         this.#signalingService.sendEvent({
-          //@ts-ignore
+          // @ts-ignore
           type: 'user-disconnected',
-          userId
-        });
+          userId,
+        })
       })
 
     // 3. События медиа
@@ -261,25 +280,30 @@ export class ConferenceService {
           await Promise.all(
             participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
           )
-          this.#notifySubscribers()
         } catch (error) {
           console.error('❌ Ошибка добавления медиа треков:', error)
           this.#notificationManager.notify('error', 'Ошибка трансляции с камеры')
         }
       })
-      .on('streamStopped', () => {
-        this.#notifySubscribers()
-      })
-      .on('videoToggled', (event) => {
+      .on('streamStopped', ({ streamId }: { streamId: string }) => {
         this.#signalingService.sendEvent({
-          type: event.active ? 'camera-on' : 'camera-off',
+          type: 'camera-off',
+          payload: { streamId },
         })
-        this.#notifySubscribers()
       })
-      .on('audioToggled', (event) => {
+      .on('videoToggled', ({ streamId, active }: { active: boolean, streamId: string }) => {
         this.#signalingService.sendEvent({
-          type: event.active ? 'mic-on' : 'mic-off',
+          type: active ? 'camera-on' : 'camera-off',
+          payload: { streamId },
         })
+      })
+      .on('audioToggled', ({ streamId, active }: { active: boolean, streamId: string }) => {
+        this.#signalingService.sendEvent({
+          type: active ? 'mic-on' : 'mic-off',
+          payload: { streamId },
+        })
+      })
+      .on('stateChanged', () => {
         this.#notifySubscribers()
       })
 
@@ -299,22 +323,13 @@ export class ConferenceService {
           this.#notificationManager.notify('error', 'Ошибка трансляции экрана')
         }
       })
-      .on('streamStopped', async (stream: MediaStream) => {
-        console.log('🖥️ Остановка трансляции экрана:', stream.id)
+      .on('streamStopped', async ({ streamId }: { streamId: string }) => {
+        console.log('🖥️ Остановка трансляции экрана:', streamId)
 
-        try {
-          const participants = this.#roomService.getParticipants()
-          await Promise.all(participants.map(async (participant) => {
-            const tracks = stream.getTracks()
-            await Promise.all(
-              tracks.map((track) => this.#connectionManager.removeTrack(participant.userId, track.id)),
-            )
-          }))
-          this.#notifySubscribers()
-        } catch (error) {
-          console.error('❌ Ошибка удаления треков скриншеринга:', error)
-          this.#notificationManager.notify('error', 'Ошибка остановки трансляции экрана')
-        }
+        this.#signalingService.sendEvent({
+          type: 'screen-share-off',
+          payload: { streamId },
+        })
       })
       .on('error', (error: Error) => {
         console.error('❌ Ошибка скриншеринга:', error)
@@ -406,6 +421,7 @@ export class ConferenceService {
 
   #notifySubscribers(): void {
     const state = this.getState()
+    console.log('__STATE___', state)
     this.#subscribers.forEach((cb) => cb(state))
   }
 

@@ -99,29 +99,13 @@ export class MediaStreamManager extends EventEmitter {
     this.#checkInitialized()
 
     try {
-      if (!this.#stream) {
+      if (this.#stream) {
+        // Если стрим есть - останавливаем его
+        this.stopStream()
+      } else {
+        // Если стрима нет - запускаем новый
         await this.startStream()
-        return
       }
-
-      const videoTrack = this.#stream.getVideoTracks()[0]
-
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled
-        this.#isVideoEnabled = videoTrack.enabled
-        this.emit('videoToggled', { active: this.#isVideoEnabled, streamId: this.#stream.id })
-      } else if (!videoTrack && this.#constraints?.video) {
-        const newVideoStream = await navigator.mediaDevices.getUserMedia({
-          video: this.#constraints.video,
-        })
-
-        const newVideoTrack = newVideoStream.getVideoTracks()[0]
-        this.#stream.addTrack(newVideoTrack)
-        this.#isVideoEnabled = true
-        this.emit('videoToggled', { active: true, streamId: this.#stream.id })
-      }
-
-      this.emit('stateChanged', this.getState())
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to toggle video')
       this.emit('error', error)
