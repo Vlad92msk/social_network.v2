@@ -6,7 +6,6 @@ export class ScreenShareManager extends EventEmitter {
 
   private isEnabled: boolean = false
 
-
   async startScreenShare() {
     try {
       this.stream = await navigator.mediaDevices.getDisplayMedia({
@@ -15,7 +14,7 @@ export class ScreenShareManager extends EventEmitter {
       })
 
       // Подписываемся на события остановки трансляции
-      this.stream.getTracks().forEach(track => {
+      this.stream.getTracks().forEach((track) => {
         track.addEventListener('ended', () => {
           // Вызываем stopScreenShare при остановке трансляции через браузер
           this.stopScreenShare()
@@ -24,17 +23,20 @@ export class ScreenShareManager extends EventEmitter {
 
       this.isEnabled = true
       this.emit('streamStarted', this.stream)
+      this.emit('stateChanged', this.getState())
     } catch (error) {
       throw new Error('Ошибка начала трансляции экрана')
     }
   }
 
   stopScreenShare() {
+    console.log('stopScreenShare!!!!!!')
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop())
       this.emit('streamStopped', { streamId: this.stream.id })
       this.stream = undefined
       this.isEnabled = false
+      this.emit('stateChanged', this.getState())
     }
   }
 

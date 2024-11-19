@@ -122,8 +122,7 @@ export class ConferenceService {
             await this.handleStreamTracks(userId, screenShare, this.#connectionManager, this.#signalingService)
           }
         } catch (error) {
-          console.error('❌ Ошибка при обработке нового участника:', error)
-          this.#notificationManager.notify('error', 'Ошибка подключения участника')
+          this.#notificationManager.notify('error', `❌ Ошибка подключения участника, ${error}`)
           this.#roomService.removeParticipant(userId)
           this.#connectionManager.close(userId)
         }
@@ -230,22 +229,6 @@ export class ConferenceService {
 
         this.#notifySubscribers()
       })
-      .on('trackEnded', ({ userId, trackId }) => {
-        console.clear()
-        console.log(`🛑 Обработка завершения трека ${trackId} для ${userId}`)
-        const participant = this.#roomService.getParticipant(userId)
-
-        if (participant) {
-          participant.streams.forEach((stream) => {
-            const hasTrack = stream.getTracks().some((track) => track.id === trackId)
-            if (hasTrack) {
-              console.log(`🗑️ Удаление потока ${stream.id} для трека ${trackId}`)
-              this.#roomService.removeStream(userId, stream.id)
-              this.#notifySubscribers()
-            }
-          })
-        }
-      })
       .on('iceCandidate', async ({ userId, candidate }) => {
         if (candidate) {
           try {
@@ -317,7 +300,6 @@ export class ConferenceService {
           await Promise.all(
             participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
           )
-          this.#notifySubscribers()
         } catch (error) {
           console.error('❌ Ошибка добавления треков скриншеринга:', error)
           this.#notificationManager.notify('error', 'Ошибка трансляции экрана')
@@ -334,6 +316,9 @@ export class ConferenceService {
       .on('error', (error: Error) => {
         console.error('❌ Ошибка скриншеринга:', error)
         this.#notificationManager.notify('error', 'Ошибка доступа к экрану')
+      })
+      .on('stateChanged', () => {
+        this.#notifySubscribers()
       })
 
     this.#roomService.on('participantAdded', () => {
