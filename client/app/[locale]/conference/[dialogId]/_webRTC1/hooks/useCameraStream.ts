@@ -1,8 +1,7 @@
-// Вспомогательный хук для видео элемента
 import { useEffect, useMemo, useRef } from 'react'
 import { useConference } from '../context'
 
-export function useVideoStream(options?: {
+export function useCameraStream(options?: {
   enabled?: boolean;
   mirror?: boolean;
   onStreamChange?: (stream: MediaStream | null) => void;

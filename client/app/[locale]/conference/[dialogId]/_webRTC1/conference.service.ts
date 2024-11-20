@@ -48,7 +48,7 @@ export class ConferenceService {
     this.#connectionManager = new ConnectionManager()
   }
 
-  async initialize(config: ConferenceConfig): Promise<void> {
+  async initialize(config: ConferenceConfig) {
     try {
       console.log('🚀 Инициализация конференции...')
       if (this.#initialized) await this.destroy()
@@ -86,7 +86,7 @@ export class ConferenceService {
     }
   }
 
-  #setupEvents(): void {
+  #setupEvents() {
     // 1. События сигнального сервера
     this.#signalingService
       // Состояние подключения
@@ -114,12 +114,9 @@ export class ConferenceService {
           const { stream: localStream } = this.#mediaManager.getState()
           const { stream: screenShare } = this.#screenShareManager.getState()
 
-          if (localStream) {
-            await this.handleStreamTracks(userId, localStream, this.#connectionManager, this.#signalingService)
-          }
-
-          if (screenShare) {
-            await this.handleStreamTracks(userId, screenShare, this.#connectionManager, this.#signalingService)
+          const streams = [localStream, screenShare].filter(Boolean) as MediaStream[]
+          if (streams.length > 0) {
+            await this.handleStreamTracks(userId, streams, this.#connectionManager, this.#signalingService)
           }
         } catch (error) {
           this.#notificationManager.notify('error', `❌ Ошибка подключения участника, ${error}`)
@@ -162,13 +159,9 @@ export class ConferenceService {
             const { stream: localStream } = this.#mediaManager.getState()
             const { stream: screenShare } = this.#screenShareManager.getState()
 
-            if (localStream || screenShare) {
-              if (localStream) {
-                await this.handleStreamTracks(userId, localStream, this.#connectionManager, this.#signalingService)
-              }
-              if (screenShare) {
-                await this.handleStreamTracks(userId, screenShare, this.#connectionManager, this.#signalingService)
-              }
+            const streams = [localStream, screenShare].filter(Boolean) as MediaStream[]
+            if (streams.length > 0) {
+              await this.handleStreamTracks(userId, streams, this.#connectionManager, this.#signalingService)
             }
           } else if (description.type === 'answer') {
             console.log('📨 Получен answer от:', userId)
@@ -282,13 +275,6 @@ export class ConferenceService {
         // Очищаем ресурсы
         this.#connectionManager.close(userId)
         this.#roomService.removeParticipant(userId)
-
-        // Уведомляем сигнальный сервер
-        this.#signalingService.sendEvent({
-          // @ts-ignore
-          type: 'user-disconnected',
-          userId,
-        })
       })
       .on('trackEnded', async ({ userId, trackId }) => {
         console.log(`trackEnded ${userId}, ${trackId}`)
@@ -302,7 +288,7 @@ export class ConferenceService {
 
         try {
           await Promise.all(
-            participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
+            participants.map(({ userId }) => this.handleStreamTracks(userId, [stream], this.#connectionManager, this.#signalingService)),
           )
           this.#signalingService.sendEvent({
             type: 'camera-on',
@@ -337,7 +323,7 @@ export class ConferenceService {
 
         try {
           await Promise.all(
-            participants.map(({ userId }) => this.handleStreamTracks(userId, stream, this.#connectionManager, this.#signalingService)),
+            participants.map(({ userId }) => this.handleStreamTracks(userId, [stream], this.#connectionManager, this.#signalingService)),
           )
           this.#signalingService.sendEvent({
             type: 'screen-share-on',
@@ -382,21 +368,21 @@ export class ConferenceService {
 
   async handleStreamTracks(
     userId: string,
-    stream: MediaStream,
+    streams: MediaStream[],
     connectionManager: ConnectionManager,
     signalingService: SignalingService,
-  ): Promise<void> {
-    // Создаем/проверяем соединение
+  ) {
+    // Create/check connection
     if (!connectionManager.getConnection(userId)) {
       await connectionManager.createConnection(userId)
     }
 
-    // Добавляем треки
+    // Add all tracks from all streams
     await Promise.all(
-      stream.getTracks().map((track) => connectionManager.addTrack(userId, track, stream)),
+      streams.flatMap((stream) => stream.getTracks().map((track) => connectionManager.addTrack(userId, track, stream))),
     )
 
-    // Создаем offer после добавления всех треков
+    // Create single offer after adding all tracks
     const offer = await connectionManager.createOffer(userId)
     if (offer) {
       await signalingService.sendOffer(userId, offer)
@@ -404,7 +390,7 @@ export class ConferenceService {
   }
 
   // Публичные методы управления конференцией
-  async startLocalStream(): Promise<void> {
+  async startLocalStream() {
     this.#checkInitialized()
     await this.#mediaManager.startStream()
   }
@@ -414,21 +400,21 @@ export class ConferenceService {
     this.#mediaManager.stopStream()
   }
 
-  async startScreenShare(): Promise<void> {
+  async startScreenShare() {
     this.#checkInitialized()
     await this.#screenShareManager.startScreenShare()
   }
 
-  async stopScreenShare(): Promise<void> {
+  async stopScreenShare() {
     this.#checkInitialized()
     this.#screenShareManager.stopScreenShare()
   }
 
-  async toggleVideo(): Promise<void> {
+  async toggleVideo() {
     await this.#mediaManager.toggleVideo()
   }
 
-  toggleAudio(): void {
+  toggleAudio() {
     this.#mediaManager.toggleAudio()
   }
 
@@ -444,16 +430,16 @@ export class ConferenceService {
     }
   }
 
-  #checkInitialized(): void {
+  #checkInitialized() {
     if (!this.#initialized) throw new Error('Сервис не инициализирован')
   }
 
-  #notifySubscribers(): void {
+  #notifySubscribers() {
     const state = this.getState()
     this.#subscribers.forEach((cb) => cb(state))
   }
 
-  subscribe(callback: (state: any) => void): () => void {
+  subscribe(callback: (state: any) => void) {
     this.#subscribers.push(callback)
     callback(this.getState())
     return () => {
@@ -461,7 +447,7 @@ export class ConferenceService {
     }
   }
 
-  async destroy(): Promise<void> {
+  async destroy() {
     if (this.#initialized) {
       await Promise.all([
         this.#mediaManager.destroy(),
