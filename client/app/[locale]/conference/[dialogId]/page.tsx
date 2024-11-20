@@ -1,8 +1,6 @@
-import { MediaStreamProvider } from '@ui/components/media-stream/context/MediaStreamContext'
 import { getServerProfile } from '@utils/server'
 import { Conference } from './_components'
-import { WebRTCProvider } from './_services/ConferenceContext'
-import { ConferenceProvider } from './_webRTC1/context'
+import { ConferenceProvider } from './_web-rtc/context'
 
 export default async function ConferencePage({ params }) {
   const profile = await getServerProfile()

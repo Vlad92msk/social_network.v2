@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useConference } from '../context'
+import { useConference } from '../_web-rtc/context'
 
 export function useCameraStream(options?: {
   enabled?: boolean;

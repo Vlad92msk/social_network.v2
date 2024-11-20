@@ -28,7 +28,7 @@ export class MediaStreamManager extends EventEmitter {
 
   #initialized = false
 
-  init(options: MediaStreamOptions = { audio: false, video: true }): void {
+  init(options: MediaStreamOptions): void {
     // Если уже инициализирован, сначала очищаем
     if (this.#initialized) {
       this.destroy()

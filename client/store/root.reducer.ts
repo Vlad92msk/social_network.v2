@@ -4,12 +4,10 @@ import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
 import { profileInitialState, profileReducer, ProfileSliceState } from './profile.slice'
-import { conferenceReducer, ConferenceSliceState } from '../app/[locale]/conference/[dialogId]/_store/conference.slice'
 
 export interface RootReducer {
   profile: ProfileSliceState
   messenger: MessengerSliceState
-  conference: ConferenceSliceState
   [tagsApi.reducerPath]: ReturnType<typeof tagsApi.reducer>
   [commentsApi.reducerPath]: ReturnType<typeof commentsApi.reducer>
   [messagesApi.reducerPath]: ReturnType<typeof messagesApi.reducer>
@@ -24,7 +22,6 @@ export interface RootReducer {
 export const rootReducer = combineReducers({
   profile: profileReducer,
   messenger: messengerReducer,
-  conference: conferenceReducer,
   [tagsApi.reducerPath]: tagsApi.reducer,
   [commentsApi.reducerPath]: commentsApi.reducer,
   [messagesApi.reducerPath]: messagesApi.reducer,

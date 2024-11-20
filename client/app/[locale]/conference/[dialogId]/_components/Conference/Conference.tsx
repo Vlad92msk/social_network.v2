@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import styles from './Conference.module.scss'
 import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
-import { CallControls, LocalPreview } from '../../_webRTC1/components/components'
-import { useConference } from '../../_webRTC1/context'
+import { CallControls, LocalPreview } from '../../components/components'
+import { useConference } from '../../_web-rtc/context'
 
 interface ConferenceProps {
   profile?: UserProfileInfo;

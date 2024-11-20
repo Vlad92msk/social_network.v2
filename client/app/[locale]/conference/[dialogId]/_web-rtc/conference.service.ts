@@ -10,7 +10,7 @@ import {
   SignalingService,
 } from './micro-services'
 
-interface ConferenceConfig {
+export interface ConferenceConfig {
   ice: RTCIceServer[]
   mediaConstraints: MediaStreamOptions
   signaling: SignalingConfig
@@ -55,9 +55,8 @@ export class ConferenceService {
 
       this.#config = config
 
-      // Инициализируем сервисы
       await this.#connectionManager.init({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        iceServers: config.ice,
         iceCandidatePoolSize: 1,
       })
 
