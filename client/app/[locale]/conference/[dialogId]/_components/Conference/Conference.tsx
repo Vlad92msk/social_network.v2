@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import styles from './Conference.module.scss'
 import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
 import { CallControls, LocalPreview } from '../../components/components'
-import { useConference } from '../../_web-rtc/context'
+import { useConference } from '../../web-rtc/context'
 
 interface ConferenceProps {
   profile?: UserProfileInfo;

@@ -1,7 +1,19 @@
 @import "@ui/styles/for_components";
 @import "../variables";
 
-
+@keyframes callPulse {
+  0% {
+    left: -50%;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
 
 .DialogSelected {
   position: absolute;
@@ -38,6 +50,27 @@
     padding: $messenger--padding--small;
     align-items: center;
     border-bottom: rem(1) solid var(--Color-Border--variant-3--theme-default);
+
+    &--activeCall {
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+                        90deg,
+                        transparent 0%,
+                        var(--Palette--BrightGreen--120--opacity-1) 50%,
+                        transparent 100%
+        );
+        animation: callPulse 2s ease-in-out infinite;
+      }
+    }
   }
 
   &-Body {

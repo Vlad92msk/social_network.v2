@@ -4,7 +4,6 @@ import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userI
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { UserStatus } from '../../../../types/user-status'
 
-
 export interface MessengerSliceState {
   isConnected: boolean
   error: string | null
@@ -23,6 +22,7 @@ export interface MessengerSliceState {
   typing: Record<string, Record<number, boolean>>
   // Активные пользователи
   activeParticipants: Record<string, number[]>
+  activeConference: Record<string, boolean>
 
   undoStack: PayloadAction<any>[]; // Стек для хранения отменяющих событий
 }
@@ -40,6 +40,8 @@ export const messengerInitialState: MessengerSliceState = {
   activeParticipants: {},
   isConnected: false,
   error: null,
+
+  activeConference: {},
 
   undoStack: [],
 }
@@ -66,8 +68,14 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       setConnected: (state, action: PayloadAction<boolean>) => {
         state.isConnected = action.payload
       },
+
       setError: (state, action: PayloadAction<string>) => {
         state.error = action.payload
+      },
+
+      setActiveConference: (state, action: PayloadAction<{ dialogId: string, active: boolean }>) => {
+        const { dialogId, active } = action.payload
+        state.activeConference[dialogId] = active
       },
 
       exitUserTyping: (state, action: PayloadAction<{ dialogId: string, userId: number, isTyping: boolean }>) => {

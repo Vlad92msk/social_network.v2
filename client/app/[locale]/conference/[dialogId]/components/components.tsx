@@ -1,7 +1,7 @@
 'use client'
 
 import styles from './examples.module.scss'
-import { useConference } from '../_web-rtc/context'
+import { useConference } from '../web-rtc/context'
 import { useCameraStream } from '../hooks/useCameraStream'
 
 // Локальное превью с зеркальным отображением

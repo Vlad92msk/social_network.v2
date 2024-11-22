@@ -10,7 +10,6 @@ import {
 import { MessageEntity } from '@services/messenger/message/entity/message.entity'
 import { Server, Socket } from 'socket.io'
 import { DialogService } from './dialog.service'
-import { MessageService } from '../message/message.service'
 import { BadRequestException, Injectable, UseGuards } from '@nestjs/common'
 import { RequestParams, WsRequestParams } from '@shared/decorators'
 import { WebsocketDevMiddleware } from './middleware/websocket-dev.middleware'
@@ -19,7 +18,6 @@ import { ClientToServerEvents, ServerToClientEvents, DialogEvents } from './type
 import { OnEvent } from '@nestjs/event-emitter'
 import { DialogEntity } from './entities/dialog.entity'
 import { DialogShortDto } from './dto/dialog-short.dto'
-import { VideoConferenceEvents } from '../video-conference/types'
 
 
 interface AuthenticatedSocket extends Socket {
@@ -48,11 +46,47 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server: Server<ClientToServerEvents, ServerToClientEvents, {}, RequestParams>
     private userSockets = new Map<number, AuthenticatedSocket>()
 
-    constructor(
-        private dialogService: DialogService,
-        private messageService: MessageService
-    ) {}
+    constructor(private dialogService: DialogService) {}
 
+    @OnEvent('conference.started')
+    async handleConferenceStarted(payload: {dialogId: string, active: boolean}) {
+        // Проверяем, является ли пользователь участником диалога
+        const dialog = await this.dialogService.getDialogInfo(
+          payload.dialogId,
+          {
+              relations: {
+                  participants: true,
+                  fixed_messages: false,
+                  admins: false,
+                  audio: false,
+                  media: false,
+                  videos: false,
+              }
+          })
+        for (const participantId of dialog.participants) {
+            this.sendToUser(participantId.id, 'conference:status', payload)
+        }
+    }
+
+    @OnEvent('conference.ended')
+    async handleConferenceEnded(payload: {dialogId: string, active: boolean}) {
+        // Проверяем, является ли пользователь участником диалога
+        const dialog = await this.dialogService.getDialogInfo(
+          payload.dialogId,
+          {
+              relations: {
+                  participants: true,
+                  fixed_messages: false,
+                  admins: false,
+                  audio: false,
+                  media: false,
+                  videos: false,
+              }
+          })
+        for (const participantId of dialog.participants) {
+            this.sendToUser(participantId.id, 'conference:status', payload)
+        }
+    }
 
     /**
      * Обрабатывает подключение нового клиента
@@ -271,23 +305,6 @@ export class DialogGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.sendDialogUpdate(payload.dialogId, DialogEvents.DIALOG_SHORT_UPDATED, payload.updatedDialogShort)
     }
 
-    @OnEvent(VideoConferenceEvents.CONFERENCE_STARTED)
-    handleVideoConferenceStarted(payload: { dialogId: string, initiatorId: number }) {
-        // Оповещаем всех участников диалога о начале видео-конференции
-        this.server.to(payload.dialogId).emit(DialogEvents.VIDEO_CONFERENCE_STARTED, {
-            dialogId: payload.dialogId,
-            initiatorId: payload.initiatorId
-        })
-    }
-
-    @OnEvent(VideoConferenceEvents.CONFERENCE_ENDED)
-    handleVideoConferenceEnded(payload: { dialogId: string, initiatorId: number }) {
-        // Оповещаем всех участников диалога о завершении видео-конференции
-        this.server.to(payload.dialogId).emit(DialogEvents.VIDEO_CONFERENCE_ENDED, {
-            dialogId: payload.dialogId,
-            initiatorId: payload.initiatorId
-        })
-    }
 
     @OnEvent(DialogEvents.DIALOG_SHORT_UPDATED)
     async createdDialog(payload: { data: any, participants: number[] }) {

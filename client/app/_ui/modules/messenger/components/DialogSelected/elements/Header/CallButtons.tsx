@@ -14,21 +14,19 @@ interface CallButtonsProps {
 export function CallButtons(props: CallButtonsProps) {
   const { className } = props
   const currentDialog = useSelector(MessengerSelectors.selectCurrentDialog)
-
+  const activeConference = useSelector(MessengerSelectors.selectActiveConference)
   const { locale } = useParams<{locale: Locale, userId: string}>()
 
   return (
     <div className={classNames(cn('CallButtons'), className)}>
       <Link
+        className={cn('CallButton', { active: currentDialog && activeConference[currentDialog?.id] })}
         href={`/${locale}/conference/${currentDialog?.id}`}
         target="_blank"
         rel="noopener noreferrer"
       >
         <Icon name="video-camera" />
       </Link>
-      <button onClick={() => console.log('audio conference')}>
-        <Icon name="phone" />
-      </button>
     </div>
   )
 }

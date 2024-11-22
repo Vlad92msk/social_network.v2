@@ -1,7 +1,23 @@
 @import "@ui/styles/for_components";
 @import "../../../variables";
 
+@keyframes shake {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
 
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%, 50%, 70% {
+    transform: translate3d(-3px, 0, 0);
+  }
+
+  40%, 60% {
+    transform: translate3d(3px, 0, 0);
+  }
+}
 
 .Header {
   &-ButtonCloseChat {
@@ -62,6 +78,28 @@
     gap: rem(10);
     color: var(--Color-Text--root--theme-default);
     margin-left: auto;
+  }
+
+  &-CallButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--Palette--Oceanic--100--opacity-1);
+    text-decoration: none;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #e5e5e5;
+      color: #444;
+    }
+
+    &--active {
+      background: var(--Palette--BrightGreen--120--opacity-05);
+      animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) infinite;
+    }
   }
 
   &-InfoButton {

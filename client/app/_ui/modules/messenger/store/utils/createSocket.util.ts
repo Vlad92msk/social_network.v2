@@ -6,7 +6,7 @@ export interface SocketConnectProps {
   user_public_id?: string
 }
 
-export const createSocket = (props: SocketConnectProps) => {
+export const createSocketDialog = (props: SocketConnectProps) => {
   const { profile_id, user_info_id, user_public_id } = props
 
   return io('http://localhost:3001/dialog', {

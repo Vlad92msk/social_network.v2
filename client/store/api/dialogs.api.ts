@@ -247,13 +247,6 @@ export const dialogsApi = createApi({
       },
     }),
 
-    createVideoConference: builder.mutation<string, Parameters<typeof dialogsApiInstance.createVideoConference>[0]>({
-      query: (params) => {
-        const { url, init } = dialogsApiInstance.createVideoConferenceInit(params)
-        return { url, ...init }
-      },
-    }),
-
     findAllShortDialogs: builder.query<DialogShortDto[], Parameters<typeof dialogsApiInstance.findAllShortDialogs>[0]>({
       query: (params) => {
         const { url, init } = dialogsApiInstance.findAllShortDialogsInit(params)

@@ -11,6 +11,7 @@ export const selectDrawerStatus = createSelector(selectSelf, (messenger) => mess
 export const selectInfoPanelStatus = createSelector(selectSelf, (messenger) => messenger.infoPanelStatus)
 
 export const selectCurrentDialogId = createSelector(selectSelf, (messenger) => messenger.currentDialogId)
+export const selectActiveConference = createSelector(selectSelf, (messenger) => messenger.activeConference)
 
 export const selectTargetNewUserToDialog = createSelector(selectSelf, (messenger) => messenger.targetNewUserToDialog)
 export const selectCurrentDialog = createSelector(selectSelf, (messenger) => messenger.currentDialog)

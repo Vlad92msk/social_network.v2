@@ -1,6 +1,6 @@
 import { getServerProfile } from '@utils/server'
 import { Conference } from './_components'
-import { ConferenceProvider } from './_web-rtc/context'
+import { ConferenceProvider } from './web-rtc/context'
 
 export default async function ConferencePage({ params }) {
   const profile = await getServerProfile()

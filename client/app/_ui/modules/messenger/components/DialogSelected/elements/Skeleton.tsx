@@ -14,12 +14,14 @@ interface SkeletonProps {
 export function Skeleton(props: SkeletonProps) {
   const { headerComponent, footerComponent, bodyComponent, fixedMessages, usersTyping, infoPanel } = props
   const chatingPanelStatus = useSelector(MessengerSelectors.selectChatingPanelStatus)
+  const activeConference = useSelector(MessengerSelectors.selectActiveConference)
+  const currentDialog = useSelector(MessengerSelectors.selectCurrentDialog)
 
   return (
     <div className={cn({ statusVisible: chatingPanelStatus })}>
       {chatingPanelStatus === 'open' && (
         <>
-          <div className={cn('Header')}>
+          <div className={cn('Header', { activeCall: currentDialog?.id && activeConference[currentDialog?.id] })}>
             {headerComponent}
           </div>
           {fixedMessages}

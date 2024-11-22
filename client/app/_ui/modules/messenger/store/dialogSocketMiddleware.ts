@@ -1,6 +1,6 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
 import { Socket } from 'socket.io-client'
-import { createSocket } from '@ui/modules/messenger/store/utils'
+import { createSocketDialog } from '@ui/modules/messenger/store/utils'
 import { MessengerSliceActions } from './messenger.slice'
 import { DialogEntity, MessageEntity } from '../../../../../../swagger/dialogs/interfaces-dialogs'
 import { DialogEvents } from '../../../../../store/events/dialog-events-enum'
@@ -15,7 +15,7 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
   const { profile } = store.getState().profile
 
   if (action.type === 'WEBSOCKET_CONNECT' && !socket && profile) {
-    socket = createSocket({
+    socket = createSocketDialog({
       user_info_id: profile.user_info.id,
       user_public_id: profile.user_info.public_id,
       profile_id: profile.id,
@@ -54,6 +54,10 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     socket.on(DialogEvents.UPDATE_DIALOG_INFO, (payload: { data: DialogEntity }) => {
       console.log('payload', payload)
       store.dispatch(MessengerSliceActions.updateDialogInfo(payload))
+    })
+
+    socket.on('conference:status', (payload) => {
+      store.dispatch(MessengerSliceActions.setActiveConference(payload))
     })
   }
 

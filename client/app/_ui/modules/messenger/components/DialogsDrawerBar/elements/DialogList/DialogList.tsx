@@ -23,6 +23,7 @@ export function DialogList(props: DialogListProps) {
   const router = useRouter()
   const dispatch = useDispatch()
   const { profile } = useSelector(ProfileSelectors.selectProfile)
+  const activeConference = useSelector(MessengerSelectors.selectActiveConference)
 
   const drawerStatus = useSelector(MessengerSelectors.selectDrawerStatus)
 
@@ -43,7 +44,7 @@ export function DialogList(props: DialogListProps) {
         last_message,
         id,
       }) => (
-        <div key={id} className={cn('Contact')}>
+        <div key={id} className={cn('Contact', { activeCall: activeConference[id] })}>
           <div className={cn('ContactImgContainer')}>
             <Image src={image} alt={title || ''} width="50" height="50" />
           </div>

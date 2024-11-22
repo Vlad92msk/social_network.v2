@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { EventType } from '@services/messenger/conference/conference.gateway'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 
 interface RoomParticipant {
     userId: string;
@@ -20,8 +20,9 @@ export class ConferenceService {
 
     private userEvents: UserEvent = {}
 
+    constructor(private eventEmitter: EventEmitter2) {}
+
     setUserEvents(props: { streamId: string, payload: any }) {
-        console.log('______props', props)
         const { streamId, payload } = props
         this.userEvents[streamId] = {
             ...this.userEvents[streamId],
@@ -34,6 +35,11 @@ export class ConferenceService {
     addUserToRoom(dialogId: string, userId: string): string[] {
         if (!this.rooms.has(dialogId)) {
             this.rooms.set(dialogId, new Map())
+            // Эмитим событие начала конференции при первом участнике
+            this.eventEmitter.emit('conference.started', {
+                dialogId,
+                active: true
+            })
         }
 
         const room = this.rooms.get(dialogId)
@@ -52,6 +58,11 @@ export class ConferenceService {
             const removed = room.delete(userId)
             if (room.size === 0) {
                 this.rooms.delete(dialogId)
+                // Эмитим событие окончания конференции когда все участники покинули комнату
+                this.eventEmitter.emit('conference.ended', {
+                    dialogId,
+                    active: false
+                })
             }
             return removed
         }
@@ -76,25 +87,5 @@ export class ConferenceService {
               .sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime())[0]?.joinedAt,
             userEvents: this.userEvents,
         }
-    }
-
-    // Обновление состояния медиа для участника
-    updateParticipantMediaState(
-      dialogId: string,
-      userId: string,
-      updates: Partial<Pick<RoomParticipant, 'isVideoEnabled' | 'isAudioEnabled'>>,
-    ): boolean {
-        const room = this.rooms.get(dialogId)
-        const participant = room?.get(userId)
-
-        if (participant) {
-            room.set(userId, {
-                ...participant,
-                ...updates,
-            })
-            return true
-        }
-
-        return false
     }
 }
