@@ -29,7 +29,6 @@ export class MediaStreamManager extends EventEmitter {
   #initialized = false
 
   init(options: MediaStreamOptions): void {
-    // Если уже инициализирован, сначала очищаем
     if (this.#initialized) {
       this.destroy()
     }
@@ -47,7 +46,6 @@ export class MediaStreamManager extends EventEmitter {
     this.#isAudioEnabled = !!options.audio
     this.#initialized = true
 
-    // Уведомляем об инициализации
     this.emit('initialized', this.getState())
   }
 
@@ -65,15 +63,62 @@ export class MediaStreamManager extends EventEmitter {
         throw new Error('Constraints are not set')
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia(this.#constraints)
-      this.#stream = mediaStream
-      this.#isVideoEnabled = true
-      this.#isAudioEnabled = true
+      console.log('Starting stream with constraints:', this.#constraints)
 
-      // Уведомляем о начале стрима
+      // Убедимся что хотя бы одно из устройств запрашивается
+      const constraints = {
+        ...this.#constraints,
+        video: this.#constraints.video === false ? false : {
+          facingMode: 'user',
+          ...(this.#constraints.video as MediaTrackConstraints),
+        },
+        audio: this.#constraints.audio === false ? false : {
+          ...(this.#constraints.audio as MediaTrackConstraints),
+        },
+      }
+
+      console.log('Processed constraints:', constraints)
+
+      if (!constraints.audio && !constraints.video) {
+        throw new Error('At least one of audio or video must be enabled')
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      console.log('Got media stream:', {
+        audioTracks: mediaStream.getAudioTracks().length,
+        videoTracks: mediaStream.getVideoTracks().length
+      })
+
+      // Если уже есть старый стрим, останавливаем его
+      if (this.#stream) {
+        this.#stream.getTracks().forEach((track) => track.stop())
+      }
+
+      this.#stream = mediaStream
+
+      // Устанавливаем начальное состояние треков
+      const videoTracks = mediaStream.getVideoTracks()
+      const audioTracks = mediaStream.getAudioTracks()
+
+      console.log('Setting initial track states:', {
+        videoTracksCount: videoTracks.length,
+        audioTracksCount: audioTracks.length,
+        isVideoEnabled: this.#isVideoEnabled,
+        isAudioEnabled: this.#isAudioEnabled
+      })
+
+      videoTracks.forEach((track) => {
+        track.enabled = this.#isVideoEnabled
+      })
+
+      audioTracks.forEach((track) => {
+        track.enabled = this.#isAudioEnabled
+      })
+
       this.emit('streamStarted', mediaStream)
       this.emit('stateChanged', this.getState())
     } catch (err) {
+      console.error('Start stream error:', err)
       const error = err instanceof Error ? err : new Error('Failed to get media stream')
       this.emit('error', error)
       throw error
@@ -85,12 +130,9 @@ export class MediaStreamManager extends EventEmitter {
 
     if (this.#stream) {
       this.#stream.getTracks().forEach((track) => track.stop())
-      // Уведомляем об остановке стрима
       this.emit('streamStopped', { streamId: this.#stream.id })
 
       this.#stream = undefined
-      this.#isVideoEnabled = false
-      this.#isAudioEnabled = false
       this.emit('stateChanged', this.getState())
     }
   }
@@ -99,12 +141,29 @@ export class MediaStreamManager extends EventEmitter {
     this.#checkInitialized()
 
     try {
-      if (this.#stream) {
-        // Если стрим есть - останавливаем его
-        this.stopStream()
-      } else {
-        // Если стрима нет - запускаем новый
+      if (!this.#stream) {
+        // Обновляем constraints перед созданием стрима
+        this.updateConstraints({
+          video: true,  // включаем видео
+          audio: !!this.#constraints?.audio, // сохраняем текущее состояние аудио
+          videoConstraints: { facingMode: 'user' }
+        })
+        this.#isVideoEnabled = true
         await this.startStream()
+      } else {
+        // Если стрим есть, переключаем состояние видео треков
+        const videoTracks = this.#stream.getVideoTracks()
+        if (videoTracks.length > 0) {
+          this.#isVideoEnabled = !this.#isVideoEnabled
+          videoTracks.forEach((track) => {
+            track.enabled = this.#isVideoEnabled
+          })
+          this.emit('videoToggled', {
+            active: this.#isVideoEnabled,
+            streamId: this.#stream.id,
+          })
+          this.emit('stateChanged', this.getState())
+        }
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to toggle video')
@@ -113,17 +172,65 @@ export class MediaStreamManager extends EventEmitter {
     }
   }
 
-  toggleAudio(): void {
+  async toggleAudio(): Promise<void> {
     this.#checkInitialized()
 
-    if (this.#stream) {
-      const audioTrack = this.#stream.getAudioTracks()[0]
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled
-        this.#isAudioEnabled = audioTrack.enabled
-        this.emit('audioToggled', { active: this.#isAudioEnabled, streamId: this.#stream.id })
+    try {
+      if (!this.#stream) {
+        // Только если стрима вообще нет, создаем новый
+        this.updateConstraints({
+          audio: true,
+          video: !!this.#constraints?.video,
+          audioConstraints: {}
+        })
+        this.#isAudioEnabled = true
+        await this.startStream()
+      } else {
+        // Иначе работаем с существующим стримом
+        const audioTracks = this.#stream.getAudioTracks()
+
+        if (audioTracks.length === 0) {
+          // Если нет аудио треков, получаем только аудио стрим и добавляем его треки
+          const audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false
+          })
+          audioStream.getAudioTracks().forEach(track => {
+            this.#stream?.addTrack(track)
+          })
+          this.#isAudioEnabled = true
+        } else {
+          // Если есть аудио треки, просто переключаем их
+          this.#isAudioEnabled = !this.#isAudioEnabled
+          audioTracks.forEach(track => {
+            track.enabled = this.#isAudioEnabled
+          })
+        }
+
+        this.emit('audioToggled', {
+          active: this.#isAudioEnabled,
+          streamId: this.#stream.id,
+        })
         this.emit('stateChanged', this.getState())
       }
+
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to toggle audio')
+      this.emit('error', error)
+      throw error
+    }
+  }
+
+  updateConstraints(options: MediaStreamOptions): void {
+    this.#checkInitialized()
+
+    this.#constraints = {
+      video: options.video ? {
+        ...options.videoConstraints,
+      } : false,
+      audio: options.audio ? {
+        ...options.audioConstraints,
+      } : false,
     }
   }
 
@@ -139,6 +246,15 @@ export class MediaStreamManager extends EventEmitter {
 
   getState(): MediaStreamState {
     this.#checkInitialized()
+
+    // Проверяем реальное состояние аудио трека
+    if (this.#stream) {
+      const audioTracks = this.#stream.getAudioTracks()
+      if (audioTracks.length > 0) {
+        this.#isAudioEnabled = audioTracks[0].enabled
+      }
+    }
+
     return {
       stream: this.#stream,
       isVideoEnabled: this.#isVideoEnabled,

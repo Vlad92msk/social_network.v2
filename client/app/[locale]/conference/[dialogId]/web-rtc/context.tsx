@@ -53,7 +53,7 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
         await conferenceService.current.initialize(
           conferenceConfig({
             signaling: { userId: currentUserId, dialogId },
-            localVideo: { video: true, audio: true },
+            localVideo: { video: false, audio: false },
           }),
         )
 

@@ -218,14 +218,6 @@ export class ConferenceService {
               'camera',
             )
             break
-            // this.#roomService.setUserEvents({
-            //   streamId: event.event.payload.streamId,
-            //   payload: {
-            //     mickActive: true,
-            //     streamType: 'camera',
-            //   },
-            // })
-            break
           }
           default:
             console.warn('Неизвестный тип события:', event.type) // Добавлена обработка неизвестных событий
@@ -286,6 +278,7 @@ export class ConferenceService {
             type: 'camera-on',
             payload: { streamId: stream.id },
           })
+          this.#notifySubscribers()
         } catch (error) {
           console.error('❌ Ошибка добавления медиа треков:', error)
           this.#notificationManager.notify('error', 'Ошибка трансляции с камеры')
@@ -296,12 +289,14 @@ export class ConferenceService {
           type: 'camera-off',
           payload: { streamId },
         })
+        this.#notifySubscribers()
       })
       .on('audioToggled', ({ streamId, active }: { active: boolean, streamId: string }) => {
         this.#signalingService.sendEvent({
           type: active ? 'mic-on' : 'mic-off',
           payload: { streamId },
         })
+        this.#notifySubscribers()
       })
       .on('stateChanged', () => {
         this.#notifySubscribers()
@@ -321,6 +316,7 @@ export class ConferenceService {
             type: 'screen-share-on',
             payload: { streamId: stream.id },
           })
+          this.#notifySubscribers()
         } catch (error) {
           console.error('❌ Ошибка добавления треков скриншеринга:', error)
           this.#notificationManager.notify('error', 'Ошибка трансляции экрана')
@@ -333,6 +329,7 @@ export class ConferenceService {
           type: 'screen-share-off',
           payload: { streamId },
         })
+        this.#notifySubscribers()
       })
       .on('error', (error: Error) => {
         console.error('❌ Ошибка скриншеринга:', error)
@@ -418,8 +415,8 @@ export class ConferenceService {
     await this.#mediaManager.toggleVideo()
   }
 
-  toggleAudio() {
-    this.#mediaManager.toggleAudio()
+  async toggleAudio() {
+    await this.#mediaManager.toggleAudio()
   }
 
   getState() {
