@@ -112,7 +112,9 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         if (event.payload.streamId) {
             this.conferenceService.setUserEvents({
                 streamId: event.payload.streamId,
-                payload: event
+                payload: event,
+                dialogId,
+                senderId
             })
         }
 
@@ -123,45 +125,26 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         })
     }
 
-    private initializeUser(client: Socket, roomId: string, userId: string) {
-        console.log('=== INITIALIZE USER ===', {
-            socketId: client.id,
-            userId,
-            roomId,
-            timestamp: new Date().toISOString()
-        })
-
+    private async initializeUser(client: Socket, roomId: string, userId: string) {
         client.data.userId = userId
         client.join(userId)
         client.join(roomId)
 
-        const participants = this.conferenceService.addUserToRoom(roomId, userId)
+        const participants = await this.conferenceService.addUserToRoom(roomId, userId)
 
-        // Последовательно логируем и отправляем каждое событие
-        console.log('=== SENDING room:participants ===', {
-            roomId,
-            participants,
-            timestamp: new Date().toISOString()
-        })
+        const roomInfo = this.conferenceService.getRoomInfo(roomId)
+
         this.server.to(roomId).emit('room:participants', participants)
+        this.server.to(roomId).except(client.id).emit(
+          'user:joined',
+          roomInfo.participants.find(({ userId: id }) => userId === id).userInfo
+        )
 
-        console.log('=== SENDING user:joined ===', {
-            roomId,
-            userId,
-            timestamp: new Date().toISOString()
-        })
-        this.server.to(roomId).except(client.id).emit('user:joined', userId)
-
-        console.log('=== SENDING room:info ===', {
-            roomId,
-            userId,
-            timestamp: new Date().toISOString()
-        })
         client.emit('room:info', {
             roomId,
             joined: new Date().toISOString(),
-            ...this.conferenceService.getRoomInfo(roomId),
-            participants,
+            ...roomInfo,
+            participantsIds: participants,
         })
     }
 

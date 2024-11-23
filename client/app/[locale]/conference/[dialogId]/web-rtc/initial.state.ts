@@ -7,8 +7,6 @@ export interface InitialState {
   signaling: ConferenceContextState['signaling']
   participants: Participant[]
   localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
-  streams: ReturnType<ConferenceService['getState']>['streams']
-  userEvents: ReturnType<ConferenceService['getState']>['userEvents']
 }
 
 export const initialState: InitialState = {
@@ -26,6 +24,4 @@ export const initialState: InitialState = {
     stream: undefined,
     isVideoEnabled: false,
   },
-  streams: [],
-  userEvents: {},
 }

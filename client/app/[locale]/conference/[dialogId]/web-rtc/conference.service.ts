@@ -9,6 +9,7 @@ import {
   SignalingConfig,
   SignalingService,
 } from './micro-services'
+import { UserInfo } from '../../../../../../swagger/userInfo/interfaces-userInfo'
 
 export interface ConferenceConfig {
   ice: RTCIceServer[]
@@ -102,25 +103,25 @@ export class ConferenceService {
       })
       .on('stateChanged', (state) => {
         console.log('🔄 Изменение состояния сигнального сервера:', state)
-        this.#notifySubscribers()
+        // this.#notifySubscribers()
       })
 
       // События участниковя
-      .on('userJoined', async (userId: string) => {
+      .on('userJoined', async (user: UserInfo) => {
         try {
-          this.#roomService.addParticipant(userId)
+          this.#roomService.addParticipant(user)
 
           const { stream: localStream } = this.#mediaManager.getState()
           const { stream: screenShare } = this.#screenShareManager.getState()
 
           const streams = [localStream, screenShare].filter(Boolean) as MediaStream[]
           if (streams.length > 0) {
-            await this.handleStreamTracks(userId, streams, this.#connectionManager, this.#signalingService)
+            await this.handleStreamTracks(String(user.id), streams, this.#connectionManager, this.#signalingService)
           }
         } catch (error) {
           this.#notificationManager.notify('error', `❌ Ошибка подключения участника, ${error}`)
-          this.#roomService.removeParticipant(userId)
-          this.#connectionManager.close(userId)
+          this.#roomService.removeParticipant(String(user.id))
+          this.#connectionManager.close(String(user.id))
         }
       })
 
@@ -187,12 +188,11 @@ export class ConferenceService {
         console.log('👤 Событие участника:', event.event.type, 'от:', event.initiator, event)
         switch (event.event.type) {
           case 'screen-share-on': {
-            this.#roomService.setUserEvents({
-              streamId: event.event.payload.streamId,
-              payload: {
-                streamType: 'screen',
-              },
-            })
+            this.#roomService.setStreamType(
+              event.initiator,
+              event.event.payload.streamId,
+              'screen',
+            )
             break
           }
           case 'screen-share-off': {
@@ -205,33 +205,26 @@ export class ConferenceService {
           }
           case 'mic-off': {
             this.#roomService.muteParticipantAudio(event.initiator)
-            this.#roomService.setUserEvents({
-              streamId: event.event.payload.streamId,
-              payload: {
-                mickActive: false,
-              },
-            })
             break
           }
           case 'mic-on': {
             this.#roomService.unmuteParticipantAudio(event.initiator)
-
-            this.#roomService.setUserEvents({
-              streamId: event.event.payload.streamId,
-              payload: {
-                mickActive: true,
-              },
-            })
             break
           }
           case 'camera-on': {
-            this.#roomService.setUserEvents({
-              streamId: event.event.payload.streamId,
-              payload: {
-                mickActive: true,
-                streamType: 'camera',
-              },
-            })
+            this.#roomService.setStreamType(
+              event.initiator,
+              event.event.payload.streamId,
+              'camera',
+            )
+            break
+            // this.#roomService.setUserEvents({
+            //   streamId: event.event.payload.streamId,
+            //   payload: {
+            //     mickActive: true,
+            //     streamType: 'camera',
+            //   },
+            // })
             break
           }
           default:
@@ -349,9 +342,21 @@ export class ConferenceService {
         this.#notifySubscribers()
       })
 
-    this.#roomService.on('participantAdded', () => {
-      this.#notifySubscribers()
-    })
+    this.#roomService
+      .on('participantAdded', ({ user }: { user: UserInfo }) => {
+        this.#notificationManager.notify('INFO', `Пользователь ${user.name} присоединился к конференции`)
+        this.#notifySubscribers()
+      })
+      .on('participantRemoved', ({ user }: { user: UserInfo }) => {
+        this.#notificationManager.notify('INFO', `Пользователь ${user.name} покинул конференцию`)
+        this.#notifySubscribers()
+      })
+      .on('participantAudioUnmuted', () => {
+        this.#notifySubscribers()
+      })
+      .on('participantAudioMuted', () => {
+        this.#notifySubscribers()
+      })
   }
 
   #waitForRoomInfo(): Promise<RoomInfo> {
@@ -423,9 +428,7 @@ export class ConferenceService {
       media: this.#mediaManager.getState(),
       signaling: this.#signalingService.getState(),
       participants: this.#roomService.getParticipants(),
-      streams: this.#roomService.getStreams(),
       localScreenShare: this.#screenShareManager.getState(),
-      userEvents: this.#roomService.getUserEvents(),
     }
   }
 
@@ -435,6 +438,7 @@ export class ConferenceService {
 
   #notifySubscribers() {
     const state = this.getState()
+    console.log('__STATE___', state)
     this.#subscribers.forEach((cb) => cb(state))
   }
 

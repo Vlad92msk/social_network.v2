@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import { UserInfo } from '@services/users/user-info/entities'
+import { UserInfoService } from '@services/users/user-info/user-info.service'
 
 interface RoomParticipant {
     userId: string;
     joinedAt: Date;
     isVideoEnabled: boolean;
     isAudioEnabled: boolean;
+    userInfo: UserInfo
+    mickActive: boolean
+    streamsType: Record<string, 'camera' | 'screen'>
 }
 
 type UserEvent = Record<string, {
@@ -20,19 +25,53 @@ export class ConferenceService {
 
     private userEvents: UserEvent = {}
 
-    constructor(private eventEmitter: EventEmitter2) {}
+    constructor(
+      @Inject(forwardRef(() => UserInfoService))
+      private userInfoService: UserInfoService,
+      private eventEmitter: EventEmitter2
+    ) {}
 
-    setUserEvents(props: { streamId: string, payload: any }) {
-        const { streamId, payload } = props
-        this.userEvents[streamId] = {
-            ...this.userEvents[streamId],
+    async setUserEvents(props: { streamId: string, payload: any, senderId: string, dialogId: string }) {
+        const { streamId, payload, senderId, dialogId } = props
+        this.userEvents[senderId] = {
+            ...this.userEvents[senderId],
             mickActive: payload.type === 'mic-on',
             streamType: payload.type,
         }
+
+        const room = this.rooms.get(dialogId)
+        const p = room.get(senderId)
+
+        if (payload.type === 'mic-on' || payload.type === 'mic-off') {
+            room.set(senderId, {
+                ...p,
+                mickActive: payload.type === 'mic-on'
+            })
+        }
+        if (payload.type === 'camera-on' || payload.type === 'screen-share-on') {
+            room.set(senderId, {
+                ...p,
+                streamsType: {
+                    ...p.streamsType,
+                    [streamId]: payload.type === 'camera-on' ? 'camera' : 'screen',
+                },
+            })
+        }
+
+        if (payload.type === 'camera-off' || payload.type === 'screen-share-off') {
+            const newStreamsType = { ...p.streamsType }
+            delete newStreamsType[streamId]
+
+            room.set(senderId, {
+                ...p,
+                streamsType: newStreamsType
+            })
+        }
+
         console.log('userEvents', this.userEvents)
     }
 
-    addUserToRoom(dialogId: string, userId: string): string[] {
+    async addUserToRoom(dialogId: string, userId: string) {
         if (!this.rooms.has(dialogId)) {
             this.rooms.set(dialogId, new Map())
             // Эмитим событие начала конференции при первом участнике
@@ -41,6 +80,8 @@ export class ConferenceService {
                 active: true
             })
         }
+        const userInfo = await this.userInfoService.getUsersById(Number(userId))
+
 
         const room = this.rooms.get(dialogId)
         room.set(userId, {
@@ -48,6 +89,9 @@ export class ConferenceService {
             joinedAt: new Date(),
             isVideoEnabled: true,
             isAudioEnabled: true,
+            mickActive: false,
+            userInfo,
+            streamsType: {}
         })
         return Array.from(room.keys())
     }

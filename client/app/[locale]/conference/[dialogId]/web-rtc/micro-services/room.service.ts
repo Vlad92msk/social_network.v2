@@ -1,19 +1,27 @@
 import { EventEmitter } from 'events'
+import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 
 export interface Participant {
   userId: string
   streams: Set<MediaStream>
+  userInfo: UserInfo
+  mickActive: boolean
+  streamsType: Record<string, 'camera' | 'screen'>
 }
-type UserEvent = Record<string, {
-  mickActive?: boolean
-  streamType?: 'camera' | 'screen'
-}>
 
+interface RoomParticipant {
+  userId: string;
+  joinedAt: Date;
+  isVideoEnabled: boolean;
+  isAudioEnabled: boolean;
+  userInfo: UserInfo
+  mickActive: boolean
+  streamsType: Record<string, 'camera' | 'screen'>
+}
 export interface RoomInfo {
   dialogId: string
-  participants: string[]
+  participants: RoomParticipant[]
   createdAt: string
-  userEvents: UserEvent
 }
 
 /**
@@ -22,17 +30,7 @@ export interface RoomInfo {
 export class RoomService extends EventEmitter {
   #room?: RoomInfo
 
-  #userEvents: UserEvent = {}
-
   #participants = new Map<string, Participant>()
-
-  setUserEvents(props: { streamId: string, payload: UserEvent[0] }) {
-    const { streamId, payload } = props
-    this.#userEvents[streamId] = {
-      ...this.#userEvents[streamId],
-      ...payload
-    }
-  }
 
   /**
    * Инициализация комнаты
@@ -41,35 +39,40 @@ export class RoomService extends EventEmitter {
     this.#room = info
     this.#participants.clear()
 
+    console.log('info', info)
     // Создаем начальных участников
-    info.participants.forEach((userId) => {
-      this.#participants.set(userId, {
-        userId,
+    info.participants.forEach((user) => {
+      this.#participants.set(user.userId, {
+        userId: user.userId,
         streams: new Set(),
+        userInfo: user.userInfo,
+        mickActive: user.mickActive,
+        streamsType: user.streamsType,
       })
     })
-    this.#userEvents = info.userEvents
     this.emit('initialized', info)
   }
 
   /**
    * Добавление участника
    */
-  addParticipant(userId: string): void {
+  addParticipant(user: UserInfo): void {
     if (!this.#room) return
 
-    console.log('➕ Добавление участника:', userId)
+    console.log('➕ Добавление участника:', user.id)
 
     // Добавляем только если участника еще нет
-    if (!this.#participants.has(userId)) {
-      this.#participants.set(userId, {
-        userId,
+    if (!this.#participants.has(String(user.id))) {
+      this.#participants.set(String(user.id), {
+        userId: String(user.id),
         streams: new Set<MediaStream>(),
+        userInfo: user,
+        mickActive: false,
+        streamsType: {},
       })
 
-      this.#room.participants.push(userId)
-      console.log('✅ Участник добавлен:', userId)
-      this.emit('participantAdded', { userId })
+      console.log('✅ Участник добавлен:', String(user.id))
+      this.emit('participantAdded', { user })
     }
   }
 
@@ -87,44 +90,41 @@ export class RoomService extends EventEmitter {
       stream.getTracks().forEach((track) => track.stop())
     })
 
+    this.emit('participantRemoved', { user: participant.userInfo })
+
     // Удаляем участника
     this.#participants.delete(userId)
-    const index = this.#room.participants.indexOf(userId)
-    if (index !== -1) {
-      this.#room.participants.splice(index, 1)
-    }
-
-    this.emit('participantRemoved', { userId })
   }
 
   /**
    * Добавление медиа потока участнику
    */
   addStream(userId: string, stream: MediaStream): void {
-    console.log(`➕ Попытка добавить поток ${stream.id} для пользователя ${userId}`);
+    console.log(`➕ Попытка добавить поток ${stream.id} для пользователя ${userId}`)
 
-    const participant = this.#participants.get(userId);
+    const participant = this.#participants.get(userId)
     if (!participant) {
-      console.warn(`⚠️ Участник ${userId} не найден при добавлении потока`);
-      return;
+      console.warn(`⚠️ Участник ${userId} не найден при добавлении потока`)
+      return
     }
 
     // Проверяем наличие треков в потоке
-    const tracks = stream.getTracks();
-    console.log(`📊 Поток содержит ${tracks.length} треков:`,
-      tracks.map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled, muted: t.muted }))
-    );
+    const tracks = stream.getTracks()
+    console.log(
+      `📊 Поток содержит ${tracks.length} треков:`,
+      tracks.map((t) => ({ kind: t.kind, id: t.id, enabled: t.enabled, muted: t.muted })),
+    )
 
     // Добавляем поток и проверяем успешность
-    const sizeBefore = participant.streams.size;
-    participant.streams.add(stream);
-    const sizeAfter = participant.streams.size;
+    const sizeBefore = participant.streams.size
+    participant.streams.add(stream)
+    const sizeAfter = participant.streams.size
 
     if (sizeAfter > sizeBefore) {
-      console.log(`✅ Поток ${stream.id} успешно добавлен к участнику ${userId}`);
-      this.emit('streamAdded', { userId, stream });
+      console.log(`✅ Поток ${stream.id} успешно добавлен к участнику ${userId}`)
+      this.emit('streamAdded', { userId, stream })
     } else {
-      console.log(`ℹ️ Поток ${stream.id} уже существует у участника ${userId}`);
+      console.log(`ℹ️ Поток ${stream.id} уже существует у участника ${userId}`)
     }
   }
 
@@ -165,40 +165,6 @@ export class RoomService extends EventEmitter {
     return Array.from(this.#participants.values())
   }
 
-  /**
-   * Получение активных медиа потоков
-   */
-  getStreams(): Array<{ userId: string, streams: MediaStream[] }> {
-    const result: Array<{ userId: string, streams: MediaStream[] }> = []
-
-    this.#participants.forEach((participant, userId) => {
-      if (participant.streams.size > 0) {
-        result.push({
-          userId,
-          streams: Array.from(participant.streams),
-        })
-      }
-    })
-
-    return result
-  }
-
-  getUserEvents() {
-    return this.#userEvents
-  }
-
-  getRoomInfo(): RoomInfo | undefined {
-    return this.#room
-  }
-
-  getParticipantCount(): number {
-    return this.#participants.size
-  }
-
-  hasParticipant(userId: string): boolean {
-    return this.#participants.has(userId)
-  }
-
   getParticipantTracks(userId: string, kind?: 'audio' | 'video'): MediaStreamTrack[] {
     const participant = this.#participants.get(userId)
     if (!participant) return []
@@ -215,15 +181,48 @@ export class RoomService extends EventEmitter {
   }
 
   muteParticipantAudio(userId: string): void {
+    const p = this.getParticipant(userId)
+    if (p) {
+      this.#participants.set(userId, { ...p, mickActive: false })
+    }
     const audioTracks = this.getParticipantTracks(userId, 'audio')
     audioTracks.forEach((track) => track.enabled = false)
     this.emit('participantAudioMuted', { userId })
   }
 
   unmuteParticipantAudio(userId: string): void {
+    const p = this.getParticipant(userId)
+    if (p) {
+      this.#participants.set(userId, { ...p, mickActive: true })
+    }
     const audioTracks = this.getParticipantTracks(userId, 'audio')
     audioTracks.forEach((track) => track.enabled = true)
     this.emit('participantAudioUnmuted', { userId })
+  }
+
+  setStreamType(userId: string, streamId: string, type: 'camera' | 'screen') {
+    const p = this.getParticipant(userId)
+    if (p) {
+      this.#participants.set(userId, {
+        ...p,
+        streamsType: {
+          ...p.streamsType,
+          [streamId]: type,
+        },
+      })
+    }
+  }
+
+  getRoomInfo(): RoomInfo | undefined {
+    return this.#room
+  }
+
+  getParticipantCount(): number {
+    return this.#participants.size
+  }
+
+  hasParticipant(userId: string): boolean {
+    return this.#participants.has(userId)
   }
 
   /**
@@ -239,7 +238,6 @@ export class RoomService extends EventEmitter {
 
     // Очищаем данные
     this.#participants.clear()
-    this.#userEvents = {}
     this.#room = undefined
     this.removeAllListeners()
   }

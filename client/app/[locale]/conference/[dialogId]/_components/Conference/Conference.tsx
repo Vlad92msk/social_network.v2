@@ -41,10 +41,34 @@ export function VideoStream({ stream, className }: VideoProps) {
   )
 }
 
+function ParticipantVideo({ participant, currentUserId }: { participant: any, currentUserId: string }) {
+  const isCurrentUser = participant.userId === currentUserId
+
+  // Для текущего пользователя всегда показываем профиль без проверки потоков
+  if (isCurrentUser || participant.streams.size === 0) {
+    return (
+      <div className={styles.participant}>
+        <div className={styles.profileImageContainer}>
+          <img
+            src={participant.userInfo.profile_image}
+            alt={participant.userInfo.name}
+            className={styles.profileImage}
+          />
+        </div>
+        <span className={styles.participantName}>
+          {participant.userInfo.name}
+          {isCurrentUser ? ' (You)' : ''}
+        </span>
+      </div>
+    )
+  }
+  return null
+}
+
 export function Conference({ profile }: ConferenceProps) {
   const [pinnedStream, setPinnedStream] = useState<{
     userId: string;
-    stream: any;
+    stream: MediaStream;
     isLocal?: boolean;
     isScreenShare?: boolean;
   } | null>(null)
@@ -52,11 +76,12 @@ export function Conference({ profile }: ConferenceProps) {
   const {
     isInitialized,
     localScreenShare,
-    streams,
-    participants,
-    userEvents,
+    participants: allParticipants,
     media: { stream: localStream },
   } = useConference()
+  const currentUserId = profile?.user_info.id.toString() || ''
+
+  const participants = allParticipants.filter(({ userId }) => userId !== currentUserId)
 
   if (!isInitialized) {
     return (
@@ -66,12 +91,28 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
-  const streamsList = streams?.reduce((acc, user) => {
-    const d = user.streams.map((stream) => ({ userId: user.userId, stream }))
-    // @ts-ignore
-    acc.push(...d)
-    return acc as any[]
-  }, [])
+  // Преобразуем Set streams в массив для каждого участника
+  const getStreamsList = () => participants.reduce((acc, participant) => {
+    const streams = Array.from(participant.streams).map((stream) => ({
+      userId: participant.userId,
+      stream,
+      userInfo: participant.userInfo,
+      mickActive: participant.mickActive,
+      streamsType: participant.streamsType,
+    }))
+    return [...acc, ...streams]
+  }, [] as Array<{
+      userId: string;
+      stream: MediaStream;
+      streamsType: Record<string, string>
+      userInfo: {
+        id: number;
+        name: string;
+        profile_image: string;
+        public_id: string;
+      };
+      mickActive: boolean;
+    }>)
 
   const handleStreamClick = (streamData: any, type: 'remote' | 'local' | 'screenShare') => {
     if (type === 'local') {
@@ -79,8 +120,7 @@ export function Conference({ profile }: ConferenceProps) {
         setPinnedStream(null)
       } else {
         setPinnedStream({
-          // @ts-ignore
-          userId: profile?.user_info.id || '',
+          userId: profile?.user_info.id.toString() || '',
           stream: streamData,
           isLocal: true,
         })
@@ -90,8 +130,7 @@ export function Conference({ profile }: ConferenceProps) {
         setPinnedStream(null)
       } else {
         setPinnedStream({
-          // @ts-ignore
-          userId: profile?.user_info.id || '',
+          userId: profile?.user_info.id.toString() || '',
           stream: streamData,
           isScreenShare: true,
         })
@@ -103,26 +142,25 @@ export function Conference({ profile }: ConferenceProps) {
     }
   }
 
-  const renderStream = (stream: any, isPinned = false) => {
-    const streamType = userEvents[stream.stream.id]?.streamType
-    const mickActive = userEvents[stream.stream.id]?.mickActive
-
-    return (
-      <div
-        key={stream.stream.id}
-        className={`${styles.participant} ${!isPinned && 'cursor-pointer'}`}
-        onClick={() => handleStreamClick(stream, 'remote')}
-      >
-        <VideoStream stream={stream.stream} className={styles.video} />
-        <span className={styles.participantName}>
-          {`${stream.userId} (${streamType})`}
-        </span>
-        <span className={styles.participantMic}>
-          {streamType === 'camera' ? mickActive && '🎤' : null}
-        </span>
-      </div>
-    )
-  }
+  const renderStream = (streamData: any, isPinned = false) => (
+    <div
+      key={streamData.stream.id}
+      className={`${styles.participant} ${!isPinned && 'cursor-pointer'}`}
+      onClick={() => handleStreamClick(streamData, 'remote')}
+    >
+      <VideoStream stream={streamData.stream} className={styles.video} />
+      <span className={styles.participantName}>
+        {streamData.userInfo.name}
+      </span>
+      {
+        streamData.streamsType[streamData.stream.id] === 'camera' ? (
+          <span className={styles.participantMic}>
+            {streamData.mickActive ? '🎤' : '🚫'}
+          </span>
+        ) : null
+      }
+    </div>
+  )
 
   const renderMainContent = () => {
     if (pinnedStream) {
@@ -133,9 +171,11 @@ export function Conference({ profile }: ConferenceProps) {
             onClick={() => handleStreamClick(localStream, 'local')}
           >
             <LocalPreview />
-            {profile?.user_info.id}
-            {' '}
-            (You)
+            <span className={styles.participantName}>
+              {profile?.user_info.name}
+              {' '}
+              (You)
+            </span>
           </div>
         )
       }
@@ -160,9 +200,11 @@ export function Conference({ profile }: ConferenceProps) {
           onClick={() => handleStreamClick(localStream, 'local')}
         >
           <LocalPreview />
-          {profile?.user_info.id}
-          {' '}
-          (You)
+          <span className={styles.participantName}>
+            {profile?.user_info.name}
+            {' '}
+            (You)
+          </span>
         </div>
         {localScreenShare.isVideoEnabled && localScreenShare.stream && (
           <div
@@ -173,7 +215,22 @@ export function Conference({ profile }: ConferenceProps) {
             <span className={styles.participantName}>Your Screen Share</span>
           </div>
         )}
-        {streamsList?.map((stream) => renderStream(stream))}
+        {getStreamsList()
+          .filter((streamData) => streamData.userId !== currentUserId)
+          .map((streamData) => renderStream(streamData))}
+        {participants
+          .filter((participant) => {
+            // Показываем участников без потоков и текущего пользователя
+            const isCurrentUser = participant.userId === currentUserId
+            return isCurrentUser || participant.streams.size === 0
+          })
+          .map((participant) => (
+            <ParticipantVideo
+              key={participant.userId}
+              participant={participant}
+              currentUserId={currentUserId}
+            />
+          ))}
       </>
     )
   }
@@ -181,9 +238,14 @@ export function Conference({ profile }: ConferenceProps) {
   const renderSideContent = () => {
     if (!pinnedStream) {
       return participants.map((participant) => (
-        <div key={participant.userId}>{participant.userId}</div>
+        <div key={participant.userId}>
+          {participant.userInfo.name}
+          {participant.userId === currentUserId ? ' (You)' : ''}
+        </div>
       ))
     }
+
+    const streamsList = getStreamsList()
 
     return (
       <>
@@ -193,9 +255,11 @@ export function Conference({ profile }: ConferenceProps) {
             onClick={() => handleStreamClick(localStream, 'local')}
           >
             <LocalPreview />
-            {profile?.user_info.id}
-            {' '}
-            (You)
+            <span className={styles.participantName}>
+              {profile?.user_info.name}
+              {' '}
+              (You)
+            </span>
           </div>
         )}
         {!pinnedStream.isScreenShare
@@ -210,8 +274,22 @@ export function Conference({ profile }: ConferenceProps) {
             </div>
         )}
         {streamsList
-          ?.filter((stream) => stream.stream.id !== pinnedStream.stream?.id)
-          .map((stream) => renderStream(stream))}
+          .filter((streamData) => streamData.stream.id !== pinnedStream.stream?.id
+            && streamData.userId !== currentUserId)
+          .map((streamData) => renderStream(streamData))}
+        {participants
+          .filter((participant) => {
+            const isCurrentUser = participant.userId === currentUserId
+            return (isCurrentUser || participant.streams.size === 0)
+              && (!pinnedStream.isLocal || participant.userId !== currentUserId)
+          })
+          .map((participant) => (
+            <ParticipantVideo
+              key={participant.userId}
+              participant={participant}
+              currentUserId={currentUserId}
+            />
+          ))}
       </>
     )
   }

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events'
 import { io, Socket } from 'socket.io-client'
+import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 
 // Типы для сигнальных сообщений
 type SignalType = 'offer' | 'answer' | 'ice-candidate'
@@ -103,7 +104,7 @@ export class SignalingService extends EventEmitter {
       this.emit('stateChanged', this.getState())
     })
 
-    socket.on('user:joined', (userId: string) => {
+    socket.on('user:joined', (userId: UserInfo) => {
       this.emit('userJoined', userId)
     })
 

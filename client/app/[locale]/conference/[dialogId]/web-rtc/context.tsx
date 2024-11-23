@@ -29,8 +29,6 @@ export interface ConferenceContextState {
 
   // Трансляция экрана
   localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
-  userEvents: ReturnType<ConferenceService['getState']>['userEvents']
-  streams: ReturnType<ConferenceService['getState']>['streams']
   startScreenShare: VoidFunction
   stopScreenShare: VoidFunction
 }
