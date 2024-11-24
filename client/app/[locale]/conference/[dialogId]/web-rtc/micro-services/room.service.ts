@@ -6,6 +6,7 @@ export interface Participant {
   streams: Set<MediaStream>
   userInfo: UserInfo
   mickActive: boolean
+  videoActive?: boolean
   streamsType: Record<string, 'camera' | 'screen'>
 }
 
@@ -16,12 +17,14 @@ interface RoomParticipant {
   isAudioEnabled: boolean;
   userInfo: UserInfo
   mickActive: boolean
+  videoActive?: boolean
   streamsType: Record<string, 'camera' | 'screen'>
 }
 export interface RoomInfo {
   dialogId: string
   participants: RoomParticipant[]
   createdAt: string
+  currentUser: UserInfo
 }
 
 /**
@@ -47,6 +50,7 @@ export class RoomService extends EventEmitter {
         streams: new Set(),
         userInfo: user.userInfo,
         mickActive: user.mickActive,
+        videoActive: user.videoActive,
         streamsType: user.streamsType,
       })
     })
@@ -128,16 +132,41 @@ export class RoomService extends EventEmitter {
     }
   }
 
+  onCameraOff(userId: string) {
+    const participant = this.#participants.get(userId)
+    if (!participant) {
+      console.warn(`⚠️ Участник ${userId} не найден при удалении потока`)
+      return
+    }
+
+    const p = this.getParticipant(userId)
+    if (p) {
+      this.#participants.set(userId, {
+        ...p,
+        videoActive: false,
+      })
+    }
+    this.emit('onCameraOff')
+  }
+
   /**
    * Удаление медиа потока у участника
    */
-  removeStream(userId: string, streamId: string): void {
+  removeStream(userId: string, streamId: string) {
     console.log(`➖ Попытка удалить поток ${streamId} у участника ${userId}`)
 
     const participant = this.#participants.get(userId)
     if (!participant) {
       console.warn(`⚠️ Участник ${userId} не найден при удалении потока`)
       return
+    }
+
+    const p = this.getParticipant(userId)
+    if (p) {
+      this.#participants.set(userId, {
+        ...p,
+        videoActive: false,
+      })
     }
 
     // Находим и удаляем поток
@@ -163,6 +192,10 @@ export class RoomService extends EventEmitter {
    */
   getParticipants(): Participant[] {
     return Array.from(this.#participants.values())
+  }
+
+  getCurrentUser() {
+    return this.#room?.currentUser
   }
 
   getParticipantTracks(userId: string, kind?: 'audio' | 'video'): MediaStreamTrack[] {
@@ -203,26 +236,27 @@ export class RoomService extends EventEmitter {
   setStreamType(userId: string, streamId: string, type: 'camera' | 'screen') {
     const p = this.getParticipant(userId)
     if (p) {
-      this.#participants.set(userId, {
-        ...p,
-        streamsType: {
-          ...p.streamsType,
-          [streamId]: type,
-        },
-      })
+      if (type === 'camera') {
+        this.#participants.set(userId, {
+          ...p,
+          videoActive: type === 'camera',
+          streamsType: {
+            ...p.streamsType,
+            [streamId]: type,
+          },
+        })
+      }
+
+      if (type === 'screen') {
+        this.#participants.set(userId, {
+          ...p,
+          streamsType: {
+            ...p.streamsType,
+            [streamId]: type,
+          },
+        })
+      }
     }
-  }
-
-  getRoomInfo(): RoomInfo | undefined {
-    return this.#room
-  }
-
-  getParticipantCount(): number {
-    return this.#participants.size
-  }
-
-  hasParticipant(userId: string): boolean {
-    return this.#participants.has(userId)
   }
 
   /**

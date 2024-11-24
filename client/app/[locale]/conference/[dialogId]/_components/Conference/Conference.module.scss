@@ -36,6 +36,9 @@
   width: 100%;
 }
 
+.pin {
+  width: 100%;
+}
 .remoteStreams {
   display: grid;
   gap: 10px;
@@ -44,7 +47,7 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   align-content: start;
 
-  > * {
+  > *:not(.pin) {
     //aspect-ratio: 16 / 9;
     width: 100%;
     min-width: 200px;

@@ -6,10 +6,9 @@ export function useCameraStream(options?: {
   mirror?: boolean;
   onStreamChange?: (stream: MediaStream | null) => void;
 }) {
-  const { media: { stream } } = useConference()
+  const { media: { stream, isVideoEnabled, isAudioEnabled }, currentUser } = useConference()
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // console.log('localstream', stream)
   useEffect(() => {
     const videoElement = videoRef.current
     if (videoElement && stream && options?.enabled !== false) {
@@ -21,7 +20,7 @@ export function useCameraStream(options?: {
         options?.onStreamChange?.(null)
       }
     }
-  }, [stream, options?.enabled, options])
+  }, [stream, options, isVideoEnabled, isAudioEnabled])
 
   const videoProps = useMemo(() => ({
     ref: videoRef,
@@ -32,5 +31,30 @@ export function useCameraStream(options?: {
     } as const,
   }), [options?.mirror])
 
-  return videoProps
+  return { videoProps, isAudioEnabled, isVideoEnabled, currentUser }
+}
+
+export function useScreenShareStream() {
+  const { localScreenShare: { stream, isVideoEnabled }, currentUser } = useConference()
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+    if (videoElement && stream) {
+      videoElement.srcObject = stream
+
+      return () => {
+        videoElement.srcObject = null
+      }
+    }
+  }, [stream, isVideoEnabled])
+
+  const videoProps = useMemo(() => ({
+    ref: videoRef,
+    autoPlay: true,
+    playsInline: true,
+    muted: true,
+  }), [])
+
+  return { videoProps, isVideoEnabled, currentUser }
 }

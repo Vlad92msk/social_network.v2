@@ -200,7 +200,7 @@ export class ConferenceService {
             break
           }
           case 'camera-off': {
-            this.#roomService.removeStream(event.initiator, event.event.payload.streamId)
+            this.#roomService.onCameraOff(event.initiator)
             break
           }
           case 'mic-off': {
@@ -298,6 +298,13 @@ export class ConferenceService {
         })
         this.#notifySubscribers()
       })
+      .on('toggleVideo', ({ streamId, type }: { type: 'camera-on' | 'camera-off', streamId: string }) => {
+        this.#signalingService.sendEvent({
+          type,
+          payload: { streamId },
+        })
+        this.#notifySubscribers()
+      })
       .on('stateChanged', () => {
         this.#notifySubscribers()
       })
@@ -352,6 +359,10 @@ export class ConferenceService {
         this.#notifySubscribers()
       })
       .on('participantAudioMuted', () => {
+        this.#notifySubscribers()
+      })
+      .on('onCameraOff', () => {
+        console.log('onCameraOff')
         this.#notifySubscribers()
       })
   }
@@ -426,6 +437,7 @@ export class ConferenceService {
       signaling: this.#signalingService.getState(),
       participants: this.#roomService.getParticipants(),
       localScreenShare: this.#screenShareManager.getState(),
+      currentUser: this.#roomService.getCurrentUser(),
     }
   }
 

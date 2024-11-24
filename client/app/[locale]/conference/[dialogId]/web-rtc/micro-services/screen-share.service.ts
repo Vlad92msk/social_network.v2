@@ -10,7 +10,7 @@ export class ScreenShareManager extends EventEmitter {
     try {
       this.stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: true,
+        audio: false,
       })
 
       // Подписываемся на события остановки трансляции
@@ -30,7 +30,6 @@ export class ScreenShareManager extends EventEmitter {
   }
 
   stopScreenShare() {
-    console.log('stopScreenShare!!!!!!')
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop())
       this.emit('streamStopped', { streamId: this.stream.id })

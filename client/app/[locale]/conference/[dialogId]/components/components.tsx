@@ -1,31 +1,64 @@
 'use client'
 
 import { Icon } from '@ui/common/Icon'
+import { Image } from '@ui/common/Image'
 import styles from './examples.module.scss'
 import { useCameraStream } from '../hooks/useCameraStream'
 import { useConference } from '../web-rtc/context'
 
 // Локальное превью с зеркальным отображением
 export function LocalPreview() {
-  const videoProps = useCameraStream({
+  const { videoProps, isVideoEnabled, isAudioEnabled, currentUser } = useCameraStream({
     mirror: true,
     onStreamChange: (stream) => {
-      // console.log('Stream changed:', stream?.getTracks())
+      console.log('Stream changed:', stream?.getTracks())
     },
   })
 
   return (
-    <video
-      {...videoProps}
-      className={`${styles.video} ${styles.videoMirrored}`}
-    />
+    <div className={styles.participant}>
+      {
+        isVideoEnabled ? (
+          <video
+            {...videoProps}
+            className={`${styles.video} ${styles.videoMirrored}`}
+          />
+        ) : (
+          <div className={styles.profileImageContainer}>
+            <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
+          </div>
+        )
+      }
+      {isAudioEnabled
+        ? (
+          <Icon
+            name="microphone"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+          />
+        )
+        : (
+          <Icon
+            name="microphone-off"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+          />
+        )}
+    </div>
   )
 }
 
 // Простые контролы
 export function CallControls() {
   const {
-    media: { stream, isVideoEnabled, isAudioEnabled },
+    media: { stream,
+      isVideoEnabled, isAudioEnabled },
     localScreenShare,
     toggleVideo,
     toggleAudio,
@@ -44,10 +77,7 @@ export function CallControls() {
       window.location.href = 'about:blank'
     }
   }
-console.log('media', stream)
-console.log('isVideoEnabled', isVideoEnabled)
-console.log('isAudioEnabled', isAudioEnabled)
-console.log('localScreenShare', localScreenShare)
+
   return (
     <div className={styles.controls}>
       <button
@@ -67,7 +97,6 @@ console.log('localScreenShare', localScreenShare)
         className={styles.button}
         onClick={toggleAudio}
         style={{ backgroundColor: isAudioEnabled ? 'white' : 'transparent' }}
-        disabled={!stream} // Аудио можно переключать только при наличии потока
       >
         {isAudioEnabled ? <Icon name="microphone" /> : <Icon name="microphone-off" />}
       </button>

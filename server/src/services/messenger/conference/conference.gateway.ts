@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io'
 import { ConferenceService } from './conference.service'
 
 // Типы сигналов WebRTC
-type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share' | 'screen-sharing-started' | 'screen-sharing-stopped';
+type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share' | 'screen-sharing-started' | 'screen-sharing-stopped' | 'camera-on' | 'camera-off';
 
 
 interface WebRTCSignal {
@@ -50,17 +50,11 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const { targetUserId, signal, dialogId } = payload
         const senderId = client.data.userId
 
-        if (signal.type === 'ice-candidate'){
-            console.log(
-              '___payload___', payload
-            )
-        }
-
-        console.log('Received signal:', {
+        console.log('Сигнал:', {
             type: signal.type,
             from: senderId,
-            to: targetUserId,
-            dialogId,
+            // to: targetUserId,
+            // dialogId,
         })
 
         if (!this.validateSignalPayload(senderId, targetUserId, signal, dialogId)) {
@@ -102,7 +96,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
     }
 
     @SubscribeMessage('event')
-    handleEvent(
+    async handleEvent(
       @ConnectedSocket() client: Socket,
       @MessageBody() payload: EventType
     ) {
@@ -110,7 +104,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const senderId = client.data.userId
 
         if (event.payload.streamId) {
-            this.conferenceService.setUserEvents({
+            await this.conferenceService.setUserEvents({
                 streamId: event.payload.streamId,
                 payload: event,
                 dialogId,
@@ -132,7 +126,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
 
         const participants = await this.conferenceService.addUserToRoom(roomId, userId)
 
-        const roomInfo = this.conferenceService.getRoomInfo(roomId)
+        const roomInfo = this.conferenceService.getRoomInfo(roomId, userId)
 
         this.server.to(roomId).emit('room:participants', participants)
         this.server.to(roomId).except(client.id).emit(
@@ -148,13 +142,8 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         })
     }
 
-    handleConnection(client: Socket) {
+    async handleConnection(client: Socket) {
         const { dialogId, userId } = client.handshake.query
-        console.log('New connection:', {
-            socketId: client.id,
-            userId,
-            dialogId
-        })
 
         if (typeof dialogId !== 'string' || typeof userId !== 'string') {
             console.error('Invalid connection parameters:', {
@@ -165,7 +154,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             return
         }
 
-        this.initializeUser(client, dialogId, userId)
+        await this.initializeUser(client, dialogId, userId)
     }
 
     handleDisconnect(client: Socket) {
@@ -211,7 +200,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         }
 
         // Добавляем screen-share в список валидных типов сигналов
-        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate', 'screen-share', 'screen-sharing-started', 'screen-sharing-stopped']
+        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate', 'screen-share', 'screen-sharing-started', 'screen-sharing-stopped', 'camera-on', 'camera-off']
         if (!validSignalTypes.includes(signal.type)) {
             console.error('Invalid signal type:', signal.type)
             return false

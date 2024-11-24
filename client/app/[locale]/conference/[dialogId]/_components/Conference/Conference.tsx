@@ -1,10 +1,36 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Icon } from '@ui/common/Icon'
+import { Image } from '@ui/common/Image'
 import styles from './Conference.module.scss'
 import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
-import { CallControls, LocalPreview } from '../../components/components'
+import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
+import { CallControls } from '../../components/components'
+import { useCameraStream, useScreenShareStream } from '../../hooks/useCameraStream'
 import { useConference } from '../../web-rtc/context'
+import { Participant } from '../../web-rtc/micro-services'
+
+type StreamType = 'local-preview' | 'local-screen' | 'remote';
+
+interface BaseStreamItem {
+  id: string;
+  type: StreamType;
+  component: JSX.Element;
+}
+
+interface LocalStreamItem extends BaseStreamItem {
+  type: 'local-preview' | 'local-screen';
+}
+
+interface RemoteStreamItem extends BaseStreamItem {
+  type: 'remote';
+  stream: MediaStream;
+  participant: Participant;
+}
+
+type StreamItem = LocalStreamItem | RemoteStreamItem;
+type StreamsRecord = Record<string, StreamItem>;
 
 interface ConferenceProps {
   profile?: UserProfileInfo;
@@ -13,75 +39,254 @@ interface ConferenceProps {
 interface VideoProps {
   stream?: MediaStream;
   className?: string;
+  isVideoEnabled?: boolean,
+  isAudioEnabled?: boolean,
+  currentUser?: UserInfo
+  streamType?: 'screen' | 'camera'
 }
 
-export function VideoStream({ stream, className }: VideoProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream
-    }
-
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null
-      }
-    }
-  }, [stream])
+export function LocalPreview() {
+  const { videoProps, isVideoEnabled, isAudioEnabled, currentUser } = useCameraStream({
+    mirror: true,
+    onStreamChange: (stream) => {
+      console.log('Stream changed:', stream?.getTracks())
+    },
+  })
 
   return (
-    <video
-      ref={videoRef}
-      autoPlay
-      playsInline
-      muted
-      className={className}
-    />
+    <div className={styles.participant}>
+      {
+        isVideoEnabled ? (
+          <video
+            {...videoProps}
+            className={`${styles.video} ${styles.videoMirrored}`}
+          />
+        ) : (
+          <div className={styles.profileImageContainer}>
+            <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
+          </div>
+        )
+      }
+      {isAudioEnabled
+        ? (
+          <Icon
+            name="microphone"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+          />
+        )
+        : (
+          <Icon
+            name="microphone-off"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+          />
+        )}
+    </div>
   )
 }
 
-function ParticipantVideo({ participant, currentUserId }: { participant: any, currentUserId: string }) {
-  const isCurrentUser = participant.userId === currentUserId
+export function LocalScreenShare() {
+  const { videoProps, isVideoEnabled } = useScreenShareStream()
 
-  // Для текущего пользователя всегда показываем профиль без проверки потоков
-  if (isCurrentUser || participant.streams.size === 0) {
+  if (!isVideoEnabled) return null
+  return (
+    <div className={styles.participant}>
+      <video
+        {...videoProps}
+        className={`${styles.video} ${styles.videoMirrored}`}
+      />
+    </div>
+  )
+}
+
+export function RemoteStream(props: VideoProps) {
+  const { stream, className, isVideoEnabled, isAudioEnabled, currentUser, streamType } = props
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+    if (videoElement && stream && isVideoEnabled) {
+      videoElement.srcObject = stream
+      // Добавим обработку ошибок и попытку воспроизведения
+      videoElement.play().catch((error) => {
+        console.error('Error playing video:', error)
+      })
+
+      return () => {
+        videoElement.srcObject = null
+      }
+    }
+  }, [stream, isVideoEnabled])
+
+  const videoProps = useMemo(() => ({
+    ref: videoRef,
+    autoPlay: true,
+    playsInline: true,
+    muted: true,
+  }), [])
+
+  const cameraStream = useMemo(() => {
+    const hasVideo = stream?.getTracks().map(track => track.kind).includes('video')
+    if (isVideoEnabled && hasVideo) {
+      return (
+        <video
+          {...videoProps}
+          key={stream?.id}
+          className={`${styles.video} ${className}`}
+        />
+      )
+    }
     return (
-      <div className={styles.participant}>
-        <div className={styles.profileImageContainer}>
-          <img
-            src={participant.userInfo.profile_image}
-            alt={participant.userInfo.name}
-            className={styles.profileImage}
-          />
-        </div>
-        <span className={styles.participantName}>
-          {participant.userInfo.name}
-          {isCurrentUser ? ' (You)' : ''}
-        </span>
+      <div className={styles.profileImageContainer}>
+        <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
       </div>
     )
-  }
-  return null
+  }, [className, currentUser, isVideoEnabled, stream, videoProps])
+
+  const screenStream = useMemo(() => (
+    <video
+      {...videoProps}
+      key={stream?.id}
+      className={`${styles.video} ${className}`}
+    />
+  ), [className, stream?.id, videoProps])
+
+  const microphoneElement = useMemo(() => {
+    if (isAudioEnabled) {
+      return (
+        <Icon
+          name="microphone"
+          style={{
+            position: 'absolute',
+            right: 10,
+            top: 10,
+            background: 'gray',
+          }}
+        />
+      )
+    }
+    return (
+      <Icon
+        name="microphone-off"
+        style={{
+          position: 'absolute',
+          right: 10,
+          top: 10,
+          background: 'gray',
+        }}
+      />
+    )
+  }, [isAudioEnabled])
+
+  return (
+    <div className={styles.participant}>
+      {streamType === 'camera' ? cameraStream : screenStream}
+      {streamType === 'camera' ? <span className={styles.participantName}>{currentUser?.name}</span> : null}
+      {streamType === 'camera' ? microphoneElement : null}
+    </div>
+  )
 }
 
 export function Conference({ profile }: ConferenceProps) {
-  const [pinnedStream, setPinnedStream] = useState<{
-    userId: string;
-    stream: MediaStream;
-    isLocal?: boolean;
-    isScreenShare?: boolean;
-  } | null>(null)
-
-  const {
-    isInitialized,
-    localScreenShare,
-    participants: allParticipants,
-    media: { stream: localStream },
-  } = useConference()
+  const { isInitialized, participants: allParticipants, localScreenShare: { isVideoEnabled } } = useConference()
   const currentUserId = profile?.user_info.id.toString() || ''
 
-  const participants = allParticipants.filter(({ userId }) => userId !== currentUserId)
+  const [pinnedStream, setPinnedStream] = useState<string | null>(null)
+  const [allStreams, setAllStreams] = useState<StreamsRecord>({
+    'local-preview': {
+      id: 'local-preview',
+      type: 'local-preview',
+      component: <LocalPreview />,
+    },
+  })
+  const mainList = useMemo(
+    () => Object.keys(allStreams).filter((id) => id !== pinnedStream),
+    [allStreams, pinnedStream],
+  )
+  console.log('mainList', mainList)
+
+  useEffect(() => {
+    const participants = allParticipants.filter(
+      ({ userId }) => userId !== currentUserId,
+    )
+
+    setAllStreams((prev) => {
+      const newStreams: StreamsRecord = {
+        'local-preview': prev['local-preview'],
+      }
+
+      // Если видео выключено - удаляем поток
+      if (!isVideoEnabled) {
+        delete newStreams['local-screen']
+      } else {
+        // Если включено - добавляем/обновляем поток
+        newStreams['local-screen'] = {
+          id: 'local-screen',
+          type: 'local-screen',
+          component: <LocalScreenShare />,
+        }
+      }
+
+      participants.forEach((participant) => {
+        const streams = Array.from(participant.streams)
+
+        if (streams.length > 0) {
+          // Если у участника есть потоки, добавляем их
+          streams.forEach((stream) => {
+            newStreams[stream.id] = {
+              id: stream.id,
+              type: 'remote',
+              stream,
+              participant,
+              component: (
+                <RemoteStream
+                  key={stream.id}
+                  stream={stream}
+                  isVideoEnabled={participant.videoActive}
+                  isAudioEnabled={participant.mickActive}
+                  currentUser={participant.userInfo}
+                  streamType={participant.streamsType[stream.id]}
+                />
+              ),
+            }
+          })
+        } else {
+          // Если у участника нет потоков, создаем виртуальный поток для отображения присутствия
+          const virtualStreamId = `virtual-${participant.userId}`
+          newStreams[virtualStreamId] = {
+            id: virtualStreamId,
+            type: 'remote',
+            participant,
+            // @ts-ignore
+            stream: undefined,
+            component: (
+              <RemoteStream
+                key={virtualStreamId}
+                stream={undefined}
+                isVideoEnabled={false}
+                isAudioEnabled={participant.mickActive}
+                currentUser={participant.userInfo}
+                streamType="camera"
+              />
+            ),
+          }
+        }
+      })
+
+      return newStreams
+    })
+  }, [allParticipants, currentUserId, isVideoEnabled])
+
+  const handleStreamClick = useCallback((streamId: string) => {
+    setPinnedStream(pinnedStream === streamId ? null : streamId)
+  }, [pinnedStream])
 
   if (!isInitialized) {
     return (
@@ -91,221 +296,44 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
-  // Преобразуем Set streams в массив для каждого участника
-  const getStreamsList = () => participants.reduce((acc, participant) => {
-    const streams = Array.from(participant.streams).map((stream) => ({
-      userId: participant.userId,
-      stream,
-      userInfo: participant.userInfo,
-      mickActive: participant.mickActive,
-      streamsType: participant.streamsType,
-    }))
-    return [...acc, ...streams]
-  }, [] as Array<{
-      userId: string;
-      stream: MediaStream;
-      streamsType: Record<string, string>
-      userInfo: {
-        id: number;
-        name: string;
-        profile_image: string;
-        public_id: string;
-      };
-      mickActive: boolean;
-    }>)
-
-  const handleStreamClick = (streamData: any, type: 'remote' | 'local' | 'screenShare') => {
-    if (type === 'local') {
-      if (pinnedStream?.isLocal) {
-        setPinnedStream(null)
-      } else {
-        setPinnedStream({
-          userId: profile?.user_info.id.toString() || '',
-          stream: streamData,
-          isLocal: true,
-        })
-      }
-    } else if (type === 'screenShare') {
-      if (pinnedStream?.isScreenShare) {
-        setPinnedStream(null)
-      } else {
-        setPinnedStream({
-          userId: profile?.user_info.id.toString() || '',
-          stream: streamData,
-          isScreenShare: true,
-        })
-      }
-    } else if (pinnedStream?.stream.id === streamData.stream.id) {
-      setPinnedStream(null)
-    } else {
-      setPinnedStream(streamData)
-    }
-  }
-
-  const renderStream = (streamData: any, isPinned = false) => (
-    <div
-      key={streamData.stream.id}
-      className={`${styles.participant} ${!isPinned && 'cursor-pointer'}`}
-      onClick={() => handleStreamClick(streamData, 'remote')}
-    >
-      <VideoStream stream={streamData.stream} className={styles.video} />
-      <span className={styles.participantName}>
-        {streamData.userInfo.name}
-      </span>
-      {
-        streamData.streamsType[streamData.stream.id] === 'camera' ? (
-          <span className={styles.participantMic}>
-            {streamData.mickActive ? '🎤' : '🚫'}
-          </span>
-        ) : null
-      }
-    </div>
-  )
-
-  const renderMainContent = () => {
-    if (pinnedStream) {
-      if (pinnedStream.isLocal) {
-        return (
-          <div
-            className={styles.participant}
-            onClick={() => handleStreamClick(localStream, 'local')}
-          >
-            <LocalPreview />
-            <span className={styles.participantName}>
-              {profile?.user_info.name}
-              {' '}
-              (You)
-            </span>
-          </div>
-        )
-      }
-      if (pinnedStream.isScreenShare) {
-        return (
-          <div
-            className={styles.participant}
-            onClick={() => handleStreamClick(localScreenShare.stream, 'screenShare')}
-          >
-            <VideoStream stream={localScreenShare.stream} />
-            <span className={styles.participantName}>Your Screen Share</span>
-          </div>
-        )
-      }
-      return renderStream(pinnedStream, true)
-    }
-
-    return (
-      <>
-        <div
-          className={styles.participant}
-          onClick={() => handleStreamClick(localStream, 'local')}
-        >
-          <LocalPreview />
-          <span className={styles.participantName}>
-            {profile?.user_info.name}
-            {' '}
-            (You)
-          </span>
-        </div>
-        {localScreenShare.isVideoEnabled && localScreenShare.stream && (
-          <div
-            className={styles.participant}
-            onClick={() => handleStreamClick(localScreenShare.stream, 'screenShare')}
-          >
-            <VideoStream stream={localScreenShare.stream} />
-            <span className={styles.participantName}>Your Screen Share</span>
-          </div>
-        )}
-        {getStreamsList()
-          .filter((streamData) => streamData.userId !== currentUserId)
-          .map((streamData) => renderStream(streamData))}
-        {participants
-          .filter((participant) => {
-            // Показываем участников без потоков и текущего пользователя
-            const isCurrentUser = participant.userId === currentUserId
-            return isCurrentUser || participant.streams.size === 0
-          })
-          .map((participant) => (
-            <ParticipantVideo
-              key={participant.userId}
-              participant={participant}
-              currentUserId={currentUserId}
-            />
-          ))}
-      </>
-    )
-  }
-
-  const renderSideContent = () => {
-    if (!pinnedStream) {
-      return participants.map((participant) => (
-        <div key={participant.userId}>
-          {participant.userInfo.name}
-          {participant.userId === currentUserId ? ' (You)' : ''}
-        </div>
-      ))
-    }
-
-    const streamsList = getStreamsList()
-
-    return (
-      <>
-        {!pinnedStream.isLocal && (
-          <div
-            className={styles.participant}
-            onClick={() => handleStreamClick(localStream, 'local')}
-          >
-            <LocalPreview />
-            <span className={styles.participantName}>
-              {profile?.user_info.name}
-              {' '}
-              (You)
-            </span>
-          </div>
-        )}
-        {!pinnedStream.isScreenShare
-          && localScreenShare.isVideoEnabled
-          && localScreenShare.stream && (
-            <div
-              className={styles.participant}
-              onClick={() => handleStreamClick(localScreenShare.stream, 'screenShare')}
-            >
-              <VideoStream stream={localScreenShare.stream} />
-              <span className={styles.participantName}>Your Screen Share</span>
-            </div>
-        )}
-        {streamsList
-          .filter((streamData) => streamData.stream.id !== pinnedStream.stream?.id
-            && streamData.userId !== currentUserId)
-          .map((streamData) => renderStream(streamData))}
-        {participants
-          .filter((participant) => {
-            const isCurrentUser = participant.userId === currentUserId
-            return (isCurrentUser || participant.streams.size === 0)
-              && (!pinnedStream.isLocal || participant.userId !== currentUserId)
-          })
-          .map((participant) => (
-            <ParticipantVideo
-              key={participant.userId}
-              participant={participant}
-              currentUserId={currentUserId}
-            />
-          ))}
-      </>
-    )
-  }
-
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
-        <div className={styles.remoteStreams}>{renderMainContent()}</div>
-        {Boolean(pinnedStream) && (
-          <div className={styles.participantList}>
-            <div className={styles.participantsInfo}>
-              Участников:
-              {' '}
-              {participants.length || 0}
+        <div className={styles.remoteStreams}>
+          {pinnedStream ? (
+            <div
+              className={styles.pin}
+              onClick={() => handleStreamClick(pinnedStream)}
+            >
+              {allStreams[pinnedStream].component}
             </div>
-            {renderSideContent()}
+          ) : (
+            mainList.map((streamId) => {
+              const stream = allStreams[streamId]
+              return stream ? (
+                <div
+                  key={streamId}
+                  onClick={() => handleStreamClick(streamId)}
+                >
+                  {stream.component}
+                </div>
+              ) : null
+            })
+          )}
+        </div>
+        {pinnedStream && (
+          <div className={styles.participantList}>
+            {mainList.map((streamId) => {
+              const stream = allStreams[streamId]
+              return stream ? (
+                <div
+                  key={streamId}
+                  onClick={() => handleStreamClick(streamId)}
+                >
+                  {stream.component}
+                </div>
+              ) : null
+            })}
           </div>
         )}
       </div>

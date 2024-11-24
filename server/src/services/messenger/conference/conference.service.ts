@@ -48,15 +48,36 @@ export class ConferenceService {
                 mickActive: payload.type === 'mic-on'
             })
         }
-        if (payload.type === 'camera-on' || payload.type === 'screen-share-on') {
+       if (payload.type === 'camera-on') {
+           room.set(senderId, {
+               ...p,
+               //@ts-ignore
+               videoActive: true,
+               streamsType: {
+                   ...p.streamsType,
+                   [streamId]: 'camera',
+               },
+           })
+       }
+
+        if (payload.type === 'camera-off') {
+            room.set(senderId, {
+                ...p,
+                //@ts-ignore
+                videoActive: false,
+            })
+        }
+
+        if (payload.type === 'screen-share-on') {
             room.set(senderId, {
                 ...p,
                 streamsType: {
                     ...p.streamsType,
-                    [streamId]: payload.type === 'camera-on' ? 'camera' : 'screen',
+                    [streamId]: 'screen',
                 },
             })
         }
+
 
         if (payload.type === 'camera-off' || payload.type === 'screen-share-off') {
             const newStreamsType = { ...p.streamsType }
@@ -119,7 +140,7 @@ export class ConferenceService {
     }
 
     // Получение полной информации об участниках комнаты
-    getRoomInfo(dialogId: string) {
+    getRoomInfo(dialogId: string, userId: string) {
         const room = this.rooms.get(dialogId)
         if (!room) return null
 
@@ -127,6 +148,7 @@ export class ConferenceService {
             dialogId,
             participants: Array.from(room.values()),
             participantsCount: room.size,
+            currentUser: room.get(userId).userInfo,
             createdAt: Array.from(room.values())
               .sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime())[0]?.joinedAt,
             userEvents: this.userEvents,

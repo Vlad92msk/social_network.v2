@@ -1,7 +1,7 @@
-import { UserInfo } from '@api/users/types/user.type'
-import { cn } from '../cn'
 import { BannerImage } from './BannerImage'
 import { ProfileImage } from './ProfileImage'
+import { UserInfo } from '../../../../../../../../../swagger/userInfo/interfaces-userInfo'
+import { cn } from '../cn'
 
 interface BannerProps {
   contacts?: UserInfo[]

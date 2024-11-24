@@ -14,6 +14,7 @@ export interface ConferenceContextState {
     error: Error | null
   }
   participants: Participant[]
+  currentUser: ReturnType<ConferenceService['getState']>['currentUser']
 
   // Видео с камеры
   media: {
@@ -42,6 +43,7 @@ interface ConferenceProviderProps {
 }
 
 export function ConferenceProvider({ children, currentUserId, dialogId }: ConferenceProviderProps) {
+
   const conferenceService = useRef(new ConferenceService())
   const [isInitialized, setIsInitialized] = useState(false)
   const [state, setState] = useState<InitialState>(initialState)
@@ -53,7 +55,7 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
         await conferenceService.current.initialize(
           conferenceConfig({
             signaling: { userId: currentUserId, dialogId },
-            localVideo: { video: false, audio: false },
+            localVideo: { video: false, audio: true },
           }),
         )
 

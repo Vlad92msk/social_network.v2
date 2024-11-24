@@ -22,6 +22,8 @@ const baseConfig= {
         DB_URL: 'http://localhost:3001'
     },
     images: {
+        // deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+        // imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
         // Указываем домены с которых можно получать картинок с внешних сервисов
         remotePatterns: [
             {
@@ -34,7 +36,7 @@ const baseConfig= {
                 protocol: 'http',
                 hostname: 'localhost',
                 port: '3001',
-                // pathname: '/account123/**',
+                // pathname: '/uploads/**',
             },
         ]
     },
@@ -56,7 +58,7 @@ module.exports = (phase, { defaultConfig }) => {
             return ({
                 ...intlConfig,
                 experimental:{
-                    reactCompiler: true,
+                    reactCompiler: false,
                 }
             });
         case prod:
