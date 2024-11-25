@@ -1,167 +1,118 @@
 import { EventEmitter } from 'events'
 
-interface StreamInfo {
-  stream: MediaStream;
-  tracks: RTCRtpSender[];
-}
-
 type ConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
 
+interface PeerEvents {
+  // Событие получения нового трека
+  track: { userId: string; track: MediaStreamTrack; stream: MediaStream };
+  // Событие окончания трека
+  trackEnded: { userId: string; trackId: string };
+  // Событие изменения состояния соединения
+  connectionState: { userId: string; state: ConnectionState };
+  // Событие получения ICE кандидата
+  iceCandidate: { userId: string; candidate: RTCIceCandidate };
+  // Событие ошибки
+  error: { userId: string; error: Error };
+}
+
 export class ConnectionManager extends EventEmitter {
-  #connections = new Map<string, RTCPeerConnection>()
+  private connections = new Map<string, RTCPeerConnection>()
 
-  #streams = new Map<string, Map<string, StreamInfo>>()
+  private config: RTCConfiguration
 
-  #iceCandidatesBuffer = new Map<string, RTCIceCandidate[]>()
-
-  #remoteDescriptionSet = new Map<string, boolean>()
-
-  #config: RTCConfiguration
-
-  constructor() {
-    super()
-    this.setMaxListeners(100)
-  }
-
+  // Инициализация менеджера
   async init(config: RTCConfiguration): Promise<void> {
-    this.#config = config
+    this.config = config
   }
 
+  // Создание нового peer соединения
   async createConnection(userId: string): Promise<void> {
     try {
-      this.close(userId)
-      const connection = new RTCPeerConnection(this.#config)
-      this.#remoteDescriptionSet.set(userId, false)
+      // Закрываем существующее соединение если есть
+      this.closeConnection(userId)
 
+      const connection = new RTCPeerConnection(this.config)
+console.log('___connection')
+      // Обработка необходимости перепереговоров (при добавлении/удалении треков)
+      connection.onnegotiationneeded = async () => {
+        try {
+          // Создаём и отправляем новый offer
+          const offer = await connection.createOffer()
+          await connection.setLocalDescription(offer)
+
+          // Уведомляем внешний код о необходимости отправить offer
+          this.emit('negotiationNeeded', {
+            userId,
+            offer: connection.localDescription,
+          })
+        } catch (error) {
+          this.emit('error', {
+            userId,
+            error: error instanceof Error
+              ? error
+              : new Error('Ошибка создания offer при перепереговорах'),
+          })
+        }
+      }
+
+      // Обработка входящих треков
       connection.ontrack = ({ track, streams }) => {
         const stream = streams[0]
         if (!stream) {
-          this.emit('error', { userId, error: new Error('No stream received with track') })
+          this.emit('error', {
+            userId,
+            error: new Error('Не получен медиа поток вместе с треком'),
+          })
           return
         }
+
+        console.log('Получен новый трек:', {
+          userId,
+          trackKind: track.kind,
+          trackEnabled: track.enabled,
+          streamId: stream.id
+        });
+
         this.emit('track', { userId, track, stream })
+
+        // Отслеживаем окончание трека
         track.onended = () => {
           this.emit('trackEnded', { userId, trackId: track.id })
         }
       }
 
+      // Отслеживание состояния соединения
       connection.onconnectionstatechange = () => {
         const state = connection.connectionState as ConnectionState
         this.emit('connectionState', { userId, state })
-
-        if (state === 'disconnected' || state === 'failed') {
-          this.emit('connectionLost', { userId })
-        }
       }
 
+      // Обработка ICE кандидатов
       connection.onicecandidate = ({ candidate }) => {
         if (candidate) {
           this.emit('iceCandidate', { userId, candidate })
         }
       }
 
-      this.#connections.set(userId, connection)
+      this.connections.set(userId, connection)
     } catch (error) {
       this.emit('error', {
         userId,
-        error: error instanceof Error ? error : new Error('Failed to create connection'),
+        error: error instanceof Error ? error : new Error('Ошибка создания соединения'),
       })
       throw error
     }
   }
 
-  /**
-   * Создание offer для установки соединения
-   */
-  async createOffer(userId: string): Promise<RTCSessionDescriptionInit | undefined> {
-    const connection = this.#connections.get(userId)
-    if (!connection) {
-      throw new Error(`No connection found for user ${userId}`)
-    }
-
-    try {
-      // Проверяем текущее состояние
-      if (connection.signalingState !== 'stable') {
-        console.log(`⚠️ Пропуск создания offer - некорректное состояние: ${connection.signalingState}`)
-        return
-      }
-
-      // Проверяем наличие отправляемых треков
-      const senders = connection.getSenders()
-      if (senders.length === 0) {
-        console.log('⚠️ Нет треков для отправки, пропуск создания offer')
-        return
-      }
-
-      console.log(`📝 Создание offer для ${userId}, количество треков: ${senders.length}`)
-      const offer = await connection.createOffer()
-      console.log('Offer создан:', offer)
-
-      await connection.setLocalDescription(offer)
-      console.log('Local description установлен')
-
-      return offer
-    } catch (error) {
-      this.emit('error', {
-        userId,
-        error: error instanceof Error ? error : new Error('Failed to create offer'),
-      })
-      throw error
-    }
-  }
-
-  /**
-   * Удаление медиа трека из соединения
-   */
-  async removeTrack(userId: string, trackId: string): Promise<void> {
-    const connection = this.#connections.get(userId)
-    if (!connection) {
-      throw new Error(`No connection found for user ${userId}`)
-    }
-
-    try {
-      const sender = connection.getSenders().find((s) => s.track?.id === trackId)
-      if (sender) {
-        await connection.removeTrack(sender)
-
-        // Обновляем информацию о стримах
-        const userStreams = this.#streams.get(userId)
-        if (userStreams) {
-          userStreams.forEach((streamInfo, streamId) => {
-            streamInfo.tracks = streamInfo.tracks.filter((s) => s !== sender)
-            if (streamInfo.tracks.length === 0) {
-              userStreams.delete(streamId)
-            }
-          })
-        }
-      }
-    } catch (error) {
-      this.emit('error', {
-        userId,
-        error: error instanceof Error ? error : new Error('Failed to remove track'),
-      })
-      throw error
-    }
-  }
-
+  // Добавление медиа трека в соединение
   async addTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): Promise<void> {
-    const connection = this.#connections.get(userId)
+    const connection = this.connections.get(userId)
     if (!connection) {
-      throw new Error(`No connection found for user ${userId}`)
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
     }
 
     try {
-      console.log(`Добавляется ${track.kind} трек для соединения с пользователем ${userId}`)
-      const sender = connection.addTrack(track, stream)
-
-      if (!this.#streams.has(userId)) {
-        this.#streams.set(userId, new Map())
-      }
-
-      const userStreams = this.#streams.get(userId)!
-      const streamInfo = userStreams.get(stream.id) || { stream, tracks: [] }
-      streamInfo.tracks.push(sender)
-      userStreams.set(stream.id, streamInfo)
+      connection.addTrack(track, stream)
     } catch (error) {
       this.emit('error', {
         userId,
@@ -171,157 +122,236 @@ export class ConnectionManager extends EventEmitter {
     }
   }
 
-  /**
-   * Получение текущего соединения по userId
-   */
-  getConnection(userId: string): RTCPeerConnection | undefined {
-    return this.#connections.get(userId)
-  }
-
-  async handleOffer(userId: string, offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-    const connection = this.#connections.get(userId)
+  // Создание offer для установки соединения
+  async createOffer(userId: string): Promise<RTCSessionDescriptionInit | undefined> {
+    const connection = this.connections.get(userId)
     if (!connection) {
-      throw new Error(`No connection found for user ${userId}`)
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
     }
 
     try {
-      if (!offer.sdp) {
-        throw new Error('Invalid offer: no SDP')
-      }
-
-      await connection.setRemoteDescription(new RTCSessionDescription(offer))
-      this.#remoteDescriptionSet.set(userId, true)
-
-      // Добавляем буферизованные кандидаты после установки remote description
-      await this.addBufferedCandidates(userId)
-
-      const answer = await connection.createAnswer()
-      await connection.setLocalDescription(answer)
-
-      if (!answer.sdp) {
-        throw new Error('Created answer has no SDP')
-      }
-
-      return {
-        type: 'answer',
-        sdp: answer.sdp,
-      }
+      const offer = await connection.createOffer()
+      await connection.setLocalDescription(offer)
+      return offer
     } catch (error) {
       this.emit('error', {
         userId,
-        error: error instanceof Error ? error : new Error('Failed to handle offer'),
+        error: error instanceof Error ? error : new Error('Ошибка создания offer'),
       })
       throw error
     }
   }
 
-  async handleAnswer(userId: string, answer: RTCSessionDescriptionInit): Promise<void> {
-    const connection = this.#connections.get(userId)
+  // Обработка входящего offer
+  async handleOffer(userId: string, offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
+    const connection = this.connections.get(userId)
     if (!connection) {
-      throw new Error(`No connection found for user ${userId}`)
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+
+    try {
+      await connection.setRemoteDescription(new RTCSessionDescription(offer))
+      const answer = await connection.createAnswer()
+      await connection.setLocalDescription(answer)
+      return answer
+    } catch (error) {
+      this.emit('error', {
+        userId,
+        error: error instanceof Error ? error : new Error('Ошибка обработки offer'),
+      })
+      throw error
+    }
+  }
+
+  // Обработка входящего answer
+  async handleAnswer(userId: string, answer: RTCSessionDescriptionInit) {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
     }
 
     try {
       await connection.setRemoteDescription(new RTCSessionDescription(answer))
-      this.#remoteDescriptionSet.set(userId, true)
-
-      // Добавляем буферизованные кандидаты после установки remote description
-      await this.addBufferedCandidates(userId)
     } catch (error) {
       this.emit('error', {
         userId,
-        error: error instanceof Error ? error : new Error('Failed to handle answer'),
+        error: error instanceof Error ? error : new Error('Ошибка обработки answer'),
       })
       throw error
     }
   }
 
-  async addIceCandidate(userId: string, candidate: RTCIceCandidate): Promise<void> {
-    // Всегда буферизуем кандидатов
-    if (!this.#iceCandidatesBuffer.has(userId)) {
-      this.#iceCandidatesBuffer.set(userId, [])
+  // Добавление ICE кандидата
+  async addIceCandidate(userId: string, candidate: RTCIceCandidate) {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
     }
-    this.#iceCandidatesBuffer.get(userId)!.push(candidate)
 
-    // Пытаемся добавить буферизованные кандидаты, если remote description установлен
-    if (this.#remoteDescriptionSet.get(userId)) {
-      await this.addBufferedCandidates(userId)
+    try {
+      await connection.addIceCandidate(candidate)
+    } catch (error) {
+      this.emit('error', {
+        userId,
+        error: error instanceof Error ? error : new Error('Ошибка добавления ICE кандидата'),
+      })
+      throw error
     }
   }
 
-  private async addBufferedCandidates(userId: string): Promise<void> {
-    const connection = this.#connections.get(userId)
-    const candidates = this.#iceCandidatesBuffer.get(userId) || []
+  // Проверка состояния соединения
+  isConnected(userId: string) {
+    const connection = this.connections.get(userId)
+    return connection?.connectionState === 'connected'
+  }
 
-    if (connection && this.#remoteDescriptionSet.get(userId)) {
-      try {
-        await Promise.all(
-          candidates.map((candidate) => connection.addIceCandidate(candidate)),
-        )
-        this.#iceCandidatesBuffer.set(userId, []) // Очищаем буфер, сохраняя массив
-      } catch (error) {
-        this.emit('error', {
-          userId,
-          error: error instanceof Error ? error : new Error('Failed to add buffered ICE candidates'),
-        })
+  // Получение списка отправляемых треков
+  getSenders(userId: string): RTCRtpSender[] {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+    return connection.getSenders()
+  }
+
+  // Получение списка принимаемых треков
+  getReceivers(userId: string): RTCRtpReceiver[] {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+    return connection.getReceivers()
+  }
+
+  // Удаление конкретного трека из соединения
+  async removeTrack(userId: string, trackId: string): Promise<void> {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+
+    try {
+      const sender = connection.getSenders().find((s) => s.track?.id === trackId)
+      if (sender) {
+        await connection.removeTrack(sender)
       }
+    } catch (error) {
+      this.emit('error', {
+        userId,
+        error: error instanceof Error ? error : new Error('Ошибка удаления трека'),
+      })
+      throw error
     }
   }
 
-  isConnected(userId: string): boolean {
-    const connection = this.#connections.get(userId)
-    return connection?.connectionState !== 'closed'
-      && connection?.connectionState !== 'failed'
-      && connection?.signalingState === 'stable'
+  // Замена трека (полезно при переключении камер)
+  async replaceTrack(userId: string, oldTrackId: string, newTrack: MediaStreamTrack): Promise<void> {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+
+    try {
+      const sender = connection.getSenders().find((s) => s.track?.id === oldTrackId)
+      if (sender) {
+        await sender.replaceTrack(newTrack)
+      } else {
+        throw new Error('Не найден трек для замены')
+      }
+    } catch (error) {
+      this.emit('error', {
+        userId,
+        error: error instanceof Error ? error : new Error('Ошибка замены трека'),
+      })
+      throw error
+    }
   }
 
-  close(userId: string): void {
-    const connection = this.#connections.get(userId)
+  // Получение статистики соединения
+  async getStats(userId: string): Promise<RTCStatsReport> {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+
+    try {
+      return await connection.getStats()
+    } catch (error) {
+      this.emit('error', {
+        userId,
+        error: error instanceof Error ? error : new Error('Ошибка получения статистики'),
+      })
+      throw error
+    }
+  }
+
+  // Проверка состояния сигнального процесса
+  getSignalingState(userId: string): RTCSignalingState {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+    return connection.signalingState
+  }
+
+  // Получение информации о состоянии ICE соединения
+  getIceConnectionState(userId: string): RTCIceConnectionState {
+    const connection = this.connections.get(userId)
+    if (!connection) {
+      throw new Error(`Не найдено соединение для пользователя ${userId}`)
+    }
+    return connection.iceConnectionState
+  }
+
+  // Проверка наличия соединения
+  hasConnection(userId: string): boolean {
+    return this.connections.has(userId)
+  }
+
+  getConnections() {
+    return Array.from(this.connections.entries()).map(([userId, connection]) => ({
+      userId,
+      state: connection.connectionState as ConnectionState,
+      senders: connection.getSenders().length,
+      receivers: connection.getReceivers().length,
+    }))
+  }
+
+  // Закрытие соединения с пользователем
+  closeConnection(userId: string): void {
+    const connection = this.connections.get(userId)
     if (!connection) return
 
     try {
-      // Сначала получаем все sender'ы
-      const senders = connection.getSenders()
-      const receivers = connection.getReceivers()
-
-      // Удаляем треки из соединения
-      senders.forEach((sender) => {
-        connection.removeTrack(sender)
-      })
-
-      // Только после этого останавливаем треки
-      senders.forEach((sender) => {
+      // Останавливаем все треки
+      connection.getSenders().forEach((sender) => {
         if (sender.track) sender.track.stop()
       })
 
-      receivers.forEach((receiver) => {
+      connection.getReceivers().forEach((receiver) => {
         if (receiver.track) receiver.track.stop()
       })
 
       connection.close()
-      this.#connections.delete(userId)
-      this.#streams.delete(userId)
-      this.#iceCandidatesBuffer.delete(userId)
-      this.#remoteDescriptionSet.delete(userId)
+      this.connections.delete(userId)
     } catch (error) {
       this.emit('error', {
         userId,
-        error: error instanceof Error ? error : new Error('Failed to close connection'),
+        error: error instanceof Error ? error : new Error('Ошибка закрытия соединения'),
       })
     }
   }
 
-  destroy(): void {
+  // Уничтожение менеджера
+  destroy() {
     try {
-      this.#connections.forEach((_, userId) => this.close(userId))
-      this.#connections.clear()
-      this.#streams.clear()
-      this.#iceCandidatesBuffer.clear()
+      this.connections.forEach((_, userId) => this.closeConnection(userId))
+      this.connections.clear()
       this.removeAllListeners()
     } catch (error) {
       this.emit('error', {
         userId: 'global',
-        error: error instanceof Error ? error : new Error('Failed to destroy manager'),
+        error: error instanceof Error ? error : new Error('Ошибка уничтожения менеджера'),
       })
     }
   }

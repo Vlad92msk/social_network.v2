@@ -6,7 +6,10 @@ export function useCameraStream(options?: {
   mirror?: boolean;
   onStreamChange?: (stream: MediaStream | null) => void;
 }) {
-  const { media: { stream, isVideoEnabled, isAudioEnabled }, currentUser } = useConference()
+  const {
+    localMedia: { stream, isVideoEnabled, isAudioEnabled },
+    currentUser,
+  } = useConference()
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -20,12 +23,13 @@ export function useCameraStream(options?: {
         options?.onStreamChange?.(null)
       }
     }
-  }, [stream, options, isVideoEnabled, isAudioEnabled])
+  }, [stream, isVideoEnabled, isAudioEnabled, options])
 
   const videoProps = useMemo(() => ({
     ref: videoRef,
     autoPlay: true,
     playsInline: true,
+    muted: true, // Всегда мьютим локальное видео
     style: {
       transform: options?.mirror ? 'scaleX(-1)' : undefined,
     } as const,
@@ -35,7 +39,10 @@ export function useCameraStream(options?: {
 }
 
 export function useScreenShareStream() {
-  const { localScreenShare: { stream, isVideoEnabled }, currentUser } = useConference()
+  const {
+    screenShare: { stream, isVideoEnabled },
+    currentUser,
+  } = useConference()
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {

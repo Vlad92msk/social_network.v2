@@ -1,29 +1,27 @@
 import { ConferenceService } from './conference.service'
-import { ConferenceContextState } from './context'
 import { Participant } from './micro-services'
 
-export interface InitialState {
-  media: ConferenceContextState['media']
-  signaling: ConferenceContextState['signaling']
-  participants: Participant[]
-  localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
+export interface ConferenceState {
+  participants: ReturnType<ConferenceService['getState']>['participants']
+  localMedia: ReturnType<ConferenceService['getState']>['localMedia']
+  screenShare: ReturnType<ConferenceService['getState']>['screenShare']
+  connections: ReturnType<ConferenceService['getState']>['connections']
   currentUser: ReturnType<ConferenceService['getState']>['currentUser']
 }
 
-export const initialState: InitialState = {
-  media: {
-    isVideoEnabled: false,
-    isAudioEnabled: false,
-    error: null,
-  },
-  signaling: {
-    isConnected: false,
-    error: null,
-  },
+export const initialState: ConferenceState = {
   participants: [],
   currentUser: undefined,
-  localScreenShare: {
+  localMedia: {
+    stream: null,
+    isVideoEnabled: false,
+    isAudioEnabled: false,
+    hasVideo: false,
+    hasAudio: false,
+  },
+  screenShare: {
     stream: undefined,
     isVideoEnabled: false,
   },
+  connections: [],
 }

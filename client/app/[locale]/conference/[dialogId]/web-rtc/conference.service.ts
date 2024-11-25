@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events'
 import {
   ConnectionManager,
   MediaStreamManager,
@@ -11,6 +12,17 @@ import {
 } from './micro-services'
 import { UserInfo } from '../../../../../../swagger/userInfo/interfaces-userInfo'
 
+function ensureInitialized(target, name, descriptor) {
+  const original = descriptor.value
+  descriptor.value = async function (...args) {
+    if (!this.initialized) {
+      throw new Error('Service not initialized')
+    }
+    return await original.apply(this, args)
+  }
+  return descriptor
+}
+
 export interface ConferenceConfig {
   ice: RTCIceServer[]
   mediaConstraints: MediaStreamOptions
@@ -21,456 +33,436 @@ export interface ConferenceConfig {
  * ConferenceService - главный оркестратор видеоконференции
  * Управляет взаимодействием всех сервисов и обработкой событий
  */
-export class ConferenceService {
-  #config: ConferenceConfig
+export class ConferenceService extends EventEmitter {
+  private readonly notificationManager: NotificationManager
 
-  readonly #notificationManager: NotificationManager
+  private readonly roomService: RoomService
 
-  readonly #roomService: RoomService
+  private readonly mediaManager: MediaStreamManager
 
-  readonly #mediaManager: MediaStreamManager
+  private readonly screenShareManager: ScreenShareManager
 
-  readonly #screenShareManager: ScreenShareManager
+  private readonly signalingService: SignalingService
 
-  readonly #signalingService: SignalingService
+  private readonly connectionManager: ConnectionManager
 
-  readonly #connectionManager: ConnectionManager
+  private config: ConferenceConfig
 
-  #initialized = false
+  private subscribers: Array<(state: any) => void> = []
 
-  #subscribers: Array<(state: any) => void> = []
+  private initialized = false
 
   constructor() {
-    this.#notificationManager = new NotificationManager()
-    this.#roomService = new RoomService()
-    this.#mediaManager = new MediaStreamManager()
-    this.#screenShareManager = new ScreenShareManager()
-    this.#signalingService = new SignalingService()
-    this.#connectionManager = new ConnectionManager()
+    super()
+    this.notificationManager = new NotificationManager()
+    this.roomService = new RoomService()
+    this.mediaManager = new MediaStreamManager()
+    this.screenShareManager = new ScreenShareManager()
+    this.signalingService = new SignalingService()
+    this.connectionManager = new ConnectionManager()
   }
 
-  async initialize(config: ConferenceConfig) {
+  async initialize(config: ConferenceConfig): Promise<void> {
     try {
-      console.log('🚀 Инициализация конференции...')
-      if (this.#initialized) await this.destroy()
+      if (this.initialized) {
+        await this.destroy()
+      }
 
-      this.#config = config
+      this.config = config
 
-      await this.#connectionManager.init({
-        iceServers: config.ice,
-        iceCandidatePoolSize: 1,
-      })
+      // Инициализируем все сервисы
+      await this.connectionManager.init({ iceServers: config.ice })
+      await this.mediaManager.init(config.mediaConstraints)
 
-      this.#mediaManager.init(config.mediaConstraints)
       // Сначала настраиваем обработчик
       const roomInfoPromise = this.#waitForRoomInfo()
 
-      // Потом инициализируем сигнальный сервис
-      await this.#signalingService.init(config.signaling)
+      await this.signalingService.init(config.signaling)
 
       // Ждем информацию о комнате
       const roomInfo = await roomInfoPromise
 
-      this.#roomService.init(roomInfo)
+      this.roomService.init(roomInfo)
 
-      // Связываем события
+      // Устанавливаем обработчики событий
       this.#setupEvents()
 
-      this.#initialized = true
-      this.#notifySubscribers()
-      console.log('✅ Конференция инициализирована')
+      this.initialized = true
+      this.notifySubscribers()
+      this.emit('initialized')
     } catch (error) {
-      console.error('❌ Ошибка инициализации:', error)
-      this.#notificationManager.notify('error', 'Ошибка инициализации')
+      this.notificationManager.notify('error', 'Ошибка инициализации конференции')
       throw error
     }
   }
 
   #setupEvents() {
     // 1. События сигнального сервера
-    this.#signalingService
-      // Состояние подключения
-      .on('connected', () => {
-        console.log('✅ Подключено к сигнальному серверу')
-      })
-      .on('disconnected', () => {
-        console.log('❌ Отключено от сигнального сервера')
-        this.#notificationManager.notify('warning', 'Соединение потеряно')
-      })
-      .on('error', (error: Error) => { // Добавлен тип для error
-        console.error('❌ Ошибка сигнального сервера:', error)
-        this.#notificationManager.notify('error', 'Ошибка сервера')
-      })
-      .on('stateChanged', (state) => {
-        console.log('🔄 Изменение состояния сигнального сервера:', state)
-        // this.#notifySubscribers()
-      })
-
-      // События участниковя
-      .on('userJoined', async (user: UserInfo) => {
-        try {
-          this.#roomService.addParticipant(user)
-
-          const { stream: localStream } = this.#mediaManager.getState()
-          const { stream: screenShare } = this.#screenShareManager.getState()
-
-          const streams = [localStream, screenShare].filter(Boolean) as MediaStream[]
-          if (streams.length > 0) {
-            await this.handleStreamTracks(String(user.id), streams, this.#connectionManager, this.#signalingService)
-          }
-        } catch (error) {
-          this.#notificationManager.notify('error', `❌ Ошибка подключения участника, ${error}`)
-          this.#roomService.removeParticipant(String(user.id))
-          this.#connectionManager.close(String(user.id))
-        }
-      })
-
-      // Для динамических изменений
+    this.signalingService
+      // Обработка подключения нового участника
+      .on('userJoined', (user: UserInfo) => this.handleUserJoined(user))
+      // Обработка отключения участника
       .on('userLeft', (userId) => {
-        console.log('👋 Участник покинул конференцию:', userId)
-        // Сначала закрываем соединение
-        this.#connectionManager.close(userId)
-        // Затем очищаем данные участника
-        this.#roomService.removeParticipant(userId)
-        // Возможно очистка медиа-ресурсов
-        // this.#mediaManager.cleanupUserResources(userId)
-        this.#notifySubscribers()
+        console.log('Участник отключился:', userId)
+        this.connectionManager.closeConnection(userId)
+        this.roomService.removeParticipant(userId)
+        this.notifySubscribers()
       })
-      .on('participantsUpdated', (participants) => {
-        console.log('👥 Обновление списка участников:', participants)
-        this.#notifySubscribers()
-      })
+      // Обработка SDP сообщений
       .on('sdp', async ({ userId, description }) => {
         if (!description) return
 
         try {
+          console.log('Получено SDP:', { userId, type: description.type });
+
           if (description.type === 'offer') {
-            console.log('📨 Получен offer от:', userId)
-
-            if (!this.#connectionManager.getConnection(userId)) {
-              await this.#connectionManager.createConnection(userId)
+            // Создаем соединение при получении offer если его нет
+            if (!this.connectionManager.hasConnection(userId)) {
+              console.log('Создание соединения при получении offer');
+              await this.connectionManager.createConnection(userId);
             }
 
-            const answer = await this.#connectionManager.handleOffer(userId, description)
-            await this.#signalingService.sendAnswer(userId, answer)
-            console.log('📨 Отправлен answer пользователю:', userId)
-
-            // Только потом отправляем свои стримы
-            const { stream: localStream } = this.#mediaManager.getState()
-            const { stream: screenShare } = this.#screenShareManager.getState()
-
-            const streams = [localStream, screenShare].filter(Boolean) as MediaStream[]
-            if (streams.length > 0) {
-              await this.handleStreamTracks(userId, streams, this.#connectionManager, this.#signalingService)
-            }
+            // Обрабатываем offer и отправляем answer
+            const answer = await this.connectionManager.handleOffer(userId, description);
+            await this.signalingService.sendAnswer(userId, answer);
           } else if (description.type === 'answer') {
-            console.log('📨 Получен answer от:', userId)
-            await this.#connectionManager.handleAnswer(userId, description)
+            await this.connectionManager.handleAnswer(userId, description);
           }
         } catch (error) {
-          console.error('❌ Ошибка обработки SDP:', error)
-          this.#notificationManager.notify('error', 'Ошибка обмена данными')
+          console.error('Ошибка обработки SDP:', error);
+          this.notificationManager.notify('error', 'Ошибка установки соединения');
         }
       })
+      // Обработка ICE кандидатов
       .on('iceCandidate', async ({ userId, candidate }) => {
         if (candidate) {
-          try {
-            console.log('📨 Получен ICE кандидат для:', userId)
-            await this.#connectionManager.addIceCandidate(userId, candidate as RTCIceCandidate)
-            this.#notifySubscribers()
-          } catch (error) {
-            console.error('❌ Ошибка добавления ICE candidate:', error)
-            this.#notificationManager.notify('error', 'Ошибка установки соединения')
-          }
+          await this.connectionManager.addIceCandidate(userId, candidate)
         }
-      })
-      .on('userEvent', (event) => {
-        console.log('👤 Событие участника:', event.event.type, 'от:', event.initiator, event)
-        switch (event.event.type) {
-          case 'screen-share-on': {
-            this.#roomService.setStreamType(
-              event.initiator,
-              event.event.payload.streamId,
-              'screen',
-            )
-            break
-          }
-          case 'screen-share-off': {
-            this.#roomService.removeStream(event.initiator, event.event.payload.streamId)
-            break
-          }
-          case 'camera-off': {
-            this.#roomService.onCameraOff(event.initiator)
-            break
-          }
-          case 'mic-off': {
-            this.#roomService.muteParticipantAudio(event.initiator)
-            break
-          }
-          case 'mic-on': {
-            this.#roomService.unmuteParticipantAudio(event.initiator)
-            break
-          }
-          case 'camera-on': {
-            this.#roomService.setStreamType(
-              event.initiator,
-              event.event.payload.streamId,
-              'camera',
-            )
-            break
-          }
-          default:
-            console.warn('Неизвестный тип события:', event.type) // Добавлена обработка неизвестных событий
-            break
-        }
-        this.#notifySubscribers()
       })
 
     // 2. События WebRTC соединений
-    this.#connectionManager
+    this.connectionManager
       .on('track', ({ userId, track, stream }) => {
-        if (!userId || !stream) return
-
-        // Добавляем поток в RoomService
-        this.#roomService.addStream(userId, stream)
-
-        // Запрашиваем состояние room service после добавления
-        const participant = this.#roomService.getParticipant(userId)
-        console.log('📊 Состояние участника после добавления потока:', {
+        console.log('Получен трек в ConferenceService:', {
           userId,
-          streamsCount: participant?.streams.size,
-          streams: Array.from(participant?.streams || []).map((s) => s.id),
+          trackKind: track.kind,
+          streamId: stream.id,
         })
 
-        this.#notifySubscribers()
+        this.roomService.addStream(userId, stream)
+        this.notifySubscribers()
       })
-      .on('iceCandidate', async ({ userId, candidate }) => {
-        if (candidate) {
-          try {
-            await this.#signalingService.sendIceCandidate(userId, candidate)
-          } catch (error) {
-            console.error('❌ Ошибка отправки ICE candidate:', error)
+      .on('iceCandidate', ({ userId, candidate }) => {
+        this.signalingService.sendIceCandidate(userId, candidate)
+      })
+      .on('negotiationNeeded', async ({ userId, offer }) => {
+        try {
+          if (offer) {
+            // Отправляем offer через сигнальный сервис
+            await this.signalingService.sendOffer(userId, offer)
           }
-        }
-      })
-      .on('connectionLost', async ({ userId }) => {
-        console.log(`❌ Потеряно соединение с ${userId}`)
-
-        // Очищаем ресурсы
-        this.#connectionManager.close(userId)
-        this.#roomService.removeParticipant(userId)
-      })
-      .on('trackEnded', async ({ userId, trackId }) => {
-        console.log(`trackEnded ${userId}, ${trackId}`)
-      })
-
-    // 3. События медиа
-    this.#mediaManager
-      .on('streamStarted', async (stream: MediaStream) => {
-        const participants = this.#roomService.getParticipants()
-          .filter(({ userId }) => userId !== this.#config.signaling.userId)
-
-        try {
-          await Promise.all(
-            participants.map(({ userId }) => this.handleStreamTracks(userId, [stream], this.#connectionManager, this.#signalingService)),
-          )
-          this.#signalingService.sendEvent({
-            type: 'camera-on',
-            payload: { streamId: stream.id },
-          })
-          this.#notifySubscribers()
         } catch (error) {
-          console.error('❌ Ошибка добавления медиа треков:', error)
-          this.#notificationManager.notify('error', 'Ошибка трансляции с камеры')
+          console.error('Ошибка отправки offer при перепереговорах:', error)
+          this.notificationManager.notify('error', 'Ошибка обновления соединения')
         }
       })
-      .on('streamStopped', ({ streamId }: { streamId: string }) => {
-        this.#signalingService.sendEvent({
-          type: 'camera-off',
-          payload: { streamId },
-        })
-        this.#notifySubscribers()
-      })
-      .on('audioToggled', ({ streamId, active }: { active: boolean, streamId: string }) => {
-        this.#signalingService.sendEvent({
-          type: active ? 'mic-on' : 'mic-off',
-          payload: { streamId },
-        })
-        this.#notifySubscribers()
-      })
-      .on('toggleVideo', ({ streamId, type }: { type: 'camera-on' | 'camera-off', streamId: string }) => {
-        this.#signalingService.sendEvent({
-          type,
-          payload: { streamId },
-        })
-        this.#notifySubscribers()
-      })
-      .on('stateChanged', () => {
-        this.#notifySubscribers()
+      .on('error', ({ userId, error }) => {
+        console.error(`Ошибка соединения с ${userId}:`, error)
+        this.notificationManager.notify('error', 'Ошибка соединения')
       })
 
-    // 4. События скриншеринга
-    this.#screenShareManager
-      .on('streamStarted', async (stream: MediaStream) => {
-        const participants = this.#roomService.getParticipants()
-          .filter(({ userId }) => userId !== this.#config.signaling.userId)
+    // 3. События камеры
+    this.mediaManager.on('stateChanged', async (state) => {
+      this.notifySubscribers()
 
-        try {
-          await Promise.all(
-            participants.map(({ userId }) => this.handleStreamTracks(userId, [stream], this.#connectionManager, this.#signalingService)),
-          )
-          this.#signalingService.sendEvent({
-            type: 'screen-share-on',
-            payload: { streamId: stream.id },
+      // Оповещаем других участников об изменении состояния медиа
+      if (state.stream) {
+        const eventType = {
+          audio: state.isAudioEnabled ? 'mic-on' : 'mic-off',
+          video: state.isVideoEnabled ? 'camera-on' : 'camera-off',
+        }
+
+        this.signalingService.sendEvent({
+          // @ts-ignore
+          type: eventType.audio,
+          payload: { streamId: state.stream.id },
+        })
+
+        this.signalingService.sendEvent({
+          // @ts-ignore
+          type: eventType.video,
+          payload: { streamId: state.stream.id },
+        })
+      }
+    })
+
+    // 4. События трансляции экрана
+    this.screenShareManager.on('stateChanged', async (state) => {
+      this.notifySubscribers();
+
+      if (state.stream && state.isActive) {
+        // Отправляем событие
+        this.signalingService.sendEvent({
+          type: 'screen-share-on',
+          payload: { streamId: state.stream.id },
+        });
+
+        // Получаем список других участников
+        const participants = this.roomService.getParticipants()
+          .filter(p => p.userId !== this.config.signaling.userId);
+
+        // Добавляем треки в существующие соединения
+        await Promise.all(
+          participants.map(async (participant) => {
+            for (const track of state.stream.getTracks()) {
+              await this.connectionManager.addTrack(participant.userId, track, state.stream);
+            }
           })
-          this.#notifySubscribers()
-        } catch (error) {
-          console.error('❌ Ошибка добавления треков скриншеринга:', error)
-          this.#notificationManager.notify('error', 'Ошибка трансляции экрана')
-        }
-      })
-      .on('streamStopped', async ({ streamId }: { streamId: string }) => {
-        console.log('🖥️ Остановка трансляции экрана:', streamId)
+        );
+      }
+    })
+  }
 
-        this.#signalingService.sendEvent({
-          type: 'screen-share-off',
-          payload: { streamId },
-        })
-        this.#notifySubscribers()
-      })
-      .on('error', (error: Error) => {
-        console.error('❌ Ошибка скриншеринга:', error)
-        this.#notificationManager.notify('error', 'Ошибка доступа к экрану')
-      })
-      .on('stateChanged', () => {
-        this.#notifySubscribers()
-      })
+  private async handleUserJoined(user: UserInfo): Promise<void> {
+    try {
+      console.log('Новый участник:', user.id)
 
-    this.#roomService
-      .on('participantAdded', ({ user }: { user: UserInfo }) => {
-        this.#notificationManager.notify('INFO', `Пользователь ${user.name} присоединился к конференции`)
-        this.#notifySubscribers()
-      })
-      .on('participantRemoved', ({ user }: { user: UserInfo }) => {
-        this.#notificationManager.notify('INFO', `Пользователь ${user.name} покинул конференцию`)
-        this.#notifySubscribers()
-      })
-      .on('participantAudioUnmuted', () => {
-        this.#notifySubscribers()
-      })
-      .on('participantAudioMuted', () => {
-        this.#notifySubscribers()
-      })
-      .on('onCameraOff', () => {
-        console.log('onCameraOff')
-        this.#notifySubscribers()
-      })
+      // Добавляем участника в RoomService
+      this.roomService.addParticipant(user)
+      const userId = String(user.id)
+
+      // Создаём peer соединение в любом случае
+      await this.connectionManager.createConnection(userId)
+      console.log('Создано соединение для:', user.id)
+
+      // Если есть активные потоки - отправляем их
+      const mediaStream = this.mediaManager.getStream()
+      const { stream: screenStream } = this.screenShareManager.getState()
+      const streams = [mediaStream, screenStream].filter(Boolean) as MediaStream[]
+
+      if (streams.length > 0) {
+        console.log('Отправка существующих потоков новому участнику:', user.id)
+        // Добавляем все треки из всех потоков
+        await Promise.all(
+          streams.flatMap((stream) => stream.getTracks().map((track) => this.connectionManager.addTrack(userId, track, stream))),
+        )
+      }
+
+      // Создаем и отправляем offer
+      const offer = await this.connectionManager.createOffer(userId)
+      if (offer) {
+        await this.signalingService.sendOffer(userId, offer)
+        console.log('отправлен offer', userId)
+      }
+
+      this.notifySubscribers()
+    } catch (error) {
+      console.error('Ошибка при подключении участника:', error)
+      this.notificationManager.notify('error', 'Ошибка подключения участника')
+    }
   }
 
   #waitForRoomInfo(): Promise<RoomInfo> {
     return new Promise((resolve) => {
       const handler = (info: RoomInfo) => {
-        this.#signalingService.off('roomInfo', handler)
+        this.signalingService.off('roomInfo', handler)
         resolve(info)
       }
 
-      this.#signalingService.on('roomInfo', handler)
+      this.signalingService.on('roomInfo', handler)
     })
   }
 
-  async handleStreamTracks(
-    userId: string,
-    streams: MediaStream[],
-    connectionManager: ConnectionManager,
-    signalingService: SignalingService,
-  ) {
-    // Create/check connection
-    if (!connectionManager.getConnection(userId)) {
-      await connectionManager.createConnection(userId)
+  // Включение/выключение камеры
+  async toggleVideo(): Promise<void> {
+    try {
+      await this.mediaManager.toggleVideo();
+      const { stream, isVideoEnabled } = this.mediaManager.getState();
+
+      if (stream && isVideoEnabled) {
+        // Получаем список других участников
+        const participants = this.roomService.getParticipants()
+          .filter(p => p.userId !== this.config.signaling.userId);
+
+        // Добавляем видео трек во все существующие соединения
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          await Promise.all(
+            participants.map(async (participant) => {
+              await this.connectionManager.addTrack(participant.userId, videoTrack, stream);
+            })
+          );
+        }
+      }
+
+      this.notifySubscribers();
+    } catch (error) {
+      console.error('Ошибка в toggleVideo:', error);
+      this.notificationManager.notify('error', 'Ошибка управления камерой');
     }
+  }
 
-    // Add all tracks from all streams
-    await Promise.all(
-      streams.flatMap((stream) => stream.getTracks().map((track) => connectionManager.addTrack(userId, track, stream))),
-    )
+  // Включение/выключение микрофона
+  async toggleAudio(): Promise<void> {
+    this.#checkInitialized()
+    await this.mediaManager.toggleAudio()
+  }
 
-    // Create single offer after adding all tracks
-    const offer = await connectionManager.createOffer(userId)
-    if (offer) {
-      await signalingService.sendOffer(userId, offer)
+  async startScreenShare(): Promise<void> {
+    try {
+      this.#checkInitialized()
+      await this.screenShareManager.startScreenShare()
+
+      // Обработка добавления треков происходит в обработчике событий screenShareManager
+    } catch (error) {
+      console.error('Ошибка запуска демонстрации экрана:', error)
+      this.notificationManager.notify('error', 'Ошибка запуска демонстрации экрана')
     }
   }
 
-  // Публичные методы управления конференцией
-  async startLocalStream() {
-    this.#checkInitialized()
-    await this.#mediaManager.startStream()
+  async stopScreenShare(): Promise<void> {
+    try {
+      this.#checkInitialized()
+      const { stream } = this.screenShareManager.getState()
+
+      if (stream) {
+        // Удаляем треки демонстрации экрана из всех соединений
+        const participants = this.roomService.getParticipants()
+        await Promise.all(
+          stream.getTracks().flatMap((track) => participants.map((p) => this.connectionManager.removeTrack(p.userId, track.id))),
+        )
+      }
+
+      this.screenShareManager.stopScreenShare()
+    } catch (error) {
+      console.error('Ошибка остановки демонстрации экрана:', error)
+      this.notificationManager.notify('error', 'Ошибка остановки демонстрации экрана')
+    }
   }
 
-  stopLocalStream(): void {
-    this.#checkInitialized()
-    this.#mediaManager.stopStream()
+  // Полное отключение видео (когда нужно не просто выключить, а удалить трек)
+  async stopVideo() {
+    const { stream } = this.mediaManager.getState()
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0]
+      if (videoTrack) {
+        // Удаляем видео трек из всех соединений
+        const participants = this.roomService.getParticipants()
+        await Promise.all(
+          participants.map((p) => this.connectionManager.removeTrack(p.userId, videoTrack.id)),
+        )
+      }
+    }
   }
 
-  async startScreenShare() {
-    this.#checkInitialized()
-    await this.#screenShareManager.startScreenShare()
-  }
-
-  async stopScreenShare() {
-    this.#checkInitialized()
-    this.#screenShareManager.stopScreenShare()
-  }
-
-  async toggleVideo() {
-    await this.#mediaManager.toggleVideo()
-  }
-
-  async toggleAudio() {
-    await this.#mediaManager.toggleAudio()
-  }
-
-  getState() {
+  /**
+   * Получение списка доступных устройств
+   * const devices = await conferenceService.getAvailableDevices();
+   * Когда пользователь выбирает новое устройство:
+   *   await conferenceService.switchCamera(selectedDeviceId);
+   * или
+   *   await conferenceService.switchMicrophone(selectedDeviceId);
+   */
+  async getAvailableDevices() {
     return {
-      initialized: this.#initialized,
-      media: this.#mediaManager.getState(),
-      signaling: this.#signalingService.getState(),
-      participants: this.#roomService.getParticipants(),
-      localScreenShare: this.#screenShareManager.getState(),
-      currentUser: this.#roomService.getCurrentUser(),
+      video: await this.mediaManager.getVideoDevices(),
+      audio: await this.mediaManager.getAudioDevices(),
     }
   }
 
-  #checkInitialized() {
-    if (!this.#initialized) throw new Error('Сервис не инициализирован')
+  async switchCamera(deviceId: string) {
+    try {
+      const oldTrack = this.mediaManager.getVideoTrack()
+      const newTrack = await this.mediaManager.createVideoTrack(deviceId)
+
+      if (oldTrack && newTrack) {
+        // Заменяем трек во всех активных соединениях
+        const participants = this.roomService.getParticipants()
+        await Promise.all(
+          participants.map((p) => this.connectionManager.replaceTrack(p.userId, oldTrack.id, newTrack)),
+        )
+      }
+    } catch (error) {
+      this.notificationManager.notify('error', 'Ошибка переключения камеры')
+      throw error
+    }
   }
 
-  #notifySubscribers() {
-    const state = this.getState()
-    console.log('__STATE___', state)
-    this.#subscribers.forEach((cb) => cb(state))
+  async switchMicrophone(deviceId: string) {
+    try {
+      const oldTrack = this.mediaManager.getAudioTrack()
+      const newTrack = await this.mediaManager.createAudioTrack(deviceId)
+
+      if (oldTrack && newTrack) {
+        // Заменяем трек во всех активных соединениях
+        const participants = this.roomService.getParticipants()
+        await Promise.all(
+          participants.map((p) => this.connectionManager.replaceTrack(p.userId, oldTrack.id, newTrack)),
+        )
+      }
+    } catch (error) {
+      this.notificationManager.notify('error', 'Ошибка переключения микрофона')
+      throw error
+    }
+  }
+
+  /**
+   * Получение подробной информации о соединении с конкретным участником
+   *   const connectionInfo = await conferenceService.getParticipantConnectionInfo(userId);
+   *   console.log('Состояние соединения:', connectionInfo.status);
+   *   console.log('Статистика:', connectionInfo.stats);
+   */
+  async getParticipantConnectionInfo(userId: string) {
+    return {
+      status: {
+        signaling: this.connectionManager.getSignalingState(userId),
+        ice: this.connectionManager.getIceConnectionState(userId),
+        isConnected: this.connectionManager.isConnected(userId),
+      },
+      tracks: {
+        senders: this.connectionManager.getSenders(userId),
+        receivers: this.connectionManager.getReceivers(userId),
+      },
+      stats: await this.connectionManager.getStats(userId),
+    }
   }
 
   subscribe(callback: (state: any) => void) {
-    this.#subscribers.push(callback)
+    this.subscribers.push(callback)
     callback(this.getState())
     return () => {
-      this.#subscribers = this.#subscribers.filter((cb) => cb !== callback)
+      this.subscribers = this.subscribers.filter((cb) => cb !== callback)
     }
   }
 
-  async destroy() {
-    if (this.#initialized) {
-      await Promise.all([
-        this.#mediaManager.destroy(),
-        this.#screenShareManager.destroy(),
-        this.#connectionManager.destroy(),
-        this.#signalingService.destroy(),
-        this.#roomService.destroy(),
-      ])
-      this.#subscribers = []
-      this.#initialized = false
-      this.#notifySubscribers()
+  private notifySubscribers() {
+    const state = this.getState()
+    console.log('__STATE__', state)
+    this.subscribers.forEach((cb) => cb(state))
+  }
+
+  #checkInitialized() {
+    if (!this.initialized) throw new Error('Сервис не инициализирован')
+  }
+
+  // Получение состояния конференции
+  getState() {
+    return {
+      currentUser: this.roomService.getCurrentUser(),
+      participants: this.roomService.getParticipants(),
+      localMedia: this.mediaManager.getState(),
+      screenShare: this.screenShareManager.getState(),
+      connections: this.connectionManager.getConnections?.() || [],
     }
+  }
+
+  async destroy(): Promise<void> {
+    this.connectionManager.destroy()
+    this.mediaManager.destroy()
+    this.screenShareManager.destroy()
+    this.signalingService.destroy()
+    this.roomService.destroy()
+    this.removeAllListeners()
+    this.initialized = false
   }
 }

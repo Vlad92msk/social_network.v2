@@ -195,98 +195,7 @@ export function RemoteStream(props: VideoProps) {
 }
 
 export function Conference({ profile }: ConferenceProps) {
-  const { isInitialized, participants: allParticipants, localScreenShare: { isVideoEnabled } } = useConference()
-  const currentUserId = profile?.user_info.id.toString() || ''
-
-  const [pinnedStream, setPinnedStream] = useState<string | null>(null)
-  const [allStreams, setAllStreams] = useState<StreamsRecord>({
-    'local-preview': {
-      id: 'local-preview',
-      type: 'local-preview',
-      component: <LocalPreview />,
-    },
-  })
-  const mainList = useMemo(
-    () => Object.keys(allStreams).filter((id) => id !== pinnedStream),
-    [allStreams, pinnedStream],
-  )
-  console.log('mainList', mainList)
-
-  useEffect(() => {
-    const participants = allParticipants.filter(
-      ({ userId }) => userId !== currentUserId,
-    )
-
-    setAllStreams((prev) => {
-      const newStreams: StreamsRecord = {
-        'local-preview': prev['local-preview'],
-      }
-
-      // Если видео выключено - удаляем поток
-      if (!isVideoEnabled) {
-        delete newStreams['local-screen']
-      } else {
-        // Если включено - добавляем/обновляем поток
-        newStreams['local-screen'] = {
-          id: 'local-screen',
-          type: 'local-screen',
-          component: <LocalScreenShare />,
-        }
-      }
-
-      participants.forEach((participant) => {
-        const streams = Array.from(participant.streams)
-
-        if (streams.length > 0) {
-          // Если у участника есть потоки, добавляем их
-          streams.forEach((stream) => {
-            newStreams[stream.id] = {
-              id: stream.id,
-              type: 'remote',
-              stream,
-              participant,
-              component: (
-                <RemoteStream
-                  key={stream.id}
-                  stream={stream}
-                  isVideoEnabled={participant.videoActive}
-                  isAudioEnabled={participant.mickActive}
-                  currentUser={participant.userInfo}
-                  streamType={participant.streamsType[stream.id]}
-                />
-              ),
-            }
-          })
-        } else {
-          // Если у участника нет потоков, создаем виртуальный поток для отображения присутствия
-          const virtualStreamId = `virtual-${participant.userId}`
-          newStreams[virtualStreamId] = {
-            id: virtualStreamId,
-            type: 'remote',
-            participant,
-            // @ts-ignore
-            stream: undefined,
-            component: (
-              <RemoteStream
-                key={virtualStreamId}
-                stream={undefined}
-                isVideoEnabled={false}
-                isAudioEnabled={participant.mickActive}
-                currentUser={participant.userInfo}
-                streamType="camera"
-              />
-            ),
-          }
-        }
-      })
-
-      return newStreams
-    })
-  }, [allParticipants, currentUserId, isVideoEnabled])
-
-  const handleStreamClick = useCallback((streamId: string) => {
-    setPinnedStream(pinnedStream === streamId ? null : streamId)
-  }, [pinnedStream])
+  const { isInitialized } = useConference()
 
   if (!isInitialized) {
     return (
@@ -300,42 +209,10 @@ export function Conference({ profile }: ConferenceProps) {
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.remoteStreams}>
-          {pinnedStream ? (
-            <div
-              className={styles.pin}
-              onClick={() => handleStreamClick(pinnedStream)}
-            >
-              {allStreams[pinnedStream].component}
-            </div>
-          ) : (
-            mainList.map((streamId) => {
-              const stream = allStreams[streamId]
-              return stream ? (
-                <div
-                  key={streamId}
-                  onClick={() => handleStreamClick(streamId)}
-                >
-                  {stream.component}
-                </div>
-              ) : null
-            })
-          )}
+          <LocalPreview />
+          <LocalScreenShare />
         </div>
-        {pinnedStream && (
-          <div className={styles.participantList}>
-            {mainList.map((streamId) => {
-              const stream = allStreams[streamId]
-              return stream ? (
-                <div
-                  key={streamId}
-                  onClick={() => handleStreamClick(streamId)}
-                >
-                  {stream.component}
-                </div>
-              ) : null
-            })}
-          </div>
-        )}
+
       </div>
       <div className={styles.actionsContainer}>
         <div className={styles.mediaControls}>

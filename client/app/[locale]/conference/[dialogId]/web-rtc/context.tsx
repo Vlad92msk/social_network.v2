@@ -4,34 +4,25 @@ import { cloneDeep } from 'lodash'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
-import { InitialState, initialState } from './initial.state'
-import { Participant } from './micro-services'
+import { ConferenceState, initialState } from './initial.state'
 
-export interface ConferenceContextState {
-  isInitialized: boolean
-  signaling: {
-    isConnected: boolean
-    error: Error | null
-  }
-  participants: Participant[]
-  currentUser: ReturnType<ConferenceService['getState']>['currentUser']
 
-  // Видео с камеры
-  media: {
-    stream?: MediaStream
-    isVideoEnabled: boolean
-    isAudioEnabled: boolean
-    error: Error | null
-  }
-  toggleVideo: VoidFunction
-  toggleAudio: VoidFunction
-  startLocalStream: VoidFunction
-  stopLocalStream: VoidFunction
 
-  // Трансляция экрана
-  localScreenShare: ReturnType<ConferenceService['getState']>['localScreenShare']
-  startScreenShare: VoidFunction
-  stopScreenShare: VoidFunction
+interface ConferenceContextState extends ConferenceState {
+  isInitialized: boolean;
+  // Управление медиа
+  toggleVideo: () => Promise<void>
+  toggleAudio: () => Promise<void>
+  // Управление устройствами
+  switchCamera: (deviceId: string) => Promise<void>
+  switchMicrophone: (deviceId: string) => Promise<void>
+  getAvailableDevices: () => Promise<{
+    video: MediaDeviceInfo[]
+    audio: MediaDeviceInfo[]
+  }>;
+  // Управление демонстрацией экрана
+  startScreenShare: () => Promise<void>
+  stopScreenShare: () => Promise<void>
 }
 
 const ConferenceContext = createContext<ConferenceContextState | null>(null)
@@ -43,55 +34,63 @@ interface ConferenceProviderProps {
 }
 
 export function ConferenceProvider({ children, currentUserId, dialogId }: ConferenceProviderProps) {
-
   const conferenceService = useRef(new ConferenceService())
   const [isInitialized, setIsInitialized] = useState(false)
-  const [state, setState] = useState<InitialState>(initialState)
+  const [state, setState] = useState<ConferenceState>(initialState)
 
   // Инициализация сервиса
   useEffect(() => {
+    const service = conferenceService.current
+
     const initializeConference = async () => {
       try {
-        await conferenceService.current.initialize(
+        await service.initialize(
           conferenceConfig({
             signaling: { userId: currentUserId, dialogId },
-            localVideo: { video: false, audio: true },
+            localVideo: {
+              video: false,
+              audio: false,
+            },
           }),
         )
 
-        // Получаем начальное состояние
-        // @ts-ignore
-        setState(conferenceService.current.getState())
-
-        const unsubscribe = conferenceService.current.subscribe((newState) => {
-          // приходится использовать cloneDeep
-          // потому что дальше в компоненте не обновляется состояние
-          // хотя это странно...
-          setState(cloneDeep(newState))
-        })
-
         setIsInitialized(true)
-
-        return unsubscribe
       } catch (error) {
         console.error('Ошибка инициализации:', error)
+        // Можно добавить обработку ошибки, например показ уведомления
       }
     }
 
+    // Подписываемся на обновления состояния
+    const unsubscribe = conferenceService.current.subscribe((newState) => {
+      // приходится использовать cloneDeep
+      // потому что дальше в компоненте не обновляется состояние
+      // хотя это странно...
+      setState(cloneDeep(newState))
+    })
+
     initializeConference()
 
+    // Очистка при размонтировании
     return () => {
-      conferenceService.current.destroy()
+      unsubscribe()
+      service.destroy()
     }
-  }, [currentUserId, dialogId, setState])
+  }, [currentUserId, dialogId])
 
-  const value: ConferenceContextState = useMemo(() => ({
+  const value = useMemo(() => ({
     isInitialized,
     ...state,
+    // Базовые методы управления медиа
     toggleVideo: () => conferenceService.current.toggleVideo(),
     toggleAudio: () => conferenceService.current.toggleAudio(),
-    startLocalStream: () => conferenceService.current.startLocalStream(),
-    stopLocalStream: () => conferenceService.current.stopLocalStream(),
+
+    // Методы управления устройствами
+    switchCamera: (deviceId: string) => conferenceService.current.switchCamera(deviceId),
+    switchMicrophone: (deviceId: string) => conferenceService.current.switchMicrophone(deviceId),
+    getAvailableDevices: () => conferenceService.current.getAvailableDevices(),
+
+    // Методы управления демонстрацией экрана
     startScreenShare: () => conferenceService.current.startScreenShare(),
     stopScreenShare: () => conferenceService.current.stopScreenShare(),
   }), [isInitialized, state])
