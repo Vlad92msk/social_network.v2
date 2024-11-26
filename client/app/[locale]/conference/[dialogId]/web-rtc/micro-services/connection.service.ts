@@ -1,19 +1,18 @@
 import { EventEmitter } from 'events'
 
-type ConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
-
-interface PeerEvents {
-  // Событие получения нового трека
-  track: { userId: string; track: MediaStreamTrack; stream: MediaStream };
-  // Событие окончания трека
-  trackEnded: { userId: string; trackId: string };
-  // Событие изменения состояния соединения
-  connectionState: { userId: string; state: ConnectionState };
-  // Событие получения ICE кандидата
-  iceCandidate: { userId: string; candidate: RTCIceCandidate };
-  // Событие ошибки
-  error: { userId: string; error: Error };
+function parseIceCandidate(candidateStr: string) {
+  const parts = candidateStr.split(' ')
+  return {
+    foundation: parts[0].split(':')[1],
+    protocol: parts[2],
+    type: parts[7],
+    ip: parts[4],
+    port: parts[5],
+    candidateType: parts[7],
+  }
 }
+
+export type ConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
 
 export class ConnectionManager extends EventEmitter {
   private connections = new Map<string, RTCPeerConnection>()
@@ -30,9 +29,15 @@ export class ConnectionManager extends EventEmitter {
     try {
       // Закрываем существующее соединение если есть
       this.closeConnection(userId)
+      console.log(`[Connection] Создаем новое соединение для ${userId}`)
 
       const connection = new RTCPeerConnection(this.config)
-console.log('___connection')
+      // Добавим проверку на дубликаты кандидатов
+      const processedCandidates = new Set()
+
+      // Проверим конфигурацию
+      console.log('[Connection] ICE config:', this.config)
+
       // Обработка необходимости перепереговоров (при добавлении/удалении треков)
       connection.onnegotiationneeded = async () => {
         try {
@@ -65,36 +70,64 @@ console.log('___connection')
           })
           return
         }
-
-        console.log('Получен новый трек:', {
-          userId,
-          trackKind: track.kind,
-          trackEnabled: track.enabled,
-          streamId: stream.id
-        });
+        console.log(`Получен новый ${track.kind} трек от пользовтаеля ${userId} для потока ${stream.id}. Доступен ${track.enabled}`)
 
         this.emit('track', { userId, track, stream })
 
+        // Слушаем изменения состояния трека
+        track.onmute = () => console.log('Track muted')
+        track.onunmute = () => console.log('Track unmuted')
+        track.onended = () => console.log('Track ended')
         // Отслеживаем окончание трека
         track.onended = () => {
           this.emit('trackEnded', { userId, trackId: track.id })
         }
       }
 
-      // Отслеживание состояния соединения
-      connection.onconnectionstatechange = () => {
-        const state = connection.connectionState as ConnectionState
-        this.emit('connectionState', { userId, state })
-      }
-
-      // Обработка ICE кандидатов
       connection.onicecandidate = ({ candidate }) => {
         if (candidate) {
-          this.emit('iceCandidate', { userId, candidate })
+          // Создадим уникальный ключ для кандидата
+          const candidateKey = candidate.candidate // используем строку кандидата как ключ
+
+          if (!processedCandidates.has(candidateKey)) {
+            processedCandidates.add(candidateKey)
+
+            console.log(`[ICE] Новый кандидат для ${userId}:`, {
+              foundation: candidate.foundation,
+              protocol: candidate.protocol,
+              type: candidate.type,
+              candidate: candidate.candidate,
+            })
+
+            this.emit('iceCandidate', { userId, candidate })
+          } else {
+            console.log(`[ICE] Пропускаем дубликат кандидата для ${userId}`)
+          }
+        } else {
+          console.log(`[ICE] Сбор кандидатов завершен для ${userId}`)
         }
       }
 
+      connection.onconnectionstatechange = () => {
+        console.log(`[Connection] Состояние соединения для ${userId}:`, {
+          connectionState: connection.connectionState,
+          iceConnectionState: connection.iceConnectionState,
+          iceGatheringState: connection.iceGatheringState,
+          signalingState: connection.signalingState,
+        })
+      }
+
+      // Следим за состоянием ICE
+      connection.oniceconnectionstatechange = () => {
+        console.log(`[ICE] Состояние соединения для ${userId}:`, connection.iceConnectionState)
+        this.emit('iceConnectionState', {
+          userId,
+          state: connection.iceConnectionState,
+        })
+      }
+
       this.connections.set(userId, connection)
+      this.emit('connectionCreated', { userId })
     } catch (error) {
       this.emit('error', {
         userId,
@@ -150,15 +183,28 @@ console.log('___connection')
     }
 
     try {
+      console.log('[Connection] Состояние перед обработкой offer:', {
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState,
+        iceConnectionState: connection.iceConnectionState,
+      })
+
       await connection.setRemoteDescription(new RTCSessionDescription(offer))
+      console.log('Remote Description установлен')
+
       const answer = await connection.createAnswer()
       await connection.setLocalDescription(answer)
+      console.log('Local Description установлен')
+
+      console.log('[Connection] Состояние после установки описаний:', {
+        signalingState: connection.signalingState,
+        iceGatheringState: connection.iceGatheringState,
+        iceConnectionState: connection.iceConnectionState,
+      })
+
       return answer
     } catch (error) {
-      this.emit('error', {
-        userId,
-        error: error instanceof Error ? error : new Error('Ошибка обработки offer'),
-      })
+      console.error('[Connection] Ошибка в handleOffer:', error)
       throw error
     }
   }
@@ -189,12 +235,21 @@ console.log('___connection')
     }
 
     try {
-      await connection.addIceCandidate(candidate)
-    } catch (error) {
-      this.emit('error', {
-        userId,
-        error: error instanceof Error ? error : new Error('Ошибка добавления ICE кандидата'),
+      if (!candidate || !candidate.candidate) {
+        console.log(`[ICE] Пропускаем пустого кандидата для ${userId}`)
+        return
+      }
+
+      const parsedCandidate = parseIceCandidate(candidate.candidate)
+      console.log(`[ICE] Добавляем кандидата для ${userId}:`, {
+        ...parsedCandidate,
+        raw: candidate.candidate,
       })
+
+      await connection.addIceCandidate(candidate)
+      console.log(`[ICE] Кандидат успешно добавлен для ${userId}`)
+    } catch (error) {
+      console.error(`[ICE] Ошибка добавления кандидата для ${userId}:`, error)
       throw error
     }
   }

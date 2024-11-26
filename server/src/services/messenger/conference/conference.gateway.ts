@@ -57,34 +57,14 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
             // dialogId,
         })
 
-        if (!this.validateSignalPayload(senderId, targetUserId, signal, dialogId)) {
-            console.error('Invalid signal payload')
-            return
-        }
+        // if (!this.validateSignalPayload(senderId, targetUserId, signal, dialogId)) {
+        //     console.error('Invalid signal payload')
+        //     return
+        // }
 
         // Проверяем, что пользователь существует в комнате
         const participants = this.conferenceService.getParticipants(dialogId)
-        if (targetUserId !== 'all') {
-            if (!participants.includes(targetUserId)) {
-                console.error('Target user not found in room:', {
-                    targetUserId,
-                    dialogId,
-                    participants
-                })
-                client.emit('error', {
-                    message: 'Target user not found in room',
-                    code: 'USER_NOT_FOUND'
-                })
-                return
-            }
-        }
 
-        console.log('Emitting signal:', {
-            type: signal.type,
-            to: targetUserId,
-            from: senderId,
-            participants
-        })
 
         // Отправляем сигнал целевому пользователю
         this.server.to(targetUserId).emit(signal.type, {

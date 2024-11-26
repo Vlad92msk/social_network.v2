@@ -184,7 +184,17 @@ export class SignalingService extends EventEmitter {
     })
   }
 
-  sendIceCandidate(targetUserId: string, candidate: RTCIceCandidateInit) {
+  sendIceCandidate(targetUserId: string, candidate: RTCIceCandidate) {
+    if (!candidate || !candidate.candidate) {
+      console.log('[Signaling] Пропускаем отправку пустого кандидата');
+      return;
+    }
+    console.log(`[Signaling] Отправка ICE кандидата:`, {
+      targetUserId,
+      foundation: candidate.foundation,
+      protocol: candidate.protocol,
+      type: candidate.type
+    });
     this.#sendSignal(targetUserId, {
       type: 'ice-candidate',
       payload: candidate,

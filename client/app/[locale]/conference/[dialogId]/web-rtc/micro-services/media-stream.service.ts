@@ -7,21 +7,8 @@ export interface MediaStreamOptions {
   audioConstraints?: MediaTrackConstraints;
 }
 
-interface MediaStreamEvents {
-  // Состояние медиа изменилось
-  stateChanged: {
-    stream: MediaStream | null;
-    hasVideo: boolean;
-    hasAudio: boolean;
-    isVideoEnabled: boolean;
-    isAudioEnabled: boolean;
-  };
-  // Произошла ошибка
-  error: Error;
-}
-
 export class MediaStreamManager extends EventEmitter {
-  private stream: MediaStream | null = null
+  private stream: MediaStream | undefined
 
   private constraints: MediaStreamConstraints = { audio: false, video: false }
 
@@ -179,7 +166,7 @@ export class MediaStreamManager extends EventEmitter {
   /**
    * Получение текущего медиа потока
    */
-  getStream(): MediaStream | null {
+  getStream() {
     return this.stream
   }
 
@@ -189,7 +176,7 @@ export class MediaStreamManager extends EventEmitter {
   stopStream(): void {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop())
-      this.stream = null
+      this.stream = undefined
       this.isVideoEnabled = false
       this.isAudioEnabled = false
       this.emitState()
