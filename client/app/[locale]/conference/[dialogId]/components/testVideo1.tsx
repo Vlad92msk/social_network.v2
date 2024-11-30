@@ -45,6 +45,9 @@ export function VideoChatTest() {
   const handleStateChange = useCallback((newState: MediaStreamState) => {
     setState(cloneDeep(newState))
     updateVideoStream(newState.stream)
+    const tracks = newState.stream?.getTracks()
+    console.clear()
+    console.log('tracks', tracks)
   }, [updateVideoStream, setState])
 
   useEffect(() => {

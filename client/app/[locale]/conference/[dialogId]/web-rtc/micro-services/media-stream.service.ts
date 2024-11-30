@@ -201,13 +201,31 @@ export class MediaStreamManager extends EventEmitter {
    */
   async enableVideo(): Promise<void> {
     try {
-      await this.startStream({ ...this.getConstraints(), video: true })
+      if (!this.stream || !this.getVideoTrack()) {
+        await this.startStream({
+          video: {
+            facingMode: this.options.facingMode,
+            width: this.options.width,
+            height: this.options.height,
+            aspectRatio: this.options.aspectRatio,
+            frameRate: this.options.frameRate,
+            deviceId: this.options.preferredVideoDeviceId,
+            ...this.options.videoConstraints
+          }
+        })
+      } else {
+        const videoTrack = this.getVideoTrack()
+        if (videoTrack) {
+          videoTrack.enabled = true
+          this.isVideoEnabled = true
+          this.isVideoMuted = false
+        }
+      }
+      this.emitState()
     } catch (error) {
       this.handleError('Не удалось включить видео', error)
     }
   }
-
-
 
   /**
    * Временно отключает видео (без остановки дорожки)
@@ -242,7 +260,14 @@ export class MediaStreamManager extends EventEmitter {
   async enableAudio(): Promise<void> {
     try {
       if (!this.stream || !this.getAudioTrack()) {
-        await this.startStream({ ...this.getConstraints(), audio: true })
+        await this.startStream({
+          audio: {
+            echoCancellation: this.options.echoCancellation,
+            noiseSuppression: this.options.noiseSuppression,
+            autoGainControl: this.options.autoGainControl,
+            deviceId: this.options.preferredAudioDeviceId
+          }
+        })
       } else {
         const audioTrack = this.getAudioTrack()
         if (audioTrack) {
@@ -265,6 +290,7 @@ export class MediaStreamManager extends EventEmitter {
     const audioTrack = this.getAudioTrack()
     if (audioTrack) {
       audioTrack.enabled = false
+      this.stream?.removeTrack(audioTrack)
       audioTrack.stop()
       this.isAudioEnabled = false
       this.emitState()
