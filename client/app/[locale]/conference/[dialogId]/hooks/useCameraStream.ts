@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useConference } from '../web-rtc/context'
 
 export function useCameraStream(options?: {
@@ -6,24 +6,34 @@ export function useCameraStream(options?: {
   mirror?: boolean;
   onStreamChange?: (stream: MediaStream | null) => void;
 }) {
-  const {
-    localMedia: { stream, isVideoEnabled, isAudioEnabled },
-    currentUser,
-  } = useConference()
+  const { localMedia, currentUser } = useConference()
+  const [showPlaceholder, setShowPlaceholder] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    const videoElement = videoRef.current
-    if (videoElement && stream && options?.enabled !== false) {
-      videoElement.srcObject = stream
-      options?.onStreamChange?.(stream)
+    // console.clear()
+    // console.log('1', stream)
+    // console.log('2', localMedia.hasVideo)
+    // console.log('3', localMedia.isVideoMuted)
+    setShowPlaceholder(!localMedia.stream || !localMedia.hasVideo || localMedia.isVideoMuted)
+  }, [localMedia.hasVideo, localMedia.isVideoMuted, localMedia.stream])
 
-      return () => {
-        videoElement.srcObject = null
-        options?.onStreamChange?.(null)
+  useEffect(() => {
+    if (videoRef.current) {
+      const stream = localMedia?.stream
+
+      if (stream && stream !== videoRef.current.srcObject) {
+        videoRef.current.srcObject = null // Сначала очищаем
+        videoRef.current.srcObject = stream // Затем устанавливаем новый поток
+
+        options?.onStreamChange?.(stream)
+        // Дожидаемся загрузки метаданных перед воспроизведением
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(console.error)
+        }
       }
     }
-  }, [stream, isVideoEnabled, isAudioEnabled, options])
+  }, [localMedia?.stream, options])
 
   const videoProps = useMemo(() => ({
     ref: videoRef,
@@ -35,7 +45,7 @@ export function useCameraStream(options?: {
     } as const,
   }), [options?.mirror])
 
-  return { videoProps, isAudioEnabled, isVideoEnabled, currentUser }
+  return { videoProps, currentUser, localMedia, showPlaceholder }
 }
 
 export function useScreenShareStream() {

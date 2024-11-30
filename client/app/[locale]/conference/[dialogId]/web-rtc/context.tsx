@@ -40,9 +40,11 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
         await service.initialize(
           conferenceConfig({
             signaling: { userId: currentUserId, dialogId },
-            localVideo: {
+            mediaConfig: {
               video: false,
               audio: false,
+              echoCancellation: true,
+              noiseSuppression: true,
             },
           }),
         )
@@ -75,8 +77,8 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
     isInitialized,
     ...state,
     // Базовые методы управления медиа
-    toggleVideo: () => conferenceService.current.toggleVideo(),
-    toggleAudio: () => conferenceService.current.toggleAudio(),
+    toggleVideo: () => conferenceService.current.toggleLocalVideo(),
+    toggleAudio: () => conferenceService.current.toggleLocalAudio(),
 
     // Методы управления демонстрацией экрана
     startScreenShare: () => conferenceService.current.startScreenShare(),

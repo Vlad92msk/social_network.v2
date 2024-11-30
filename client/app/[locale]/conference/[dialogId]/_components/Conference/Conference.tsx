@@ -1,6 +1,6 @@
 'use client'
 
-import { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@ui/common/Icon'
 import { Image } from '@ui/common/Image'
 import { VideoChatTest } from '../../components/testVideo1'
@@ -46,28 +46,29 @@ interface VideoProps {
 }
 
 export function LocalPreview() {
-  const { videoProps, isVideoEnabled, isAudioEnabled, currentUser } = useCameraStream({
+  const { videoProps, currentUser, showPlaceholder, localMedia } = useCameraStream({
     mirror: true,
-    onStreamChange: (stream) => {
-      console.log('Stream changed:', stream?.getTracks())
-    },
+    // onStreamChange: (stream) => {
+    //   console.log('Stream changed:', stream?.getTracks())
+    // },
   })
+  // console.log('showPlaceholder', showPlaceholder)
+
+  const isActiveMicrophone = localMedia.isAudioEnabled && !localMedia.isAudioMuted
 
   return (
     <div className={styles.participant}>
-      {
-        isVideoEnabled ? (
-          <video
-            {...videoProps}
-            className={`${styles.video} ${styles.videoMirrored}`}
-          />
-        ) : (
-          <div className={styles.profileImageContainer}>
-            <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
-          </div>
-        )
-      }
-      {isAudioEnabled
+      <video
+        {...videoProps}
+        className={`${styles.video} ${styles.videoMirrored}`}
+        style={{ display: showPlaceholder ? 'none' : 'block' }}
+      />
+      {showPlaceholder && (
+        <div className={styles.profileImageContainer}>
+          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50}/>
+        </div>
+      )}
+      {isActiveMicrophone
         ? (
           <Icon
             name="microphone"
@@ -262,31 +263,31 @@ export function RemoteScreenShare() {
 // }
 
 export function Conference({ profile }: ConferenceProps) {
-  // const { isInitialized, roomInfo } = useConference()
+  const { isInitialized } = useConference()
 
-  // if (!isInitialized) {
-  //   return (
-  //     <div className={styles.conferenceLoading}>
-  //       <p>Подключение к конференции...</p>
-  //     </div>
-  //   )
-  // }
+  if (!isInitialized) {
+    return (
+      <div className={styles.conferenceLoading}>
+        <p>Подключение к конференции...</p>
+      </div>
+    )
+  }
 
   // console.log('__roomInfo', roomInfo)
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.remoteStreams}>
-          {/* <LocalPreview /> */}
+          <LocalPreview />
           {/* <LocalScreenShare /> */}
           {/* <RemoteScreenShare /> */}
-          <VideoChatTest />
+          {/* <VideoChatTest /> */}
         </div>
 
       </div>
       <div className={styles.actionsContainer}>
         <div className={styles.mediaControls}>
-          {/* <CallControls /> */}
+          <CallControls />
         </div>
       </div>
     </div>

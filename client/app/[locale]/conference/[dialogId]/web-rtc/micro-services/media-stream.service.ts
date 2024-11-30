@@ -2,6 +2,16 @@
 
 import { EventEmitter } from 'events'
 
+export enum MediaEvents {
+  STATE_CHANGED = 'stateChanged',
+  TRACK_ADDED = 'trackAdded', // Новый трек добавлен
+  TRACK_REMOVED = 'trackRemoved', // Трек удален
+  TRACK_MUTED = 'trackMuted', // Трек заглушен
+  TRACK_UNMUTED = 'trackUnmuted', // Трек включен
+  DEVICE_CHANGED = 'deviceChanged', // Сменилось устройство
+  ERROR = 'error'
+}
+
 export interface MediaStreamOptions {
   // Основные настройки устройств
   audio?: boolean;
@@ -128,7 +138,6 @@ export class MediaStreamManager extends EventEmitter {
     }
   }
 
-
   /**
    * Обработчик завершения медиадорожки
    * Внутренний метод, вызывается автоматически
@@ -153,14 +162,16 @@ export class MediaStreamManager extends EventEmitter {
 
       if (this.stream) {
         // Добавляем новые треки к существующему потоку
-        stream.getTracks().forEach(track => {
+        stream.getTracks().forEach((track) => {
           this.stream?.addTrack(track)
           track.addEventListener('ended', () => this.handleTrackEnded(track))
+          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track })
         })
       } else {
         this.stream = stream
-        stream.getTracks().forEach(track => {
+        stream.getTracks().forEach((track) => {
           track.addEventListener('ended', () => this.handleTrackEnded(track))
+          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track })
         })
       }
 
@@ -210,8 +221,8 @@ export class MediaStreamManager extends EventEmitter {
             aspectRatio: this.options.aspectRatio,
             frameRate: this.options.frameRate,
             deviceId: this.options.preferredVideoDeviceId,
-            ...this.options.videoConstraints
-          }
+            ...this.options.videoConstraints,
+          },
         })
       } else {
         const videoTrack = this.getVideoTrack()
@@ -228,32 +239,6 @@ export class MediaStreamManager extends EventEmitter {
   }
 
   /**
-   * Временно отключает видео (без остановки дорожки)
-   * Вызывать для временного отключения видео
-   */
-  muteVideo(): void {
-    const videoTrack = this.getVideoTrack()
-    if (videoTrack) {
-      videoTrack.enabled = false
-      this.isVideoMuted = true
-      this.emitState()
-    }
-  }
-
-  /**
-   * Возобновляет передачу видео
-   * Вызывать для возобновления передачи после mute
-   */
-  unmuteVideo(): void {
-    const videoTrack = this.getVideoTrack()
-    if (videoTrack) {
-      videoTrack.enabled = true
-      this.isVideoMuted = false
-      this.emitState()
-    }
-  }
-
-  /**
    * Включает аудиодорожку
    * Вызывать когда нужно включить микрофон
    */
@@ -265,8 +250,8 @@ export class MediaStreamManager extends EventEmitter {
             echoCancellation: this.options.echoCancellation,
             noiseSuppression: this.options.noiseSuppression,
             autoGainControl: this.options.autoGainControl,
-            deviceId: this.options.preferredAudioDeviceId
-          }
+            deviceId: this.options.preferredAudioDeviceId,
+          },
         })
       } else {
         const audioTrack = this.getAudioTrack()
@@ -306,6 +291,7 @@ export class MediaStreamManager extends EventEmitter {
     if (audioTrack) {
       audioTrack.enabled = false
       this.isAudioMuted = true
+      this.emit(MediaEvents.TRACK_MUTED, { kind: 'audio', track: audioTrack })
       this.emitState()
     }
   }
@@ -319,6 +305,35 @@ export class MediaStreamManager extends EventEmitter {
     if (audioTrack) {
       audioTrack.enabled = true
       this.isAudioMuted = false
+      this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'audio', track: audioTrack })
+      this.emitState()
+    }
+  }
+
+  /**
+   * Временно отключает видео (без остановки дорожки)
+   * Вызывать для временного отключения видео
+   */
+  muteVideo(): void {
+    const videoTrack = this.getVideoTrack()
+    if (videoTrack) {
+      videoTrack.enabled = false
+      this.isVideoMuted = true
+      this.emit(MediaEvents.TRACK_MUTED, { kind: 'video', track: videoTrack })
+      this.emitState()
+    }
+  }
+
+  /**
+   * Возобновляет передачу видео
+   * Вызывать для возобновления передачи после mute
+   */
+  unmuteVideo(): void {
+    const videoTrack = this.getVideoTrack()
+    if (videoTrack) {
+      videoTrack.enabled = true
+      this.isVideoMuted = false
+      this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'video', track: videoTrack })
       this.emitState()
     }
   }

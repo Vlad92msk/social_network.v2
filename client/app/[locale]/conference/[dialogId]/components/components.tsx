@@ -6,14 +6,7 @@ import { useConference } from '../web-rtc/context'
 
 // Простые контролы
 export function CallControls() {
-  const {
-    localMedia: { isVideoEnabled, isAudioEnabled },
-    screenShare: { isVideoEnabled: isScreenShareActive },
-    toggleVideo,
-    toggleAudio,
-    startScreenShare,
-    stopScreenShare,
-  } = useConference()
+  const { localMedia: { isVideoEnabled, isAudioEnabled, isAudioMuted, isVideoMuted }, toggleVideo, toggleAudio } = useConference()
 
   const handleClose = () => {
     // Закрываем текущую вкладку браузера
@@ -27,6 +20,9 @@ export function CallControls() {
     }
   }
 
+  const isActiveMicrophone = isAudioEnabled && !isAudioMuted
+  const isActiveCamera = isVideoEnabled && !isVideoMuted
+
   return (
     <div className={styles.controls}>
       <button
@@ -37,28 +33,28 @@ export function CallControls() {
       </button>
 
       <button
-        style={{ backgroundColor: isVideoEnabled ? 'white' : 'transparent' }}
+        style={{ backgroundColor: isActiveCamera ? 'white' : 'transparent' }}
         className={styles.button}
         onClick={toggleVideo}
       >
-        <Icon name={isVideoEnabled ? 'videocam-off' : 'videocam-on'} />
+        <Icon name={isActiveCamera ? 'videocam-off' : 'videocam-on'} />
       </button>
 
       <button
-        style={{ backgroundColor: isAudioEnabled ? 'white' : 'transparent' }}
+        style={{ backgroundColor: isActiveMicrophone ? 'white' : 'transparent' }}
         className={styles.button}
         onClick={toggleAudio}
       >
-        <Icon name={isAudioEnabled ? 'microphone' : 'microphone-off'} />
+        <Icon name={isActiveMicrophone ? 'microphone' : 'microphone-off'} />
       </button>
 
-      <button
-        style={{ backgroundColor: isScreenShareActive ? 'white' : 'transparent' }}
-        className={`${styles.button} ${isScreenShareActive ? styles.buttonActive : ''}`}
-        onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare())}
-      >
-        <Icon name={isScreenShareActive ? 'screen-share-on' : 'screen-share-off'} />
-      </button>
+      {/* <button */}
+      {/*   style={{ backgroundColor: isScreenShareActive ? 'white' : 'transparent' }} */}
+      {/*   className={`${styles.button} ${isScreenShareActive ? styles.buttonActive : ''}`} */}
+      {/*   onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare())} */}
+      {/* > */}
+      {/*   <Icon name={isScreenShareActive ? 'screen-share-on' : 'screen-share-off'} /> */}
+      {/* </button> */}
     </div>
   )
 }

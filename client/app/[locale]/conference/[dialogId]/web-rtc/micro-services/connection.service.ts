@@ -339,6 +339,7 @@ export class ConnectionManager extends EventEmitter {
       state: connection.connectionState as ConnectionState,
       senders: connection.getSenders().length,
       receivers: connection.getReceivers().length,
+      sendersArr: connection.getSenders()
     }))
   }
 

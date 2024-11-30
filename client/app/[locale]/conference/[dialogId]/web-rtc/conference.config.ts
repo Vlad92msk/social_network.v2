@@ -1,25 +1,27 @@
 import { ConferenceConfig } from './conference.service'
+import { MediaStreamOptions } from './micro-services'
 
 export const conferenceConfig = ({
   signaling: { userId, dialogId },
-  localVideo,
+  mediaConfig,
 }:{
   signaling: {
     userId: string,
     dialogId: string
   },
-  localVideo?: {
-    audio?: boolean,
-    video?: boolean,
-  }
-}):ConferenceConfig => ({
+  mediaConfig?: MediaStreamOptions
+}): ConferenceConfig => ({
   signaling: {
     url: 'http://localhost:3001/conference',
     userId,
     dialogId,
   },
-  mediaConstraints: {
-    ...localVideo,
+  mediaConfig: {
+    video: false,
+    audio: false,
+    echoCancellation: true,
+    noiseSuppression: true,
+    ...mediaConfig,
   },
   ice: [
     { urls: 'stun:stun.l.google.com:19302' },

@@ -2,9 +2,9 @@
 
 import { EventEmitter } from 'events'
 import {
-  ConnectionManager, EventType,
+  ConnectionManager, EventType, MediaEvents,
   MediaStreamManager,
-  MediaStreamOptions, MediaStreamState,
+  MediaStreamOptions,
   NotificationManager,
   RoomInfo,
   RoomService,
@@ -169,12 +169,19 @@ export class ConferenceService extends EventEmitter {
     // 2. События WebRTC соединений
     this.connectionManager
       .on('track', ({ userId, track, stream }) => {
-        this.roomService.handleTrack(userId, track)
+        this.roomService.handleTrack(userId, track, stream)
 
-        // Слушаем завершение трека
-        track.onended = () => {
+        track.addEventListener('ended', () => {
           this.roomService.handleTrackEnded(userId, track)
-        }
+        })
+
+        track.addEventListener('mute', () => {
+          this.roomService.handleTrackDisabled(userId, track)
+        })
+
+        track.addEventListener('unmute', () => {
+          this.roomService.handleTrackEnabled(userId, track)
+        })
       })
       .on('iceCandidate', async ({ userId, candidate }) => {
         await this.signalingService.sendIceCandidate(userId, candidate)
@@ -206,47 +213,34 @@ export class ConferenceService extends EventEmitter {
       })
 
     // 3. События камеры
-    this.mediaManager.on('stateChanged', async (mediaState: MediaStreamState) => {
-      // Уведомляем подписчиков об изменении состояния
+    this.mediaManager.on(MediaEvents.TRACK_ADDED, async ({ kind, track }: { kind: 'video' | 'audio', track: MediaStreamTrack }) => {
       this.notifySubscribers()
 
-      // Отправляем события в сигнальный сервер об изменении состояния
-      this.signalingService.sendEvent({
-        type: mediaState.hasAudio && !mediaState.isAudioMuted ? 'mic-on' : 'mic-off',
-      })
+      // Оповещаем других участников об изменениях
+      const activeConnections = this.connectionManager
+        .getConnections()
+        .filter((conn) => conn.state === 'connected')
 
-      this.signalingService.sendEvent({
-        type: mediaState.hasVideo && !mediaState.isVideoMuted ? 'camera-on' : 'camera-off',
-      })
-
-      // Если появился новый стрим (первое включение камеры или микрофона)
-      if (mediaState.stream) {
-        const participants = this.roomService
-          .getParticipants()
-          .filter((p) => p.userId !== this.config.signaling.userId)
-
-        // Добавляем треки в существующие соединения
-        participants.forEach((participant) => {
-          const connection = this.connectionManager.getConnection(participant.userId)
-          if (!connection) return
-
-          // Получаем текущие отправители
-          const senders = connection.getSenders()
-
-          // Для видео
-          if (mediaState.hasVideo && !senders.some((s) => s.track?.kind === 'video')) {
-            const videoTrack = mediaState.stream!.getVideoTracks()[0]
-            this.connectionManager.addTrack(participant.userId, videoTrack, mediaState.stream!)
-          }
-
-          // Для аудио
-          if (mediaState.hasAudio && !senders.some((s) => s.track?.kind === 'audio')) {
-            const audioTrack = mediaState.stream!.getAudioTracks()[0]
-            this.connectionManager.addTrack(participant.userId, audioTrack, mediaState.stream!)
-          }
-        })
-      }
+      await Promise.all(activeConnections.map(async (connection) => {
+        const sender = connection.sendersArr.find((s) => s.track?.kind === kind)
+        if (sender) {
+          await sender.replaceTrack(track)
+        }
+      }))
     })
+      .on(MediaEvents.TRACK_MUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack }) => {
+        const type = kind === 'video' ? 'camera' : 'mic'
+        this.signalingService.sendEvent({ type: `${type}-off` })
+      })
+      .on(MediaEvents.TRACK_UNMUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack}) => {
+        const type = kind === 'video' ? 'camera' : 'mic'
+        this.signalingService.sendEvent({ type: `${type}-on` })
+      })
+      .on('stateChanged', (s) => {
+        // console.clear()
+        console.log('stateChanged', s.isVideoMuted)
+        this.notifySubscribers()
+      })
 
     this.roomService.on('stateChanged', (state: ReturnType<RoomService['getState']>) => {
       const media = state.participants.find(({ userId }) => userId === '6')?.media
@@ -258,34 +252,24 @@ export class ConferenceService extends EventEmitter {
 
   private async handleUserJoined(user: UserInfo): Promise<void> {
     try {
-      console.log('Новый участник:', user.id)
-
-      // Добавляем участника в RoomService
       this.roomService.addParticipant(user)
       const userId = String(user.id)
 
-      // Создаём peer соединение в любом случае
+      // Создаём peer соединение
       await this.connectionManager.createConnection(userId)
-      console.log('Создано соединение для:', user.id)
 
-      // Если есть активные потоки - отправляем их
+      // Добавляем текущие треки в соединение
       const mediaStream = this.mediaManager.getStream()
-      const { stream: screenStream } = this.screenShareManager.getState()
-      const streams = [mediaStream, screenStream].filter(Boolean) as MediaStream[]
-
-      if (streams.length > 0) {
-        console.log('Отправка существующих потоков новому участнику:', user.id)
-        // Добавляем все треки из всех потоков
-        await Promise.all(
-          streams.flatMap((stream) => stream.getTracks().map((track) => this.connectionManager.addTrack(userId, track, stream))),
-        )
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => {
+          this.connectionManager.addTrack(userId, track, mediaStream)
+        })
       }
 
       // Создаем и отправляем offer
       const offer = await this.connectionManager.createOffer(userId)
       if (offer) {
         await this.signalingService.sendOffer(userId, offer)
-        console.log('отправлен offer', userId)
       }
 
       this.notifySubscribers()
@@ -307,73 +291,31 @@ export class ConferenceService extends EventEmitter {
   }
 
   // Управление видео
-  async toggleVideo(): Promise<void> {
-    try {
-      this.#checkInitialized()
-      const state = this.mediaManager.getState()
+  async toggleLocalVideo(): Promise<void> {
+    const track = this.mediaManager.getVideoTrack()
+    const { isVideoMuted, isVideoEnabled } = this.mediaManager.getState()
 
-      if (!state.hasVideo) {
-        // Если нет видео трека, включаем видео
-        await this.mediaManager.enableVideo()
-      } else {
-        // Если есть - просто переключаем mute состояние
-        if (state.isVideoMuted) {
-          await this.mediaManager.unmuteVideo()
-        } else {
-          await this.mediaManager.muteVideo()
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка в toggleVideo:', error)
-      this.notificationManager.notify('error', 'Ошибка управления камерой')
+    // console.log('isVideoMuted', isVideoMuted)
+    if (!track) {
+      await this.mediaManager.enableVideo()
+    } else if (isVideoEnabled && !isVideoMuted) {
+      this.mediaManager.muteVideo()
+    } else {
+      this.mediaManager.unmuteVideo()
     }
   }
 
   // Управление аудио
-  async toggleAudio(): Promise<void> {
-    try {
-      this.#checkInitialized()
-      const state = this.mediaManager.getState()
+  async toggleLocalAudio(): Promise<void> {
+    const track = this.mediaManager.getAudioTrack()
+    const { isAudioEnabled, isAudioMuted } = this.mediaManager.getState()
 
-      if (!state.hasAudio) {
-        // Если нет аудио трека, включаем аудио
-        await this.mediaManager.enableAudio()
-      } else {
-        // Если есть - просто переключаем mute состояние
-        if (state.isAudioMuted) {
-          await this.mediaManager.unmuteAudio()
-        } else {
-          await this.mediaManager.muteAudio()
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка в toggleAudio:', error)
-      this.notificationManager.notify('error', 'Ошибка управления микрофоном')
-    }
-  }
-
-  // Полное отключение видео
-  async stopVideo(): Promise<void> {
-    try {
-      this.#checkInitialized()
-      const state = this.mediaManager.getState()
-
-      if (state.hasVideo) {
-        // Удаляем видео треки из всех соединений
-        const participants = this.roomService.getParticipants()
-        const videoTrack = this.mediaManager.getVideoTrack()
-
-        if (videoTrack) {
-          await Promise.all(
-            participants.map((p) => this.connectionManager.removeTrack(p.userId, videoTrack.id)),
-          )
-        }
-
-        // Отключаем видео в медиа менеджере
-        this.mediaManager.disableVideo()
-      }
-    } catch (error) {
-      this.notificationManager.notify('error', 'Ошибка отключения видео')
+    if (!track) {
+      await this.mediaManager.enableAudio()
+    } else if (isAudioEnabled && !isAudioMuted) {
+      this.mediaManager.muteAudio()
+    } else {
+      this.mediaManager.unmuteAudio()
     }
   }
 

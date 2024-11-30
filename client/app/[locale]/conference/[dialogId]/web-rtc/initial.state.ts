@@ -17,13 +17,8 @@ export const initialState: ConferenceState = {
     participants: []
   },
   currentUser: undefined,
-  localMedia: {
-    stream: undefined,
-    isVideoEnabled: false,
-    isAudioEnabled: false,
-    hasVideo: false,
-    hasAudio: false,
-  },
+  //@ts-ignore
+  localMedia: {},
   screenShare: {
     stream: undefined,
     isVideoEnabled: false,
