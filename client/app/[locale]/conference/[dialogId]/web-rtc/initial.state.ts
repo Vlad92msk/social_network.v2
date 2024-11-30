@@ -1,8 +1,8 @@
 import { ConferenceService } from './conference.service'
-import { Participant } from './micro-services'
 
 export interface ConferenceState {
   participants: ReturnType<ConferenceService['getState']>['participants']
+  roomInfo: ReturnType<ConferenceService['getState']>['roomInfo']
   localMedia: ReturnType<ConferenceService['getState']>['localMedia']
   screenShare: ReturnType<ConferenceService['getState']>['screenShare']
   connections: ReturnType<ConferenceService['getState']>['connections']
@@ -11,9 +11,14 @@ export interface ConferenceState {
 
 export const initialState: ConferenceState = {
   participants: [],
+  roomInfo: {
+    currentUser: undefined,
+    roomId: undefined,
+    participants: []
+  },
   currentUser: undefined,
   localMedia: {
-    stream: null,
+    stream: undefined,
     isVideoEnabled: false,
     isAudioEnabled: false,
     hasVideo: false,

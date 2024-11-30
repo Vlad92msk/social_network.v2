@@ -218,6 +218,8 @@ export class SignalingService extends EventEmitter {
       throw new Error('SignalingService не инициализирован')
     }
 
+    console.log('событие')
+
     this.#socket.emit('event', {
       event,
       dialogId: this.#config.dialogId,

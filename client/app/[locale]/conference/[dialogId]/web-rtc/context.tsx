@@ -13,13 +13,6 @@ interface ConferenceContextState extends ConferenceState {
   // Управление медиа
   toggleVideo: () => Promise<void>
   toggleAudio: () => Promise<void>
-  // Управление устройствами
-  switchCamera: (deviceId: string) => Promise<void>
-  switchMicrophone: (deviceId: string) => Promise<void>
-  getAvailableDevices: () => Promise<{
-    video: MediaDeviceInfo[]
-    audio: MediaDeviceInfo[]
-  }>;
   // Управление демонстрацией экрана
   startScreenShare: () => Promise<void>
   stopScreenShare: () => Promise<void>
@@ -84,11 +77,6 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
     // Базовые методы управления медиа
     toggleVideo: () => conferenceService.current.toggleVideo(),
     toggleAudio: () => conferenceService.current.toggleAudio(),
-
-    // Методы управления устройствами
-    switchCamera: (deviceId: string) => conferenceService.current.switchCamera(deviceId),
-    switchMicrophone: (deviceId: string) => conferenceService.current.switchMicrophone(deviceId),
-    getAvailableDevices: () => conferenceService.current.getAvailableDevices(),
 
     // Методы управления демонстрацией экрана
     startScreenShare: () => conferenceService.current.startScreenShare(),

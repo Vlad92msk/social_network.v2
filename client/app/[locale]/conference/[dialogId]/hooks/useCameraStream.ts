@@ -62,6 +62,6 @@ export function useScreenShareStream() {
     playsInline: true,
     muted: true,
   }), [])
-
+  // console.log('useScreenShareStream', stream?.getTracks())
   return { videoProps, isVideoEnabled, currentUser }
 }

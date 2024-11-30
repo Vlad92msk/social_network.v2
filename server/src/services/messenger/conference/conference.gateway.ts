@@ -83,15 +83,6 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         const { event, dialogId } = payload
         const senderId = client.data.userId
 
-        if (event.payload.streamId) {
-            await this.conferenceService.setUserEvents({
-                streamId: event.payload.streamId,
-                payload: event,
-                dialogId,
-                senderId
-            })
-        }
-
         // Отправляем сигнал целевому пользователю
         client.to(dialogId).emit('user:event', {
             initiator: senderId,
