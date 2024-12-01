@@ -335,7 +335,7 @@ export class ConnectionManager extends EventEmitter {
       state: connection.connectionState as ConnectionState,
       senders: connection.getSenders().length,
       receivers: connection.getReceivers().length,
-      sendersArr: connection.getSenders()
+      sendersArr: connection.getSenders(),
     }))
   }
 
@@ -349,8 +349,10 @@ export class ConnectionManager extends EventEmitter {
 
     try {
       // Закрываем все отправляемые треки
-      connection.getSenders().forEach(sender => sender.track?.stop())
-
+      // connection.getSenders().forEach(sender => sender.track?.stop())
+      connection.getSenders().forEach((sender) => {
+        connection.removeTrack(sender)
+      })
       // Закрываем соединение
       connection.close()
 
@@ -368,7 +370,7 @@ export class ConnectionManager extends EventEmitter {
   }
 
   getConnection(userId: string): RTCPeerConnection | undefined {
-    return this.connections.get(userId);
+    return this.connections.get(userId)
   }
 
   // Уничтожение менеджера

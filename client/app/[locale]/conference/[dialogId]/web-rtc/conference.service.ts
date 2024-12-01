@@ -279,6 +279,12 @@ export class ConferenceService extends EventEmitter {
       this.roomService.addParticipant(user)
       const userId = String(user.id)
 
+      const hasActiveConnection = this.connectionManager.hasConnection(userId)
+      // Когда пользователь переподключается - удаляем прошлое соединение
+      if (hasActiveConnection) {
+        // Закрываем старое соединение
+        this.connectionManager.closeConnection(userId)
+      }
       // Создаём peer соединение
       await this.connectionManager.createConnection(userId)
 
