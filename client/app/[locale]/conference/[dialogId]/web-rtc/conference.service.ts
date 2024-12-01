@@ -270,7 +270,7 @@ export class ConferenceService extends EventEmitter {
       const media = state.participants.find(({ userId }) => userId === '6')?.media
       // console.clear()
       console.log('___MEDIA____', media)
-      console.log('___GETTRACKS____', media?.stream?.getTracks())
+      this.notifySubscribers()
     })
   }
 

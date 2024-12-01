@@ -93,177 +93,162 @@ export function LocalPreview() {
   )
 }
 
-export function LocalScreenShare() {
-  const { videoProps, isVideoEnabled } = useScreenShareStream()
+// export function LocalScreenShare() {
+//   const { videoProps, isVideoEnabled } = useScreenShareStream()
+//
+//   if (!isVideoEnabled) return null
+//   return (
+//     <div className={styles.participant}>
+//       <video
+//         {...videoProps}
+//         className={`${styles.video} ${styles.videoMirrored}`}
+//       />
+//     </div>
+//   )
+// }
+//
+// export function RemoteScreenShare() {
+//   const { roomInfo:{ participants } } = useConference()
+//
+//   // console.clear()
+//   const a = participants.find(({ userId }) => userId === '6')?.media
+//   const streams = a?.stream
+//
+//
+//
+//   const screenRef = useRef<HTMLVideoElement>(null)
+//
+//   // useEffect(() => {
+//   //   const videoElement = screenRef.current
+//   //   if (videoElement && screen) {
+//   //     videoElement.srcObject = screen
+//   //
+//   //     return () => {
+//   //       videoElement.srcObject = null
+//   //     }
+//   //   }
+//   // }, [screen, isScreenSharing])
+//   //
+//   // const cameraRef = useRef<HTMLVideoElement>(null)
+//   //
+//   // useEffect(() => {
+//   //   const videoElement = cameraRef.current
+//   //   if (videoElement && camera) {
+//   //     videoElement.srcObject = camera
+//   //
+//   //     return () => {
+//   //       videoElement.srcObject = null
+//   //     }
+//   //   }
+//   // }, [camera])
+//
+//   // console.clear()
+//   // console.log('user', a)
+//   // console.log('streams', streams?.getTracks().filter(track => track.kind === 'audio'))
+//
+//
+//   return (
+//     <div className={styles.participant}>
+//       <video
+//         ref={screenRef}
+//         autoPlay
+//         playsInline
+//         muted
+//         className={`${styles.video} ${styles.videoMirrored}`}
+//       />
+//       <video
+//         ref={cameraRef}
+//         autoPlay
+//         playsInline
+//         muted
+//         className={`${styles.video} ${styles.videoMirrored}`}
+//       />
+//     </div>
+//   )
+// }
 
-  if (!isVideoEnabled) return null
+export function RemoteStream(props: VideoProps) {
+  const {
+    stream,
+    className,
+    isVideoEnabled,
+    isAudioEnabled,
+    currentUser,
+    streamType
+  } = props
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // console.clear()
+  console.log('stream', stream)
+  console.log('isVideoEnabled', isVideoEnabled)
+  console.log('isAudioEnabled', isAudioEnabled)
+  useEffect(() => {
+    if (videoRef.current) {
+
+      if (stream && stream !== videoRef.current.srcObject) {
+        videoRef.current.srcObject = null // Сначала очищаем
+        videoRef.current.srcObject = stream // Затем устанавливаем новый поток
+
+        // Дожидаемся загрузки метаданных перед воспроизведением
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(console.error)
+        }
+      }
+    }
+  }, [stream])
+
+  const videoProps = useMemo(() => ({
+    ref: videoRef,
+    autoPlay: true,
+    playsInline: true,
+    muted: true,
+  }), [])
+
+
+
   return (
     <div className={styles.participant}>
       <video
         {...videoProps}
         className={`${styles.video} ${styles.videoMirrored}`}
+        style={{ display: !isVideoEnabled ? 'none' : 'block' }}
       />
+      {!isVideoEnabled && (
+        <div className={styles.profileImageContainer}>
+          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50}/>
+        </div>
+      )}
+      {isAudioEnabled
+        ? (
+          <Icon
+            name="microphone"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+          />
+        )
+        : (
+          <Icon
+            name="microphone-off"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+          />
+        )}
     </div>
   )
 }
-
-export function RemoteScreenShare() {
-  const { roomInfo:{ participants } } = useConference()
-
-  // console.clear()
-  const a = participants.find(({ userId }) => userId === '6')?.media
-  const streams = a?.stream
-
-
-
-  const screenRef = useRef<HTMLVideoElement>(null)
-
-  // useEffect(() => {
-  //   const videoElement = screenRef.current
-  //   if (videoElement && screen) {
-  //     videoElement.srcObject = screen
-  //
-  //     return () => {
-  //       videoElement.srcObject = null
-  //     }
-  //   }
-  // }, [screen, isScreenSharing])
-  //
-  // const cameraRef = useRef<HTMLVideoElement>(null)
-  //
-  // useEffect(() => {
-  //   const videoElement = cameraRef.current
-  //   if (videoElement && camera) {
-  //     videoElement.srcObject = camera
-  //
-  //     return () => {
-  //       videoElement.srcObject = null
-  //     }
-  //   }
-  // }, [camera])
-
-  // console.clear()
-  // console.log('user', a)
-  // console.log('streams', streams?.getTracks().filter(track => track.kind === 'audio'))
-
-
-  return (
-    <div className={styles.participant}>
-      {/* <video */}
-      {/*   ref={screenRef} */}
-      {/*   autoPlay */}
-      {/*   playsInline */}
-      {/*   muted */}
-      {/*   className={`${styles.video} ${styles.videoMirrored}`} */}
-      {/* /> */}
-      {/* <video */}
-      {/*   ref={cameraRef} */}
-      {/*   autoPlay */}
-      {/*   playsInline */}
-      {/*   muted */}
-      {/*   className={`${styles.video} ${styles.videoMirrored}`} */}
-      {/* /> */}
-    </div>
-  )
-}
-
-// export function RemoteStream(props: VideoProps) {
-//   const {
-//     stream,
-//     className,
-//     isVideoEnabled,
-//     isAudioEnabled,
-//     currentUser,
-//     streamType
-//   } = props
-//   const videoRef = useRef<HTMLVideoElement>(null)
-//
-//   useEffect(() => {
-//     const videoElement = videoRef.current
-//     if (videoElement && stream && isVideoEnabled) {
-//       videoElement.srcObject = stream
-//       // Добавим обработку ошибок и попытку воспроизведения
-//       videoElement.play().catch((error) => {
-//         console.error('Error playing video:', error)
-//       })
-//
-//       return () => {
-//         videoElement.srcObject = null
-//       }
-//     }
-//   }, [stream, isVideoEnabled])
-//
-//   const videoProps = useMemo(() => ({
-//     ref: videoRef,
-//     autoPlay: true,
-//     playsInline: true,
-//     muted: true,
-//   }), [])
-//
-//   const cameraStream = useMemo(() => {
-//     const hasVideo = stream?.getTracks().map(track => track.kind).includes('video')
-//     if (isVideoEnabled && hasVideo) {
-//       return (
-//         <video
-//           {...videoProps}
-//           key={stream?.id}
-//           className={`${styles.video} ${className}`}
-//         />
-//       )
-//     }
-//     return (
-//       <div className={styles.profileImageContainer}>
-//         <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
-//       </div>
-//     )
-//   }, [className, currentUser, isVideoEnabled, stream, videoProps])
-//
-//   const screenStream = useMemo(() => (
-//     <video
-//       {...videoProps}
-//       key={stream?.id}
-//       className={`${styles.video} ${className}`}
-//     />
-//   ), [className, stream?.id, videoProps])
-//
-//   const microphoneElement = useMemo(() => {
-//     if (isAudioEnabled) {
-//       return (
-//         <Icon
-//           name="microphone"
-//           style={{
-//             position: 'absolute',
-//             right: 10,
-//             top: 10,
-//             background: 'gray',
-//           }}
-//         />
-//       )
-//     }
-//     return (
-//       <Icon
-//         name="microphone-off"
-//         style={{
-//           position: 'absolute',
-//           right: 10,
-//           top: 10,
-//           background: 'gray',
-//         }}
-//       />
-//     )
-//   }, [isAudioEnabled])
-//
-//   return (
-//     <div className={styles.participant}>
-//       {streamType === 'camera' ? cameraStream : screenStream}
-//       {streamType === 'camera' ? <span className={styles.participantName}>{currentUser?.name}</span> : null}
-//       {streamType === 'camera' ? microphoneElement : null}
-//     </div>
-//   )
-// }
 
 export function Conference({ profile }: ConferenceProps) {
-  const { isInitialized } = useConference()
+  const {
+    isInitialized,
+    participants,
+    currentUser
+  } = useConference()
 
   if (!isInitialized) {
     return (
@@ -273,12 +258,31 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
-  // console.log('__roomInfo', roomInfo)
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.remoteStreams}>
-          <LocalPreview />
+          <LocalPreview/>
+          {participants.filter(({ userId }) => userId !== String(currentUser?.id))
+            ?.map(({
+              userId,
+              userInfo,
+              media
+            }) => {
+
+              const isAudioEnabled = media.isAudioEnabled
+              const isVideoEnabled = media.isVideoEnabled
+              return (
+                <RemoteStream
+                  key={userId}
+                  stream={media.stream}
+                  currentUser={userInfo}
+                  streamType={'camera'}
+                  isAudioEnabled={isAudioEnabled}
+                isVideoEnabled={isVideoEnabled}
+              />
+            )
+          })}
           {/* <LocalScreenShare /> */}
           {/* <RemoteScreenShare /> */}
           {/* <VideoChatTest /> */}
