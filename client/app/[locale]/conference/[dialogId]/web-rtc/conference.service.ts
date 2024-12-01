@@ -140,9 +140,10 @@ export class ConferenceService extends EventEmitter {
         }
       })
       .on('userEvent', (payload: EventType) => {
-        console.log('___СОБЫТИЕ____', payload)
-        const { type, initiator, payload: s } = payload
-        switch (type) {
+        const { event, initiator } = payload
+        console.clear()
+
+        switch (event.type) {
           case 'mic-off':
             this.roomService.updateParticipantMedia(initiator, { isAudioEnabled: false })
             break
@@ -168,19 +169,13 @@ export class ConferenceService extends EventEmitter {
 
     // 2. События WebRTC соединений
     this.connectionManager
-      .on('track', ({ userId, track, stream }) => {
-        this.roomService.handleTrack(userId, track, stream)
+      .on('track', ({ userId, track }) => {
+        // console.clear()
+        // console.log(`Получен трек от ${userId}, track: ${track}`, stream)
+        this.roomService.handleTrack(userId, track)
 
         track.addEventListener('ended', () => {
           this.roomService.handleTrackEnded(userId, track)
-        })
-
-        track.addEventListener('mute', () => {
-          this.roomService.handleTrackDisabled(userId, track)
-        })
-
-        track.addEventListener('unmute', () => {
-          this.roomService.handleTrackEnabled(userId, track)
         })
       })
       .on('iceCandidate', async ({ userId, candidate }) => {
@@ -213,21 +208,52 @@ export class ConferenceService extends EventEmitter {
       })
 
     // 3. События камеры
-    this.mediaManager.on(MediaEvents.TRACK_ADDED, async ({ kind, track }: { kind: 'video' | 'audio', track: MediaStreamTrack }) => {
-      this.notifySubscribers()
+    this.mediaManager
+      .on(MediaEvents.TRACK_ADDED, async ({ kind, track, stream }: { kind: 'video' | 'audio', track: MediaStreamTrack, stream: MediaStream }) => {
+        this.notifySubscribers()
 
-      // Оповещаем других участников об изменениях
-      const activeConnections = this.connectionManager
-        .getConnections()
-        .filter((conn) => conn.state === 'connected')
+        console.log(`[Media] Новый ${kind} трек добавлен:`, {
+          trackId: track.id,
+          streamId: stream.id,
+          enabled: track.enabled,
+        })
 
-      await Promise.all(activeConnections.map(async (connection) => {
-        const sender = connection.sendersArr.find((s) => s.track?.kind === kind)
-        if (sender) {
-          await sender.replaceTrack(track)
-        }
-      }))
-    })
+        // Получаем активные соединения
+        const activeConnections = this.connectionManager.getConnections()
+
+        await Promise.all(activeConnections.map(async ({ userId }) => {
+          try {
+            const connection = this.connectionManager.getConnection(userId)
+            if (!connection) return
+
+            // Проверяем существующие отправители для данного типа трека
+            const existingSender = connection.getSenders().find((s) => s.track?.kind === kind)
+
+            if (existingSender) {
+            // Если отправитель существует - заменяем трек
+              console.log(`[Media] Заменяем существующий ${kind} трек для пользователя ${userId}`)
+              await existingSender.replaceTrack(track)
+            } else {
+            // Если отправителя нет - добавляем новый трек
+              console.log(`[Media] Добавляем новый ${kind} трек для пользователя ${userId}`)
+              await this.connectionManager.addTrack(userId, track, stream)
+            }
+          } catch (error) {
+            console.error(`[Media] Ошибка обработки трека для пользователя ${userId}:`, error)
+          }
+        }))
+      })
+      .on(MediaEvents.TRACK_REMOVED, async ({ kind, trackId }: { kind: 'video' | 'audio', trackId: string }) => {
+        const activeConnections = this.connectionManager.getConnections()
+
+        await Promise.all(activeConnections.map(async ({ userId }) => {
+          try {
+            await this.connectionManager.removeTrack(userId, trackId)
+          } catch (error) {
+            console.error(`[Media] Ошибка удаления трека для пользователя ${userId}:`, error)
+          }
+        }))
+      })
       .on(MediaEvents.TRACK_MUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack }) => {
         const type = kind === 'video' ? 'camera' : 'mic'
         this.signalingService.sendEvent({ type: `${type}-off` })
@@ -237,8 +263,6 @@ export class ConferenceService extends EventEmitter {
         this.signalingService.sendEvent({ type: `${type}-on` })
       })
       .on('stateChanged', (s) => {
-        // console.clear()
-        console.log('stateChanged', s.isVideoMuted)
         this.notifySubscribers()
       })
 
@@ -295,7 +319,6 @@ export class ConferenceService extends EventEmitter {
     const track = this.mediaManager.getVideoTrack()
     const { isVideoMuted, isVideoEnabled } = this.mediaManager.getState()
 
-    // console.log('isVideoMuted', isVideoMuted)
     if (!track) {
       await this.mediaManager.enableVideo()
     } else if (isVideoEnabled && !isVideoMuted) {

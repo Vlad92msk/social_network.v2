@@ -2,12 +2,12 @@ import { EventEmitter } from 'events'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 
 interface ParticipantMedia {
-  hasAudio: boolean        // Есть ли аудио трек
-  hasVideo: boolean        // Есть ли видео трек с камеры
-  isAudioEnabled: boolean  // Включен ли аудио трек
-  isVideoEnabled: boolean  // Включен ли видео трек
+  hasAudio: boolean // Есть ли аудио трек
+  hasVideo: boolean // Есть ли видео трек с камеры
+  isAudioEnabled: boolean // Включен ли аудио трек
+  isVideoEnabled: boolean // Включен ли видео трек
   isScreenSharing: boolean // Есть ли активный трек трансляции экрана
-  stream?: MediaStream     // Единый поток для всех треков
+  stream?: MediaStream // Единый поток для всех треков
 }
 
 interface Participant {
@@ -77,7 +77,7 @@ export class RoomService extends EventEmitter {
           isAudioEnabled: false,
           isVideoEnabled: false,
           isScreenSharing: false,
-          stream: undefined
+          stream: undefined,
         },
       })
 
@@ -112,7 +112,7 @@ export class RoomService extends EventEmitter {
 
   handleTrackEnded(userId: string, track: MediaStreamTrack): void {
     const participant = this.participants.get(userId)
-    if (!participant) return
+    if (!participant || !participant.media.stream) return
 
     const updates: Partial<ParticipantMedia> = {}
 
@@ -124,7 +124,11 @@ export class RoomService extends EventEmitter {
       updates.isVideoEnabled = false
     }
 
+    // Сначала обновляем состояние
     this.updateParticipantMedia(userId, updates)
+
+    // Потом удаляем трек
+    participant.media.stream.removeTrack(track)
   }
 
   /**
@@ -134,7 +138,7 @@ export class RoomService extends EventEmitter {
     const participant = this.participants.get(userId)
     if (participant) {
       if (participant.media.stream) {
-        participant.media.stream.getTracks().forEach(track => track.stop())
+        participant.media.stream.getTracks().forEach((track) => track.stop())
       }
       this.participants.delete(userId)
       this.emit('participantLeft', { userId })
@@ -142,14 +146,20 @@ export class RoomService extends EventEmitter {
     }
   }
 
-  handleTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): void {
+  handleTrack(userId: string, track: MediaStreamTrack): void {
     const participant = this.participants.get(userId)
     if (!participant) return
 
-    participant.media.stream = stream
+    // Создаем новый MediaStream если его еще нет
+    if (!participant.media.stream) {
+      participant.media.stream = new MediaStream()
+    }
+
+    // Добавляем новый трек в существующий стрим
+    participant.media.stream.addTrack(track)
 
     const updates: Partial<ParticipantMedia> = {
-      stream
+      stream: participant.media.stream,
     }
 
     if (track.kind === 'audio') {
@@ -163,13 +173,39 @@ export class RoomService extends EventEmitter {
     this.updateParticipantMedia(userId, updates)
   }
 
-
   /**
    * Обновление состояния медиа участника
    */
   updateParticipantMedia(userId: string, updates: Partial<ParticipantMedia>): void {
     const participant = this.participants.get(userId)
     if (participant) {
+      // Проверяем, есть ли реальные изменения
+      const hasChanges = Object.entries(updates).some(([key, value]) => participant.media[key as keyof ParticipantMedia] !== value)
+
+      if (!hasChanges) {
+        return // Пропускаем обновление если ничего не изменилось
+      }
+
+      // Обновляем состояние треков в MediaStream
+      if (participant.media.stream) {
+        const tracks = participant.media.stream.getTracks()
+
+        if ('isAudioEnabled' in updates) {
+          const audioTrack = tracks.find((track) => track.kind === 'audio')
+          if (audioTrack && audioTrack.enabled !== updates.isAudioEnabled) {
+            audioTrack.enabled = updates.isAudioEnabled!
+          }
+        }
+
+        if ('isVideoEnabled' in updates) {
+          const videoTrack = tracks.find((track) => track.kind === 'video')
+          if (videoTrack && videoTrack.enabled !== updates.isVideoEnabled) {
+            videoTrack.enabled = updates.isVideoEnabled!
+          }
+        }
+      }
+
+      // Обновляем состояние в сторе
       participant.media = {
         ...participant.media,
         ...updates,
@@ -219,9 +255,9 @@ export class RoomService extends EventEmitter {
    * Очистка
    */
   destroy(): void {
-    this.participants.forEach(participant => {
+    this.participants.forEach((participant) => {
       if (participant.media.stream) {
-        participant.media.stream.getTracks().forEach(track => track.stop())
+        participant.media.stream.getTracks().forEach((track) => track.stop())
       }
     })
     this.participants.clear()

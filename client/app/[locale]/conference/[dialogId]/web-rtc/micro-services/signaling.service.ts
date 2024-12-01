@@ -6,9 +6,11 @@ import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userI
 type SignalType = 'offer' | 'answer' | 'ice-candidate'
 
 export type EventType = {
-  type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off',
+  event: {
+    type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off'
+    payload: any;
+  },
   initiator: string
-  payload: any
 }
 
 

@@ -82,10 +82,10 @@ export class MediaStreamManager extends EventEmitter {
    * Вызывается автоматически при создании экземпляра класса
    */
   private setupDeviceChangeListener(): void {
-    if (typeof window !== 'undefined') { // Проверяем, что мы на клиенте
+    if (typeof window !== 'undefined') {
       this.deviceChangeListener = async () => {
         const devices = await this.getAvailableDevices()
-        this.emit('deviceChange', devices)
+        this.emit(MediaEvents.DEVICE_CHANGED, devices)
       }
 
       navigator.mediaDevices?.addEventListener('devicechange', this.deviceChangeListener)
@@ -143,7 +143,7 @@ export class MediaStreamManager extends EventEmitter {
    * Внутренний метод, вызывается автоматически
    */
   private handleTrackEnded(track: MediaStreamTrack): void {
-    this.emit('trackEnded', track)
+    this.emit(MediaEvents.TRACK_REMOVED, { kind: track.kind, track })
     if (track.kind === 'video') {
       this.isVideoEnabled = false
     } else if (track.kind === 'audio') {
@@ -161,17 +161,17 @@ export class MediaStreamManager extends EventEmitter {
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
 
       if (this.stream) {
-        // Добавляем новые треки к существующему потоку
+        // Add new tracks to existing stream
         stream.getTracks().forEach((track) => {
           this.stream?.addTrack(track)
+          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track, stream })
           track.addEventListener('ended', () => this.handleTrackEnded(track))
-          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track })
         })
       } else {
         this.stream = stream
         stream.getTracks().forEach((track) => {
+          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track, stream })
           track.addEventListener('ended', () => this.handleTrackEnded(track))
-          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track })
         })
       }
 
@@ -200,6 +200,7 @@ export class MediaStreamManager extends EventEmitter {
     if (videoTrack) {
       videoTrack.enabled = false
       this.stream?.removeTrack(videoTrack)
+      this.emit(MediaEvents.TRACK_REMOVED, { kind: 'video', track: videoTrack })
       videoTrack.stop()
       this.isVideoEnabled = false
       this.emitState()
@@ -230,6 +231,7 @@ export class MediaStreamManager extends EventEmitter {
           videoTrack.enabled = true
           this.isVideoEnabled = true
           this.isVideoMuted = false
+          this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'video', track: videoTrack })
         }
       }
       this.emitState()
@@ -259,6 +261,7 @@ export class MediaStreamManager extends EventEmitter {
           audioTrack.enabled = true
           this.isAudioEnabled = true
           this.isAudioMuted = false
+          this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'audio', track: audioTrack })
         }
       }
       this.emitState()
@@ -276,6 +279,7 @@ export class MediaStreamManager extends EventEmitter {
     if (audioTrack) {
       audioTrack.enabled = false
       this.stream?.removeTrack(audioTrack)
+      this.emit(MediaEvents.TRACK_REMOVED, { kind: 'audio', track: audioTrack })
       audioTrack.stop()
       this.isAudioEnabled = false
       this.emitState()
@@ -450,12 +454,12 @@ export class MediaStreamManager extends EventEmitter {
 
   private handleError(message: string, error: unknown): void {
     const finalError = error instanceof Error ? error : new Error(message)
-    this.emit('error', finalError)
+    this.emit(MediaEvents.ERROR, finalError)
     throw finalError
   }
 
   private emitState(): void {
-    this.emit('stateChanged', this.getState())
+    this.emit(MediaEvents.STATE_CHANGED, this.getState())
   }
 
   /**
@@ -466,6 +470,7 @@ export class MediaStreamManager extends EventEmitter {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => {
         track.enabled = false
+        this.emit(MediaEvents.TRACK_REMOVED, { kind: track.kind, track })
         track.stop()
       })
       this.stream = null

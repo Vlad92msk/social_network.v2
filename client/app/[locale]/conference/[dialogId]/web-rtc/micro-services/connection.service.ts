@@ -62,10 +62,6 @@ export class ConnectionManager extends EventEmitter {
 
         this.emit('track', { userId, track, stream })
 
-        // Слушаем изменения состояния трека
-        track.onmute = () => console.log('Track muted')
-        track.onunmute = () => console.log('Track unmuted')
-        track.onended = () => console.log('Track ended')
         // Отслеживаем окончание трека
         track.onended = () => {
           this.emit('trackEnded', { userId, trackId: track.id })
