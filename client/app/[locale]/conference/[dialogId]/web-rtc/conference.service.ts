@@ -144,32 +144,32 @@ export class ConferenceService extends EventEmitter {
 
         switch (event.type) {
           case 'initial-setup':
-            this.roomService.updateParticipantMedia(initiator, event.payload)
+            this.roomService.handleInitialSetup(initiator, event.payload)
             break
           case 'mic-off':
-            this.roomService.updateParticipantMedia(initiator, { isAudioEnabled: false })
+            this.roomService.handleAudioState(initiator, false)
             break
           case 'mic-on':
-            this.roomService.updateParticipantMedia(initiator, { isAudioEnabled: true })
+            this.roomService.handleAudioState(initiator, true)
             break
           case 'camera-off':
-            this.roomService.updateParticipantMedia(initiator, { isVideoEnabled: false })
+            this.roomService.handleVideoState(initiator, false)
             break
           case 'camera-on':
-            this.roomService.updateParticipantMedia(initiator, { isVideoEnabled: true })
+            this.roomService.handleVideoState(initiator, true)
             break
           case 'camera-start':
-            this.roomService.updateParticipantMedia(initiator, { isVideoEnabled: true, cameraStreamId: event.payload.cameraStreamId })
+            this.roomService.handleCameraStart(initiator, event.payload.cameraStreamId)
             break
           case 'screen-share-off':
-            this.roomService.updateParticipantMedia(initiator, { isScreenSharing: false })
+            this.roomService.handleScreenShare(initiator, false)
             break
           case 'screen-share-on':
-            this.roomService.updateParticipantMedia(initiator, { isScreenSharing: true, screenStreamId: event.payload.screenStreamId })
+            this.roomService.handleScreenShare(initiator, true, event.payload.screenStreamId)
             break
           default: break
         }
-        this.notifySubscribers()
+        // this.notifySubscribers()
       })
 
     // 2. События WebRTC соединений
@@ -180,9 +180,7 @@ export class ConferenceService extends EventEmitter {
 
         track.addEventListener('ended', () => {
           this.roomService.handleTrackEnded(userId, track, stream)
-          this.notifySubscribers()
         })
-        this.notifySubscribers()
       })
       .on('iceCandidate', async ({ userId, candidate }) => {
         await this.signalingService.sendIceCandidate(userId, candidate)
@@ -218,7 +216,13 @@ export class ConferenceService extends EventEmitter {
       .on(MediaEvents.TRACK_ADDED, async ({ kind, track, stream }: { kind: 'video' | 'audio', track: MediaStreamTrack, stream: MediaStream }) => {
         this.notifySubscribers()
 
-        this.signalingService.sendEvent({ type: 'camera-start', payload: { cameraStreamId: stream.id } })
+        // Отправляем camera-start только для видео трека
+        if (kind === 'video') {
+          this.signalingService.sendEvent({
+            type: 'camera-start',
+            payload: { cameraStreamId: stream.id }
+          })
+        }
         // Получаем активные соединения
         const activeConnections = this.connectionManager.getConnections()
 
@@ -278,7 +282,10 @@ export class ConferenceService extends EventEmitter {
         // Отправляем сигнал о начале трансляции
         this.signalingService.sendEvent({
           type: 'screen-share-on',
-          payload: { screenStreamId: stream.id },
+          payload: {
+            screenStreamId: stream.id,
+            trackId: stream.getVideoTracks()[0]?.id, // Добавляем ID трека
+          },
         })
 
         // Получаем активные соединения и добавляем трек
@@ -321,6 +328,15 @@ export class ConferenceService extends EventEmitter {
           }
         }))
       })
+
+    this.roomService.on('stateChanged', (state:  ReturnType<ConferenceService['getState']>['roomInfo']) => {
+      // console.clear()
+      // const cameraID = state.participants.find(({ userId }) => userId === '6')?.media.cameraStreamId
+      // const streams = state.participants.find(({ userId }) => userId === '6')?.media.streams
+      // const tracks = (cameraID && streams) ? streams[cameraID].getVideoTracks() : undefined
+      // console.log('state', tracks)
+      this.notifySubscribers()
+    })
   }
 
   private async handleUserJoined(user: UserInfo): Promise<void> {
@@ -341,14 +357,19 @@ export class ConferenceService extends EventEmitter {
       const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled } = this.mediaManager.getState()
       const { stream: screenStream, isVideoEnabled: screenIsVideoEnabled } = this.screenShareManager.getState()
 
-      this.signalingService.sendEvent({ type: 'initial-setup',
-        payload: {
-          isAudioEnabled: cameraIsAudioEnabled,
-          isVideoEnabled: cameraIsVideoEnabled,
-          cameraStreamId: mediaStream?.id,
-          screenStreamId: screenStream?.id,
-          isScreenSharing: screenIsVideoEnabled,
-        } })
+      // Отправляем initial-setup только с действительно необходимыми полями
+      const initialSetup = {
+        isAudioEnabled: cameraIsAudioEnabled,
+        isVideoEnabled: cameraIsVideoEnabled,
+        isScreenSharing: screenIsVideoEnabled,
+        ...(mediaStream?.id && { cameraStreamId: mediaStream.id }),
+        ...(screenStream?.id && screenIsVideoEnabled && { screenStreamId: screenStream.id }),
+      }
+
+      this.signalingService.sendEvent({
+        type: 'initial-setup',
+        payload: initialSetup,
+      })
 
       // Добавляем треки с камеры
       if (mediaStream) {

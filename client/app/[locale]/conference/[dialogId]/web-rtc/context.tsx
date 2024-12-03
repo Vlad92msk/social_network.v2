@@ -85,7 +85,7 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
     stopScreenShare: () => conferenceService.current.stopScreenShare(),
   }), [isInitialized, state])
 
-  console.log('____value___', value)
+  // console.log('____value___', value)
   return (
     <ConferenceContext.Provider value={value}>
       {children}

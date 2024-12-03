@@ -123,7 +123,7 @@ export class SignalingService extends EventEmitter {
     })
 
     socket.on('user:event', (payload: EventType) => {
-      console.log(`Получено событие от пользователя ${payload.initiator}`, payload)
+      // console.log(`Получено событие от пользователя ${payload.initiator}`, payload)
       this.emit('userEvent', payload)
     })
 
@@ -188,15 +188,15 @@ export class SignalingService extends EventEmitter {
 
   sendIceCandidate(targetUserId: string, candidate: RTCIceCandidate) {
     if (!candidate || !candidate.candidate) {
-      console.log('[Signaling] Пропускаем отправку пустого кандидата');
+      // console.log('[Signaling] Пропускаем отправку пустого кандидата');
       return;
     }
-    console.log(`[Signaling] Отправка ICE кандидата:`, {
-      targetUserId,
-      foundation: candidate.foundation,
-      protocol: candidate.protocol,
-      type: candidate.type
-    });
+    // console.log(`[Signaling] Отправка ICE кандидата:`, {
+    //   targetUserId,
+    //   foundation: candidate.foundation,
+    //   protocol: candidate.protocol,
+    //   type: candidate.type
+    // });
     this.#sendSignal(targetUserId, {
       type: 'ice-candidate',
       payload: candidate,
@@ -219,8 +219,6 @@ export class SignalingService extends EventEmitter {
     if (!this.#socket || !this.#config) {
       throw new Error('SignalingService не инициализирован')
     }
-
-    console.log('событие')
 
     this.#socket.emit('event', {
       event,

@@ -179,7 +179,7 @@ export function RemoteStream(props: VideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // console.clear()
-  console.log('stream', stream)
+  console.log('stream', stream?.getTracks())
   console.log('isVideoEnabled', isVideoEnabled)
   console.log('isAudioEnabled', isAudioEnabled)
   useEffect(() => {
@@ -255,9 +255,6 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
-  // console.clear()
-  console.log('[CONFERENCE] participants', participants)
-
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
@@ -276,32 +273,33 @@ export function Conference({ profile }: ConferenceProps) {
                 isScreenSharing,
                 streams,
                 screenStreamId,
-                cameraStreamId
+                cameraStreamId,
               } = media
 
-              // Находим поток трансляции экрана
-              const screenStream = screenStreamId ? streams.get(screenStreamId) : undefined
-              const cameraStream = cameraStreamId ? streams.get(cameraStreamId) : undefined
+              // Получаем потоки из объекта streams
+              const screenStream = screenStreamId ? streams[screenStreamId] : undefined
+              const cameraStream = cameraStreamId ? streams[cameraStreamId] : undefined
+
 
               return (
                 <div key={userId}>
-                  {/* Показываем камеру */}
-                    <RemoteStream
-                      stream={cameraStream}
-                      currentUser={userInfo}
-                      streamType="camera"
-                      isAudioEnabled={isAudioEnabled}
-                      isVideoEnabled={isVideoEnabled}
-                    />
+                  {/* Показываем камеру если поток существует */}
+                  <RemoteStream
+                    stream={cameraStream}
+                    currentUser={userInfo}
+                    streamType="camera"
+                    isAudioEnabled={isAudioEnabled}
+                    isVideoEnabled={isVideoEnabled}
+                  />
 
-                  {/* Показываем трансляцию экрана если она есть */}
+                  {/* Показываем трансляцию экрана если она активна и поток существует */}
                   {screenStream && isScreenSharing && (
                     <RemoteStream
                       stream={screenStream}
                       currentUser={userInfo}
                       streamType="screen"
-                      isAudioEnabled={false} // У трансляции экрана нет звука
-                      isVideoEnabled // Если поток есть - значит трансляция активна
+                      isAudioEnabled={false}
+                      isVideoEnabled
                     />
                   )}
                 </div>
@@ -309,8 +307,8 @@ export function Conference({ profile }: ConferenceProps) {
             })}
           <LocalScreenShare />
         </div>
-
       </div>
+
       <div className={styles.actionsContainer}>
         <div className={styles.mediaControls}>
           <CallControls />

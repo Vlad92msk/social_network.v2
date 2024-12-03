@@ -17,14 +17,14 @@ export class ConnectionManager extends EventEmitter {
     try {
       // Закрываем существующее соединение если есть
       this.closeConnection(userId)
-      console.log(`[Connection] Создаем новое соединение для ${userId}`)
+      // console.log(`[Connection] Создаем новое соединение для ${userId}`)
 
       const connection = new RTCPeerConnection(this.config)
       // Добавим проверку на дубликаты кандидатов
       const processedCandidates = new Set()
 
       // Проверим конфигурацию
-      console.log('[Connection] ICE config:', this.config)
+      // console.log('[Connection] ICE config:', this.config)
 
       // Обработка необходимости перепереговоров (при добавлении/удалении треков)
       connection.onnegotiationneeded = async () => {
@@ -75,34 +75,34 @@ export class ConnectionManager extends EventEmitter {
           if (!processedCandidates.has(candidateKey)) {
             processedCandidates.add(candidateKey)
 
-            console.log(`[ICE] Новый кандидат для ${userId}:`, {
-              foundation: candidate.foundation,
-              protocol: candidate.protocol,
-              type: candidate.type,
-              candidate: candidate.candidate,
-            })
+            // console.log(`[ICE] Новый кандидат для ${userId}:`, {
+            //   foundation: candidate.foundation,
+            //   protocol: candidate.protocol,
+            //   type: candidate.type,
+            //   candidate: candidate.candidate,
+            // })
 
             this.emit('iceCandidate', { userId, candidate })
           } else {
-            console.log(`[ICE] Пропускаем дубликат кандидата для ${userId}`)
+            // console.log(`[ICE] Пропускаем дубликат кандидата для ${userId}`)
           }
         } else {
           console.log(`[ICE] Сбор кандидатов завершен для ${userId}`)
         }
       }
 
-      connection.onconnectionstatechange = () => {
-        console.log(`[Connection] Состояние соединения для ${userId}:`, {
-          connectionState: connection.connectionState,
-          iceConnectionState: connection.iceConnectionState,
-          iceGatheringState: connection.iceGatheringState,
-          signalingState: connection.signalingState,
-        })
-      }
+      // connection.onconnectionstatechange = () => {
+      //   console.log(`[Connection] Состояние соединения для ${userId}:`, {
+      //     connectionState: connection.connectionState,
+      //     iceConnectionState: connection.iceConnectionState,
+      //     iceGatheringState: connection.iceGatheringState,
+      //     signalingState: connection.signalingState,
+      //   })
+      // }
 
       // Следим за состоянием ICE
       connection.oniceconnectionstatechange = () => {
-        console.log(`[ICE] Состояние соединения для ${userId}:`, connection.iceConnectionState)
+        // console.log(`[ICE] Состояние соединения для ${userId}:`, connection.iceConnectionState)
         this.emit('iceConnectionState', {
           userId,
           state: connection.iceConnectionState,
@@ -188,11 +188,11 @@ export class ConnectionManager extends EventEmitter {
 
     try {
       await connection.setRemoteDescription(new RTCSessionDescription(offer))
-      console.log('Remote Description установлен')
+      // console.log('Remote Description установлен')
 
       const answer = await connection.createAnswer()
       await connection.setLocalDescription(answer)
-      console.log('Local Description установлен')
+      // console.log('Local Description установлен')
 
       return answer
     } catch (error) {
@@ -228,12 +228,12 @@ export class ConnectionManager extends EventEmitter {
 
     try {
       if (!candidate || !candidate.candidate) {
-        console.log(`[ICE] Пропускаем пустого кандидата для ${userId}`)
+        // console.log(`[ICE] Пропускаем пустого кандидата для ${userId}`)
         return
       }
 
       await connection.addIceCandidate(candidate)
-      console.log(`[ICE] Кандидат успешно добавлен для ${userId}`)
+      // console.log(`[ICE] Кандидат успешно добавлен для ${userId}`)
     } catch (error) {
       console.error(`[ICE] Ошибка добавления кандидата для ${userId}:`, error)
       throw error

@@ -1,16 +1,15 @@
 import { EventEmitter } from 'events'
-import * as stream from 'node:stream'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 
 interface ParticipantMedia {
-  hasAudio: boolean // Есть ли аудио трек
-  hasVideo: boolean // Есть ли видео трек с камеры
-  isAudioEnabled: boolean // Включен ли аудио трек
-  isVideoEnabled: boolean // Включен ли видео трек
-  isScreenSharing: boolean // Есть ли активный трек трансляции экрана
-  streams: Map<string, MediaStream> // Храним все стримы по их ID
-  screenStreamId?: string
-  cameraStreamId?: string
+  hasAudio: boolean;
+  hasVideo: boolean;
+  isAudioEnabled: boolean;
+  isVideoEnabled: boolean;
+  isScreenSharing: boolean;
+  streams: Record<string, MediaStream>;
+  screenStreamId?: string;
+  cameraStreamId?: string;
 }
 
 interface Participant {
@@ -55,12 +54,269 @@ export class RoomService extends EventEmitter {
           isAudioEnabled: false,
           isVideoEnabled: false,
           isScreenSharing: false,
-          streams: new Map(),
+          streams: {},
         },
       })
     })
 
     this.emit('initialized', this.getState())
+  }
+
+  /**
+   * Обработка входящего трека
+   */
+  handleTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): void {
+    const participant = this.participants.get(userId);
+    if (!participant) return;
+
+    console.log('Handle Track:', {
+      userId,
+      trackKind: track.kind,
+      trackId: track.id,
+      streamId: stream.id,
+      currentStreams: Object.keys(participant.media.streams)
+    });
+
+    // Проверяем, существует ли уже такой поток
+    let currentStream = participant.media.streams[stream.id];
+
+    // Если потока нет - создаем новый
+    if (!currentStream) {
+      currentStream = new MediaStream();
+      participant.media.streams[stream.id] = currentStream;
+
+      // Если это видео трек и не скриншеринг - помечаем как поток камеры
+      if (track.kind === 'video' && stream.id !== participant.media.screenStreamId) {
+        participant.media.cameraStreamId = stream.id;
+      }
+    }
+
+    // Добавляем трек если его еще нет в потоке
+    if (!currentStream.getTracks().some(t => t.id === track.id)) {
+      currentStream.addTrack(track);
+    }
+
+    // Обновляем состояние в зависимости от типа трека
+    if (track.kind === 'audio') {
+      participant.media.hasAudio = true;
+      participant.media.isAudioEnabled = track.enabled;
+    } else if (track.kind === 'video') {
+      if (stream.id === participant.media.screenStreamId) {
+        participant.media.isScreenSharing = true;
+      } else {
+        participant.media.hasVideo = true;
+        participant.media.isVideoEnabled = track.enabled;
+      }
+    }
+
+    console.log('After Track Update:', {
+      streams: Object.entries(participant.media.streams).map(([id, s]) => ({
+        id,
+        tracks: s.getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled }))
+      }))
+    });
+
+    this.emitStateChanged();
+  }
+
+  /**
+   * Инициализация состояния участника
+   */
+  handleInitialSetup(userId: string, setup: any): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    participant.media = {
+      ...participant.media,
+      ...setup,
+      streams: participant.media.streams, // Сохраняем существующие потоки
+    }
+
+    this.emitStateChanged()
+  }
+
+  handleAudioState(userId: string, enabled: boolean): void {
+    const participant = this.participants.get(userId);
+    if (!participant) return;
+
+    participant.media.isAudioEnabled = enabled;
+
+    if (participant.media.cameraStreamId) {
+      const stream = participant.media.streams[participant.media.cameraStreamId];
+      if (stream) {
+        const audioTracks = stream.getAudioTracks();
+        audioTracks.forEach(track => {
+          track.enabled = enabled;
+          console.log('Audio track state updated:', { trackId: track.id, enabled });
+        });
+      }
+    }
+
+    this.emitStateChanged();
+  }
+
+  handleVideoState(userId: string, enabled: boolean): void {
+    const participant = this.participants.get(userId);
+    if (!participant) return;
+
+    participant.media.isVideoEnabled = enabled;
+
+    if (participant.media.cameraStreamId) {
+      const stream = participant.media.streams[participant.media.cameraStreamId];
+      if (stream) {
+        const videoTracks = stream.getVideoTracks();
+        videoTracks.forEach(track => {
+          track.enabled = enabled;
+          console.log('Video track state updated:', { trackId: track.id, enabled });
+        });
+      }
+    }
+
+    this.emitStateChanged();
+  }
+
+  /**
+   * Инициализация камеры
+   */
+  handleCameraStart(userId: string, streamId: string): void {
+    console.log('Handle Camera Start:', { userId, streamId });
+
+    const participant = this.participants.get(userId);
+    if (!participant) return;
+
+    participant.media.cameraStreamId = streamId;
+    participant.media.isVideoEnabled = true;
+
+    // Не создаем пустой поток, он будет создан когда придет трек
+    this.emitStateChanged();
+  }
+
+  /**
+   * Управление трансляцией экрана
+   */
+  handleScreenShare(userId: string, enabled: boolean, streamId?: string): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    if (enabled && streamId) {
+      participant.media.screenStreamId = streamId
+      participant.media.isScreenSharing = true
+    } else {
+      // Удаляем поток трансляции
+      if (participant.media.screenStreamId) {
+        const stream = participant.media.streams[participant.media.screenStreamId]
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop())
+          delete participant.media.streams[participant.media.screenStreamId]
+        }
+      }
+      participant.media.screenStreamId = undefined
+      participant.media.isScreenSharing = false
+    }
+
+    this.emitStateChanged()
+  }
+
+  /**
+   * Обработка завершения трека
+   */
+  handleTrackEnded(userId: string, track: MediaStreamTrack, stream: MediaStream): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    const currentStream = participant.media.streams[stream.id]
+    if (!currentStream) return
+
+    // Удаляем трек из потока
+    currentStream.removeTrack(track)
+    track.stop()
+
+    // Если поток пустой - удаляем его
+    if (currentStream.getTracks().length === 0) {
+      delete participant.media.streams[stream.id]
+    }
+
+    const updates: Partial<ParticipantMedia> = {
+      streams: participant.media.streams,
+    }
+
+    // Обновляем состояние в зависимости от типа трека
+    if (stream.id === participant.media.screenStreamId) {
+      updates.isScreenSharing = false
+      updates.screenStreamId = undefined
+    } else if (track.kind === 'audio') {
+      updates.hasAudio = false
+      updates.isAudioEnabled = false
+    } else if (track.kind === 'video') {
+      updates.hasVideo = false
+      updates.isVideoEnabled = false
+    }
+
+    this.updateMediaState(userId, updates)
+  }
+
+  /**
+   * Обновление состояния медиа
+   */
+  private updateMediaState(userId: string, updates: Partial<ParticipantMedia>): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    // Сохраняем существующие потоки если новые не предоставлены
+    const updatedStreams = updates.streams || participant.media.streams
+
+    // Применяем обновления к существующим трекам
+    Object.entries(updatedStreams).forEach(([streamId, stream]) => {
+      const tracks = stream.getTracks()
+      const isScreenShare = streamId === participant.media.screenStreamId
+
+      tracks.forEach((track) => {
+        if (track.kind === 'audio' && 'isAudioEnabled' in updates) {
+          track.enabled = updates.isAudioEnabled!
+        } else if (track.kind === 'video') {
+          if (isScreenShare && 'isScreenSharing' in updates) {
+            track.enabled = updates.isScreenSharing!
+          } else if (!isScreenShare && 'isVideoEnabled' in updates) {
+            track.enabled = updates.isVideoEnabled!
+          }
+        }
+      })
+    })
+
+    // Обновляем состояние, сохраняя существующие потоки
+    participant.media = {
+      ...participant.media,
+      ...updates,
+      streams: updatedStreams, // Важно: используем сохраненные потоки
+    }
+
+    this.emit('participantMediaChanged', { userId, media: participant.media })
+    this.emit('stateChanged', this.getState())
+  }
+
+  /**
+   * Вспомогательный метод для эмита состояния
+   */
+  private emitStateChanged(): void {
+    const state = this.getState()
+    console.group('🔄 State Changed')
+    state.participants.forEach((participant) => {
+      console.log(`Participant ${participant.userId}:`, {
+        streams: Object.entries(participant.media.streams).map(([id, stream]) => ({
+          id,
+          tracks: stream.getTracks().map((t) => ({
+            id: t.id,
+            kind: t.kind,
+            enabled: t.enabled,
+          })),
+        })),
+        hasVideo: participant.media.hasVideo,
+        isVideoEnabled: participant.media.isVideoEnabled,
+        cameraStreamId: participant.media.cameraStreamId,
+      })
+    })
+    console.groupEnd()
+    this.emit('stateChanged', state)
   }
 
   /**
@@ -80,37 +336,13 @@ export class RoomService extends EventEmitter {
           isAudioEnabled: false,
           isVideoEnabled: false,
           isScreenSharing: false,
-          streams: new Map(),
+          streams: {},
         },
       })
 
       this.emit('participantJoined', { userId, userInfo })
       this.emit('stateChanged', this.getState())
     }
-  }
-
-  handleTrackDisabled(userId: string, track: MediaStreamTrack): void {
-    const updates: Partial<ParticipantMedia> = {}
-
-    if (track.kind === 'audio') {
-      updates.isAudioEnabled = false
-    } else if (track.kind === 'video') {
-      updates.isVideoEnabled = false
-    }
-
-    this.updateParticipantMedia(userId, updates)
-  }
-
-  handleTrackEnabled(userId: string, track: MediaStreamTrack): void {
-    const updates: Partial<ParticipantMedia> = {}
-
-    if (track.kind === 'audio') {
-      updates.isAudioEnabled = true
-    } else if (track.kind === 'video') {
-      updates.isVideoEnabled = true
-    }
-
-    this.updateParticipantMedia(userId, updates)
   }
 
   /**
@@ -121,7 +353,7 @@ export class RoomService extends EventEmitter {
     if (participant) {
       // Останавливаем треки во всех потоках
       if (participant.media.streams) {
-        participant.media.streams.forEach((stream) => {
+        Object.values(participant.media.streams).forEach((stream) => {
           stream.getTracks().forEach((track) => track.stop())
         })
       }
@@ -129,145 +361,6 @@ export class RoomService extends EventEmitter {
       this.emit('participantLeft', { userId })
       this.emit('stateChanged', this.getState())
     }
-  }
-
-  handleTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): void {
-    const participant = this.participants.get(userId)
-    if (!participant) return
-
-    if (!participant.media.streams) {
-      participant.media.streams = new Map()
-    }
-
-    // Получаем существующий поток или создаем новый
-    let currentStream = participant.media.streams.get(stream.id)
-    if (!currentStream) {
-      currentStream = new MediaStream()
-      participant.media.streams.set(stream.id, currentStream)
-    }
-
-    // Добавляем трек, если его еще нет в потоке
-    if (!currentStream.getTracks().some(t => t.id === track.id)) {
-      currentStream.addTrack(track)
-    }
-
-    const updates: Partial<ParticipantMedia> = {
-      streams: participant.media.streams,
-    }
-
-    // Определяем тип потока по ID
-    const isScreenShare = stream.id === participant.media.screenStreamId
-    const isCamera = stream.id === participant.media.cameraStreamId
-
-    if (track.kind === 'audio') {
-      updates.hasAudio = true
-      updates.isAudioEnabled = track.enabled
-    } else if (track.kind === 'video') {
-      if (isScreenShare) {
-        updates.isScreenSharing = true
-      } else if (isCamera) {
-        updates.hasVideo = true
-        updates.isVideoEnabled = track.enabled
-      }
-    }
-
-    this.updateParticipantMedia(userId, updates)
-  }
-
-  handleTrackEnded(userId: string, track: MediaStreamTrack, stream: MediaStream): void {
-    const participant = this.participants.get(userId)
-    if (!participant || !participant.media.streams) return
-
-    // Проверяем, является ли это треком трансляции экрана
-    const isScreenShare = stream.id === participant.media.screenStreamId
-
-    // Удаляем трек из потока
-    stream.removeTrack(track)
-    track.stop()
-
-    // Если это трансляция экрана или в потоке не осталось треков - удаляем его
-    if (isScreenShare || stream.getTracks().length === 0) {
-      participant.media.streams.delete(stream.id)
-    }
-
-    const updates: Partial<ParticipantMedia> = {}
-    if (isScreenShare) {
-      updates.isScreenSharing = false
-      updates.screenStreamId = undefined
-    } else if (track.kind === 'audio') {
-      updates.hasAudio = false
-      updates.isAudioEnabled = false
-    } else if (track.kind === 'video') {
-      updates.hasVideo = false
-      updates.isVideoEnabled = false
-    }
-
-    this.updateParticipantMedia(userId, updates)
-  }
-
-  /**
-   * Обновление состояния медиа участника
-   */
-  updateParticipantMedia(userId: string, updates: Partial<ParticipantMedia>): void {
-    const participant = this.participants.get(userId)
-    if (!participant) return
-
-    // Проверяем изменения, исключая streams
-    const hasChanges = Object.entries(updates).some(([key, value]) => {
-      if (key === 'streams') return false
-      return participant.media[key as keyof ParticipantMedia] !== value
-    })
-
-    if (!hasChanges) return
-
-    if (participant.media.streams) {
-
-      if ('isScreenSharing' in updates) {
-        const {isScreenSharing} = updates
-        if (isScreenSharing === false) {
-          // @ts-ignore
-          participant.media.streams.delete(!participant.media.screenStreamId!)
-        }
-      }
-
-      participant.media.streams.forEach((stream) => {
-        const tracks = stream.getTracks()
-        const isScreenShare = stream.id === participant.media.screenStreamId
-        const isCamera = stream.id === participant.media.cameraStreamId
-
-        if ('isAudioEnabled' in updates) {
-          const audioTrack = tracks.find((track) => track.kind === 'audio')
-          if (audioTrack && audioTrack.enabled !== updates.isAudioEnabled) {
-            audioTrack.enabled = updates.isAudioEnabled!
-          }
-        }
-
-        if ('isVideoEnabled' in updates && isCamera) {
-          const videoTrack = tracks.find((track) => track.kind === 'video')
-          if (videoTrack && videoTrack.enabled !== updates.isVideoEnabled) {
-            videoTrack.enabled = updates.isVideoEnabled!
-          }
-        }
-
-        if ('isScreenSharing' in updates && isScreenShare) {
-          const videoTrack = tracks.find((track) => track.kind === 'video')
-          if (videoTrack) {
-            videoTrack.enabled = updates.isScreenSharing!
-          }
-        }
-      })
-    }
-
-    participant.media = {
-      ...participant.media,
-      ...updates,
-      streams: updates.streams || participant.media.streams,
-    }
-
-
-
-    this.emit('participantMediaChanged', { userId, media: participant.media })
-    this.emit('stateChanged', this.getState())
   }
 
   /**
@@ -298,7 +391,16 @@ export class RoomService extends EventEmitter {
     return {
       roomId: this.room?.roomId,
       currentUser: this.room?.currentUser,
-      participants: this.getParticipants(),
+      participants: Array.from(this.participants.values()).map((participant) => ({
+        userId: participant.userId,
+        userInfo: participant.userInfo,
+        joinedAt: participant.joinedAt,
+        media: {
+          ...participant.media,
+          // Важно! Возвращаем streams как есть, не преобразовывая
+          streams: participant.media.streams,
+        },
+      })),
     }
   }
 
@@ -309,7 +411,7 @@ export class RoomService extends EventEmitter {
     this.participants.forEach((participant) => {
       // Останавливаем треки во всех потоках
       if (participant.media.streams) {
-        participant.media.streams.forEach((stream) => {
+        Object.values(participant.media.streams).forEach((stream) => {
           stream.getTracks().forEach((track) => track.stop())
         })
       }
