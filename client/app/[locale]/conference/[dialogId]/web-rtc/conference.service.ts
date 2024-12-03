@@ -141,9 +141,11 @@ export class ConferenceService extends EventEmitter {
       })
       .on('userEvent', (payload: EventType) => {
         const { event, initiator } = payload
-        console.clear()
 
         switch (event.type) {
+          case 'initial-setup':
+            this.roomService.updateParticipantMedia(initiator, event.payload)
+            break
           case 'mic-off':
             this.roomService.updateParticipantMedia(initiator, { isAudioEnabled: false })
             break
@@ -156,11 +158,14 @@ export class ConferenceService extends EventEmitter {
           case 'camera-on':
             this.roomService.updateParticipantMedia(initiator, { isVideoEnabled: true })
             break
+          case 'camera-start':
+            this.roomService.updateParticipantMedia(initiator, { isVideoEnabled: true, cameraStreamId: event.payload.cameraStreamId })
+            break
           case 'screen-share-off':
             this.roomService.updateParticipantMedia(initiator, { isScreenSharing: false })
             break
           case 'screen-share-on':
-            this.roomService.updateParticipantMedia(initiator, { isScreenSharing: true })
+            this.roomService.updateParticipantMedia(initiator, { isScreenSharing: true, screenStreamId: event.payload.screenStreamId })
             break
           default: break
         }
@@ -169,14 +174,15 @@ export class ConferenceService extends EventEmitter {
 
     // 2. События WebRTC соединений
     this.connectionManager
-      .on('track', ({ userId, track }) => {
-        // console.clear()
-        // console.log(`Получен трек от ${userId}, track: ${track}`, stream)
-        this.roomService.handleTrack(userId, track)
+      .on('track', ({ userId, track, stream }) => {
+        console.log(`Получен трек от ${userId}, stream: ${stream.id}, track: ${track.id}`)
+        this.roomService.handleTrack(userId, track, stream)
 
         track.addEventListener('ended', () => {
-          this.roomService.handleTrackEnded(userId, track)
+          this.roomService.handleTrackEnded(userId, track, stream)
+          this.notifySubscribers()
         })
+        this.notifySubscribers()
       })
       .on('iceCandidate', async ({ userId, candidate }) => {
         await this.signalingService.sendIceCandidate(userId, candidate)
@@ -212,12 +218,7 @@ export class ConferenceService extends EventEmitter {
       .on(MediaEvents.TRACK_ADDED, async ({ kind, track, stream }: { kind: 'video' | 'audio', track: MediaStreamTrack, stream: MediaStream }) => {
         this.notifySubscribers()
 
-        console.log(`[Media] Новый ${kind} трек добавлен:`, {
-          trackId: track.id,
-          streamId: stream.id,
-          enabled: track.enabled,
-        })
-
+        this.signalingService.sendEvent({ type: 'camera-start', payload: { cameraStreamId: stream.id } })
         // Получаем активные соединения
         const activeConnections = this.connectionManager.getConnections()
 
@@ -244,6 +245,7 @@ export class ConferenceService extends EventEmitter {
         }))
       })
       .on(MediaEvents.TRACK_REMOVED, async ({ kind, trackId }: { kind: 'video' | 'audio', trackId: string }) => {
+        this.notifySubscribers()
         const activeConnections = this.connectionManager.getConnections()
 
         await Promise.all(activeConnections.map(async ({ userId }) => {
@@ -255,10 +257,12 @@ export class ConferenceService extends EventEmitter {
         }))
       })
       .on(MediaEvents.TRACK_MUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack }) => {
+        this.notifySubscribers()
         const type = kind === 'video' ? 'camera' : 'mic'
         this.signalingService.sendEvent({ type: `${type}-off` })
       })
       .on(MediaEvents.TRACK_UNMUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack}) => {
+        this.notifySubscribers()
         const type = kind === 'video' ? 'camera' : 'mic'
         this.signalingService.sendEvent({ type: `${type}-on` })
       })
@@ -266,12 +270,57 @@ export class ConferenceService extends EventEmitter {
         this.notifySubscribers()
       })
 
-    this.roomService.on('stateChanged', (state: ReturnType<RoomService['getState']>) => {
-      const media = state.participants.find(({ userId }) => userId === '6')?.media
-      // console.clear()
-      console.log('___MEDIA____', media)
-      this.notifySubscribers()
-    })
+    // 4. События трансляции экрана
+    this.screenShareManager
+      .on('streamStarted', async (stream: MediaStream) => {
+        this.notifySubscribers()
+
+        // Отправляем сигнал о начале трансляции
+        this.signalingService.sendEvent({
+          type: 'screen-share-on',
+          payload: { screenStreamId: stream.id },
+        })
+
+        // Получаем активные соединения и добавляем трек
+        const activeConnections = this.connectionManager.getConnections()
+        await Promise.all(activeConnections.map(async ({ userId }) => {
+          try {
+            const connection = this.connectionManager.getConnection(userId)
+            if (!connection) return
+
+            const track = stream.getVideoTracks()[0]
+            await this.connectionManager.addTrack(userId, track, stream)
+          } catch (error) {
+            console.error(`[ScreenShare] Ошибка добавления трека трансляции для ${userId}:`, error)
+          }
+        }))
+      })
+      .on('streamStopped', async ({ streamId }) => {
+        this.notifySubscribers()
+
+        // Отправляем сигнал об окончании трансляции
+        this.signalingService.sendEvent({
+          type: 'screen-share-off',
+          payload: { screenStreamId: streamId },
+        })
+
+        const activeConnections = this.connectionManager.getConnections()
+        await Promise.all(activeConnections.map(async ({ userId }) => {
+          try {
+            const connection = this.connectionManager.getConnection(userId)
+            if (!connection) return
+
+            const screenSender = connection.getSenders()
+              .find((sender) => sender.track?.id === streamId)
+
+            if (screenSender) {
+              await this.connectionManager.removeTrack(userId, screenSender.track!.id)
+            }
+          } catch (error) {
+            console.error(`[ScreenShare] Ошибка удаления трека трансляции для ${userId}:`, error)
+          }
+        }))
+      })
   }
 
   private async handleUserJoined(user: UserInfo): Promise<void> {
@@ -289,10 +338,29 @@ export class ConferenceService extends EventEmitter {
       await this.connectionManager.createConnection(userId)
 
       // Добавляем текущие треки в соединение
-      const mediaStream = this.mediaManager.getStream()
+      const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled } = this.mediaManager.getState()
+      const { stream: screenStream, isVideoEnabled: screenIsVideoEnabled } = this.screenShareManager.getState()
+
+      this.signalingService.sendEvent({ type: 'initial-setup',
+        payload: {
+          isAudioEnabled: cameraIsAudioEnabled,
+          isVideoEnabled: cameraIsVideoEnabled,
+          cameraStreamId: mediaStream?.id,
+          screenStreamId: screenStream?.id,
+          isScreenSharing: screenIsVideoEnabled,
+        } })
+
+      // Добавляем треки с камеры
       if (mediaStream) {
         mediaStream.getTracks().forEach((track) => {
           this.connectionManager.addTrack(userId, track, mediaStream)
+        })
+      }
+
+      // Добавляем треки с экрана, если трансляция активна
+      if (screenStream && screenIsVideoEnabled) {
+        screenStream.getTracks().forEach((track) => {
+          this.connectionManager.addTrack(userId, track, screenStream)
         })
       }
 
@@ -361,7 +429,7 @@ export class ConferenceService extends EventEmitter {
   async stopScreenShare(): Promise<void> {
     try {
       this.#checkInitialized()
-      await this.screenShareManager.stopScreenShare()
+      this.screenShareManager.stopScreenShare()
     } catch (error) {
       console.error('Ошибка остановки демонстрации экрана:', error)
       this.notificationManager.notify('error', 'Ошибка остановки демонстрации экрана')
@@ -378,7 +446,7 @@ export class ConferenceService extends EventEmitter {
 
   private notifySubscribers() {
     const state = this.getState()
-    console.log('__STATE__', state)
+    console.log('__STATE__', state.roomInfo.participants.find(({ userId }) => userId === '6'))
     this.subscribers.forEach((cb) => cb(state))
   }
 

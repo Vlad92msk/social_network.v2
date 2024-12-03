@@ -7,7 +7,7 @@ type SignalType = 'offer' | 'answer' | 'ice-candidate'
 
 export type EventType = {
   event: {
-    type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off'
+    type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off' | 'camera-start' | 'initial-setup'
     payload: any;
   },
   initiator: string
@@ -215,7 +215,7 @@ export class SignalingService extends EventEmitter {
     })
   }
 
-  sendEvent(event: { type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off', payload?: any }) {
+  sendEvent(event: { type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-start' | 'camera-off' | 'screen-share-on' | 'screen-share-off' | 'initial-setup', payload?: any }) {
     if (!this.#socket || !this.#config) {
       throw new Error('SignalingService не инициализирован')
     }

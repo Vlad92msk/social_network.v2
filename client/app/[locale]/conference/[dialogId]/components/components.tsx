@@ -6,7 +6,14 @@ import { useConference } from '../web-rtc/context'
 
 // Простые контролы
 export function CallControls() {
-  const { localMedia: { isVideoEnabled, isAudioEnabled, isAudioMuted, isVideoMuted }, toggleVideo, toggleAudio } = useConference()
+  const {
+    localMedia: { isVideoEnabled, isAudioEnabled, isAudioMuted, isVideoMuted },
+    toggleVideo,
+    toggleAudio,
+    screenShare: { isVideoEnabled: isScreenShareActive },
+    startScreenShare,
+    stopScreenShare,
+  } = useConference()
 
   const handleClose = () => {
     // Закрываем текущую вкладку браузера
@@ -48,13 +55,13 @@ export function CallControls() {
         <Icon name={isActiveMicrophone ? 'microphone' : 'microphone-off'} />
       </button>
 
-      {/* <button */}
-      {/*   style={{ backgroundColor: isScreenShareActive ? 'white' : 'transparent' }} */}
-      {/*   className={`${styles.button} ${isScreenShareActive ? styles.buttonActive : ''}`} */}
-      {/*   onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare())} */}
-      {/* > */}
-      {/*   <Icon name={isScreenShareActive ? 'screen-share-on' : 'screen-share-off'} /> */}
-      {/* </button> */}
+      <button
+        style={{ backgroundColor: isScreenShareActive ? 'white' : 'transparent' }}
+        className={`${styles.button} ${isScreenShareActive ? styles.buttonActive : ''}`}
+        onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare())}
+      >
+        <Icon name={isScreenShareActive ? 'screen-share-on' : 'screen-share-off'} />
+      </button>
     </div>
   )
 }

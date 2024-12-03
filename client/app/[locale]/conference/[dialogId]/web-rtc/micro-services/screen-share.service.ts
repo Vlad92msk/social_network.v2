@@ -15,6 +15,7 @@ export class ScreenShareManager extends EventEmitter {
 
       // Подписываемся на события остановки трансляции
       this.stream.getTracks().forEach((track) => {
+        track.contentHint = 'screen'
         track.addEventListener('ended', () => {
           // Вызываем stopScreenShare при остановке трансляции через браузер
           this.stopScreenShare()
@@ -32,9 +33,10 @@ export class ScreenShareManager extends EventEmitter {
   stopScreenShare() {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop())
-      this.emit('streamStopped', { streamId: this.stream.id })
+      const streamId = this.stream.id
       this.stream = undefined
       this.isEnabled = false
+      this.emit('streamStopped', { streamId })
       this.emit('stateChanged', this.getState())
     }
   }

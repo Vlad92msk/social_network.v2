@@ -58,7 +58,6 @@ export class ConnectionManager extends EventEmitter {
           })
           return
         }
-        console.log(`Получен новый ${track.kind} трек от пользовтаеля ${userId} для потока ${stream.id}. Доступен ${track.enabled}`)
 
         this.emit('track', { userId, track, stream })
 

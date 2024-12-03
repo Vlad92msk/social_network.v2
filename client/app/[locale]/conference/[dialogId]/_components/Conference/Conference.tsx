@@ -3,11 +3,11 @@
 import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@ui/common/Icon'
 import { Image } from '@ui/common/Image'
-import { VideoChatTest } from '../../components/testVideo1'
 import styles from './Conference.module.scss'
 import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { CallControls } from '../../components/components'
+import { VideoChatTest } from '../../components/testVideo1'
 import { useCameraStream, useScreenShareStream } from '../../hooks/useCameraStream'
 import { useConference } from '../../web-rtc/context'
 
@@ -65,7 +65,7 @@ export function LocalPreview() {
       />
       {showPlaceholder && (
         <div className={styles.profileImageContainer}>
-          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50}/>
+          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
         </div>
       )}
       {isActiveMicrophone
@@ -93,19 +93,19 @@ export function LocalPreview() {
   )
 }
 
-// export function LocalScreenShare() {
-//   const { videoProps, isVideoEnabled } = useScreenShareStream()
-//
-//   if (!isVideoEnabled) return null
-//   return (
-//     <div className={styles.participant}>
-//       <video
-//         {...videoProps}
-//         className={`${styles.video} ${styles.videoMirrored}`}
-//       />
-//     </div>
-//   )
-// }
+export function LocalScreenShare() {
+  const { videoProps, isVideoEnabled } = useScreenShareStream()
+
+  if (!isVideoEnabled) return null
+  return (
+    <div className={styles.participant}>
+      <video
+        {...videoProps}
+        className={`${styles.video} ${styles.videoMirrored}`}
+      />
+    </div>
+  )
+}
 //
 // export function RemoteScreenShare() {
 //   const { roomInfo:{ participants } } = useConference()
@@ -174,7 +174,7 @@ export function RemoteStream(props: VideoProps) {
     isVideoEnabled,
     isAudioEnabled,
     currentUser,
-    streamType
+    streamType,
   } = props
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -184,7 +184,6 @@ export function RemoteStream(props: VideoProps) {
   console.log('isAudioEnabled', isAudioEnabled)
   useEffect(() => {
     if (videoRef.current) {
-
       if (stream && stream !== videoRef.current.srcObject) {
         videoRef.current.srcObject = null // Сначала очищаем
         videoRef.current.srcObject = stream // Затем устанавливаем новый поток
@@ -204,21 +203,19 @@ export function RemoteStream(props: VideoProps) {
     muted: true,
   }), [])
 
-
-
   return (
     <div className={styles.participant}>
+      {streamType}
       <video
         {...videoProps}
-        className={`${styles.video} ${styles.videoMirrored}`}
         style={{ display: !isVideoEnabled ? 'none' : 'block' }}
       />
       {!isVideoEnabled && (
         <div className={styles.profileImageContainer}>
-          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50}/>
+          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
         </div>
       )}
-      {isAudioEnabled
+      {isAudioEnabled && streamType === 'camera'
         ? (
           <Icon
             name="microphone"
@@ -247,7 +244,7 @@ export function Conference({ profile }: ConferenceProps) {
   const {
     isInitialized,
     participants,
-    currentUser
+    currentUser,
   } = useConference()
 
   if (!isInitialized) {
@@ -258,34 +255,59 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
+  // console.clear()
+  console.log('[CONFERENCE] participants', participants)
+
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.remoteStreams}>
-          <LocalPreview/>
-          {participants.filter(({ userId }) => userId !== String(currentUser?.id))
-            ?.map(({
+          <LocalPreview />
+          {participants
+            .filter(({ userId }) => userId !== String(currentUser?.id))
+            .map(({
               userId,
               userInfo,
-              media
+              media,
             }) => {
+              const {
+                isAudioEnabled,
+                isVideoEnabled,
+                isScreenSharing,
+                streams,
+                screenStreamId,
+                cameraStreamId
+              } = media
 
-              const isAudioEnabled = media.isAudioEnabled
-              const isVideoEnabled = media.isVideoEnabled
+              // Находим поток трансляции экрана
+              const screenStream = screenStreamId ? streams.get(screenStreamId) : undefined
+              const cameraStream = cameraStreamId ? streams.get(cameraStreamId) : undefined
+
               return (
-                <RemoteStream
-                  key={userId}
-                  stream={media.stream}
-                  currentUser={userInfo}
-                  streamType={'camera'}
-                  isAudioEnabled={isAudioEnabled}
-                isVideoEnabled={isVideoEnabled}
-              />
-            )
-          })}
-          {/* <LocalScreenShare /> */}
-          {/* <RemoteScreenShare /> */}
-          {/* <VideoChatTest /> */}
+                <div key={userId}>
+                  {/* Показываем камеру */}
+                    <RemoteStream
+                      stream={cameraStream}
+                      currentUser={userInfo}
+                      streamType="camera"
+                      isAudioEnabled={isAudioEnabled}
+                      isVideoEnabled={isVideoEnabled}
+                    />
+
+                  {/* Показываем трансляцию экрана если она есть */}
+                  {screenStream && isScreenSharing && (
+                    <RemoteStream
+                      stream={screenStream}
+                      currentUser={userInfo}
+                      streamType="screen"
+                      isAudioEnabled={false} // У трансляции экрана нет звука
+                      isVideoEnabled // Если поток есть - значит трансляция активна
+                    />
+                  )}
+                </div>
+              )
+            })}
+          <LocalScreenShare />
         </div>
 
       </div>
