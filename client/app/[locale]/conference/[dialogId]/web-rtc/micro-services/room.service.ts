@@ -125,7 +125,7 @@ export class RoomService extends EventEmitter {
   handleInitialSetup(userId: string, setup: any): void {
     const participant = this.participants.get(userId)
     if (!participant) return
-
+console.log('setup', setup)
     participant.media = {
       ...participant.media,
       ...setup,

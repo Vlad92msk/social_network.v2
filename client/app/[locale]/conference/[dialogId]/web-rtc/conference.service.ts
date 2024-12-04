@@ -354,12 +354,12 @@ export class ConferenceService extends EventEmitter {
       await this.connectionManager.createConnection(userId)
 
       // Добавляем текущие треки в соединение
-      const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled } = this.mediaManager.getState()
+      const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled, isAudioMuted } = this.mediaManager.getState()
       const { stream: screenStream, isVideoEnabled: screenIsVideoEnabled } = this.screenShareManager.getState()
 
       // Отправляем initial-setup только с действительно необходимыми полями
       const initialSetup = {
-        isAudioEnabled: cameraIsAudioEnabled,
+        isAudioEnabled: cameraIsAudioEnabled && !isAudioMuted,
         isVideoEnabled: cameraIsVideoEnabled,
         isScreenSharing: screenIsVideoEnabled,
         ...(mediaStream?.id && { cameraStreamId: mediaStream.id }),
@@ -467,7 +467,7 @@ export class ConferenceService extends EventEmitter {
 
   private notifySubscribers() {
     const state = this.getState()
-    console.log('__STATE__', state.roomInfo.participants.find(({ userId }) => userId === '6'))
+    console.log('__STATE__', state.localMedia)
     this.subscribers.forEach((cb) => cb(state))
   }
 

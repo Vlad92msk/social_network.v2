@@ -4,37 +4,10 @@ import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'r
 import { Icon } from '@ui/common/Icon'
 import { Image } from '@ui/common/Image'
 import styles from './Conference.module.scss'
-import { UserProfileInfo } from '../../../../../../../swagger/profile/interfaces-profile'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { CallControls } from '../../components/components'
-import { VideoChatTest } from '../../components/testVideo1'
 import { useCameraStream, useScreenShareStream } from '../../hooks/useCameraStream'
 import { useConference } from '../../web-rtc/context'
-
-type StreamType = 'local-preview' | 'local-screen' | 'remote';
-
-interface BaseStreamItem {
-  id: string;
-  type: StreamType;
-  component: JSX.Element;
-}
-
-interface LocalStreamItem extends BaseStreamItem {
-  type: 'local-preview' | 'local-screen';
-}
-
-interface RemoteStreamItem extends BaseStreamItem {
-  type: 'remote';
-  stream: MediaStream;
-  participant: any;
-}
-
-type StreamItem = LocalStreamItem | RemoteStreamItem;
-type StreamsRecord = Record<string, StreamItem>;
-
-interface ConferenceProps {
-  profile?: UserProfileInfo;
-}
 
 interface VideoProps {
   stream?: MediaStream;
@@ -48,11 +21,7 @@ interface VideoProps {
 export function LocalPreview() {
   const { videoProps, currentUser, showPlaceholder, localMedia } = useCameraStream({
     mirror: true,
-    // onStreamChange: (stream) => {
-    //   console.log('Stream changed:', stream?.getTracks())
-    // },
   })
-  // console.log('showPlaceholder', showPlaceholder)
 
   const isActiveMicrophone = localMedia.isAudioEnabled && !localMedia.isAudioMuted
 
@@ -106,66 +75,6 @@ export function LocalScreenShare() {
     </div>
   )
 }
-//
-// export function RemoteScreenShare() {
-//   const { roomInfo:{ participants } } = useConference()
-//
-//   // console.clear()
-//   const a = participants.find(({ userId }) => userId === '6')?.media
-//   const streams = a?.stream
-//
-//
-//
-//   const screenRef = useRef<HTMLVideoElement>(null)
-//
-//   // useEffect(() => {
-//   //   const videoElement = screenRef.current
-//   //   if (videoElement && screen) {
-//   //     videoElement.srcObject = screen
-//   //
-//   //     return () => {
-//   //       videoElement.srcObject = null
-//   //     }
-//   //   }
-//   // }, [screen, isScreenSharing])
-//   //
-//   // const cameraRef = useRef<HTMLVideoElement>(null)
-//   //
-//   // useEffect(() => {
-//   //   const videoElement = cameraRef.current
-//   //   if (videoElement && camera) {
-//   //     videoElement.srcObject = camera
-//   //
-//   //     return () => {
-//   //       videoElement.srcObject = null
-//   //     }
-//   //   }
-//   // }, [camera])
-//
-//   // console.clear()
-//   // console.log('user', a)
-//   // console.log('streams', streams?.getTracks().filter(track => track.kind === 'audio'))
-//
-//
-//   return (
-//     <div className={styles.participant}>
-//       <video
-//         ref={screenRef}
-//         autoPlay
-//         playsInline
-//         muted
-//         className={`${styles.video} ${styles.videoMirrored}`}
-//       />
-//       <video
-//         ref={cameraRef}
-//         autoPlay
-//         playsInline
-//         muted
-//         className={`${styles.video} ${styles.videoMirrored}`}
-//       />
-//     </div>
-//   )
-// }
 
 export function RemoteStream(props: VideoProps) {
   const {
@@ -178,10 +87,6 @@ export function RemoteStream(props: VideoProps) {
   } = props
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // console.clear()
-  console.log('stream', stream?.getTracks())
-  console.log('isVideoEnabled', isVideoEnabled)
-  console.log('isAudioEnabled', isAudioEnabled)
   useEffect(() => {
     if (videoRef.current) {
       if (stream && stream !== videoRef.current.srcObject) {
@@ -205,7 +110,6 @@ export function RemoteStream(props: VideoProps) {
 
   return (
     <div className={styles.participant}>
-      {streamType}
       <video
         {...videoProps}
         style={{ display: !isVideoEnabled ? 'none' : 'block' }}
@@ -215,18 +119,9 @@ export function RemoteStream(props: VideoProps) {
           <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
         </div>
       )}
-      {isAudioEnabled && streamType === 'camera'
-        ? (
-          <Icon
-            name="microphone"
-            style={{
-              position: 'absolute',
-              right: 10,
-              top: 10,
-            }}
-          />
-        )
-        : (
+      <span className={styles.participantName}>{`${currentUser?.name} ${streamType === 'screen' ? '(screen)' : ''}`}</span>
+      {!isAudioEnabled && streamType === 'camera'
+        && (
           <Icon
             name="microphone-off"
             style={{
@@ -240,7 +135,7 @@ export function RemoteStream(props: VideoProps) {
   )
 }
 
-export function Conference({ profile }: ConferenceProps) {
+export function Conference() {
   const {
     isInitialized,
     participants,
@@ -255,56 +150,53 @@ export function Conference({ profile }: ConferenceProps) {
     )
   }
 
+  const remoteStreams = participants
+    .filter(({ userId }) => userId !== String(currentUser?.id))
+    .reduce((acc: VideoProps[], { userId, userInfo, media }) => {
+      const {
+        isAudioEnabled,
+        isVideoEnabled,
+        isScreenSharing,
+        streams,
+        screenStreamId,
+        cameraStreamId,
+      } = media
+
+      // Получаем потоки из объекта streams
+      const screenStream = screenStreamId ? streams[screenStreamId] : undefined
+      const cameraStream = cameraStreamId ? streams[cameraStreamId] : undefined
+
+      const cameraObj: VideoProps = {
+        stream: cameraStream,
+        currentUser: userInfo,
+        streamType: 'camera',
+        isAudioEnabled,
+        isVideoEnabled,
+      }
+
+      const screenObj: VideoProps = {
+        stream: screenStream,
+        currentUser: userInfo,
+        streamType: 'screen',
+        isAudioEnabled: false,
+        isVideoEnabled: true,
+      }
+
+      acc.push(cameraObj)
+
+      if (screenStream && isScreenSharing) {
+        acc.push(screenObj)
+      }
+
+      return acc
+    }, [])
+
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.remoteStreams}>
           <LocalPreview />
-          {participants
-            .filter(({ userId }) => userId !== String(currentUser?.id))
-            .map(({
-              userId,
-              userInfo,
-              media,
-            }) => {
-              const {
-                isAudioEnabled,
-                isVideoEnabled,
-                isScreenSharing,
-                streams,
-                screenStreamId,
-                cameraStreamId,
-              } = media
-
-              // Получаем потоки из объекта streams
-              const screenStream = screenStreamId ? streams[screenStreamId] : undefined
-              const cameraStream = cameraStreamId ? streams[cameraStreamId] : undefined
-
-
-              return (
-                <div key={userId}>
-                  {/* Показываем камеру если поток существует */}
-                  <RemoteStream
-                    stream={cameraStream}
-                    currentUser={userInfo}
-                    streamType="camera"
-                    isAudioEnabled={isAudioEnabled}
-                    isVideoEnabled={isVideoEnabled}
-                  />
-
-                  {/* Показываем трансляцию экрана если она активна и поток существует */}
-                  {screenStream && isScreenSharing && (
-                    <RemoteStream
-                      stream={screenStream}
-                      currentUser={userInfo}
-                      streamType="screen"
-                      isAudioEnabled={false}
-                      isVideoEnabled
-                    />
-                  )}
-                </div>
-              )
-            })}
+          {remoteStreams.map((props) => <RemoteStream key={props.stream?.id} {...props} />)}
           <LocalScreenShare />
         </div>
       </div>

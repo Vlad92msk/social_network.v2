@@ -11,10 +11,6 @@ export function useCameraStream(options?: {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    // console.clear()
-    // console.log('1', stream)
-    // console.log('2', localMedia.hasVideo)
-    // console.log('3', localMedia.isVideoMuted)
     setShowPlaceholder(!localMedia.stream || !localMedia.hasVideo || localMedia.isVideoMuted)
   }, [localMedia.hasVideo, localMedia.isVideoMuted, localMedia.stream])
 
