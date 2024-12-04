@@ -34,9 +34,10 @@ export function LocalPreview() {
       />
       {showPlaceholder && (
         <div className={styles.profileImageContainer}>
-          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
+          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50}/>
         </div>
       )}
+      <span className={styles.participantName}>Вы</span>
       {isActiveMicrophone
         ? (
           <Icon
@@ -63,7 +64,10 @@ export function LocalPreview() {
 }
 
 export function LocalScreenShare() {
-  const { videoProps, isVideoEnabled } = useScreenShareStream()
+  const {
+    videoProps,
+    isVideoEnabled
+  } = useScreenShareStream()
 
   if (!isVideoEnabled) return null
   return (
@@ -72,6 +76,7 @@ export function LocalScreenShare() {
         {...videoProps}
         className={`${styles.video} ${styles.videoMirrored}`}
       />
+      <span className={styles.participantName}>Вы (screen)</span>
     </div>
   )
 }
@@ -142,6 +147,11 @@ export function Conference() {
     currentUser,
   } = useConference()
 
+  const [pinnedStreamId, setPinnedStreamId] = useState<string | null>(null)
+  const [isLocalPinned, setIsLocalPinned] = useState(false)
+  const [isLocalScreenPinned, setIsLocalScreenPinned] = useState(false)
+
+
   if (!isInitialized) {
     return (
       <div className={styles.conferenceLoading}>
@@ -191,14 +201,77 @@ export function Conference() {
       return acc
     }, [])
 
+  const handleStreamClick = (streamId: string | undefined) => {
+    if (!streamId) return
+    setIsLocalPinned(false)
+    setIsLocalScreenPinned(false)
+    setPinnedStreamId(pinnedStreamId === streamId ? null : streamId)
+  }
+
+  const handleLocalPreviewClick = () => {
+    setPinnedStreamId(null)
+    setIsLocalScreenPinned(false)
+    setIsLocalPinned(!isLocalPinned)
+  }
+
+  const handleLocalScreenClick = () => {
+    setPinnedStreamId(null)
+    setIsLocalPinned(false)
+    setIsLocalScreenPinned(!isLocalScreenPinned)
+  }
+
+  const pinnedStream = remoteStreams.find(props => props.stream?.id === pinnedStreamId)
+  const unpinnedStreams = remoteStreams.filter(props => props.stream?.id !== pinnedStreamId)
+
+  const renderMainContent = () => {
+    if (isLocalPinned) {
+      return <div className={`${styles.participant} ${styles.pin}`} onClick={handleLocalPreviewClick}><LocalPreview /></div>
+    }
+    if (isLocalScreenPinned) {
+      return <div className={`${styles.participant} ${styles.pin}`} onClick={handleLocalScreenClick}><LocalScreenShare /></div>
+    }
+    if (pinnedStream) {
+      return <div className={`${styles.participant} ${styles.pin}`} onClick={() => handleStreamClick(pinnedStream.stream?.id)}><RemoteStream {...pinnedStream} /></div>
+    }
+    return (
+      <>
+        <div onClick={handleLocalPreviewClick}><LocalPreview /></div>
+        {remoteStreams.map((props) => (
+          <div key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}>
+            <RemoteStream {...props} />
+          </div>
+        ))}
+        <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>
+      </>
+    )
+  }
+
+  const renderParticipantList = () => {
+    if (!isLocalPinned && !isLocalScreenPinned && !pinnedStream) return null
+
+    return (
+      <div className={styles.participantList}>
+        <div className={styles.participantsInfo}>
+          Участники ({unpinnedStreams.length + 2})
+        </div>
+        {!isLocalPinned && <div onClick={handleLocalPreviewClick}><LocalPreview /></div>}
+        {unpinnedStreams.map((props) => (
+          <div key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}>
+            <RemoteStream {...props} />
+          </div>
+        ))}
+        {!isLocalScreenPinned && <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>}
+      </div>
+    )
+  }
+
   return (
     <div className={styles.conference}>
       <div className={styles.participantsContainer}>
         <div className={styles.remoteStreams}>
-          <LocalPreview />
-          {remoteStreams.map((props) => <RemoteStream key={props.stream?.id} {...props} />)}
-          <LocalScreenShare />
+          {renderMainContent()}
         </div>
+        {renderParticipantList()}
       </div>
 
       <div className={styles.actionsContainer}>
