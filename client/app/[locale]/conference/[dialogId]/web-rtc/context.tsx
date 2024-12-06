@@ -1,12 +1,11 @@
 'use client'
 
+import { Notification, NotificationProps } from '@ui/common/Notification/Notification'
 import { cloneDeep } from 'lodash'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
 import { ConferenceState, initialState } from './initial.state'
-
-
 
 interface ConferenceContextState extends ConferenceState {
   isInitialized: boolean;
@@ -31,9 +30,42 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   const [isInitialized, setIsInitialized] = useState(false)
   const [state, setState] = useState<ConferenceState>(initialState)
 
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    message: string;
+    type: NotificationProps['type'];
+  }>>([]);
+
+  console.log('notifications', notifications)
+  const addNotification = (message: string, type: NotificationProps['type'] = 'info') => {
+    const id = new Date().getTime().toString();
+    setNotifications(prev => [...prev, { id, message, type }]);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
   // Инициализация сервиса
   useEffect(() => {
     const service = conferenceService.current
+
+    // Подписываемся на события до инициализации
+    service
+      .on('userJoined', ({ user }) => {
+        addNotification(`${user.name} присоединился к диалогу`, 'success')
+      })
+      .on('userLeft', ({ leavedUser }) => {
+        addNotification(`${leavedUser?.userInfo.name} покинул диалог`, 'success')
+      })
+      .on('userStartedScreenShare', ({ user }) => {
+        addNotification(`${user?.userInfo.name} начал демонстрацию экрана`, 'success')
+      })
+
+    // Подписываемся на обновления состояния
+    const stateUnsubscribe = service.subscribe((newState) => {
+      setState(cloneDeep(newState))
+    })
 
     const initializeConference = async () => {
       try {
@@ -52,23 +84,16 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
         setIsInitialized(true)
       } catch (error) {
         console.error('Ошибка инициализации:', error)
-        // Можно добавить обработку ошибки, например показ уведомления
       }
     }
-
-    // Подписываемся на обновления состояния
-    const unsubscribe = conferenceService.current.subscribe((newState) => {
-      // приходится использовать cloneDeep
-      // потому что дальше в компоненте не обновляется состояние
-      // хотя это странно...
-      setState(cloneDeep(newState))
-    })
 
     initializeConference()
 
     // Очистка при размонтировании
     return () => {
-      unsubscribe()
+      // Отписываемся от обновлений состояния
+      stateUnsubscribe()
+      // Уничтожаем сервис
       service.destroy()
     }
   }, [currentUserId, dialogId])
@@ -88,6 +113,19 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   // console.log('____value___', value)
   return (
     <ConferenceContext.Provider value={value}>
+      <button onClick={() => addNotification('Операция успешно выполнена', 'success')}>
+        Показать уведомление
+      </button>
+      {notifications.map(({ id, message, type }, index) => (
+        <Notification
+          key={id}
+          isOpen
+          message={message}
+          type={type}
+          onClose={() => removeNotification(id)}
+          index={index}
+        />
+      ))}
       {children}
     </ConferenceContext.Provider>
   )

@@ -12,7 +12,7 @@ interface ParticipantMedia {
   cameraStreamId?: string;
 }
 
-interface Participant {
+export interface Participant {
   userId: string
   userInfo: UserInfo
   media: ParticipantMedia

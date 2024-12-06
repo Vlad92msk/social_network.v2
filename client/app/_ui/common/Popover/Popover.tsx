@@ -22,7 +22,7 @@ import React, { ReactElement, ReactNode, useCallback, useRef, useState } from 'r
 //   ref: (node: (ReferenceType | null)) => void
 // }
 
-interface PopoverProps {
+interface PopoverProps1 {
   /**
    * Функция-рендерер для элемента, к которому будет привязан попап.
    * Она получает объект с ref и другими необходимыми свойствами.
@@ -160,7 +160,7 @@ interface PopoverProps {
   };
 }
 
-interface PopoverProps {
+export interface PopoverProps {
   children: ReactElement;
   content: ReactNode;
   placement?: Placement;

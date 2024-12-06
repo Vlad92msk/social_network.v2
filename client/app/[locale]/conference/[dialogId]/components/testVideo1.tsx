@@ -14,11 +14,11 @@ export function VideoChatTest() {
   const [state, setState] = useState<MediaStreamState>()
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [devices, setDevices] = useState<{ video: MediaDeviceInfo[], audio: MediaDeviceInfo[] }>()
-  const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const [showPlaceholder, setShowPlaceholder] = useState(true)
 
   useEffect(() => {
-    setShowPlaceholder(!state?.stream || !state.hasVideo);
-  }, [state?.stream, state?.hasVideo]);
+    setShowPlaceholder(!state?.stream || !state.hasVideo)
+  }, [state?.stream, state?.hasVideo])
 
   const updateVideoStream = useCallback((stream: MediaStream | null) => {
     if (videoRef.current) {
@@ -46,13 +46,16 @@ export function VideoChatTest() {
     setState(cloneDeep(newState))
     updateVideoStream(newState.stream)
     const tracks = newState.stream?.getTracks()
-    console.clear()
-    console.log('tracks', tracks)
   }, [updateVideoStream, setState])
 
   useEffect(() => {
     const service = new MediaStreamManager()
     serviceRef.current = service
+
+    // Сначала подписываемся на события
+    service.on('stateChanged', handleStateChange)
+    service.on('error', console.error)
+    service.on('deviceChange', loadDevices)
 
     service.init({
       video: false,
@@ -60,9 +63,6 @@ export function VideoChatTest() {
       echoCancellation: true,
       noiseSuppression: true,
     }).then(() => {
-      service.on('stateChanged', handleStateChange)
-      service.on('error', console.error)
-      service.on('deviceChange', loadDevices)
       loadDevices()
     })
 
@@ -113,7 +113,7 @@ export function VideoChatTest() {
             disabled={isLoading}
             className={styles.controlButton}
           >
-            {state?.isVideoEnabled ? <Video/> : <VideoOff/>}
+            {state?.isVideoEnabled ? <Video /> : <VideoOff />}
           </button>
 
           <button
@@ -121,7 +121,7 @@ export function VideoChatTest() {
             disabled={isLoading}
             className={styles.controlButton}
           >
-            {state?.isAudioEnabled ? <Mic/> : <MicOff/>}
+            {state?.isAudioEnabled ? <Mic /> : <MicOff />}
           </button>
 
           <button
@@ -131,7 +131,7 @@ export function VideoChatTest() {
             disabled={!state?.isAudioEnabled}
             className={styles.controlButton}
           >
-            {state?.isAudioMuted ? <VolumeX/> : <Volume2/>}
+            {state?.isAudioMuted ? <VolumeX /> : <Volume2 />}
           </button>
         </div>
 

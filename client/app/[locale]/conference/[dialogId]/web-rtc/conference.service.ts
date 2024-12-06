@@ -5,7 +5,7 @@ import {
   ConnectionManager, EventType, MediaEvents,
   MediaStreamManager,
   MediaStreamOptions,
-  NotificationManager,
+  NotificationManager, Participant,
   RoomInfo,
   RoomService,
   ScreenShareManager,
@@ -13,6 +13,28 @@ import {
   SignalingService,
 } from './micro-services'
 import { UserInfo } from '../../../../../../swagger/userInfo/interfaces-userInfo'
+
+// Определяем типы всех возможных событий
+export type ConferenceEventMap = {
+  // Пользователи
+  'userJoined': { user: UserInfo }
+  'userLeft': { userId: string, leavedUser?: Participant }
+  'userRaiseHand': { userId: string }
+  'userLowerHand': { userId: string }
+  // Медиа события
+  'userMutedAudio': { userId: string }
+  'userUnmutedAudio': { userId: string }
+  'userEnabledVideo': { userId: string }
+  'userDisabledVideo': { userId: string }
+  // События демонстрации экрана
+  'userStartedScreenShare': { user?: Participant, streamId: string }
+  'userStoppedScreenShare': { userId: string }
+  // События чата
+  'chatMessage': { userId: string, message: string }
+  // События состояния
+  'connectionStateChanged': { userId: string, state: RTCPeerConnectionState }
+  'roomStateChanged': { state: RoomInfo }
+}
 
 export interface ConferenceConfig {
   ice: RTCIceServer[]
@@ -94,23 +116,36 @@ export class ConferenceService extends EventEmitter {
 
       this.initialized = true
       this.notifySubscribers()
-      this.emit('initialized')
+      // this.emit('initialized')
     } catch (error) {
       this.notificationManager.notify('error', 'Ошибка инициализации конференции')
       throw error
     }
   }
 
+  // Типизированные методы для работы с событиями
+  on<K extends keyof ConferenceEventMap>(event: K, listener: (payload: ConferenceEventMap[K]) => void): this {
+    return super.on(event, listener)
+  }
+
+  emit<K extends keyof ConferenceEventMap>(event: K, payload: ConferenceEventMap[K]): boolean {
+    return super.emit(event, payload)
+  }
+
   #setupEvents() {
     // 1. События сигнального сервера
     this.signalingService
       // Обработка подключения нового участника
-      .on('userJoined', (user: UserInfo) => this.handleUserJoined(user))
+      .on('userJoined', async (user: UserInfo) => {
+        await this.handleUserJoined(user)
+        this.emit('userJoined', { user })
+      })
       // Обработка отключения участника
       .on('userLeft', (userId) => {
-        console.log('Участник отключился:', userId)
         this.connectionManager.closeConnection(userId)
+        const leavedUser = this.roomService.getParticipant(userId)
         this.roomService.removeParticipant(userId)
+        this.emit('userLeft', { userId, leavedUser })
         this.notifySubscribers()
       })
       // Обработка SDP сообщений
@@ -163,13 +198,15 @@ export class ConferenceService extends EventEmitter {
             break
           case 'screen-share-off':
             this.roomService.handleScreenShare(initiator, false)
+            this.emit('userStoppedScreenShare', { userId: initiator })
             break
           case 'screen-share-on':
             this.roomService.handleScreenShare(initiator, true, event.payload.screenStreamId)
+            const user = this.roomService.getParticipant(initiator)
+            this.emit('userStartedScreenShare', { user, streamId: event.payload.screenStreamId })
             break
           default: break
         }
-        // this.notifySubscribers()
       })
 
     // 2. События WebRTC соединений
@@ -220,7 +257,7 @@ export class ConferenceService extends EventEmitter {
         if (kind === 'video') {
           this.signalingService.sendEvent({
             type: 'camera-start',
-            payload: { cameraStreamId: stream.id }
+            payload: { cameraStreamId: stream.id },
           })
         }
         // Получаем активные соединения
@@ -329,12 +366,7 @@ export class ConferenceService extends EventEmitter {
         }))
       })
 
-    this.roomService.on('stateChanged', (state:  ReturnType<ConferenceService['getState']>['roomInfo']) => {
-      // console.clear()
-      // const cameraID = state.participants.find(({ userId }) => userId === '6')?.media.cameraStreamId
-      // const streams = state.participants.find(({ userId }) => userId === '6')?.media.streams
-      // const tracks = (cameraID && streams) ? streams[cameraID].getVideoTracks() : undefined
-      // console.log('state', tracks)
+    this.roomService.on('stateChanged', (state: ReturnType<ConferenceService['getState']>['roomInfo']) => {
       this.notifySubscribers()
     })
   }

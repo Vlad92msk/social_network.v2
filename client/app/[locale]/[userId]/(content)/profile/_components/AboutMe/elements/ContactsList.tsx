@@ -1,8 +1,8 @@
-import { UserInfo } from '@api/users/types/user.type'
 import { Button } from '@ui/common/Button'
 import { Image } from '@ui/common/Image'
 import { Popover } from '@ui/common/Popover'
 import { Text } from '@ui/common/Text'
+import { UserInfo } from '../../../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { cn } from '../cn'
 
 interface ContactsListProps {
@@ -29,14 +29,14 @@ export function ContactsList(props: ContactsListProps) {
         content={(
           <div className={cn('ContactsListOther')}>
             {
-                other?.map(({ name, id, profileImage }) => (
+                other?.map(({ name, id, profile_image }) => (
                   <Button
                     className={cn('ContactsListOtherButton')}
                     key={id}
-                    onClick={() => onClickUser?.(id)}
+                    onClick={() => onClickUser?.(String(id))}
                   >
                     <div className={cn('ContactsListOtherImgBox')}>
-                      <Image alt="bunner" src={profileImage} width={30} height={30} />
+                      <Image alt="bunner" src={profile_image} width={30} height={30} />
                     </div>
                     <Text fs="12">{name}</Text>
                   </Button>
