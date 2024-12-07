@@ -1,4 +1,5 @@
 import { Locale } from '@middlewares/variables'
+import { NotificationsProvider } from '@providers/notifications/NotificationsProvider'
 import { ReduxProvider } from '@providers/redux'
 import { SessionProvider } from '@providers/session/SessionProvider'
 import { ThemeProvider } from '@providers/theme'
@@ -36,7 +37,9 @@ export default async function RootLayout(props: RootLayoutProps) {
           <Html locale={params.locale}>
             <SessionProvider>
               <Body>
-                {children}
+                <NotificationsProvider>
+                  {children}
+                </NotificationsProvider>
               </Body>
             </SessionProvider>
           </Html>

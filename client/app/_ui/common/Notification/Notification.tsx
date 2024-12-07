@@ -1,15 +1,13 @@
 import {
   FloatingPortal,
-  autoUpdate,
-  flip,
-  offset,
-  shift,
-  useFloating,
   type Placement,
-  type VirtualElement,
-  type Strategy
+  type Strategy,
+  useFloating,
+  useTransitionStatus,
+  useTransitionStyles,
 } from '@floating-ui/react'
-import { ReactNode, useEffect, useRef } from 'react'
+import { ReactNode, useMemo } from 'react'
+import styles from './Notification.module.scss'
 
 export interface NotificationProps {
   isOpen: boolean
@@ -20,88 +18,89 @@ export interface NotificationProps {
   position?: Placement
   strategy?: Strategy
   offset?: number
-  index?: number // Добавляем index
+  index?: number
 }
 
-export function Notification({
-  isOpen,
-  onClose,
-  message,
-  type = 'info',
-  duration = 5000,
-  position = 'bottom-end',
-  strategy = 'fixed',
-  offset: offsetDistance = 16,
-  index = 0, // По умолчанию 0
-}: NotificationProps) {
-  const virtualRef = useRef<VirtualElement>({
-    getBoundingClientRect: () => {
-      const x = position.includes('end') ? window.innerWidth - 16 : 16
-      const y = position.includes('bottom') ? window.innerHeight - 16 : 16
+const SCREEN_PADDING = 50
+const NOTIFICATION_GAP = 16
+const NOTIFICATION_HEIGHT = 100
 
-      return {
-        x,
-        y,
-        top: y,
-        bottom: y,
-        left: x,
-        right: x,
-        width: 0,
-        height: 0,
-      }
-    },
-  })
-
+export function Notification(props: NotificationProps) {
   const {
-    refs,
-    floatingStyles,
-    update,
-  } = useFloating({
-    elements: {
-      //@ts-ignore
-      reference: virtualRef.current,
+    isOpen,
+    onClose,
+    message,
+    type = 'info',
+    position = 'bottom-end',
+    strategy = 'fixed',
+    offset: offsetDistance = SCREEN_PADDING,
+    index = 0,
+  } = props
+
+  // Настраиваем floating context правильно
+  const { refs, context } = useFloating({
+    open: isOpen,
+    onOpenChange: (open) => {
+      if (!open) onClose()
     },
-    placement: position,
-    strategy,
-    middleware: [
-      // Добавляем базовый отступ + отступ на основе индекса
-      offset(() => ({
-        mainAxis: offsetDistance + (position.includes('bottom') ? -index * 100 : index * 100),
-        crossAxis: 0,
-      })),
-      flip({
-        fallbackAxisSideDirection: 'end',
-      }),
-      shift({ padding: 8 }),
-    ],
-    whileElementsMounted: autoUpdate,
   })
 
-  useEffect(() => {
-    if (isOpen) {
-      const handleResize = () => update()
-      window.addEventListener('resize', handleResize)
-      return () => window.removeEventListener('resize', handleResize)
-    }
-  }, [isOpen, update])
+  const baseStyles = useMemo<React.CSSProperties>(() => ({
+    position: strategy,
+    zIndex: 1000 + index,
+    ...(position.includes('bottom') && {
+      bottom: offsetDistance + (index * (NOTIFICATION_HEIGHT + NOTIFICATION_GAP)),
+    }),
+    ...(position.includes('top') && {
+      top: offsetDistance + (index * (NOTIFICATION_HEIGHT + NOTIFICATION_GAP)),
+    }),
+    ...(position.includes('end') && {
+      right: offsetDistance,
+    }),
+    ...(position.includes('start') && {
+      left: offsetDistance,
+    }),
+  }), [position, strategy, index, offsetDistance])
 
-  useEffect(() => {
-    if (isOpen && duration > 0) {
-      const timer = setTimeout(onClose, duration)
-      return () => clearTimeout(timer)
-    }
-  }, [isOpen, duration, onClose])
+  // Используем статус для управления монтированием
+  const { isMounted } = useTransitionStatus(context, {
+    duration: 200,
+  })
 
-  if (!isOpen) return null
+  // Настраиваем стили анимации
+  const { styles: transitionStyles } = useTransitionStyles(context, {
+    duration: 200,
+    initial: {
+      opacity: 0,
+      transform: position.includes('end') ? 'translateX(100%)' : 'translateX(-100%)',
+    },
+    open: {
+      opacity: 1,
+      transform: 'translateX(0)',
+    },
+    close: {
+      opacity: 0,
+      transform: position.includes('end') ? 'translateX(100%)' : 'translateX(-100%)',
+    },
+  })
+
+  if (!isMounted) return null
 
   return (
-    <FloatingPortal>
-      <div ref={refs.setFloating} style={floatingStyles}>
-        <div className={`notification notification-${type}`}>
+    <FloatingPortal id="notifications">
+      <div
+        ref={refs.setFloating}
+        style={{
+          ...baseStyles,
+          ...transitionStyles,
+        }}
+        className={styles.wrapper}
+      >
+        <div className={`${styles.notification} ${styles[`notification-${type}`]}`}>
           {message}
           <button
             onClick={onClose}
-            className="close-button"
+            className={styles.closeButton}
             aria-label="Close notification"
           >
             ×

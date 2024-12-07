@@ -9,7 +9,7 @@ export default async function ConferencePage({ params }) {
   if (!userId) return null
   return (
       <ConferenceProvider currentUserId={String(userId)} dialogId={params.dialogId}>
-        <Conference profile={profile} />
+        <Conference />
       </ConferenceProvider>
   )
 }

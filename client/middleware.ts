@@ -93,6 +93,6 @@ export const config = {
       * Исключаем обращения к папке icons
       * '/((?!icons).*)'
      */
-    '/((?!api|_next/static|_next/image|images|icons|favicon/*).*)',
+    '/((?!api|_next/static|_next/image|audio|images|icons|favicon/*).*)',
   ],
 }

@@ -1,8 +1,8 @@
 'use client'
 
-import { Notification, NotificationProps } from '@ui/common/Notification/Notification'
 import { cloneDeep } from 'lodash'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useAddNotification } from '@providers/notifications/NotificationsProvider'
 import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
 import { ConferenceState, initialState } from './initial.state'
@@ -30,39 +30,35 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   const [isInitialized, setIsInitialized] = useState(false)
   const [state, setState] = useState<ConferenceState>(initialState)
 
-  const [notifications, setNotifications] = useState<Array<{
-    id: string;
-    message: string;
-    type: NotificationProps['type'];
-  }>>([]);
+  const addNotification = useAddNotification()
 
-  console.log('notifications', notifications)
-  const addNotification = (message: string, type: NotificationProps['type'] = 'info') => {
-    const id = new Date().getTime().toString();
-    setNotifications(prev => [...prev, { id, message, type }]);
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  };
-
-  // Инициализация сервиса
   useEffect(() => {
     const service = conferenceService.current
 
     // Подписываемся на события до инициализации
     service
       .on('userJoined', ({ user }) => {
-        addNotification(`${user.name} присоединился к диалогу`, 'success')
+        addNotification({
+          message: `${user.name} присоединился к диалогу`,
+          type: 'info',
+          duration: 3000,
+        })
       })
       .on('userLeft', ({ leavedUser }) => {
-        addNotification(`${leavedUser?.userInfo.name} покинул диалог`, 'success')
+        addNotification({
+          message: `${leavedUser?.userInfo.name} покинул диалог`,
+          type: 'info',
+          duration: 3000,
+        })
       })
       .on('userStartedScreenShare', ({ user }) => {
-        addNotification(`${user?.userInfo.name} начал демонстрацию экрана`, 'success')
+        addNotification({
+          message: `${user?.userInfo.name} начал демонстрацию экрана`,
+          type: 'info',
+          duration: 3000,
+        })
       })
 
-    // Подписываемся на обновления состояния
     const stateUnsubscribe = service.subscribe((newState) => {
       setState(cloneDeep(newState))
     })
@@ -89,14 +85,11 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
 
     initializeConference()
 
-    // Очистка при размонтировании
     return () => {
-      // Отписываемся от обновлений состояния
       stateUnsubscribe()
-      // Уничтожаем сервис
       service.destroy()
     }
-  }, [currentUserId, dialogId])
+  }, [addNotification, currentUserId, dialogId])
 
   const value = useMemo(() => ({
     isInitialized,
@@ -113,19 +106,6 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   // console.log('____value___', value)
   return (
     <ConferenceContext.Provider value={value}>
-      <button onClick={() => addNotification('Операция успешно выполнена', 'success')}>
-        Показать уведомление
-      </button>
-      {notifications.map(({ id, message, type }, index) => (
-        <Notification
-          key={id}
-          isOpen
-          message={message}
-          type={type}
-          onClose={() => removeNotification(id)}
-          index={index}
-        />
-      ))}
       {children}
     </ConferenceContext.Provider>
   )

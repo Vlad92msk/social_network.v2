@@ -18,8 +18,99 @@ interface VideoProps {
   streamType?: 'screen' | 'camera'
 }
 
+export function useAudioAnalyzer(stream?: MediaStream | null) {
+  const [volume, setVolume] = useState(0)
+  const analyzerRef = useRef<AnalyserNode | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const animationFrameRef = useRef<number>(0)
+  const lastVolumeRef = useRef(0)
+
+  useEffect(() => {
+    if (audioContextRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      audioContextRef.current.close()
+      analyzerRef.current = null
+      audioContextRef.current = null
+    }
+
+    // Проверяем наличие аудио трека
+    if (!stream?.getAudioTracks().length) {
+      return
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext()
+      const analyzer = audioContextRef.current.createAnalyser()
+      analyzer.fftSize = 256
+      analyzerRef.current = analyzer
+
+      const microphone = audioContextRef.current.createMediaStreamSource(stream)
+      microphone.connect(analyzer)
+
+      const dataArray = new Uint8Array(analyzer.frequencyBinCount)
+
+      const analyze = () => {
+        if (!analyzerRef.current) return
+
+        analyzerRef.current.getByteFrequencyData(dataArray)
+        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
+        const roundedVolume = Math.round(average)
+
+        const THRESHOLD = 5
+        if (Math.abs(roundedVolume - lastVolumeRef.current) > THRESHOLD) {
+          setVolume(roundedVolume)
+          lastVolumeRef.current = roundedVolume
+        }
+
+        animationFrameRef.current = requestAnimationFrame(analyze)
+      }
+
+      analyze()
+    }
+
+    return () => {
+      if (audioContextRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+        audioContextRef.current.close()
+        analyzerRef.current = null
+        audioContextRef.current = null
+      }
+    }
+  }, [stream])
+
+  return volume
+}
+
+
+function Mic({ stream, isMicActive }: {stream?: MediaStream | null, isMicActive?: boolean }) {
+  const volume = useAudioAnalyzer(stream)
+  const isSpeaking = volume > 10
+
+  console.log('stream', stream?.getTracks())
+  console.log('volume', volume)
+  return (
+    <div className={styles.micContainer}>
+      <Icon
+        name="microphone-off"
+        className={`${styles.micIcon} ${isMicActive ? styles.hidden : ''}`}
+      />
+      <Icon
+        name="microphone"
+        className={`${styles.micIcon} ${!isMicActive || isSpeaking ? styles.hidden : ''}`}
+      />
+      <div className={`${styles.AudioLine} ${isSpeaking && isMicActive ? styles.active : styles.inactive}`}>
+        <span />
+        <span />
+        <span />
+      </div>
+    </div>
+  )
+}
+
 export function LocalPreview() {
-  const { videoProps, currentUser, showPlaceholder, localMedia } = useCameraStream({
+  const { videoProps,
+    currentUser,
+    showPlaceholder, localMedia } = useCameraStream({
     mirror: true,
   })
 
@@ -34,31 +125,11 @@ export function LocalPreview() {
       />
       {showPlaceholder && (
         <div className={styles.profileImageContainer}>
-          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50}/>
+          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
         </div>
       )}
       <span className={styles.participantName}>Вы</span>
-      {isActiveMicrophone
-        ? (
-          <Icon
-            name="microphone"
-            style={{
-              position: 'absolute',
-              right: 10,
-              top: 10,
-            }}
-          />
-        )
-        : (
-          <Icon
-            name="microphone-off"
-            style={{
-              position: 'absolute',
-              right: 10,
-              top: 10,
-            }}
-          />
-        )}
+      <Mic isMicActive={isActiveMicrophone} stream={localMedia.stream} />
     </div>
   )
 }
@@ -66,7 +137,7 @@ export function LocalPreview() {
 export function LocalScreenShare() {
   const {
     videoProps,
-    isVideoEnabled
+    isVideoEnabled,
   } = useScreenShareStream()
 
   if (!isVideoEnabled) return null
@@ -125,17 +196,11 @@ export function RemoteStream(props: VideoProps) {
         </div>
       )}
       <span className={styles.participantName}>{`${currentUser?.name} ${streamType === 'screen' ? '(screen)' : ''}`}</span>
-      {!isAudioEnabled && streamType === 'camera'
-        && (
-          <Icon
-            name="microphone-off"
-            style={{
-              position: 'absolute',
-              right: 10,
-              top: 10,
-            }}
-          />
-        )}
+      {
+        streamType === 'camera' && (
+          <Mic isMicActive={isAudioEnabled} stream={stream} />
+        )
+      }
     </div>
   )
 }
@@ -150,7 +215,6 @@ export function Conference() {
   const [pinnedStreamId, setPinnedStreamId] = useState<string | null>(null)
   const [isLocalPinned, setIsLocalPinned] = useState(false)
   const [isLocalScreenPinned, setIsLocalScreenPinned] = useState(false)
-
 
   if (!isInitialized) {
     return (
@@ -220,8 +284,8 @@ export function Conference() {
     setIsLocalScreenPinned(!isLocalScreenPinned)
   }
 
-  const pinnedStream = remoteStreams.find(props => props.stream?.id === pinnedStreamId)
-  const unpinnedStreams = remoteStreams.filter(props => props.stream?.id !== pinnedStreamId)
+  const pinnedStream = remoteStreams.find((props) => props.stream?.id === pinnedStreamId)
+  const unpinnedStreams = remoteStreams.filter((props) => props.stream?.id !== pinnedStreamId)
 
   const renderMainContent = () => {
     if (isLocalPinned) {
@@ -252,7 +316,9 @@ export function Conference() {
     return (
       <div className={styles.participantList}>
         <div className={styles.participantsInfo}>
-          Участники ({unpinnedStreams.length + 2})
+          Участники (
+          {unpinnedStreams.length + 2}
+          )
         </div>
         {!isLocalPinned && <div onClick={handleLocalPreviewClick}><LocalPreview /></div>}
         {unpinnedStreams.map((props) => (
