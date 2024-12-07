@@ -3,6 +3,7 @@
 import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@ui/common/Icon'
 import { Image } from '@ui/common/Image'
+import { classNames } from '@utils/others'
 import styles from './Conference.module.scss'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { CallControls } from '../../components/components'
@@ -16,6 +17,7 @@ interface VideoProps {
   isAudioEnabled?: boolean,
   currentUser?: UserInfo
   streamType?: 'screen' | 'camera'
+  onClick?: VoidFunction
 }
 
 export function useAudioAnalyzer(stream?: MediaStream | null) {
@@ -24,6 +26,13 @@ export function useAudioAnalyzer(stream?: MediaStream | null) {
   const audioContextRef = useRef<AudioContext | null>(null)
   const animationFrameRef = useRef<number>(0)
   const lastVolumeRef = useRef(0)
+
+  // Функция для запуска AudioContext
+  const resumeAudioContext = async () => {
+    if (audioContextRef.current?.state === 'suspended') {
+      await audioContextRef.current.resume()
+    }
+  }
 
   useEffect(() => {
     if (audioContextRef.current) {
@@ -40,32 +49,36 @@ export function useAudioAnalyzer(stream?: MediaStream | null) {
 
     if (!audioContextRef.current) {
       audioContextRef.current = new AudioContext()
-      const analyzer = audioContextRef.current.createAnalyser()
-      analyzer.fftSize = 256
-      analyzerRef.current = analyzer
 
-      const microphone = audioContextRef.current.createMediaStreamSource(stream)
-      microphone.connect(analyzer)
+      // Пробуем запустить контекст
+      resumeAudioContext().then(() => {
+        const analyzer = audioContextRef.current!.createAnalyser()
+        analyzer.fftSize = 256
+        analyzerRef.current = analyzer
 
-      const dataArray = new Uint8Array(analyzer.frequencyBinCount)
+        const microphone = audioContextRef.current!.createMediaStreamSource(stream)
+        microphone.connect(analyzer)
 
-      const analyze = () => {
-        if (!analyzerRef.current) return
+        const dataArray = new Uint8Array(analyzer.frequencyBinCount)
 
-        analyzerRef.current.getByteFrequencyData(dataArray)
-        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
-        const roundedVolume = Math.round(average)
+        const analyze = () => {
+          if (!analyzerRef.current) return
 
-        const THRESHOLD = 5
-        if (Math.abs(roundedVolume - lastVolumeRef.current) > THRESHOLD) {
-          setVolume(roundedVolume)
-          lastVolumeRef.current = roundedVolume
+          analyzerRef.current.getByteFrequencyData(dataArray)
+          const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
+          const roundedVolume = Math.round(average)
+
+          const THRESHOLD = 5
+          if (Math.abs(roundedVolume - lastVolumeRef.current) > THRESHOLD) {
+            setVolume(roundedVolume)
+            lastVolumeRef.current = roundedVolume
+          }
+
+          animationFrameRef.current = requestAnimationFrame(analyze)
         }
 
-        animationFrameRef.current = requestAnimationFrame(analyze)
-      }
-
-      analyze()
+        analyze()
+      })
     }
 
     return () => {
@@ -78,26 +91,35 @@ export function useAudioAnalyzer(stream?: MediaStream | null) {
     }
   }, [stream])
 
-  return volume
+  return { volume, resumeAudioContext }
 }
 
-
 function Mic({ stream, isMicActive }: {stream?: MediaStream | null, isMicActive?: boolean }) {
-  const volume = useAudioAnalyzer(stream)
+  const { volume, resumeAudioContext } = useAudioAnalyzer(stream)
   const isSpeaking = volume > 10
 
-  console.log('stream', stream?.getTracks())
-  console.log('volume', volume)
+  // При первом рендере добавляем обработчик
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      resumeAudioContext()
+      // Удаляем обработчик после первого использования
+      document.removeEventListener('click', handleFirstInteraction)
+    }
+
+    document.addEventListener('click', handleFirstInteraction)
+    return () => document.removeEventListener('click', handleFirstInteraction)
+  }, [resumeAudioContext])
+
   return (
     <div className={styles.micContainer}>
       <Icon
         name="microphone-off"
         className={`${styles.micIcon} ${isMicActive ? styles.hidden : ''}`}
       />
-      <Icon
-        name="microphone"
-        className={`${styles.micIcon} ${!isMicActive || isSpeaking ? styles.hidden : ''}`}
-      />
+      {/* <Icon */}
+      {/*   name="microphone" */}
+      {/*   className={`${styles.micIcon} ${!isMicActive || isSpeaking ? styles.hidden : ''}`} */}
+      {/* /> */}
       <div className={`${styles.AudioLine} ${isSpeaking && isMicActive ? styles.active : styles.inactive}`}>
         <span />
         <span />
@@ -107,7 +129,7 @@ function Mic({ stream, isMicActive }: {stream?: MediaStream | null, isMicActive?
   )
 }
 
-export function LocalPreview() {
+export function LocalPreview({ className, onClick }: { className?: string, onClick?: VoidFunction }) {
   const { videoProps,
     currentUser,
     showPlaceholder, localMedia } = useCameraStream({
@@ -117,7 +139,7 @@ export function LocalPreview() {
   const isActiveMicrophone = localMedia.isAudioEnabled && !localMedia.isAudioMuted
 
   return (
-    <div className={styles.participant}>
+    <div className={classNames(className, styles.participant)} onClick={onClick}>
       <video
         {...videoProps}
         className={`${styles.video} ${styles.videoMirrored}`}
@@ -134,7 +156,7 @@ export function LocalPreview() {
   )
 }
 
-export function LocalScreenShare() {
+export function LocalScreenShare({ className, onClick }: { className?: string, onClick?: VoidFunction }) {
   const {
     videoProps,
     isVideoEnabled,
@@ -142,7 +164,7 @@ export function LocalScreenShare() {
 
   if (!isVideoEnabled) return null
   return (
-    <div className={styles.participant}>
+    <div className={classNames(className, styles.participant)} onClick={onClick}>
       <video
         {...videoProps}
         className={`${styles.video} ${styles.videoMirrored}`}
@@ -160,47 +182,77 @@ export function RemoteStream(props: VideoProps) {
     isAudioEnabled,
     currentUser,
     streamType,
+    onClick,
   } = props
   const videoRef = useRef<HTMLVideoElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const hasVideo = (stream?.getVideoTracks().length || 0) > 0
+  const hasAudio = (stream?.getAudioTracks().length || 0) > 0
 
   useEffect(() => {
-    if (videoRef.current) {
-      if (stream && stream !== videoRef.current.srcObject) {
-        videoRef.current.srcObject = null // Сначала очищаем
-        videoRef.current.srcObject = stream // Затем устанавливаем новый поток
+    if (!stream) return
 
-        // Дожидаемся загрузки метаданных перед воспроизведением
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(console.error)
-        }
+    // Обновляем видео поток
+    if (hasVideo && videoRef.current && stream !== videoRef.current.srcObject) {
+      videoRef.current.srcObject = null
+      videoRef.current.srcObject = stream
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current?.play().catch(console.error)
       }
     }
-  }, [stream])
 
-  const videoProps = useMemo(() => ({
-    ref: videoRef,
+    // Обновляем аудио поток
+    if (hasAudio && !hasVideo && audioRef.current && stream !== audioRef.current.srcObject) {
+      audioRef.current.srcObject = null
+      audioRef.current.srcObject = stream
+      audioRef.current.onloadedmetadata = () => {
+        audioRef.current?.play().catch(console.error)
+      }
+    }
+  }, [stream, hasVideo, hasAudio])
+
+  const mediaProps = useMemo(() => ({
     autoPlay: true,
     playsInline: true,
     muted: true,
   }), [])
 
   return (
-    <div className={styles.participant}>
-      <video
-        {...videoProps}
-        style={{ display: !isVideoEnabled ? 'none' : 'block' }}
-      />
+    <div className={classNames(styles.participant, className)} onClick={onClick}>
+      {/* Видео элемент создаем только если есть видеотрек */}
+      {hasVideo && (
+        <video
+          ref={videoRef}
+          {...mediaProps}
+          style={{ display: !isVideoEnabled ? 'none' : 'block' }}
+        />
+      )}
+
+      {/* Аудио элемент создаем только если есть аудиотрек и нет видеотрека */}
+      {hasAudio && !hasVideo && (
+        <audio ref={audioRef} {...mediaProps} />
+      )}
+
       {!isVideoEnabled && (
         <div className={styles.profileImageContainer}>
-          <Image className={styles.profileImage} src={currentUser?.profile_image || ''} alt={currentUser?.name || ''} width={125} height={50} />
+          <Image
+            className={styles.profileImage}
+            src={currentUser?.profile_image || ''}
+            alt={currentUser?.name || ''}
+            width={125}
+            height={50}
+          />
         </div>
       )}
-      <span className={styles.participantName}>{`${currentUser?.name} ${streamType === 'screen' ? '(screen)' : ''}`}</span>
-      {
-        streamType === 'camera' && (
-          <Mic isMicActive={isAudioEnabled} stream={stream} />
-        )
-      }
+
+      <span className={styles.participantName}>
+        {`${currentUser?.name} ${streamType === 'screen' ? '(screen)' : ''}`}
+      </span>
+
+      {streamType === 'camera' && (
+        <Mic isMicActive={isAudioEnabled} stream={stream} />
+      )}
     </div>
   )
 }
@@ -289,23 +341,21 @@ export function Conference() {
 
   const renderMainContent = () => {
     if (isLocalPinned) {
-      return <div className={`${styles.participant} ${styles.pin}`} onClick={handleLocalPreviewClick}><LocalPreview /></div>
+      return <LocalPreview className={styles.pin} onClick={handleLocalPreviewClick} />
     }
     if (isLocalScreenPinned) {
-      return <div className={`${styles.participant} ${styles.pin}`} onClick={handleLocalScreenClick}><LocalScreenShare /></div>
+      return <LocalScreenShare className={styles.pin} onClick={handleLocalPreviewClick} />
     }
     if (pinnedStream) {
-      return <div className={`${styles.participant} ${styles.pin}`} onClick={() => handleStreamClick(pinnedStream.stream?.id)}><RemoteStream {...pinnedStream} /></div>
+      return <RemoteStream {...pinnedStream} className={styles.pin} onClick={() => handleStreamClick(pinnedStream.stream?.id)} />
     }
     return (
       <>
-        <div onClick={handleLocalPreviewClick}><LocalPreview /></div>
+        <LocalPreview onClick={handleLocalPreviewClick} />
         {remoteStreams.map((props) => (
-          <div key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}>
-            <RemoteStream {...props} />
-          </div>
+          <RemoteStream key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)} {...props} />
         ))}
-        <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>
+        <LocalScreenShare onClick={handleLocalScreenClick} />
       </>
     )
   }
@@ -317,7 +367,7 @@ export function Conference() {
       <div className={styles.participantList}>
         <div className={styles.participantsInfo}>
           Участники (
-          {unpinnedStreams.length + 2}
+          {unpinnedStreams.length +1}
           )
         </div>
         {!isLocalPinned && <div onClick={handleLocalPreviewClick}><LocalPreview /></div>}

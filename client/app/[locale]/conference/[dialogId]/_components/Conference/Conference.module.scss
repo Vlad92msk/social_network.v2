@@ -29,6 +29,15 @@
   pointer-events: none;
 }
 
+.videoMirrored {
+  transform: scaleX(-1);
+}
+
+.profileImageContainer, .video {
+  height: 100%;
+  width: 100%;
+}
+
 .AudioLine {
   display: flex;
   align-items: center;

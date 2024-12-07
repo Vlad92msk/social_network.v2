@@ -86,7 +86,7 @@ export class RoomService extends EventEmitter {
       participant.media.streams[stream.id] = currentStream;
 
       // Если это видео трек и не скриншеринг - помечаем как поток камеры
-      if (track.kind === 'video' && stream.id !== participant.media.screenStreamId) {
+      if (stream.id !== participant.media.screenStreamId) {
         participant.media.cameraStreamId = stream.id;
       }
     }

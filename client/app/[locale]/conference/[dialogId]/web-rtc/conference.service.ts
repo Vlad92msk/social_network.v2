@@ -441,28 +441,24 @@ export class ConferenceService extends EventEmitter {
     })
   }
 
-  // Управление видео
   async toggleLocalVideo(): Promise<void> {
-    const track = this.mediaManager.getVideoTrack()
-    const { isVideoMuted, isVideoEnabled } = this.mediaManager.getState()
+    const { isVideoEnabled, isVideoMuted } = this.mediaManager.getState()
 
-    if (!track) {
+    if (!isVideoEnabled) {
       await this.mediaManager.enableVideo()
-    } else if (isVideoEnabled && !isVideoMuted) {
+    } else if (!isVideoMuted) {
       this.mediaManager.muteVideo()
     } else {
       this.mediaManager.unmuteVideo()
     }
   }
 
-  // Управление аудио
   async toggleLocalAudio(): Promise<void> {
-    const track = this.mediaManager.getAudioTrack()
     const { isAudioEnabled, isAudioMuted } = this.mediaManager.getState()
 
-    if (!track) {
+    if (!isAudioEnabled) {
       await this.mediaManager.enableAudio()
-    } else if (isAudioEnabled && !isAudioMuted) {
+    } else if (!isAudioMuted) {
       this.mediaManager.muteAudio()
     } else {
       this.mediaManager.unmuteAudio()
@@ -499,7 +495,14 @@ export class ConferenceService extends EventEmitter {
 
   private notifySubscribers() {
     const state = this.getState()
-    console.log('__STATE__', state.localMedia)
+    const a = state.participants.find(({ userId }) => userId === '6')
+    const media = state.participants.find(({ userId }) => userId === '6')?.media
+    const b = media?.streams
+
+    // console.clear()
+    console.log('__a__', a)
+    console.log('__media__', media)
+    console.log('__streams__', b)
     this.subscribers.forEach((cb) => cb(state))
   }
 

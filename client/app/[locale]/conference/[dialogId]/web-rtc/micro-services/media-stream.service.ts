@@ -158,19 +158,25 @@ export class MediaStreamManager extends EventEmitter {
    */
   private async startStream(constraints: MediaStreamConstraints): Promise<void> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints)
 
       if (this.stream) {
-        // Add new tracks to existing stream
-        stream.getTracks().forEach((track) => {
-          this.stream?.addTrack(track)
-          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track, stream })
-          track.addEventListener('ended', () => this.handleTrackEnded(track))
+        // Stop and remove existing tracks of the same kind
+        newStream.getTracks().forEach((newTrack) => {
+          const existingTrack = this.stream?.getTracks().find(t => t.kind === newTrack.kind)
+          if (existingTrack) {
+            existingTrack.stop()
+            this.stream?.removeTrack(existingTrack)
+            this.emit(MediaEvents.TRACK_REMOVED, { kind: existingTrack.kind, track: existingTrack })
+          }
+          this.stream?.addTrack(newTrack)
+          this.emit(MediaEvents.TRACK_ADDED, { kind: newTrack.kind, track: newTrack, stream: this.stream })
+          newTrack.addEventListener('ended', () => this.handleTrackEnded(newTrack))
         })
       } else {
-        this.stream = stream
-        stream.getTracks().forEach((track) => {
-          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track, stream })
+        this.stream = newStream
+        newStream.getTracks().forEach((track) => {
+          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track, stream: newStream })
           track.addEventListener('ended', () => this.handleTrackEnded(track))
         })
       }
