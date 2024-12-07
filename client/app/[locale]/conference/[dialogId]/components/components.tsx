@@ -16,7 +16,6 @@ export function CallControls() {
   } = useConference()
 
   const handleClose = () => {
-    // Закрываем текущую вкладку браузера
     window.close()
 
     // Альтернативный вариант, если window.close() не сработает
@@ -34,30 +33,31 @@ export function CallControls() {
     <div className={styles.controls}>
       <button
         className={styles.button}
+        data-end-call="true"
         onClick={handleClose}
       >
         <Icon name="phone" />
       </button>
 
       <button
-        style={{ backgroundColor: isActiveCamera ? 'white' : 'transparent' }}
         className={styles.button}
+        data-active={isActiveCamera}
         onClick={toggleVideo}
       >
         <Icon name={isActiveCamera ? 'videocam-off' : 'videocam-on'} />
       </button>
 
       <button
-        style={{ backgroundColor: isActiveMicrophone ? 'white' : 'transparent' }}
         className={styles.button}
+        data-active={isActiveMicrophone}
         onClick={toggleAudio}
       >
         <Icon name={isActiveMicrophone ? 'microphone' : 'microphone-off'} />
       </button>
 
       <button
-        style={{ backgroundColor: isScreenShareActive ? 'white' : 'transparent' }}
-        className={`${styles.button} ${isScreenShareActive ? styles.buttonActive : ''}`}
+        className={styles.button}
+        data-active={isScreenShareActive}
         onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare())}
       >
         <Icon name={isScreenShareActive ? 'screen-share-on' : 'screen-share-off'} />

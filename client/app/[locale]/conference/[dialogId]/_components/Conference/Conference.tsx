@@ -262,6 +262,7 @@ export function Conference() {
     isInitialized,
     participants,
     currentUser,
+    screenShare: { isVideoEnabled },
   } = useConference()
 
   const [pinnedStreamId, setPinnedStreamId] = useState<string | null>(null)
@@ -363,20 +364,19 @@ export function Conference() {
   const renderParticipantList = () => {
     if (!isLocalPinned && !isLocalScreenPinned && !pinnedStream) return null
 
+    const streamsCount = remoteStreams.length
     return (
       <div className={styles.participantList}>
         <div className={styles.participantsInfo}>
-          Участники (
-          {unpinnedStreams.length +1}
-          )
+          {`Участники (${streamsCount})`}
         </div>
         {!isLocalPinned && <div onClick={handleLocalPreviewClick}><LocalPreview /></div>}
         {unpinnedStreams.map((props) => (
           <div key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}>
-            <RemoteStream {...props} />
+            <RemoteStream key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}  {...props} />
           </div>
         ))}
-        {!isLocalScreenPinned && <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>}
+        {!isLocalScreenPinned && isVideoEnabled && <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>}
       </div>
     )
   }
