@@ -122,6 +122,13 @@ export class ConnectionManager extends EventEmitter {
 
   // Добавление медиа трека в соединение
   async addTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): Promise<void> {
+    console.log('ConnectionManager: Adding track', {
+      userId,
+      trackKind: track.kind,
+      trackEnabled: track.enabled,
+      streamId: stream.id
+    });
+
     const connection = this.connections.get(userId)
     if (!connection) {
       throw new Error(`Не найдено соединение для пользователя ${userId}`)

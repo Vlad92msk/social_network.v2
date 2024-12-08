@@ -1,6 +1,8 @@
 'use client'
 
-import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState,
+} from 'react'
 import { Icon } from '@ui/common/Icon'
 import { Image } from '@ui/common/Image'
 import { classNames } from '@utils/others'
@@ -34,7 +36,7 @@ export function useAudioAnalyzer(audioTrack?: MediaStreamTrack | null) {
   }
 
   useEffect(() => {
-    console.log('Audio track in analyzer:', audioTrack)
+    // console.log('Audio track in analyzer:', audioTrack)
     // Очищаем предыдущий контекст
     if (audioContextRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
@@ -175,38 +177,26 @@ export function RemoteStream(props: VideoProps) {
     stream,
     className,
     isVideoEnabled,
-    isAudioEnabled,
     currentUser,
     streamType,
-    onClick,
+    isAudioEnabled,
   } = props
   const videoRef = useRef<HTMLVideoElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
 
-  const hasVideo = (stream?.getVideoTracks().length || 0) > 0
-  const hasAudio = (stream?.getAudioTracks().length || 0) > 0
+  const hasVideo = isVideoEnabled && (stream?.getVideoTracks().length || 0) > 0
 
+  console.log('stream?.getAudioTracks()', stream?.getAudioTracks())
   useEffect(() => {
-    if (!stream) return
-
-    // Обновляем видео поток
-    if (hasVideo && videoRef.current && stream !== videoRef.current.srcObject) {
-      videoRef.current.srcObject = null
+    if (stream && videoRef.current && isVideoEnabled) {
       videoRef.current.srcObject = stream
-      videoRef.current.onloadedmetadata = () => {
-        videoRef.current?.play().catch(console.error)
-      }
     }
 
-    // Обновляем аудио поток
-    if (hasAudio && !hasVideo && audioRef.current && stream !== audioRef.current.srcObject) {
-      audioRef.current.srcObject = null
-      audioRef.current.srcObject = stream
-      audioRef.current.onloadedmetadata = () => {
-        audioRef.current?.play().catch(console.error)
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
       }
     }
-  }, [stream, hasVideo, hasAudio])
+  }, [isVideoEnabled, stream])
 
   const mediaProps = useMemo(() => ({
     autoPlay: true,
@@ -215,22 +205,14 @@ export function RemoteStream(props: VideoProps) {
   }), [])
 
   return (
-    <div className={classNames(styles.participant, className)} onClick={onClick}>
-      {/* Видео элемент создаем только если есть видеотрек */}
-      {hasVideo && (
-        <video
-          ref={videoRef}
-          {...mediaProps}
-          style={{ display: !isVideoEnabled ? 'none' : 'block' }}
-        />
-      )}
+    <div className={classNames(styles.participant, className)}>
+      <video
+        ref={videoRef}
+        {...mediaProps}
+        style={{ display: !isVideoEnabled ? 'none' : 'block' }}
+      />
 
-      {/* Аудио элемент создаем только если есть аудиотрек и нет видеотрека */}
-      {hasAudio && !hasVideo && (
-        <audio ref={audioRef} {...mediaProps} />
-      )}
-
-      {!isVideoEnabled && (
+      {!hasVideo && (
         <div className={styles.profileImageContainer}>
           <Image
             className={styles.profileImage}
@@ -255,87 +237,35 @@ export function RemoteStream(props: VideoProps) {
 
 export function Conference() {
   const {
-    isInitialized,
-    participants,
-    currentUser,
     screenShare: { isVideoEnabled },
+    roomInfo: { s: remoteStreams },
   } = useConference()
 
   const [pinnedStreamId, setPinnedStreamId] = useState<string | null>(null)
   const [isLocalPinned, setIsLocalPinned] = useState(false)
   const [isLocalScreenPinned, setIsLocalScreenPinned] = useState(false)
 
-  if (!isInitialized) {
-    return (
-      <div className={styles.conferenceLoading}>
-        <p>Подключение к конференции...</p>
-      </div>
-    )
-  }
-
-  const remoteStreams = participants
-    .filter(({ userId }) => userId !== String(currentUser?.id))
-    .reduce((acc: VideoProps[], { userId, userInfo, media }) => {
-      const {
-        isAudioEnabled,
-        isVideoEnabled,
-        isScreenSharing,
-        streams,
-        screenStreamId,
-        cameraStreamId,
-      } = media
-
-      // Получаем потоки из объекта streams
-      const screenStream = screenStreamId ? streams[screenStreamId] : undefined
-      const cameraStream = cameraStreamId ? streams[cameraStreamId] : undefined
-
-      const cameraObj: VideoProps = {
-        stream: cameraStream,
-        currentUser: userInfo,
-        streamType: 'camera',
-        isAudioEnabled,
-        isVideoEnabled,
-      }
-
-      const screenObj: VideoProps = {
-        stream: screenStream,
-        currentUser: userInfo,
-        streamType: 'screen',
-        isAudioEnabled: false,
-        isVideoEnabled: true,
-      }
-
-      acc.push(cameraObj)
-
-      if (screenStream && isScreenSharing) {
-        acc.push(screenObj)
-      }
-
-      return acc
-    }, [])
-
-  const handleStreamClick = (streamId: string | undefined) => {
+  const handleStreamClick = useCallback((streamId: string | undefined) => {
     if (!streamId) return
     setIsLocalPinned(false)
     setIsLocalScreenPinned(false)
     setPinnedStreamId(pinnedStreamId === streamId ? null : streamId)
-  }
+  }, [pinnedStreamId])
 
-  const handleLocalPreviewClick = () => {
+  const handleLocalPreviewClick = useCallback(() => {
     setPinnedStreamId(null)
     setIsLocalScreenPinned(false)
     setIsLocalPinned(!isLocalPinned)
-  }
+  }, [isLocalPinned])
 
-  const handleLocalScreenClick = () => {
+  const handleLocalScreenClick = useCallback(() => {
     setPinnedStreamId(null)
     setIsLocalPinned(false)
     setIsLocalScreenPinned(!isLocalScreenPinned)
-  }
+  }, [isLocalScreenPinned])
 
   const pinnedStream = remoteStreams.find((props) => props.stream?.id === pinnedStreamId)
   const unpinnedStreams = remoteStreams.filter((props) => props.stream?.id !== pinnedStreamId)
-
 
   const renderMainContent = () => {
     if (isLocalPinned) {
@@ -348,13 +278,13 @@ export function Conference() {
       return <RemoteStream {...pinnedStream} className={styles.pin} onClick={() => handleStreamClick(pinnedStream.stream?.id)} />
     }
     return (
-      <>
+      <React.Fragment key={new Date().toISOString()}>
         <LocalPreview onClick={handleLocalPreviewClick} />
         {remoteStreams.map((props) => (
           <RemoteStream key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)} {...props} />
         ))}
         <LocalScreenShare onClick={handleLocalScreenClick} />
-      </>
+      </React.Fragment>
     )
   }
 

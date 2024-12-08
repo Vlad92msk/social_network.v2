@@ -31,66 +31,6 @@ export class ConferenceService {
       private eventEmitter: EventEmitter2
     ) {}
 
-    async setUserEvents(props: { streamId: string, payload: any, senderId: string, dialogId: string }) {
-        const { streamId, payload, senderId, dialogId } = props
-        this.userEvents[senderId] = {
-            ...this.userEvents[senderId],
-            mickActive: payload.type === 'mic-on',
-            streamType: payload.type,
-        }
-
-        const room = this.rooms.get(dialogId)
-        const p = room.get(senderId)
-
-        if (payload.type === 'mic-on' || payload.type === 'mic-off') {
-            room.set(senderId, {
-                ...p,
-                mickActive: payload.type === 'mic-on'
-            })
-        }
-       if (payload.type === 'camera-on') {
-           room.set(senderId, {
-               ...p,
-               //@ts-ignore
-               videoActive: true,
-               streamsType: {
-                   ...p.streamsType,
-                   [streamId]: 'camera',
-               },
-           })
-       }
-
-        if (payload.type === 'camera-off') {
-            room.set(senderId, {
-                ...p,
-                //@ts-ignore
-                videoActive: false,
-            })
-        }
-
-        if (payload.type === 'screen-share-on') {
-            room.set(senderId, {
-                ...p,
-                streamsType: {
-                    ...p.streamsType,
-                    [streamId]: 'screen',
-                },
-            })
-        }
-
-
-        if (payload.type === 'camera-off' || payload.type === 'screen-share-off') {
-            const newStreamsType = { ...p.streamsType }
-            delete newStreamsType[streamId]
-
-            room.set(senderId, {
-                ...p,
-                streamsType: newStreamsType
-            })
-        }
-
-        console.log('userEvents', this.userEvents)
-    }
 
     async addUserToRoom(dialogId: string, userId: string) {
         if (!this.rooms.has(dialogId)) {

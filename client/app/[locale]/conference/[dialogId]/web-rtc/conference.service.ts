@@ -171,9 +171,11 @@ export class ConferenceService extends EventEmitter {
             this.roomService.handleInitialSetup(initiator, event.payload)
             break
           case 'mic-off':
+            console.log(event.type, event.payload)
             this.roomService.handleAudioState(initiator, false)
             break
           case 'mic-on':
+            console.log(event.type, event.payload)
             this.roomService.handleAudioState(initiator, true)
             break
           case 'camera-off':
@@ -184,6 +186,9 @@ export class ConferenceService extends EventEmitter {
             break
           case 'camera-start':
             this.roomService.handleCameraStart(initiator, event.payload.cameraStreamId)
+            break
+          case 'audio-start':
+            this.roomService.handleAudioStart(initiator, event.payload.cameraStreamId)
             break
           case 'screen-share-off':
             this.roomService.handleScreenShare(initiator, false)
@@ -201,7 +206,6 @@ export class ConferenceService extends EventEmitter {
     // 2. События WebRTC соединений
     this.connectionManager
       .on('track', ({ userId, track, stream }) => {
-        console.log(`Получен трек от ${userId}, stream: ${stream.id}, track: ${track.id}`)
         this.roomService.handleTrack(userId, track, stream)
 
         track.addEventListener('ended', () => {
@@ -229,11 +233,11 @@ export class ConferenceService extends EventEmitter {
         console.log(`Соединение с пользователем: ${userId} - ${state}`)
       })
       .on('iceState', ({ userId, state }: { userId: string, state: any }) => {
-        console.log(`ICE state: ${state}`)
+        // console.log(`ICE state: ${state}`)
 
         // @ts-ignore
         if (state === 'connected' || state === 'completed') {
-          console.log(`Соединение с пользователем: ${userId} успешно установлено`)
+          // console.log(`Соединение с пользователем: ${userId} успешно установлено`)
         }
       })
 
@@ -248,7 +252,13 @@ export class ConferenceService extends EventEmitter {
             type: 'camera-start',
             payload: { cameraStreamId: stream.id },
           })
+        } else if (kind === 'audio') {
+          this.signalingService.sendEvent({
+            type: 'audio-start',
+            payload: { cameraStreamId: stream.id }, // используем тот же cameraStreamId
+          })
         }
+
         // Получаем активные соединения
         const activeConnections = this.connectionManager.getConnections()
 
@@ -352,6 +362,8 @@ export class ConferenceService extends EventEmitter {
       })
 
     this.roomService.on('stateChanged', (state: ReturnType<ConferenceService['getState']>['roomInfo']) => {
+      // console.clear()
+      console.log('stateChanged', state)
       this.notifySubscribers()
     })
   }
@@ -371,13 +383,13 @@ export class ConferenceService extends EventEmitter {
       await this.connectionManager.createConnection(userId)
 
       // Добавляем текущие треки в соединение
-      const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled, isAudioMuted } = this.mediaManager.getState()
+      const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled, isAudioMuted, isVideoMuted } = this.mediaManager.getState()
       const { stream: screenStream, isVideoEnabled: screenIsVideoEnabled } = this.screenShareManager.getState()
 
       // Отправляем initial-setup только с действительно необходимыми полями
       const initialSetup = {
         isAudioEnabled: cameraIsAudioEnabled && !isAudioMuted,
-        isVideoEnabled: cameraIsVideoEnabled,
+        isVideoEnabled: cameraIsVideoEnabled && !isVideoMuted,
         isScreenSharing: screenIsVideoEnabled,
         ...(mediaStream?.id && { cameraStreamId: mediaStream.id }),
         ...(screenStream?.id && screenIsVideoEnabled && { screenStreamId: screenStream.id }),
@@ -408,7 +420,7 @@ export class ConferenceService extends EventEmitter {
         await this.signalingService.sendOffer(userId, offer)
       }
 
-      this.notifySubscribers()
+      // this.notifySubscribers()
     } catch (error) {
       console.error('Ошибка при подключении участника:', error)
       this.notificationManager.notify('error', 'Ошибка подключения участника')
@@ -489,10 +501,19 @@ export class ConferenceService extends EventEmitter {
 
   // Получение состояния конференции
   getState() {
+    const c = this.roomService.getState()
+    const media = c.s.find(({currentUser}) => String(currentUser?.id) === '6')
+    const stream = media?.stream
+    const tracks = stream?.getTracks()
+
+    // console.clear()
+    console.log('media', media)
+    console.log('tracks', tracks)
     return {
       currentUser: this.roomService.getCurrentUser(),
       roomInfo: this.roomService.getState(),
       participants: this.roomService.getParticipants(),
+      remoteStreams: this.roomService.getRemoteStreams(),
       localMedia: this.mediaManager.getState(),
       screenShare: this.screenShareManager.getState(),
       connections: this.connectionManager.getConnections?.() || [],

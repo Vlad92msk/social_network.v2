@@ -7,10 +7,12 @@ export interface ConferenceState {
   screenShare: ReturnType<ConferenceService['getState']>['screenShare']
   connections: ReturnType<ConferenceService['getState']>['connections']
   currentUser: ReturnType<ConferenceService['getState']>['currentUser']
+  remoteStreams: ReturnType<ConferenceService['getState']>['remoteStreams']
 }
 
 export const initialState: ConferenceState = {
   participants: [],
+  remoteStreams: [],
   roomInfo: {
     currentUser: undefined,
     roomId: undefined,

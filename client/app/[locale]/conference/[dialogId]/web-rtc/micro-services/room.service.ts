@@ -1,5 +1,16 @@
+'use client'
+
 import { EventEmitter } from 'events'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
+
+export interface VideoProps {
+  stream?: MediaStream;
+  className?: string;
+  isVideoEnabled: boolean;
+  isAudioEnabled: boolean;
+  currentUser?: UserInfo;
+  streamType: 'screen' | 'camera';
+}
 
 interface ParticipantMedia {
   hasAudio: boolean;
@@ -69,34 +80,21 @@ export class RoomService extends EventEmitter {
     const participant = this.participants.get(userId)
     if (!participant) return
 
-    // Используем ID оригинального потока как ключ
-    const streamId = stream.id
-
-    // Создаем/получаем поток
-    if (!participant.media.streams[streamId]) {
-      participant.media.streams[streamId] = new MediaStream()
+    let currentStream = participant.media.streams[stream.id]
+    if (!currentStream) {
+      currentStream = new MediaStream()
+      participant.media.streams[stream.id] = currentStream
     }
 
-    const currentStream = participant.media.streams[streamId]
-
-    // Добавляем трек (без проверки на существование, т.к. handleTrack
-    // вызывается только для новых треков)
     currentStream.addTrack(track)
 
-    // Обновляем маппинг ID потока
-    if (track.kind === 'video' && !participant.media.screenStreamId) {
-      participant.media.cameraStreamId = streamId
-    } else if (track.kind === 'video' && participant.media.screenStreamId) {
-      participant.media.screenStreamId = streamId
-    }
-
-    // Обновляем состояние медиа
-    if (track.kind === 'audio') {
-      participant.media.hasAudio = true
-      participant.media.isAudioEnabled = track.enabled
-    } else if (track.kind === 'video') {
+    if (track.kind === 'video') {
       participant.media.hasVideo = true
-      participant.media.isVideoEnabled = track.enabled
+      if (stream.id !== participant.media.screenStreamId) {
+        participant.media.cameraStreamId = stream.id
+      }
+    } else if (track.kind === 'audio') {
+      participant.media.hasAudio = true
     }
 
     this.emitStateChanged()
@@ -109,10 +107,12 @@ export class RoomService extends EventEmitter {
     const participant = this.participants.get(userId)
     if (!participant) return
 
+    // Убираем флаги enabled пока не получим реальные треки
     participant.media = {
       ...participant.media,
       ...setup,
-      // Сохраняем существующие потоки!
+      hasVideo: false,
+      hasAudio: false,
       streams: participant.media.streams,
     }
 
@@ -157,7 +157,7 @@ export class RoomService extends EventEmitter {
    * Инициализация камеры
    */
   handleCameraStart(userId: string, streamId: string): void {
-    console.log('Handle Camera Start:', { userId, streamId })
+    // console.log('Handle Camera Start:', { userId, streamId })
 
     const participant = this.participants.get(userId)
     if (!participant) return
@@ -166,6 +166,15 @@ export class RoomService extends EventEmitter {
     participant.media.isVideoEnabled = true
 
     // Не создаем пустой поток, он будет создан когда придет трек
+    this.emitStateChanged()
+  }
+
+  handleAudioStart(userId: string, streamId: string): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    participant.media.cameraStreamId = streamId
+    participant.media.isAudioEnabled = true
     this.emitStateChanged()
   }
 
@@ -369,6 +378,7 @@ export class RoomService extends EventEmitter {
     return {
       roomId: this.room?.roomId,
       currentUser: this.room?.currentUser,
+      s: this.getRemoteStreams(),
       participants: Array.from(this.participants.values()).map((participant) => ({
         userId: participant.userId,
         userInfo: participant.userInfo,
@@ -379,6 +389,46 @@ export class RoomService extends EventEmitter {
         },
       })),
     }
+  }
+
+  getRemoteStreams(): VideoProps[] {
+    return Array.from(this.participants.values())
+      .filter(({ userId }) => userId !== String(this.room?.currentUser.id))
+      .reduce((acc: VideoProps[], participant) => {
+        const { userInfo, media } = participant
+        const {
+          isAudioEnabled,
+          isVideoEnabled,
+          isScreenSharing,
+          streams,
+          screenStreamId,
+          cameraStreamId,
+          hasVideo,
+          hasAudio
+        } = media
+
+        // Камера - добавляем всегда
+        acc.push({
+          stream: cameraStreamId ? streams[cameraStreamId] : undefined,
+          currentUser: userInfo,
+          streamType: 'camera',
+          isAudioEnabled: hasAudio && isAudioEnabled,
+          isVideoEnabled: hasVideo && isVideoEnabled,
+        })
+
+        // Скриншеринг - только если есть
+        if (screenStreamId && isScreenSharing) {
+          acc.push({
+            stream: streams[screenStreamId],
+            currentUser: userInfo,
+            streamType: 'screen',
+            isAudioEnabled: false,
+            isVideoEnabled: true,
+          })
+        }
+
+        return acc
+      }, [])
   }
 
   /**

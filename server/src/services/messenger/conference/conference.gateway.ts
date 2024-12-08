@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io'
 import { ConferenceService } from './conference.service'
 
 // Типы сигналов WebRTC
-type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share' | 'screen-sharing-started' | 'screen-sharing-stopped' | 'camera-on' | 'camera-off';
+type SignalType = 'offer' | 'answer' | 'ice-candidate' | 'screen-share' | 'screen-sharing-started' | 'screen-sharing-stopped' | 'camera-on' | 'camera-off' | 'initial-setup';
 
 
 interface WebRTCSignal {
@@ -27,7 +27,7 @@ interface SignalPayload {
 
 export interface EventType {
     event: {
-        type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off'
+        type: 'mic-on' | 'mic-off'| 'camera-on' | 'camera-off' | 'screen-share-on' | 'screen-share-off' | 'initial-setup'
         payload: any;
     },
     dialogId: string;
@@ -171,7 +171,7 @@ export class ConferenceGateway implements OnGatewayConnection, OnGatewayDisconne
         }
 
         // Добавляем screen-share в список валидных типов сигналов
-        const validSignalTypes: SignalType[] = ['offer', 'answer', 'ice-candidate', 'screen-share', 'screen-sharing-started', 'screen-sharing-stopped', 'camera-on', 'camera-off']
+        const validSignalTypes: SignalType[] = ['initial-setup', 'offer', 'answer', 'ice-candidate', 'screen-share', 'screen-sharing-started', 'screen-sharing-stopped', 'camera-on', 'camera-off']
         if (!validSignalTypes.includes(signal.type)) {
             console.error('Invalid signal type:', signal.type)
             return false

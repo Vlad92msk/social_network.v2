@@ -3,6 +3,7 @@
 import { cloneDeep } from 'lodash'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAddNotification } from '@providers/notifications/NotificationsProvider'
+import styles from '../_components/Conference/Conference.module.scss'
 import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
 import { ConferenceState, initialState } from './initial.state'
@@ -104,6 +105,13 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   }), [isInitialized, state])
 
   // console.log('____value___', value)
+  if (!isInitialized) {
+    return (
+      <div>
+        <p>Подключение к конференции...</p>
+      </div>
+    )
+  }
   return (
     <ConferenceContext.Provider value={value}>
       {children}
