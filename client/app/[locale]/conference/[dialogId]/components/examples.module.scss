@@ -45,7 +45,7 @@
   gap: clamp(
           16px, // минимальный gap
           calc(100cqi / 20), // динамический gap на основе ширины контейнера
-          40px // максимальный gap
+          30px // максимальный gap
   );
   margin-top: 16px;
   justify-content: center;
@@ -76,7 +76,7 @@
 
   // Активное состояние (когда функция включена)
   &[data-active="true"] {
-    background: white; // Красный цвет Google
+    background: white;
     border-radius: 10px;
     color: #000;
     transition: .5s ease;
@@ -90,6 +90,7 @@
 
   // Кнопка завершения звонка
   &[data-end-call="true"] {
+    margin-left: 40px;
     background: #ea4335;
 
     &:hover {

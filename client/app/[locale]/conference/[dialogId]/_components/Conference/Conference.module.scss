@@ -165,6 +165,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   background-color: #3c4043;
+  border: 1px solid #8a8eac;
   border-radius: 16px;
   overflow: hidden;
   width: 100%;
@@ -183,12 +184,17 @@
 
 .participantList {
   width: 200px;
-  background-color: #3c4043;
+  background-color: #666a8814;
   border-radius: 16px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  .profileImageContainer {
+    height: 100%;
+    width: auto;
+  }
 
   .participantsInfo {
     font-size: 14px;

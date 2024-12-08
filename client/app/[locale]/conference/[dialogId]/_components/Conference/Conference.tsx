@@ -20,14 +20,13 @@ interface VideoProps {
   onClick?: VoidFunction
 }
 
-export function useAudioAnalyzer(stream?: MediaStream | null) {
+export function useAudioAnalyzer(audioTrack?: MediaStreamTrack | null) {
   const [volume, setVolume] = useState(0)
   const analyzerRef = useRef<AnalyserNode | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const animationFrameRef = useRef<number>(0)
   const lastVolumeRef = useRef(0)
 
-  // Функция для запуска AudioContext
   const resumeAudioContext = async () => {
     if (audioContextRef.current?.state === 'suspended') {
       await audioContextRef.current.resume()
@@ -35,6 +34,8 @@ export function useAudioAnalyzer(stream?: MediaStream | null) {
   }
 
   useEffect(() => {
+    console.log('Audio track in analyzer:', audioTrack)
+    // Очищаем предыдущий контекст
     if (audioContextRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
       audioContextRef.current.close()
@@ -43,43 +44,43 @@ export function useAudioAnalyzer(stream?: MediaStream | null) {
     }
 
     // Проверяем наличие аудио трека
-    if (!stream?.getAudioTracks().length) {
+    if (!audioTrack || audioTrack.kind !== 'audio') {
       return
     }
 
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext()
+    // Создаем временный MediaStream только для этого трека
+    const tempStream = new MediaStream([audioTrack])
 
-      // Пробуем запустить контекст
-      resumeAudioContext().then(() => {
-        const analyzer = audioContextRef.current!.createAnalyser()
-        analyzer.fftSize = 256
-        analyzerRef.current = analyzer
+    audioContextRef.current = new AudioContext()
 
-        const microphone = audioContextRef.current!.createMediaStreamSource(stream)
-        microphone.connect(analyzer)
+    resumeAudioContext().then(() => {
+      const analyzer = audioContextRef.current!.createAnalyser()
+      analyzer.fftSize = 256
+      analyzerRef.current = analyzer
 
-        const dataArray = new Uint8Array(analyzer.frequencyBinCount)
+      const microphone = audioContextRef.current!.createMediaStreamSource(tempStream)
+      microphone.connect(analyzer)
 
-        const analyze = () => {
-          if (!analyzerRef.current) return
+      const dataArray = new Uint8Array(analyzer.frequencyBinCount)
 
-          analyzerRef.current.getByteFrequencyData(dataArray)
-          const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
-          const roundedVolume = Math.round(average)
+      const analyze = () => {
+        if (!analyzerRef.current) return
 
-          const THRESHOLD = 5
-          if (Math.abs(roundedVolume - lastVolumeRef.current) > THRESHOLD) {
-            setVolume(roundedVolume)
-            lastVolumeRef.current = roundedVolume
-          }
+        analyzerRef.current.getByteFrequencyData(dataArray)
+        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
+        const roundedVolume = Math.round(average)
 
-          animationFrameRef.current = requestAnimationFrame(analyze)
+        const THRESHOLD = 5
+        if (Math.abs(roundedVolume - lastVolumeRef.current) > THRESHOLD) {
+          setVolume(roundedVolume)
+          lastVolumeRef.current = roundedVolume
         }
 
-        analyze()
-      })
-    }
+        animationFrameRef.current = requestAnimationFrame(analyze)
+      }
+
+      analyze()
+    })
 
     return () => {
       if (audioContextRef.current) {
@@ -89,16 +90,16 @@ export function useAudioAnalyzer(stream?: MediaStream | null) {
         audioContextRef.current = null
       }
     }
-  }, [stream])
+  }, [audioTrack])
 
   return { volume, resumeAudioContext }
 }
 
-function Mic({ stream, isMicActive }: {stream?: MediaStream | null, isMicActive?: boolean }) {
-  const { volume, resumeAudioContext } = useAudioAnalyzer(stream)
+function Mic({ audioTrack, isMicActive }: {audioTrack?: MediaStreamTrack | null, isMicActive?: boolean }) {
+  const { volume, resumeAudioContext } = useAudioAnalyzer(audioTrack)
   const isSpeaking = volume > 10
 
-  // При первом рендере добавляем обработчик
+  // // При первом рендере добавляем обработчик
   useEffect(() => {
     const handleFirstInteraction = () => {
       resumeAudioContext()
@@ -130,12 +131,7 @@ function Mic({ stream, isMicActive }: {stream?: MediaStream | null, isMicActive?
 }
 
 export function LocalPreview({ className, onClick }: { className?: string, onClick?: VoidFunction }) {
-  const { videoProps,
-    currentUser,
-    showPlaceholder, localMedia } = useCameraStream({
-    mirror: true,
-  })
-
+  const { videoProps, currentUser, showPlaceholder, localMedia } = useCameraStream()
   const isActiveMicrophone = localMedia.isAudioEnabled && !localMedia.isAudioMuted
 
   return (
@@ -151,7 +147,7 @@ export function LocalPreview({ className, onClick }: { className?: string, onCli
         </div>
       )}
       <span className={styles.participantName}>Вы</span>
-      <Mic isMicActive={isActiveMicrophone} stream={localMedia.stream} />
+      <Mic isMicActive={isActiveMicrophone} audioTrack={localMedia.stream?.getAudioTracks()[0]} />
     </div>
   )
 }
@@ -251,7 +247,7 @@ export function RemoteStream(props: VideoProps) {
       </span>
 
       {streamType === 'camera' && (
-        <Mic isMicActive={isAudioEnabled} stream={stream} />
+        <Mic isMicActive={isAudioEnabled} audioTrack={stream?.getAudioTracks()[0]} />
       )}
     </div>
   )
@@ -373,7 +369,7 @@ export function Conference() {
         {!isLocalPinned && <div onClick={handleLocalPreviewClick}><LocalPreview /></div>}
         {unpinnedStreams.map((props) => (
           <div key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}>
-            <RemoteStream key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)}  {...props} />
+            <RemoteStream key={props.stream?.id} onClick={() => handleStreamClick(props.stream?.id)} {...props} />
           </div>
         ))}
         {!isLocalScreenPinned && isVideoEnabled && <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>}

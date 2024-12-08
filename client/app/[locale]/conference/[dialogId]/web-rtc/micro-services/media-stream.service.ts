@@ -161,14 +161,18 @@ export class MediaStreamManager extends EventEmitter {
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
 
       if (this.stream) {
-        // Stop and remove existing tracks of the same kind
+        // Сначала удаляем все нужные треки
         newStream.getTracks().forEach((newTrack) => {
-          const existingTrack = this.stream?.getTracks().find(t => t.kind === newTrack.kind)
+          const existingTrack = this.stream?.getTracks().find((t) => t.kind === newTrack.kind)
           if (existingTrack) {
             existingTrack.stop()
             this.stream?.removeTrack(existingTrack)
             this.emit(MediaEvents.TRACK_REMOVED, { kind: existingTrack.kind, track: existingTrack })
           }
+        })
+
+        // Потом добавляем новые
+        newStream.getTracks().forEach((newTrack) => {
           this.stream?.addTrack(newTrack)
           this.emit(MediaEvents.TRACK_ADDED, { kind: newTrack.kind, track: newTrack, stream: this.stream })
           newTrack.addEventListener('ended', () => this.handleTrackEnded(newTrack))
@@ -213,32 +217,51 @@ export class MediaStreamManager extends EventEmitter {
     }
   }
 
-  /**
-   * Включает видеодорожку
-   * Вызывать когда нужно включить видео
-   */
+  private async addTrackToStream(kind: 'audio' | 'video'): Promise<MediaStreamTrack> {
+    const constraints = {
+      [kind]: kind === 'video' ? {
+        facingMode: this.options.facingMode,
+        width: this.options.width,
+        height: this.options.height,
+        aspectRatio: this.options.aspectRatio,
+        frameRate: this.options.frameRate,
+        deviceId: this.options.preferredVideoDeviceId,
+        ...this.options.videoConstraints,
+      } : {
+        echoCancellation: this.options.echoCancellation,
+        noiseSuppression: this.options.noiseSuppression,
+        autoGainControl: this.options.autoGainControl,
+        deviceId: this.options.preferredAudioDeviceId,
+        ...this.options.audioConstraints,
+      }
+    }
+
+    const tempStream = await navigator.mediaDevices.getUserMedia(constraints)
+    const track = tempStream.getTracks()[0]
+
+    // Создаем основной поток, если его еще нет
+    if (!this.stream) {
+      this.stream = new MediaStream()
+    }
+
+    return track
+  }
+
   async enableVideo(): Promise<void> {
     try {
-      if (!this.stream || !this.getVideoTrack()) {
-        await this.startStream({
-          video: {
-            facingMode: this.options.facingMode,
-            width: this.options.width,
-            height: this.options.height,
-            aspectRatio: this.options.aspectRatio,
-            frameRate: this.options.frameRate,
-            deviceId: this.options.preferredVideoDeviceId,
-            ...this.options.videoConstraints,
-          },
-        })
+      const existingTrack = this.getVideoTrack()
+      if (!existingTrack) {
+        const videoTrack = await this.addTrackToStream('video')
+        this.stream!.addTrack(videoTrack)
+        this.emit(MediaEvents.TRACK_ADDED, { kind: 'video', track: videoTrack, stream: this.stream })
+        videoTrack.addEventListener('ended', () => this.handleTrackEnded(videoTrack))
+        this.isVideoEnabled = true
+        this.isVideoMuted = false
       } else {
-        const videoTrack = this.getVideoTrack()
-        if (videoTrack) {
-          videoTrack.enabled = true
-          this.isVideoEnabled = true
-          this.isVideoMuted = false
-          this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'video', track: videoTrack })
-        }
+        existingTrack.enabled = true
+        this.isVideoEnabled = true
+        this.isVideoMuted = false
+        this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'video', track: existingTrack })
       }
       this.emitState()
     } catch (error) {
@@ -246,29 +269,21 @@ export class MediaStreamManager extends EventEmitter {
     }
   }
 
-  /**
-   * Включает аудиодорожку
-   * Вызывать когда нужно включить микрофон
-   */
   async enableAudio(): Promise<void> {
     try {
-      if (!this.stream || !this.getAudioTrack()) {
-        await this.startStream({
-          audio: {
-            echoCancellation: this.options.echoCancellation,
-            noiseSuppression: this.options.noiseSuppression,
-            autoGainControl: this.options.autoGainControl,
-            deviceId: this.options.preferredAudioDeviceId,
-          },
-        })
+      const existingTrack = this.getAudioTrack()
+      if (!existingTrack) {
+        const audioTrack = await this.addTrackToStream('audio')
+        this.stream!.addTrack(audioTrack)
+        this.emit(MediaEvents.TRACK_ADDED, { kind: 'audio', track: audioTrack, stream: this.stream })
+        audioTrack.addEventListener('ended', () => this.handleTrackEnded(audioTrack))
+        this.isAudioEnabled = true
+        this.isAudioMuted = false
       } else {
-        const audioTrack = this.getAudioTrack()
-        if (audioTrack) {
-          audioTrack.enabled = true
-          this.isAudioEnabled = true
-          this.isAudioMuted = false
-          this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'audio', track: audioTrack })
-        }
+        existingTrack.enabled = true
+        this.isAudioEnabled = true
+        this.isAudioMuted = false
+        this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'audio', track: existingTrack })
       }
       this.emitState()
     } catch (error) {

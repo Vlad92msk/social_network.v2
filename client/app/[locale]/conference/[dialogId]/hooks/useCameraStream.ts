@@ -36,10 +36,7 @@ export function useCameraStream(options?: {
     autoPlay: true,
     playsInline: true,
     muted: true, // Всегда мьютим локальное видео
-    style: {
-      transform: options?.mirror ? 'scaleX(-1)' : undefined,
-    } as const,
-  }), [options?.mirror])
+  }), [])
 
   return { videoProps, currentUser, localMedia, showPlaceholder }
 }

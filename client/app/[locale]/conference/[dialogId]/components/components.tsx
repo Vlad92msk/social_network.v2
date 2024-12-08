@@ -33,18 +33,10 @@ export function CallControls() {
     <div className={styles.controls}>
       <button
         className={styles.button}
-        data-end-call="true"
-        onClick={handleClose}
-      >
-        <Icon name="phone" />
-      </button>
-
-      <button
-        className={styles.button}
         data-active={isActiveCamera}
         onClick={toggleVideo}
       >
-        <Icon name={isActiveCamera ? 'videocam-off' : 'videocam-on'} />
+        <Icon name={isActiveCamera ? 'videocam-on' : 'videocam-off'} />
       </button>
 
       <button
@@ -61,6 +53,14 @@ export function CallControls() {
         onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare())}
       >
         <Icon name={isScreenShareActive ? 'screen-share-on' : 'screen-share-off'} />
+      </button>
+
+      <button
+        className={styles.button}
+        data-end-call="true"
+        onClick={handleClose}
+      >
+        <Icon name="phone"/>
       </button>
     </div>
   )

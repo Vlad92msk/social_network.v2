@@ -47,32 +47,21 @@ export interface ConferenceConfig {
  * Управляет взаимодействием всех сервисов и обработкой событий
  */
 export class ConferenceService extends EventEmitter {
-  private readonly notificationManager: NotificationManager
-
-  private readonly roomService: RoomService
-
-  private readonly mediaManager: MediaStreamManager
-
-  private readonly screenShareManager: ScreenShareManager
-
-  private readonly signalingService: SignalingService
-
-  private readonly connectionManager: ConnectionManager
-
   private config: ConferenceConfig
 
   private subscribers: Array<(state: any) => void> = []
 
   private initialized = false
 
-  constructor() {
+  constructor(
+    private readonly notificationManager: NotificationManager = new NotificationManager(),
+    private readonly roomService: RoomService = new RoomService(),
+    private readonly mediaManager: MediaStreamManager = new MediaStreamManager(),
+    private readonly screenShareManager: ScreenShareManager = new ScreenShareManager(),
+    private readonly signalingService: SignalingService = new SignalingService(),
+    private readonly connectionManager: ConnectionManager = new ConnectionManager(),
+  ) {
     super()
-    this.notificationManager = new NotificationManager()
-    this.roomService = new RoomService()
-    this.mediaManager = new MediaStreamManager()
-    this.screenShareManager = new ScreenShareManager()
-    this.signalingService = new SignalingService()
-    this.connectionManager = new ConnectionManager()
   }
 
   async initialize(config: ConferenceConfig): Promise<void> {
@@ -272,12 +261,8 @@ export class ConferenceService extends EventEmitter {
             const existingSender = connection.getSenders().find((s) => s.track?.kind === kind)
 
             if (existingSender) {
-            // Если отправитель существует - заменяем трек
-              console.log(`[Media] Заменяем существующий ${kind} трек для пользователя ${userId}`)
               await existingSender.replaceTrack(track)
             } else {
-            // Если отправителя нет - добавляем новый трек
-              console.log(`[Media] Добавляем новый ${kind} трек для пользователя ${userId}`)
               await this.connectionManager.addTrack(userId, track, stream)
             }
           } catch (error) {
@@ -286,7 +271,7 @@ export class ConferenceService extends EventEmitter {
         }))
       })
       .on(MediaEvents.TRACK_REMOVED, async ({ kind, trackId }: { kind: 'video' | 'audio', trackId: string }) => {
-        this.notifySubscribers()
+        // this.notifySubscribers()
         const activeConnections = this.connectionManager.getConnections()
 
         await Promise.all(activeConnections.map(async ({ userId }) => {
@@ -298,12 +283,12 @@ export class ConferenceService extends EventEmitter {
         }))
       })
       .on(MediaEvents.TRACK_MUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack }) => {
-        this.notifySubscribers()
+        // this.notifySubscribers()
         const type = kind === 'video' ? 'camera' : 'mic'
         this.signalingService.sendEvent({ type: `${type}-off` })
       })
       .on(MediaEvents.TRACK_UNMUTED, ({ kind }: { kind: 'video' | 'audio', track: MediaStreamTrack}) => {
-        this.notifySubscribers()
+        // this.notifySubscribers()
         const type = kind === 'video' ? 'camera' : 'mic'
         this.signalingService.sendEvent({ type: `${type}-on` })
       })
@@ -500,9 +485,9 @@ export class ConferenceService extends EventEmitter {
     const b = media?.streams
 
     // console.clear()
-    console.log('__a__', a)
-    console.log('__media__', media)
-    console.log('__streams__', b)
+    // console.log('__a__', a)
+    // console.log('__media__', media)
+    // console.log('__streams__', b)
     this.subscribers.forEach((cb) => cb(state))
   }
 
