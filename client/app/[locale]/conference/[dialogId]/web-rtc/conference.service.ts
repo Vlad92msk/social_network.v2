@@ -240,7 +240,7 @@ export class ConferenceService extends EventEmitter {
     // 3. События камеры
     this.mediaManager
       .on(MediaEvents.TRACK_ADDED, async ({ kind, track, stream }: { kind: 'video' | 'audio', track: MediaStreamTrack, stream: MediaStream }) => {
-        this.notifySubscribers()
+        // this.notifySubscribers()
 
         // Отправляем camera-start только для видео трека
         if (kind === 'video') {
@@ -480,14 +480,6 @@ export class ConferenceService extends EventEmitter {
 
   private notifySubscribers() {
     const state = this.getState()
-    const a = state.participants.find(({ userId }) => userId === '6')
-    const media = state.participants.find(({ userId }) => userId === '6')?.media
-    const b = media?.streams
-
-    // console.clear()
-    // console.log('__a__', a)
-    // console.log('__media__', media)
-    // console.log('__streams__', b)
     this.subscribers.forEach((cb) => cb(state))
   }
 

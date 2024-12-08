@@ -66,57 +66,40 @@ export class RoomService extends EventEmitter {
    * Обработка входящего трека
    */
   handleTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): void {
-    const participant = this.participants.get(userId);
-    if (!participant) return;
+    const participant = this.participants.get(userId)
+    if (!participant) return
 
-    console.log('Handle Track:', {
-      userId,
-      trackKind: track.kind,
-      trackId: track.id,
-      streamId: stream.id,
-      currentStreams: Object.keys(participant.media.streams)
-    });
+    // Используем ID оригинального потока как ключ
+    const streamId = stream.id
 
-    // Проверяем, существует ли уже такой поток
-    let currentStream = participant.media.streams[stream.id];
-
-    // Если потока нет - создаем новый
-    if (!currentStream) {
-      currentStream = new MediaStream();
-      participant.media.streams[stream.id] = currentStream;
-
-      // Если это видео трек и не скриншеринг - помечаем как поток камеры
-      if (stream.id !== participant.media.screenStreamId) {
-        participant.media.cameraStreamId = stream.id;
-      }
+    // Создаем/получаем поток
+    if (!participant.media.streams[streamId]) {
+      participant.media.streams[streamId] = new MediaStream()
     }
 
-    // Добавляем трек если его еще нет в потоке
-    if (!currentStream.getTracks().some(t => t.id === track.id)) {
-      currentStream.addTrack(track);
+    const currentStream = participant.media.streams[streamId]
+
+    // Добавляем трек (без проверки на существование, т.к. handleTrack
+    // вызывается только для новых треков)
+    currentStream.addTrack(track)
+
+    // Обновляем маппинг ID потока
+    if (track.kind === 'video' && !participant.media.screenStreamId) {
+      participant.media.cameraStreamId = streamId
+    } else if (track.kind === 'video' && participant.media.screenStreamId) {
+      participant.media.screenStreamId = streamId
     }
 
-    // Обновляем состояние в зависимости от типа трека
+    // Обновляем состояние медиа
     if (track.kind === 'audio') {
-      participant.media.hasAudio = true;
-      participant.media.isAudioEnabled = track.enabled;
+      participant.media.hasAudio = true
+      participant.media.isAudioEnabled = track.enabled
     } else if (track.kind === 'video') {
-      if (stream.id === participant.media.screenStreamId) {
-        participant.media.isScreenSharing = true;
-      } else {
-        participant.media.hasVideo = true;
-        participant.media.isVideoEnabled = track.enabled;
-      }
+      participant.media.hasVideo = true
+      participant.media.isVideoEnabled = track.enabled
     }
 
-    console.log('After Track Update:', {
-      streams: Object.entries(participant.media.streams).map(([id, s]) => ({
-        id,
-        tracks: s.getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled }))
-      }))
-    });
-
-    this.emitStateChanged();
+    this.emitStateChanged()
   }
 
   /**
@@ -125,70 +108,65 @@ export class RoomService extends EventEmitter {
   handleInitialSetup(userId: string, setup: any): void {
     const participant = this.participants.get(userId)
     if (!participant) return
-console.log('setup', setup)
+
     participant.media = {
       ...participant.media,
       ...setup,
-      streams: participant.media.streams, // Сохраняем существующие потоки
+      // Сохраняем существующие потоки!
+      streams: participant.media.streams,
+    }
+
+    this.emitStateChanged()
+  }
+
+  handleVideoState(userId: string, enabled: boolean): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    participant.media.isVideoEnabled = enabled
+
+    // Применяем состояние к треку, если он есть
+    if (participant.media.cameraStreamId) {
+      const stream = participant.media.streams[participant.media.cameraStreamId]
+      stream?.getVideoTracks().forEach(track => {
+        track.enabled = enabled
+      })
     }
 
     this.emitStateChanged()
   }
 
   handleAudioState(userId: string, enabled: boolean): void {
-    const participant = this.participants.get(userId);
-    if (!participant) return;
+    const participant = this.participants.get(userId)
+    if (!participant) return
 
-    participant.media.isAudioEnabled = enabled;
+    participant.media.isAudioEnabled = enabled
 
+    // Применяем состояние к треку, если он есть
     if (participant.media.cameraStreamId) {
-      const stream = participant.media.streams[participant.media.cameraStreamId];
-      if (stream) {
-        const audioTracks = stream.getAudioTracks();
-        audioTracks.forEach(track => {
-          track.enabled = enabled;
-          console.log('Audio track state updated:', { trackId: track.id, enabled });
-        });
-      }
+      const stream = participant.media.streams[participant.media.cameraStreamId]
+      stream?.getAudioTracks().forEach(track => {
+        track.enabled = enabled
+      })
     }
 
-    this.emitStateChanged();
-  }
-
-  handleVideoState(userId: string, enabled: boolean): void {
-    const participant = this.participants.get(userId);
-    if (!participant) return;
-
-    participant.media.isVideoEnabled = enabled;
-
-    if (participant.media.cameraStreamId) {
-      const stream = participant.media.streams[participant.media.cameraStreamId];
-      if (stream) {
-        const videoTracks = stream.getVideoTracks();
-        videoTracks.forEach(track => {
-          track.enabled = enabled;
-          console.log('Video track state updated:', { trackId: track.id, enabled });
-        });
-      }
-    }
-
-    this.emitStateChanged();
+    this.emitStateChanged()
   }
 
   /**
    * Инициализация камеры
    */
   handleCameraStart(userId: string, streamId: string): void {
-    console.log('Handle Camera Start:', { userId, streamId });
+    console.log('Handle Camera Start:', { userId, streamId })
 
-    const participant = this.participants.get(userId);
-    if (!participant) return;
+    const participant = this.participants.get(userId)
+    if (!participant) return
 
-    participant.media.cameraStreamId = streamId;
-    participant.media.isVideoEnabled = true;
+    participant.media.cameraStreamId = streamId
+    participant.media.isVideoEnabled = true
 
     // Не создаем пустой поток, он будет создан когда придет трек
-    this.emitStateChanged();
+    this.emitStateChanged()
   }
 
   /**
@@ -397,7 +375,6 @@ console.log('setup', setup)
         joinedAt: participant.joinedAt,
         media: {
           ...participant.media,
-          // Важно! Возвращаем streams как есть, не преобразовывая
           streams: participant.media.streams,
         },
       })),

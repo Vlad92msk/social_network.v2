@@ -336,6 +336,7 @@ export function Conference() {
   const pinnedStream = remoteStreams.find((props) => props.stream?.id === pinnedStreamId)
   const unpinnedStreams = remoteStreams.filter((props) => props.stream?.id !== pinnedStreamId)
 
+
   const renderMainContent = () => {
     if (isLocalPinned) {
       return <LocalPreview className={styles.pin} onClick={handleLocalPreviewClick} />
