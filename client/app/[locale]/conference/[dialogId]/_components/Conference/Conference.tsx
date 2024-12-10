@@ -10,108 +10,20 @@ import styles from './Conference.module.scss'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 import { CallControls } from '../../components/components'
 import { useCameraStream, useScreenShareStream } from '../../hooks/useCameraStream'
-import { useConference } from '../../web-rtc/context'
+import { useConference, useConferenceUserSpeaking } from '../../web-rtc/context'
 
 interface VideoProps {
   stream?: MediaStream;
   className?: string;
-  isVideoEnabled?: boolean,
-  isAudioEnabled?: boolean,
+  isVideoEnabled: boolean,
+  isAudioEnabled: boolean,
   currentUser?: UserInfo
   streamType?: 'screen' | 'camera'
   onClick?: VoidFunction
 }
 
-export function useAudioAnalyzer(audioTrack?: MediaStreamTrack | null) {
-  const [volume, setVolume] = useState(0)
-  const analyzerRef = useRef<AnalyserNode | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const animationFrameRef = useRef<number>(0)
-  const lastVolumeRef = useRef(0)
-
-  const resumeAudioContext = async () => {
-    if (audioContextRef.current?.state === 'suspended') {
-      await audioContextRef.current.resume()
-    }
-  }
-
-  useEffect(() => {
-    // console.log('Audio track in analyzer:', audioTrack)
-    // Очищаем предыдущий контекст
-    if (audioContextRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
-      audioContextRef.current.close()
-      analyzerRef.current = null
-      audioContextRef.current = null
-    }
-
-    // Проверяем наличие аудио трека
-    if (!audioTrack || audioTrack.kind !== 'audio') {
-      return
-    }
-
-    // Создаем временный MediaStream только для этого трека
-    const tempStream = new MediaStream([audioTrack])
-
-    audioContextRef.current = new AudioContext()
-
-    resumeAudioContext().then(() => {
-      const analyzer = audioContextRef.current!.createAnalyser()
-      analyzer.fftSize = 256
-      analyzerRef.current = analyzer
-
-      const microphone = audioContextRef.current!.createMediaStreamSource(tempStream)
-      microphone.connect(analyzer)
-
-      const dataArray = new Uint8Array(analyzer.frequencyBinCount)
-
-      const analyze = () => {
-        if (!analyzerRef.current) return
-
-        analyzerRef.current.getByteFrequencyData(dataArray)
-        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
-        const roundedVolume = Math.round(average)
-
-        const THRESHOLD = 5
-        if (Math.abs(roundedVolume - lastVolumeRef.current) > THRESHOLD) {
-          setVolume(roundedVolume)
-          lastVolumeRef.current = roundedVolume
-        }
-
-        animationFrameRef.current = requestAnimationFrame(analyze)
-      }
-
-      analyze()
-    })
-
-    return () => {
-      if (audioContextRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-        audioContextRef.current.close()
-        analyzerRef.current = null
-        audioContextRef.current = null
-      }
-    }
-  }, [audioTrack])
-
-  return { volume, resumeAudioContext }
-}
-
-function Mic({ audioTrack, isMicActive }: {audioTrack?: MediaStreamTrack | null, isMicActive?: boolean }) {
-  const { volume, resumeAudioContext } = useAudioAnalyzer(audioTrack)
-  const isSpeaking = volume > 10
-
-  // // При первом рендере добавляем обработчик
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      resumeAudioContext()
-      // Удаляем обработчик после первого использования
-      document.removeEventListener('click', handleFirstInteraction)
-    }
-
-    document.addEventListener('click', handleFirstInteraction)
-    return () => document.removeEventListener('click', handleFirstInteraction)
-  }, [resumeAudioContext])
+function Mic({ userId, isMicActive }: { userId: string, isMicActive: boolean }) {
+  const isSpeaking = useConferenceUserSpeaking(userId)
 
   return (
     <div className={styles.micContainer}>
@@ -119,11 +31,9 @@ function Mic({ audioTrack, isMicActive }: {audioTrack?: MediaStreamTrack | null,
         name="microphone-off"
         className={`${styles.micIcon} ${isMicActive ? styles.hidden : ''}`}
       />
-      {/* <Icon */}
-      {/*   name="microphone" */}
-      {/*   className={`${styles.micIcon} ${!isMicActive || isSpeaking ? styles.hidden : ''}`} */}
-      {/* /> */}
-      <div className={`${styles.AudioLine} ${isSpeaking && isMicActive ? styles.active : styles.inactive}`}>
+      <div
+        className={`${styles.AudioLine} ${isSpeaking && isMicActive ? styles.active : styles.inactive}`}
+      >
         <span />
         <span />
         <span />
@@ -149,16 +59,13 @@ export function LocalPreview({ className, onClick }: { className?: string, onCli
         </div>
       )}
       <span className={styles.participantName}>Вы</span>
-      <Mic isMicActive={isActiveMicrophone} audioTrack={localMedia.stream?.getAudioTracks()[0]} />
+      <Mic userId={String(currentUser?.id)} isMicActive={isActiveMicrophone} />
     </div>
   )
 }
 
 export function LocalScreenShare({ className, onClick }: { className?: string, onClick?: VoidFunction }) {
-  const {
-    videoProps,
-    isVideoEnabled,
-  } = useScreenShareStream()
+  const { videoProps, isVideoEnabled } = useScreenShareStream()
 
   if (!isVideoEnabled) return null
   return (
@@ -182,10 +89,8 @@ export function RemoteStream(props: VideoProps) {
     isAudioEnabled,
   } = props
   const videoRef = useRef<HTMLVideoElement>(null)
-
   const hasVideo = isVideoEnabled && (stream?.getVideoTracks().length || 0) > 0
 
-  console.log('stream?.getAudioTracks()', stream?.getAudioTracks())
   useEffect(() => {
     if (stream && videoRef.current && isVideoEnabled) {
       videoRef.current.srcObject = stream
@@ -229,7 +134,7 @@ export function RemoteStream(props: VideoProps) {
       </span>
 
       {streamType === 'camera' && (
-        <Mic isMicActive={isAudioEnabled} audioTrack={stream?.getAudioTracks()[0]} />
+        <Mic userId={String(currentUser?.id)} isMicActive={isAudioEnabled} />
       )}
     </div>
   )
@@ -237,6 +142,7 @@ export function RemoteStream(props: VideoProps) {
 
 export function Conference() {
   const {
+    isInitialized,
     screenShare: { isVideoEnabled },
     roomInfo: { s: remoteStreams },
   } = useConference()
@@ -304,6 +210,15 @@ export function Conference() {
           </div>
         ))}
         {!isLocalScreenPinned && isVideoEnabled && <div onClick={handleLocalScreenClick}><LocalScreenShare /></div>}
+      </div>
+    )
+  }
+
+  console.log('_______')
+  if (!isInitialized) {
+    return (
+      <div>
+        <p>Подключение к конференции...</p>
       </div>
     )
   }

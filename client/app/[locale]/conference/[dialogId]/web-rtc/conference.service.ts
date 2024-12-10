@@ -1,6 +1,7 @@
 'use client'
 
 import { EventEmitter } from 'events'
+import _, { debounce } from 'lodash'
 import {
   ConnectionManager, EventType, MediaEvents,
   MediaStreamManager,
@@ -34,6 +35,8 @@ export type ConferenceEventMap = {
   // События состояния
   'connectionStateChanged': { userId: string, state: RTCPeerConnectionState }
   'roomStateChanged': { state: RoomInfo }
+  'userStartedSpeaking': { userId: string, volume: number }
+  'userStoppedSpeaking': { userId: string, volume: number }
 }
 
 export interface ConferenceConfig {
@@ -49,7 +52,13 @@ export interface ConferenceConfig {
 export class ConferenceService extends EventEmitter {
   private config: ConferenceConfig
 
+  private readonly SPEAKING_DEBOUNCE = 150 // ms (задержка для отправки процесса произнесения речи)
+
+  private sendSpeakingStateDebounced: ReturnType<typeof debounce> | null = null
+
   private subscribers: Array<(state: any) => void> = []
+
+  private lastSpeakingState?: boolean
 
   private initialized = false
 
@@ -82,13 +91,7 @@ export class ConferenceService extends EventEmitter {
       })
 
       // Инициализируем медиа менеджер с выключенными камерой и микрофоном
-      await this.mediaManager.init({
-        ...config.mediaConfig,
-        video: false,
-        audio: false,
-        autoPlay: true,
-        muted: true,
-      })
+      await this.mediaManager.init(config.mediaConfig)
 
       // Сначала настраиваем обработчик
       const roomInfoPromise = this.#waitForRoomInfo()
@@ -102,6 +105,8 @@ export class ConferenceService extends EventEmitter {
 
       // Устанавливаем обработчики событий
       this.#setupEvents()
+      // Обработчик отправки уведомлений о статусе речи
+      this.#setupMediaEvents()
 
       this.initialized = true
       this.notifySubscribers()
@@ -119,6 +124,36 @@ export class ConferenceService extends EventEmitter {
 
   emit<K extends keyof ConferenceEventMap>(event: K, payload: ConferenceEventMap[K]): boolean {
     return super.emit(event, payload)
+  }
+
+  #setupMediaEvents(): void {
+    // Сохраняем ссылку на дебаунсированную функцию
+    this.sendSpeakingStateDebounced = _.chain((isSpeaking: boolean, volume: number) => {
+      this.emit(isSpeaking ? 'userStartedSpeaking' : 'userStoppedSpeaking', {
+        userId: this.config.signaling.userId,
+        volume,
+      })
+
+      this.signalingService.sendEvent({
+        type: isSpeaking ? 'speaking-started' : 'speaking-stopped',
+        payload: { volume },
+      })
+    })
+      .bind(this)
+      .debounce(this.SPEAKING_DEBOUNCE, { maxWait: 300 })
+      .value()
+
+    // События камеры
+    this.mediaManager.on(
+      MediaEvents.VOLUME_CHANGE,
+      ({ isSpeaking, volume }) => {
+        // console.log('isSpeaking', isSpeaking, volume)
+        if (this.lastSpeakingState !== isSpeaking) {
+          this.lastSpeakingState = isSpeaking
+          this.sendSpeakingStateDebounced?.(isSpeaking, volume)
+        }
+      },
+    )
   }
 
   #setupEvents() {
@@ -171,11 +206,9 @@ export class ConferenceService extends EventEmitter {
             this.roomService.handleInitialSetup(initiator, event.payload)
             break
           case 'mic-off':
-            console.log(event.type, event.payload)
             this.roomService.handleAudioState(initiator, false)
             break
           case 'mic-on':
-            console.log(event.type, event.payload)
             this.roomService.handleAudioState(initiator, true)
             break
           case 'camera-off':
@@ -198,6 +231,14 @@ export class ConferenceService extends EventEmitter {
             this.roomService.handleScreenShare(initiator, true, event.payload.screenStreamId)
             const user = this.roomService.getParticipant(initiator)
             this.emit('userStartedScreenShare', { user, streamId: event.payload.screenStreamId })
+            break
+          case 'speaking-started':
+            this.roomService.handleSpeakingState(initiator, true, event.payload?.volume)
+            this.emit('userStartedSpeaking', { userId: initiator, volume: event.payload?.volume })
+            break
+          case 'speaking-stopped':
+            this.roomService.handleSpeakingState(initiator, false, event.payload?.volume)
+            this.emit('userStoppedSpeaking', { userId: initiator, volume: event.payload?.volume })
             break
           default: break
         }
@@ -361,11 +402,11 @@ export class ConferenceService extends EventEmitter {
         }))
       })
 
-    this.roomService.on('stateChanged', (state: ReturnType<ConferenceService['getState']>['roomInfo']) => {
-      // console.clear()
-      console.log('stateChanged', state)
-      this.notifySubscribers()
-    })
+    this.roomService
+      .on('stateChanged', (state: ReturnType<ConferenceService['getState']>['roomInfo']) => {
+        console.log('roomService', state)
+        this.notifySubscribers()
+      })
   }
 
   private async handleUserJoined(user: UserInfo): Promise<void> {
@@ -383,14 +424,29 @@ export class ConferenceService extends EventEmitter {
       await this.connectionManager.createConnection(userId)
 
       // Добавляем текущие треки в соединение
-      const { stream: mediaStream, isAudioEnabled: cameraIsAudioEnabled, isVideoEnabled: cameraIsVideoEnabled, isAudioMuted, isVideoMuted } = this.mediaManager.getState()
-      const { stream: screenStream, isVideoEnabled: screenIsVideoEnabled } = this.screenShareManager.getState()
+      // Получаем текущие состояния медиа
+      const {
+        stream: mediaStream,
+        isAudioEnabled: cameraIsAudioEnabled,
+        isVideoEnabled: cameraIsVideoEnabled,
+        isAudioMuted,
+        isVideoMuted,
+        isSpeaking, // Добавляем состояние разговора
+        volume, // Добавляем уровень громкости
+      } = this.mediaManager.getState()
+
+      const {
+        stream: screenStream,
+        isVideoEnabled: screenIsVideoEnabled,
+      } = this.screenShareManager.getState()
 
       // Отправляем initial-setup только с действительно необходимыми полями
       const initialSetup = {
         isAudioEnabled: cameraIsAudioEnabled && !isAudioMuted,
         isVideoEnabled: cameraIsVideoEnabled && !isVideoMuted,
         isScreenSharing: screenIsVideoEnabled,
+        isSpeaking, // Добавляем текущее состояние разговора
+        volume, // Добавляем текущий уровень громкости
         ...(mediaStream?.id && { cameraStreamId: mediaStream.id }),
         ...(screenStream?.id && screenIsVideoEnabled && { screenStreamId: screenStream.id }),
       }
@@ -501,14 +557,6 @@ export class ConferenceService extends EventEmitter {
 
   // Получение состояния конференции
   getState() {
-    const c = this.roomService.getState()
-    const media = c.s.find(({currentUser}) => String(currentUser?.id) === '6')
-    const stream = media?.stream
-    const tracks = stream?.getTracks()
-
-    // console.clear()
-    console.log('media', media)
-    console.log('tracks', tracks)
     return {
       currentUser: this.roomService.getCurrentUser(),
       roomInfo: this.roomService.getState(),
@@ -521,6 +569,11 @@ export class ConferenceService extends EventEmitter {
   }
 
   async destroy(): Promise<void> {
+    if (this.sendSpeakingStateDebounced) {
+      this.sendSpeakingStateDebounced.cancel()
+      this.sendSpeakingStateDebounced = null
+    }
+
     this.connectionManager.destroy()
     this.mediaManager.destroy()
     this.screenShareManager.destroy()

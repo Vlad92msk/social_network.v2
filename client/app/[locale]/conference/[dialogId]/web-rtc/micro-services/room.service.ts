@@ -3,6 +3,15 @@
 import { EventEmitter } from 'events'
 import { UserInfo } from '../../../../../../../swagger/userInfo/interfaces-userInfo'
 
+export interface UserSpeakingState {
+  isSpeaking: boolean
+  volume: number
+}
+
+export interface RoomSpeakingState {
+  [userId: string]: UserSpeakingState
+}
+
 export interface VideoProps {
   stream?: MediaStream;
   className?: string;
@@ -46,15 +55,19 @@ export class RoomService extends EventEmitter {
 
   private participants = new Map<string, Participant>()
 
+  private speakingState: RoomSpeakingState = {}
+
   /**
    * Инициализация комнаты
    */
   init(info: RoomInfo): void {
     this.room = info
     this.participants.clear()
+    this.speakingState = {}
 
     // Инициализируем начальных участников
     info.participants.forEach((user) => {
+      const userId = String(user.userId)
       this.participants.set(user.userId, {
         userId: user.userId,
         userInfo: user.userInfo,
@@ -68,9 +81,32 @@ export class RoomService extends EventEmitter {
           streams: {},
         },
       })
+
+      // Инициализируем состояние разговора
+      this.speakingState[userId] = {
+        isSpeaking: false,
+        volume: 0,
+      }
     })
 
     this.emit('initialized', this.getState())
+  }
+
+  handleSpeakingState(userId: string, isSpeaking: boolean, volume: number = 0): void {
+    const participant = this.participants.get(userId)
+    if (!participant) return
+
+    // Обновляем состояние в speakingState
+    this.speakingState[userId] = {
+      isSpeaking,
+      volume,
+    }
+
+    this.emit('participantSpeakingChanged', {
+      userId,
+      isSpeaking,
+      volume,
+    })
   }
 
   /**
@@ -116,6 +152,14 @@ export class RoomService extends EventEmitter {
       streams: participant.media.streams,
     }
 
+    // Обновляем состояние разговора если оно пришло в initial-setup
+    if ('isSpeaking' in setup || 'volume' in setup) {
+      this.speakingState[userId] = {
+        isSpeaking: setup.isSpeaking || false,
+        volume: setup.volume || 0,
+      }
+    }
+
     this.emitStateChanged()
   }
 
@@ -128,7 +172,7 @@ export class RoomService extends EventEmitter {
     // Применяем состояние к треку, если он есть
     if (participant.media.cameraStreamId) {
       const stream = participant.media.streams[participant.media.cameraStreamId]
-      stream?.getVideoTracks().forEach(track => {
+      stream?.getVideoTracks().forEach((track) => {
         track.enabled = enabled
       })
     }
@@ -145,7 +189,7 @@ export class RoomService extends EventEmitter {
     // Применяем состояние к треку, если он есть
     if (participant.media.cameraStreamId) {
       const stream = participant.media.streams[participant.media.cameraStreamId]
-      stream?.getAudioTracks().forEach(track => {
+      stream?.getAudioTracks().forEach((track) => {
         track.enabled = enabled
       })
     }
@@ -165,7 +209,6 @@ export class RoomService extends EventEmitter {
     participant.media.cameraStreamId = streamId
     participant.media.isVideoEnabled = true
 
-    // Не создаем пустой поток, он будет создан когда придет трек
     this.emitStateChanged()
   }
 
@@ -286,23 +329,24 @@ export class RoomService extends EventEmitter {
    */
   private emitStateChanged(): void {
     const state = this.getState()
-    console.group('🔄 State Changed')
-    state.participants.forEach((participant) => {
-      console.log(`Participant ${participant.userId}:`, {
-        streams: Object.entries(participant.media.streams).map(([id, stream]) => ({
-          id,
-          tracks: stream.getTracks().map((t) => ({
-            id: t.id,
-            kind: t.kind,
-            enabled: t.enabled,
-          })),
-        })),
-        hasVideo: participant.media.hasVideo,
-        isVideoEnabled: participant.media.isVideoEnabled,
-        cameraStreamId: participant.media.cameraStreamId,
-      })
-    })
-    console.groupEnd()
+    console.log('state', state)
+    // console.group('🔄 State Changed')
+    // state.participants.forEach((participant) => {
+    //   console.log(`Participant ${participant.userId}:`, {
+    //     streams: Object.entries(participant.media.streams).map(([id, stream]) => ({
+    //       id,
+    //       tracks: stream.getTracks().map((t) => ({
+    //         id: t.id,
+    //         kind: t.kind,
+    //         enabled: t.enabled,
+    //       })),
+    //     })),
+    //     hasVideo: participant.media.hasVideo,
+    //     isVideoEnabled: participant.media.isVideoEnabled,
+    //     cameraStreamId: participant.media.cameraStreamId,
+    //   })
+    // })
+    // console.groupEnd()
     this.emit('stateChanged', state)
   }
 
@@ -326,6 +370,12 @@ export class RoomService extends EventEmitter {
           streams: {},
         },
       })
+
+      // Инициализируем состояние разговора для нового участника
+      this.speakingState[userId] = {
+        isSpeaking: false,
+        volume: 0,
+      }
 
       this.emit('participantJoined', { userId, userInfo })
       this.emit('stateChanged', this.getState())
@@ -375,19 +425,12 @@ export class RoomService extends EventEmitter {
    * Получение полного состояния комнаты
    */
   getState() {
+    const remoteStreams = this.getRemoteStreams()
     return {
       roomId: this.room?.roomId,
       currentUser: this.room?.currentUser,
-      s: this.getRemoteStreams(),
-      participants: Array.from(this.participants.values()).map((participant) => ({
-        userId: participant.userId,
-        userInfo: participant.userInfo,
-        joinedAt: participant.joinedAt,
-        media: {
-          ...participant.media,
-          streams: participant.media.streams,
-        },
-      })),
+      s: remoteStreams,
+      participants: Array.from(this.participants.values()),
     }
   }
 
@@ -404,7 +447,7 @@ export class RoomService extends EventEmitter {
           screenStreamId,
           cameraStreamId,
           hasVideo,
-          hasAudio
+          hasAudio,
         } = media
 
         // Камера - добавляем всегда

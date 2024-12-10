@@ -14,13 +14,27 @@ export const initialState: ConferenceState = {
   participants: [],
   remoteStreams: [],
   roomInfo: {
+    s: [],
     currentUser: undefined,
     roomId: undefined,
-    participants: []
+    participants: [],
   },
   currentUser: undefined,
-  //@ts-ignore
-  localMedia: {},
+  localMedia: {
+    hasAudio: false,
+    hasVideo: false,
+    audioSettings: null,
+    currentAudioDevice: null,
+    currentVideoDevice: null,
+    videoSettings: null,
+    stream: null,
+    isAudioEnabled: false,
+    isVideoEnabled: false,
+    isAudioMuted: false,
+    isVideoMuted: false,
+    isSpeaking: false,
+    volume: 0,
+  },
   screenShare: {
     stream: undefined,
     isVideoEnabled: false,

@@ -3,10 +3,12 @@
 import { cloneDeep } from 'lodash'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAddNotification } from '@providers/notifications/NotificationsProvider'
-import styles from '../_components/Conference/Conference.module.scss'
+import { useDispatch, useSelector } from 'react-redux'
 import { conferenceConfig } from './conference.config'
 import { ConferenceService } from './conference.service'
+import { ConferenceSliceActions } from './store/conference.slice'
 import { ConferenceState, initialState } from './initial.state'
+import { ConferenceSelectors } from './store/selectors'
 
 interface ConferenceContextState extends ConferenceState {
   isInitialized: boolean;
@@ -27,6 +29,7 @@ interface ConferenceProviderProps {
 }
 
 export function ConferenceProvider({ children, currentUserId, dialogId }: ConferenceProviderProps) {
+  const dispatch = useDispatch()
   const conferenceService = useRef(new ConferenceService())
   const [isInitialized, setIsInitialized] = useState(false)
   const [state, setState] = useState<ConferenceState>(initialState)
@@ -58,6 +61,12 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
           type: 'info',
           duration: 3000,
         })
+      })
+      .on('userStartedSpeaking', ({ userId }) => {
+        dispatch(ConferenceSliceActions.setSpeakingUsers({ userId, value: true }))
+      })
+      .on('userStoppedSpeaking', ({ userId }) => {
+        dispatch(ConferenceSliceActions.setSpeakingUsers({ userId, value: false }))
       })
 
     const stateUnsubscribe = service.subscribe((newState) => {
@@ -105,13 +114,6 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   }), [isInitialized, state])
 
   // console.log('____value___', value)
-  if (!isInitialized) {
-    return (
-      <div>
-        <p>Подключение к конференции...</p>
-      </div>
-    )
-  }
   return (
     <ConferenceContext.Provider value={value}>
       {children}
@@ -127,4 +129,9 @@ export function useConference() {
     throw new Error('useConference must be used within ConferenceProvider')
   }
   return context
+}
+
+export function useConferenceUserSpeaking(userId: string) {
+  const speakingUsers = useSelector(ConferenceSelectors.selectSpeakingUsers)
+  return speakingUsers[userId]
 }

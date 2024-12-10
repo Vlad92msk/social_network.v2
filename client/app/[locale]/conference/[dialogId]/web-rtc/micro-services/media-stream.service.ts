@@ -9,6 +9,7 @@ export enum MediaEvents {
   TRACK_MUTED = 'trackMuted', // Трек заглушен
   TRACK_UNMUTED = 'trackUnmuted', // Трек включен
   DEVICE_CHANGED = 'deviceChanged', // Сменилось устройство
+  VOLUME_CHANGE = 'volumeChange',
   ERROR = 'error'
 }
 
@@ -27,6 +28,10 @@ export interface MediaStreamOptions {
   // Выбор устройств
   preferredVideoDeviceId?: string;
   preferredAudioDeviceId?: string;
+
+  // Настройки анализа звука
+  enableVoiceDetection?: boolean; // Включить определение голоса
+  voiceDetectionThreshold?: number; // Порог определения голоса в dB
 
   // Расширенные настройки
   echoCancellation?: boolean; // Подавление эха
@@ -52,6 +57,7 @@ export interface MediaStreamState {
   volume: number; // Громкость
   videoSettings: MediaTrackSettings | null; // Настройки видеодорожки
   audioSettings: MediaTrackSettings | null; // Настройки аудиодорожки
+  isSpeaking: boolean;
 }
 
 export class MediaStreamManager extends EventEmitter {
@@ -70,6 +76,21 @@ export class MediaStreamManager extends EventEmitter {
   private volume = 1
 
   private deviceChangeListener: (() => void) | null = null
+
+  // Добавляем новые поля для анализа звука
+  private audioAnalyser: AnalyserNode | null = null
+
+  private audioContext: AudioContext | null = null
+
+  private audioSource: MediaStreamAudioSourceNode | null = null
+
+  private isSpeaking = false
+
+  private animationFrame: number | null = null
+
+  private lastVolume = 0
+
+  private readonly VOLUME_THRESHOLD = 5
 
   constructor() {
     super()
@@ -93,6 +114,95 @@ export class MediaStreamManager extends EventEmitter {
   }
 
   /**
+   * Инициализирует аудио анализатор
+   * Внутренний метод, вызывается автоматически при добавлении аудио трека
+   */
+  private initAudioAnalyser(track: MediaStreamTrack): void {
+    try {
+      this.destroyAudioAnalyser()
+
+      if (this.isAudioMuted) return
+
+      const tempStream = new MediaStream([track])
+
+      this.audioContext = new AudioContext()
+      this.audioAnalyser = this.audioContext.createAnalyser()
+      this.audioAnalyser.fftSize = 256
+
+      const microphone = this.audioContext.createMediaStreamSource(tempStream)
+
+      microphone.connect(this.audioAnalyser)
+
+      const dataArray = new Uint8Array(this.audioAnalyser.frequencyBinCount)
+
+      const analyze = () => {
+        if (!this.audioAnalyser || !track.enabled) {
+          if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame)
+            this.animationFrame = null
+          }
+          return
+        }
+
+        this.audioAnalyser.getByteFrequencyData(dataArray)
+        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
+        const currentVolume = Math.round(average)
+
+        const isSpeakingNow = currentVolume > 10
+
+        // Логируем только если громкость изменилась значительно
+        if (Math.abs(this.lastVolume - currentVolume) > this.VOLUME_THRESHOLD) {
+          this.lastVolume = currentVolume
+          this.emit(MediaEvents.VOLUME_CHANGE, {
+            volume: currentVolume,
+            isSpeaking: isSpeakingNow,
+          })
+        }
+
+        this.isSpeaking = isSpeakingNow
+        this.volume = currentVolume
+
+        this.animationFrame = requestAnimationFrame(analyze)
+      }
+
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume().then(() => {
+          analyze()
+        })
+      } else {
+        analyze()
+      }
+    } catch (error) {
+      this.handleError('Не удалось инициализировать аудио анализатор', error)
+    }
+  }
+
+  private destroyAudioAnalyser(): void {
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame)
+      this.animationFrame = null
+    }
+
+    if (this.audioSource) {
+      this.audioSource.disconnect()
+      this.audioSource = null
+    }
+
+    if (this.audioContext) {
+      this.audioContext = null
+    }
+
+    this.audioAnalyser = null
+    this.lastVolume = 0
+    this.isSpeaking = false
+
+    this.emit(MediaEvents.VOLUME_CHANGE, {
+      volume: 0,
+      isSpeaking: false,
+    })
+  }
+
+  /**
    * Инициализирует медиа-менеджер с заданными настройками
    * Вызывать при первом запуске или для полной переинициализации
    * @param options - Настройки медиапотока
@@ -106,6 +216,8 @@ export class MediaStreamManager extends EventEmitter {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
+        enableVoiceDetection: true,
+        voiceDetectionThreshold: -50,
         ...options,
       }
 
@@ -159,30 +271,55 @@ export class MediaStreamManager extends EventEmitter {
   private async startStream(constraints: MediaStreamConstraints): Promise<void> {
     try {
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
-
       if (this.stream) {
-        // Сначала удаляем все нужные треки
-        newStream.getTracks().forEach((newTrack) => {
-          const existingTrack = this.stream?.getTracks().find((t) => t.kind === newTrack.kind)
-          if (existingTrack) {
-            existingTrack.stop()
-            this.stream?.removeTrack(existingTrack)
-            this.emit(MediaEvents.TRACK_REMOVED, { kind: existingTrack.kind, track: existingTrack })
-          }
-        })
+        newStream.getTracks()
+          .forEach((newTrack) => {
+            const existingTrack = this.stream?.getTracks().find((t) => t.kind === newTrack.kind)
+            if (existingTrack) {
+              existingTrack.stop()
+              this.stream?.removeTrack(existingTrack)
+              this.emit(MediaEvents.TRACK_REMOVED, {
+                kind: existingTrack.kind,
+                track: existingTrack,
+              })
 
-        // Потом добавляем новые
-        newStream.getTracks().forEach((newTrack) => {
-          this.stream?.addTrack(newTrack)
-          this.emit(MediaEvents.TRACK_ADDED, { kind: newTrack.kind, track: newTrack, stream: this.stream })
-          newTrack.addEventListener('ended', () => this.handleTrackEnded(newTrack))
-        })
+              if (existingTrack.kind === 'audio') {
+                this.destroyAudioAnalyser()
+              }
+            }
+          })
+
+        newStream.getTracks()
+          .forEach((newTrack) => {
+            this.stream?.addTrack(newTrack)
+            this.emit(MediaEvents.TRACK_ADDED, {
+              kind: newTrack.kind,
+              track: newTrack,
+              stream: this.stream,
+            })
+
+            newTrack.addEventListener('ended', () => this.handleTrackEnded(newTrack))
+
+            if (newTrack.kind === 'audio') {
+              this.initAudioAnalyser(newTrack)
+            }
+          })
       } else {
         this.stream = newStream
-        newStream.getTracks().forEach((track) => {
-          this.emit(MediaEvents.TRACK_ADDED, { kind: track.kind, track, stream: newStream })
-          track.addEventListener('ended', () => this.handleTrackEnded(track))
-        })
+
+        newStream.getTracks()
+          .forEach((track) => {
+            this.emit(MediaEvents.TRACK_ADDED, {
+              kind: track.kind,
+              track,
+              stream: newStream,
+            })
+            track.addEventListener('ended', () => this.handleTrackEnded(track))
+
+            if (track.kind === 'audio') {
+              this.initAudioAnalyser(track)
+            }
+          })
       }
 
       if (constraints.video) {
@@ -233,7 +370,7 @@ export class MediaStreamManager extends EventEmitter {
         autoGainControl: this.options.autoGainControl,
         deviceId: this.options.preferredAudioDeviceId,
         ...this.options.audioConstraints,
-      }
+      },
     }
 
     const tempStream = await navigator.mediaDevices.getUserMedia(constraints)
@@ -271,20 +408,27 @@ export class MediaStreamManager extends EventEmitter {
 
   async enableAudio(): Promise<void> {
     try {
+      if (!this.stream) {
+        this.stream = new MediaStream()
+      }
+
       const existingTrack = this.getAudioTrack()
       if (!existingTrack) {
         const audioTrack = await this.addTrackToStream('audio')
-        this.stream!.addTrack(audioTrack)
+        this.stream.addTrack(audioTrack)
         this.emit(MediaEvents.TRACK_ADDED, { kind: 'audio', track: audioTrack, stream: this.stream })
         audioTrack.addEventListener('ended', () => this.handleTrackEnded(audioTrack))
         this.isAudioEnabled = true
         this.isAudioMuted = false
+
+        this.initAudioAnalyser(audioTrack)
       } else {
         existingTrack.enabled = true
         this.isAudioEnabled = true
         this.isAudioMuted = false
         this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'audio', track: existingTrack })
       }
+
       this.emitState()
     } catch (error) {
       this.handleError('Не удалось включить аудио', error)
@@ -303,6 +447,7 @@ export class MediaStreamManager extends EventEmitter {
       this.emit(MediaEvents.TRACK_REMOVED, { kind: 'audio', track: audioTrack })
       audioTrack.stop()
       this.isAudioEnabled = false
+      this.destroyAudioAnalyser()
       this.emitState()
     }
   }
@@ -316,6 +461,10 @@ export class MediaStreamManager extends EventEmitter {
     if (audioTrack) {
       audioTrack.enabled = false
       this.isAudioMuted = true
+
+      // Останавливаем анализатор при mute
+      this.destroyAudioAnalyser()
+
       this.emit(MediaEvents.TRACK_MUTED, { kind: 'audio', track: audioTrack })
       this.emitState()
     }
@@ -330,6 +479,10 @@ export class MediaStreamManager extends EventEmitter {
     if (audioTrack) {
       audioTrack.enabled = true
       this.isAudioMuted = false
+
+      // Перезапускаем анализатор при unmute
+      this.initAudioAnalyser(audioTrack)
+
       this.emit(MediaEvents.TRACK_UNMUTED, { kind: 'audio', track: audioTrack })
       this.emitState()
     }
@@ -449,7 +602,7 @@ export class MediaStreamManager extends EventEmitter {
    * Получает текущее состояние
    * Вызывать для получения полной информации о текущем состоянии
    */
-  getState(): MediaStreamState {
+  getState() {
     return {
       stream: this.stream,
       hasVideo: Boolean(this.getVideoTrack()),
@@ -458,9 +611,10 @@ export class MediaStreamManager extends EventEmitter {
       isAudioEnabled: this.isAudioEnabled,
       isVideoMuted: this.isVideoMuted,
       isAudioMuted: this.isAudioMuted,
+      isSpeaking: this.isSpeaking, // Убедимся что это поле обновляется
+      volume: this.volume, // И это тоже
       currentVideoDevice: this.getVideoTrack()?.getSettings().deviceId || null,
       currentAudioDevice: this.getAudioTrack()?.getSettings().deviceId || null,
-      volume: this.volume,
       videoSettings: this.getVideoTrack()?.getSettings() || null,
       audioSettings: this.getAudioTrack()?.getSettings() || null,
     }
@@ -505,6 +659,7 @@ export class MediaStreamManager extends EventEmitter {
 
   async destroy() {
     await this.stopStream()
+    this.destroyAudioAnalyser()
     if (this.deviceChangeListener) {
       navigator.mediaDevices.removeEventListener('devicechange', this.deviceChangeListener)
     }

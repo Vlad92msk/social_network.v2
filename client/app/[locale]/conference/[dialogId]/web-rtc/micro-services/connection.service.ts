@@ -122,12 +122,12 @@ export class ConnectionManager extends EventEmitter {
 
   // Добавление медиа трека в соединение
   async addTrack(userId: string, track: MediaStreamTrack, stream: MediaStream): Promise<void> {
-    console.log('ConnectionManager: Adding track', {
-      userId,
-      trackKind: track.kind,
-      trackEnabled: track.enabled,
-      streamId: stream.id
-    });
+    // console.log('ConnectionManager: Adding track', {
+    //   userId,
+    //   trackKind: track.kind,
+    //   trackEnabled: track.enabled,
+    //   streamId: stream.id
+    // });
 
     const connection = this.connections.get(userId)
     if (!connection) {
@@ -349,7 +349,7 @@ export class ConnectionManager extends EventEmitter {
   closeConnection(userId: string): void {
     const connection = this.connections.get(userId)
     if (!connection) {
-      console.warn(`Соединение для пользователя ${userId} не найдено при попытке закрытия.`)
+      // console.warn(`Соединение для пользователя ${userId} не найдено при попытке закрытия.`)
       return
     }
 
