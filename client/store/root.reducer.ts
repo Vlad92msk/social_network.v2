@@ -4,7 +4,7 @@ import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
 import { profileInitialState, profileReducer, ProfileSliceState } from './profile.slice'
-import { conferenceReducer, ConferenceSliceState } from '../app/[locale]/conference/[dialogId]/web-rtc/store/conference.slice'
+import { conferenceReducer, ConferenceSliceState } from '@ui/modules/conference/store/conference.slice'
 
 export interface RootReducer {
   profile: ProfileSliceState

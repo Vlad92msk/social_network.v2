@@ -1,0 +1,93 @@
+@import "@ui/styles/for_components";
+
+
+.Conference {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #202124; // Google Meet темный фон
+  color: white;
+
+&-ParticipantList {
+  width: 200px;
+  background-color: #666a8814;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+  &-ParticipantsInfo {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &-ParticipantsContainer {
+    width: 100%;
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    height: 85vh;
+    flex: 1;
+  }
+
+  &-Pin {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+
+  &-RemoteStreams {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); // меняем auto-fit на auto-fill
+    grid-auto-rows: max-content; // добавляем это для равномерного распределения
+    align-items: center; // центрируем по вертикали
+    padding: 4px;
+    overflow-y: auto;
+
+    // Фиксим скролл в Firefox
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+
+    // Стилизуем скролл для Chrome
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    // Убираем transition, так как он может вызывать проблемы с позиционированием
+    > * {
+      width: 100%;
+      height: 100%;
+      min-height: 0; // важно для правильного расчета высоты
+    }
+  }
+
+  &-ActionsContainer {
+    height: 15vh; // Фиксированная высота
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+  }
+
+  &-MediaControls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+}
