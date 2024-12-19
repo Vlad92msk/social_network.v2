@@ -45,8 +45,12 @@ export function InputText(props: InputTextProps) {
 
       <RichTextEditor
         className={cn('AddCommentInput')}
+        onInit={(controls) => {
+          update(() => ({
+            s: controls
+          }))
+        }}
         placeholder={placeholder}
-        initialValue={text}
         onStartTyping={onStartTyping}
         onStopTyping={onStopTyping}
         onValueChange={(value) => {

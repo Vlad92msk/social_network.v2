@@ -8,7 +8,7 @@
   --BaseFontSize: 16px;
 
   --FontFamily:
-          'Archivo',
+          'Chakra',
           ui-sans-serif,
           system-ui,
           -apple-system,
@@ -39,7 +39,7 @@ html {
   overflow: hidden;
 
   font-family: var(--FontFamily);
-  font-weight: $text-weight--medium;
+  font-weight: $text-weight--light;
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -57,6 +57,9 @@ export interface PublicationContextChangeState {
 interface PublicationContextPrivateState {
   status?: 'view' | 'reset' | 'approve'
   changeState: PublicationContextChangeState
+  s: {
+    reset?: VoidFunction
+  }
 }
 
 const initialState: PublicationContextState & PublicationContextPrivateState = {
@@ -64,6 +67,9 @@ const initialState: PublicationContextState & PublicationContextPrivateState = {
   isChangeActive: false,
   dateChanged: undefined,
   status: 'view',
+  s: {
+    reset: () => {},
+  },
   changeState: {
     id: '',
     media: {},

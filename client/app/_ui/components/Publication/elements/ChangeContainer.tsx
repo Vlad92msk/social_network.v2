@@ -16,7 +16,7 @@ export function ChangeContainer(props:ChangeContainerProps) {
   const handleSetChangeActive = usePublicationCtxUpdate()
   const isChangeActive = usePublicationCtxSelect((ctx) => ctx.isChangeActive)
   const publicationId = usePublicationCtxSelect((ctx) => ctx.id)
-
+  const editorControls = usePublicationCtxSelect(ctx => ctx.s)
   if (!isChangeActive) return null
   return (
     <div className={cn('ChangeContainer')}>
@@ -50,7 +50,13 @@ export function ChangeContainer(props:ChangeContainerProps) {
         <Button>
           <Icon
             name="close"
-            onClick={() => handleSetChangeActive(() => ({ isChangeActive: false, status: 'reset' }))}
+            onClick={() => {
+              editorControls?.reset?.()
+              handleSetChangeActive(() => ({
+                isChangeActive: false,
+                status: 'reset'
+              }))
+            }}
           />
         </Button>
         <Button onClick={() => handleSetChangeActive(({ changeState, id }) => {

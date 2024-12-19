@@ -7,6 +7,7 @@ import { Body } from '@ui/components/Body'
 import { Html } from '@ui/components/Html'
 import '@ui/styles/_index.scss'
 import 'draft-js/dist/Draft.css'
+import 'prismjs/themes/prism.css';
 import { getServerProfile } from '@utils/server'
 import { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'

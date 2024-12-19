@@ -26,6 +26,9 @@ export interface CreatePublicationContextProps {
   media?: MyFile[]
   voices?: MyFile[]
   videos?: MyFile[]
+  s: {
+    reset?: VoidFunction
+  }
 }
 
 export const initialState: CreatePublicationContextProps = {
@@ -33,6 +36,9 @@ export const initialState: CreatePublicationContextProps = {
   text: '',
   voices: undefined,
   videos: undefined,
+  s: {
+    reset: () => {},
+  },
 }
 
 export const {

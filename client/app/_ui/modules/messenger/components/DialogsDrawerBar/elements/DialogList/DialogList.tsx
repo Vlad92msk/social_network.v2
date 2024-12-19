@@ -1,6 +1,7 @@
-import { Locale } from '@middlewares/variables'
 import { useParams, useRouter } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
+import { Locale } from '@middlewares/variables'
+import { editorStateFromString, editorStateToPlainText } from '@ui/common/Input/hooks'
 import { Spinner } from '@ui/common/Spinner'
 import { MessengerThunkActions } from '@ui/modules/messenger/store/actions'
 import { MessengerSliceActions } from '@ui/modules/messenger/store/messenger.slice'
@@ -53,7 +54,9 @@ export function DialogList(props: DialogListProps) {
               <Text className={cn('ContactName')} fs="12" weight="bold" textElipsis>{title}</Text>
             )}
             <Text className={cn('ContactLastContactName')} fs="12" weight="bold" textElipsis>{last_message?.author?.name}</Text>
-            <Text className={cn('ContactLastMessage')} fs="12" textElipsis>{last_message?.text}</Text>
+            <Text className={cn('ContactLastMessage')} fs="12" textElipsis>
+              {editorStateToPlainText(editorStateFromString(last_message?.text))}
+            </Text>
           </div>
           <div className={cn('ContactHoverActions')}>
             <Button onClick={() => {

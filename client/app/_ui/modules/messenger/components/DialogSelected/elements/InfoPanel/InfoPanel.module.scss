@@ -97,10 +97,22 @@
     display: flex;
     position: relative;
     overflow: hidden;
+    width: 100%;
+    aspect-ratio: 16 / 9;
 
     &:hover .InfoPanel-UploadFile {
       transform: translateX(0);
       transition: .5s;
+    }
+
+    img {
+      border-radius: $border-radius--medium;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      height: inherit;
+      width: auto;
+      display: flex;
+      place-self: center;
     }
   }
 

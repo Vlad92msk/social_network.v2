@@ -1,14 +1,38 @@
+'use client'
+
+import { compositeDecorator } from '@ui/common/Input/CodeBlock'
 import {
-  ContentState, convertFromRaw, Editor as DraftEditor, Editor as DraftEditorType, EditorState, Modifier, RichUtils,
+  Editor as DraftEditor,
+  Editor as DraftEditorType,
+  EditorState, getDefaultKeyBinding, KeyBindingUtil,
+  Modifier,
+  RichUtils, SelectionState,
 } from 'draft-js'
 import { EmojiClickData } from 'emoji-picker-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ButtonAddEmoji } from '@ui/common/ButtonAddEmoji'
+import { editorStateFromString, editorStateToPlainText, useEditorState } from '@ui/common/Input/hooks'
+import { Text } from '@ui/common/Text'
 import { classNames } from '@utils/others'
 import { cn } from './cn'
 
-// Убираем лишние типы, которые создавали проблемы
-const Editor = DraftEditor
+
+// Добавляем стили для code blocks
+const styles = `
+    .code-block {
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      padding: 1em;
+      margin: 0.5em 0;
+      overflow-x: auto;
+    }
+    
+    .code-block code {
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+  `;
 
 interface RichTextEditorProps {
   onValueChange?: (text: string) => void
@@ -17,7 +41,38 @@ interface RichTextEditorProps {
   className?: string
   placeholder?: string
   initialValue?: string
+  readOnly?: boolean
+  onInit?: (controls: { reset: () => void }) => void
 }
+
+// Функция для применения кастомного стиля
+const toggleCustomStyle = (editorState: EditorState) => {
+  const selection = editorState.getSelection();
+  const currentContent = editorState.getCurrentContent();
+  const currentStyle = editorState.getCurrentInlineStyle();
+
+  // Применяем или убираем стиль
+  const newState = currentStyle.has('CUSTOM_STYLE')
+    ? RichUtils.toggleInlineStyle(editorState, 'CUSTOM_STYLE')
+    : EditorState.push(
+      editorState,
+      Modifier.applyInlineStyle(
+        currentContent,
+        selection,
+        'CUSTOM_STYLE'
+      ),
+      'change-inline-style'
+    );
+
+  return newState;
+};
+
+const keyBindingFn = (e: any) => {
+  if (KeyBindingUtil.hasCommandModifier(e) && e.keyCode === 80) { // 80 это код клавиши 'P'
+    return 'custom-style';
+  }
+  return getDefaultKeyBinding(e);
+};
 
 export function RichTextEditor(props: RichTextEditorProps) {
   const {
@@ -27,160 +82,118 @@ export function RichTextEditor(props: RichTextEditorProps) {
     className,
     placeholder,
     initialValue,
+    readOnly,
+    onInit,
   } = props
 
-  // Создаем начальное состояние на основе initialValue
-  const createInitialState = useCallback(() => {
-    if (!initialValue) {
-      return EditorState.createEmpty()
-    }
-
-    const contentState = ContentState.createFromText(initialValue)
-    const editorState = EditorState.createWithContent(contentState)
-
-    // Устанавливаем курсор в конец текста
-    const lastBlock = contentState.getLastBlock()
-    const lastBlockKey = lastBlock.getKey()
-    const lastBlockLength = lastBlock.getLength()
-
-    const selection = editorState.getSelection().merge({
-      anchorKey: lastBlockKey,
-      anchorOffset: lastBlockLength,
-      focusKey: lastBlockKey,
-      focusOffset: lastBlockLength,
-    })
-
-    return EditorState.forceSelection(editorState, selection)
-  }, [initialValue])
-
-  const [editorState, setEditorState] = useState(createInitialState)
-
-  const [isTyping, setIsTyping] = useState(false)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  // Исправляем тип рефа
   const editorRef = useRef<DraftEditorType>(null)
+  const lastSelectionRef = useRef<SelectionState>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout>(null)
 
-  // Добавляем эффект для обновления состояния при изменении initialValue
+  const { editorState, setEditorState, getText, setText } = useEditorState(initialValue, compositeDecorator);
+
   useEffect(() => {
-    setEditorState(createInitialState())
-  }, [createInitialState])
+    onInit?.({
+      reset: () => {
+        setText(initialValue || '')
+      },
+    })
+  }, [onInit, setText, initialValue])
 
-
-  // Перемещаем notifyTypingStart выше, чтобы исправить ESLint ошибку
-  const notifyTypingStart = useCallback(() => {
-    if (!isTyping) {
-      setIsTyping(true)
-      onStartTyping?.()
+  useEffect(() => {
+    if (initialValue) {
+      setEditorState(editorStateFromString(initialValue))
     }
+  }, [initialValue, setEditorState])
 
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
+  const handleTyping = useCallback(() => {
+    onStartTyping?.()
 
+    // Очищаем предыдущий таймер если он есть
+    clearTimeout(typingTimeoutRef.current!)
+
+    // Устанавливаем новый
     typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false)
       onStopTyping?.()
     }, 1500)
-  }, [isTyping, onStartTyping, onStopTyping])
+  }, [onStartTyping, onStopTyping])
 
-  // Обработка изменения состояния редактора
-  const handleEditorChange = (newState: EditorState) => {
+  // Основной обработчик изменений
+  const handleEditorChange = useCallback((newState: EditorState) => {
+    lastSelectionRef.current = newState.getSelection()
     setEditorState(newState)
+    onValueChange?.(getText())
+    handleTyping()
+  }, [getText, handleTyping, onValueChange, setEditorState])
 
-    const currentContent = newState.getCurrentContent()
-    const text = currentContent.getPlainText()
-    onValueChange?.(text)
 
-    notifyTypingStart()
-  }
-
-  // Обработка горячих клавиш
-  const handleKeyCommand = (command: string, state: EditorState) => {
-    let newState: EditorState | null = null
-
-    switch (command) {
-      case 'bold':
-        newState = RichUtils.toggleInlineStyle(state, 'BOLD')
-        break
-      case 'italic':
-        newState = RichUtils.toggleInlineStyle(state, 'ITALIC')
-        break
-      case 'underline':
-        newState = RichUtils.toggleInlineStyle(state, 'UNDERLINE')
-        break
-      default:
-        newState = RichUtils.handleKeyCommand(state, command)
+  const handleKeyCommand = useCallback((command: string, state: EditorState) => {
+    if (command === 'custom-style') {
+      const newState = toggleCustomStyle(state);
+      handleEditorChange(newState);
+      return 'handled';
     }
 
+    const newState = RichUtils.handleKeyCommand(state, command);
     if (newState) {
-      handleEditorChange(newState)
-      return 'handled'
+      handleEditorChange(newState);
+      return 'handled';
     }
-    return 'not-handled'
-  }
+    return 'not-handled';
+  }, [handleEditorChange]);
 
-  // Добавление эмодзи
   const handleEmojiClick = useCallback((emojiData: EmojiClickData) => {
-    // Получаем текущее состояние редактора
-    const contentState = editorState.getCurrentContent()
-    const selectionState = editorState.getSelection()
+    const selection = editorState.getSelection().getHasFocus()
+      ? editorState.getSelection()
+      : lastSelectionRef.current || editorState.getSelection()
 
-    // Вставляем эмодзи в текущую позицию курсора
-    const newContentState = Modifier.insertText(
-      contentState,
-      selectionState,
-      emojiData.emoji,
-    )
-
-    // Создаем новое состояние с обновленным контентом
-    let newEditorState = EditorState.push(
+    const newEditorState = EditorState.push(
       editorState,
-      newContentState,
+      Modifier.insertText(
+        editorState.getCurrentContent(),
+        selection,
+        emojiData.emoji,
+      ),
       'insert-characters',
     )
 
-    // Обновляем позицию курсора после вставки
-    const newSelection = newEditorState.getSelection().merge({
-      anchorOffset: selectionState.getAnchorOffset() + emojiData.emoji.length,
-      focusOffset: selectionState.getFocusOffset() + emojiData.emoji.length,
+    const newSelection = selection.merge({
+      anchorOffset: selection.getAnchorOffset() + emojiData.emoji.length,
+      focusOffset: selection.getFocusOffset() + emojiData.emoji.length,
     })
 
-    // Применяем новую позицию курсора
-    newEditorState = EditorState.forceSelection(newEditorState, newSelection)
+    handleEditorChange(EditorState.forceSelection(newEditorState, newSelection))
 
-    // Обновляем состояние редактора
-    setEditorState(newEditorState)
+    requestAnimationFrame(() => editorRef.current?.focus())
+  }, [editorState, handleEditorChange])
 
-    // Возвращаем фокус редактору
-    setTimeout(() => {
-      if (editorRef.current) {
-        const editor = editorRef.current as any
-        editor.focus()
-      }
-    }, 0)
-  }, [editorState])
-
-  // Загрузка сохраненного состояния
-  useEffect(() => {
-    const savedContent = localStorage.getItem('editorContent')
-    if (savedContent) {
-      const raw = JSON.parse(savedContent)
-      const contentState = convertFromRaw(raw)
-      setEditorState(EditorState.createWithContent(contentState))
+  // Обработка фокуса
+  const handleFocus = useCallback(() => {
+    if (lastSelectionRef.current) {
+      setEditorState(
+        EditorState.forceSelection(editorState, lastSelectionRef.current),
+      )
     }
-  }, [])
+  }, [editorState, setEditorState])
+
 
   return (
-    <div className={classNames(cn('RichTextEditor'), className)}>
-      {/* @ts-ignore */}
-      <Editor
-        ref={editorRef}
-        editorState={editorState}
-        onChange={handleEditorChange}
-        handleKeyCommand={handleKeyCommand}
-        placeholder={placeholder}
-      />
+    <>
+      <style>{styles}</style>
+      <Text className={classNames(cn('RichTextEditor'), className)}>
+        {/* @ts-ignore */}
+        <DraftEditor
+          ref={editorRef}
+          editorState={editorState}
+          onChange={handleEditorChange}
+          handleKeyCommand={handleKeyCommand}
+          placeholder={placeholder}
+          onFocus={handleFocus}
+          readOnly={readOnly}
+          keyBindingFn={keyBindingFn}
+        />
+      </Text>
       <ButtonAddEmoji onEmojiClick={handleEmojiClick} />
-    </div>
+    </>
   )
 }
