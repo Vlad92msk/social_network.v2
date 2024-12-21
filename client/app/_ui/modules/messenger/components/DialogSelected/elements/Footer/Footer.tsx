@@ -54,11 +54,9 @@ export function Footer() {
       className={cn('CreateMessage')}
       onSubmit={handleSubmit}
       onStartTyping={() => {
-        console.log('Пользователь начал печатать')
         dispatch(MessengerThunkActions.startTyping(currentDialogId))
       }}
       onStopTyping={() => {
-        console.log('Пользователь закончил печатать')
         dispatch(MessengerThunkActions.stopTyping(currentDialogId))
       }}
     />

@@ -11,7 +11,6 @@ interface ButtonResetProps extends Pick<CreatePublicationProps, 'onReset'>{
 export function ButtonReset(props: ButtonResetProps) {
   const { onReset } = props
   const isEmpty = useCreatePublicationCtxSelect((ctx) => {
-    console.log('ctx', ctx)
     const targetValues = pick(ctx, SUBMIT_PROPS)
     const val = compact(values(targetValues))
     return isEmptyLodash(val)
