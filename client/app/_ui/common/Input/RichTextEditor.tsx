@@ -1,6 +1,7 @@
 'use client'
 
-import { codePlugin, colorPlugin, linkPlugin, underlinePlugin } from '@ui/common/Input/formattingPlugins'
+import { boldDecorator, linkDecorator } from '@ui/common/Input/CustomComponent'
+import { codePlugin, colorPlugin, linkPlugin, underlinePlugin, markdownBoldPlugin, markdownCodePlugin } from '@ui/common/Input/formattingPlugins'
 import { Editor as DraftEditor, Editor as DraftEditorType, EditorState, Modifier, SelectionState } from 'draft-js'
 import { EmojiClickData } from 'emoji-picker-react'
 import React, { useCallback, useEffect, useRef } from 'react'
@@ -22,8 +23,8 @@ interface RichTextEditorProps {
   onInit?: (controls: { reset: () => void }) => void
 }
 
-
-const plugins = [linkPlugin, colorPlugin, codePlugin, underlinePlugin]
+const decorators = [linkDecorator, boldDecorator]
+const plugins = [linkPlugin, colorPlugin, codePlugin, underlinePlugin, markdownBoldPlugin, markdownCodePlugin]
 export function RichTextEditor(props: RichTextEditorProps) {
   const {
     onValueChange,
@@ -43,7 +44,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
     initialValue,
     {
       plugins,
-      decorators: [],
+      // decorators,
     },
     {
       onTextChange: onValueChange,
@@ -118,7 +119,13 @@ export function RichTextEditor(props: RichTextEditorProps) {
             },
             WAVY_UNDERLINE: {
               textDecoration: 'wavy underline red'
-            }
+            },
+            CODE: {
+              backgroundColor: '#f5f5f5',
+              fontFamily: 'monospace',
+              padding: '2px 4px',
+              borderRadius: '3px',
+            },
           }}
           {...combinePlugins(plugins, setEditorState)}
         />
