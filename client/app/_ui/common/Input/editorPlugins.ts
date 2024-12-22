@@ -23,7 +23,6 @@ export const combinePlugins = (
     // Если ни один плагин не обработал, используем стандартную обработку
     return getDefaultKeyBinding(e)
   },
-
   handleKeyCommand: (command: string, editorState: EditorState): DraftHandleValue => {
     // Сначала проверяем плагины
     for (const plugin of plugins) {

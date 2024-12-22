@@ -12,7 +12,7 @@
   &-Link {
     display: flex;
     gap: rem(10);
-    height: rem(50);
+    //height: rem(50);
     align-items: center;
   }
 
@@ -32,6 +32,8 @@
     align-content: center;
     flex-shrink: 0;
     position: relative;
+    overflow: hidden;
+    border-radius: $border-radius--super-small;
 
     &:before {
       content: '';

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RichTextEditor } from '@ui/common/Input'
+import { editorStateFromString, editorStateToPlainText } from '@ui/common/Input/hooks'
 import { LinkPreview } from '@ui/common/LinkPreview'
 import { isValidUrl } from '@ui/common/LinkPreview/hooks'
 import { setImmutable } from '@utils/others'
@@ -47,7 +48,7 @@ export function InputText(props: InputTextProps) {
         className={cn('AddCommentInput')}
         onInit={(controls) => {
           update(() => ({
-            s: controls
+            s: controls,
           }))
         }}
         placeholder={placeholder}
@@ -55,7 +56,8 @@ export function InputText(props: InputTextProps) {
         onStopTyping={onStopTyping}
         onValueChange={(value) => {
           update((ctx) => setImmutable(ctx, 'text', value))
-          const foundLink = findUrlInText(value)
+          const t = editorStateToPlainText(editorStateFromString(value))
+          const foundLink = findUrlInText(t)
           if (foundLink !== link) {
             setLink(isValidUrl(foundLink) ? foundLink : null)
           }

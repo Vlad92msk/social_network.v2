@@ -1,5 +1,4 @@
-// editorPlugins/formattingPlugins.ts
-import { DraftHandleValue, EditorState, KeyBindingUtil, Modifier, RichUtils, SelectionState } from 'draft-js'
+import { EditorState, KeyBindingUtil, Modifier, RichUtils, SelectionState } from 'draft-js'
 import { KeyboardEvent } from 'react'
 import { EditorPlugin } from './hooks'
 
@@ -11,6 +10,7 @@ export const linkPlugin: EditorPlugin = {
       if (!selection.isCollapsed()) {
         const url = prompt('Введите URL:')
         if (url) {
+          // Создаем новый contentState с entity для ссылки
           const contentState = editorState.getCurrentContent()
           const contentStateWithEntity = contentState.createEntity(
             'LINK',
@@ -18,17 +18,29 @@ export const linkPlugin: EditorPlugin = {
             { url },
           )
           const entityKey = contentStateWithEntity.getLastCreatedEntityKey()
-          const newState = EditorState.set(
-            editorState,
-            { currentContent: contentStateWithEntity },
+
+          // Применяем entity к выделенному тексту
+          const newContentState = Modifier.applyEntity(
+            contentStateWithEntity,
+            selection,
+            entityKey,
           )
-          return RichUtils.toggleLink(newState, selection, entityKey)
+
+          // Создаем новое состояние редактора
+          const newEditorState = EditorState.push(
+            editorState,
+            newContentState,
+            'apply-entity',
+          )
+
+          // Важно: возвращаем новое состояние
+          return newEditorState
         }
       }
     }
     return 'not-handled'
   },
-  keyBindingFn: (e: KeyboardEvent<Element>) => {
+  keyBindingFn: (e) => {
     if (KeyBindingUtil.hasCommandModifier(e) && e.code === 'KeyK') {
       return 'add-link'
     }
@@ -36,7 +48,7 @@ export const linkPlugin: EditorPlugin = {
   },
 }
 
-// Плагин для цветного текста
+// Плагин для цветного текста (пример)
 export const colorPlugin: EditorPlugin = {
   handleKeyCommand: (command, editorState) => {
     if (command === 'text-red') {
@@ -58,38 +70,6 @@ export const colorPlugin: EditorPlugin = {
         case 'KeyB': return 'text-blue'
         default: return null
       }
-    }
-    return null
-  },
-}
-
-// Плагин для форматирования кода
-export const codePlugin: EditorPlugin = {
-  handleKeyCommand: (command, editorState) => {
-    if (command === 'code-block') {
-      return RichUtils.toggleInlineStyle(editorState, 'CODE_STYLE')
-    }
-    return 'not-handled'
-  },
-  keyBindingFn: (e: KeyboardEvent<Element>) => {
-    if (KeyBindingUtil.hasCommandModifier(e) && e.code === 'KeyM') {
-      return 'code-block'
-    }
-    return null
-  },
-}
-
-// Плагин для волнистого подчеркивания
-export const underlinePlugin: EditorPlugin = {
-  handleKeyCommand: (command, editorState) => {
-    if (command === 'wavy-underline') {
-      return RichUtils.toggleInlineStyle(editorState, 'WAVY_UNDERLINE')
-    }
-    return 'not-handled'
-  },
-  keyBindingFn: (e: KeyboardEvent<Element>) => {
-    if (KeyBindingUtil.hasCommandModifier(e) && e.code === 'KeyU') {
-      return 'wavy-underline'
     }
     return null
   },
@@ -118,9 +98,9 @@ export const markdownBoldPlugin: EditorPlugin = {
         content,
         selection.merge({
           anchorOffset: 0,
-          focusOffset: text.length
+          focusOffset: text.length,
         }),
-        'BOLD'
+        'BOLD',
       )
 
       // Добавляем звездочки вокруг текста
@@ -128,15 +108,15 @@ export const markdownBoldPlugin: EditorPlugin = {
         newContent,
         selection.merge({
           anchorOffset: 0,
-          focusOffset: text.length
+          focusOffset: text.length,
         }),
-        `**${text}*`
+        `**${text}*`,
       )
 
       const newState = EditorState.push(
         editorState,
         newContent,
-        'change-inline-style'
+        'change-inline-style',
       )
 
       // Устанавливаем курсор в конец текста
@@ -144,8 +124,8 @@ export const markdownBoldPlugin: EditorPlugin = {
         newState,
         SelectionState.createEmpty(block.getKey()).merge({
           anchorOffset: text.length + 3, // +3 для учета добавленных звездочек
-          focusOffset: text.length + 3
-        })
+          focusOffset: text.length + 3,
+        }),
       )
     }
 
@@ -163,136 +143,34 @@ export const markdownBoldPlugin: EditorPlugin = {
 
         const fullSelection = SelectionState.createEmpty(block.getKey()).merge({
           anchorOffset: openingStarsPos,
-          focusOffset: position
+          focusOffset: position,
         })
 
         let newContent = Modifier.replaceText(
           content,
           fullSelection,
-          textBetweenStars
+          textBetweenStars,
         )
 
         newContent = Modifier.applyInlineStyle(
           newContent,
           SelectionState.createEmpty(block.getKey()).merge({
             anchorOffset: openingStarsPos,
-            focusOffset: openingStarsPos + textBetweenStars.length
+            focusOffset: openingStarsPos + textBetweenStars.length,
           }),
-          'BOLD'
+          'BOLD',
         )
 
         return EditorState.forceSelection(
           EditorState.push(editorState, newContent, 'change-inline-style'),
           SelectionState.createEmpty(block.getKey()).merge({
             anchorOffset: openingStarsPos + textBetweenStars.length,
-            focusOffset: openingStarsPos + textBetweenStars.length
-          })
-        )
-      }
-    }
-
-    return editorState
-  }
-}
-
-
-export const markdownCodePlugin: EditorPlugin = {
-  onChange: (editorState: EditorState) => {
-    const content = editorState.getCurrentContent()
-    const selection = editorState.getSelection()
-    const block = content.getBlockForKey(selection.getStartKey())
-    const text = block.getText()
-    const position = selection.getAnchorOffset()
-
-    // Проверяем наличие стиля кода
-    const currentStyles = editorState.getCurrentInlineStyle()
-    const isCode = currentStyles.has('CODE')
-
-    // Проверяем было ли удаление
-    const lastChangeType = editorState.getLastChangeType()
-    const isBackspace = lastChangeType === 'backspace-character'
-
-    // Если текст в стиле кода и произошло удаление
-    if (isCode && isBackspace) {
-      // Снимаем стиль кода со всего текста
-      let newContent = Modifier.removeInlineStyle(
-        content,
-        selection.merge({
-          anchorOffset: 0,
-          focusOffset: text.length
-        }),
-        'CODE'
-      )
-
-      // Добавляем обратные кавычки вокруг текста
-      newContent = Modifier.replaceText(
-        newContent,
-        selection.merge({
-          anchorOffset: 0,
-          focusOffset: text.length
-        }),
-        '```' + text + '`'
-      )
-
-      const newState = EditorState.push(
-        editorState,
-        newContent,
-        'change-inline-style'
-      )
-
-      // Устанавливаем курсор в конец текста
-      return EditorState.forceSelection(
-        newState,
-        SelectionState.createEmpty(block.getKey()).merge({
-          anchorOffset: text.length + 4, // +4 для учета добавленных кавычек
-          focusOffset: text.length + 4
-        })
-      )
-    }
-
-    // Если вводятся первые кавычки - ничего не делаем
-    if (text === '```' || text.endsWith('```') && !text.slice(0, -3).includes('```')) {
-      return editorState
-    }
-
-    // Если последние символы - три обратные кавычки
-    if (position >= 3 && text.slice(position - 3, position) === '```') {
-      const openingQuotesPos = text.lastIndexOf('```', position - 4)
-
-      if (openingQuotesPos !== -1) {
-        const textBetweenQuotes = text.slice(openingQuotesPos + 3, position - 3)
-
-        const fullSelection = SelectionState.createEmpty(block.getKey()).merge({
-          anchorOffset: openingQuotesPos,
-          focusOffset: position
-        })
-
-        let newContent = Modifier.replaceText(
-          content,
-          fullSelection,
-          textBetweenQuotes
-        )
-
-        // Применяем стиль кода
-        newContent = Modifier.applyInlineStyle(
-          newContent,
-          SelectionState.createEmpty(block.getKey()).merge({
-            anchorOffset: openingQuotesPos,
-            focusOffset: openingQuotesPos + textBetweenQuotes.length
+            focusOffset: openingStarsPos + textBetweenStars.length,
           }),
-          'CODE'
-        )
-
-        return EditorState.forceSelection(
-          EditorState.push(editorState, newContent, 'change-inline-style'),
-          SelectionState.createEmpty(block.getKey()).merge({
-            anchorOffset: openingQuotesPos + textBetweenQuotes.length,
-            focusOffset: openingQuotesPos + textBetweenQuotes.length
-          })
         )
       }
     }
 
     return editorState
-  }
+  },
 }

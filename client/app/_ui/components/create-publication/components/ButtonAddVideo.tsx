@@ -136,6 +136,7 @@ export function ButtonAddVideo() {
           <video
             ref={setVideoRef}
             className={cn('VideoPreview')}
+            style={{ transform: 'scaleX(-1)' }}
             muted
             playsInline
             autoPlay

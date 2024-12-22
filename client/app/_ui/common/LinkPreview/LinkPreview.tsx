@@ -29,15 +29,17 @@ export function LinkPreview(props: LinkPreviewProps) {
         </div>
         )}
         <div className={cn('Summary')}>
-          <Text fs="12" weight="bold" nowrap>{previewData.title}</Text>
+          <Text fs="12" weight="bold" textElipsis>{previewData.title}</Text>
           {previewData.description && (
             <Text fs="10">{previewData.description}</Text>
           )}
         </div>
       </a>
-      <button className={cn('ButtonRemove')} onClick={onRemove}>
-        <Icon name="close" />
-      </button>
+      {onRemove && (
+        <button className={cn('ButtonRemove')} onClick={onRemove}>
+          <Icon name="close" />
+        </button>
+      )}
     </div>
   )
 }

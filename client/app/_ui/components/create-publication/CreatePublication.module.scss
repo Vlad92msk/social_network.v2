@@ -123,8 +123,10 @@ $audio-height: rem(25);
 
   &-AddCommentContainer {
     display: flex;
-    flex-direction: column;
     width: 100%;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: rem(10);
   }
 
   &-AddCommentInput {

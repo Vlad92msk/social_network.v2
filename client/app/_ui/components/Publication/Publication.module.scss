@@ -305,6 +305,8 @@ $padding: rem(6);
     grid-area: text;
     overflow-y: auto;
     display: flex;
+    flex-direction: column;
+    gap: rem(5);
 
     &Content {
       padding: $padding;

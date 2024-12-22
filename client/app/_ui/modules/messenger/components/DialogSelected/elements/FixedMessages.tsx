@@ -1,7 +1,11 @@
+import { RichTextEditor } from '@ui/common/Input'
+import { sortBy } from 'lodash'
+import { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useScrollToElement } from '@hooks'
+import { useBooleanState, useScrollToElement } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
+import { editorStateFromString, editorStateToPlainText } from '@ui/common/Input/hooks'
 import { Text } from '@ui/common/Text'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { dialogsApi } from '../../../../../../../store/api'
@@ -12,30 +16,31 @@ export function FixedMessages() {
   const dialogId = useSelector(MessengerSelectors.selectCurrentDialogId)
   const [onPin] = dialogsApi.useRemoveFixedMessageMutation()
 
-  const scrollToComment = useScrollToElement({
-    behavior: 'smooth',
-  })
+  const [isOpen, onOpen, onClose] = useBooleanState(false)
 
   if (!fixedMessages?.length) return null
+  console.log('fixedMessages', fixedMessages)
   return (
-    <div className={cn('FixedMessages')}>
-      <div className={cn('FixedMessagesSticks')}>
-        {fixedMessages.map(({ id }) => <span key={id} className={cn('FixedMessagesStickElement')} />)}
-      </div>
+    <div
+      className={cn('FixedMessages', { isOpen })}
+      style={{
+        maxHeight: fixedMessages.length * 50 + 'px',
+      }}
+      onClick={() => {
+        if (isOpen) {
+          onClose()
+        } else {
+          onOpen()
+        }
+      }}
+    >
       <div className={cn('FixedMessagesList')}>
-        {fixedMessages.map(({ id, text }) => (
+        {sortBy(fixedMessages, ({date_created}) => date_created).map(({ id, text }) => (
           <div key={id} className={cn('FixedMessagesBox')}>
-            <Button
-              className={cn('FixedMessagesContent')}
-              onClick={() => {
-                scrollToComment({
-                  targetElementId: id,
-                })
-              }}
-            >
+            <div className={cn('FixedMessagesContent')}>
               <Text weight="bold" fs="12">Закрепленное сообщение</Text>
-              <Text fs="12">{text}</Text>
-            </Button>
+              <Text fs="12">{editorStateToPlainText(editorStateFromString(text))}</Text>
+            </div>
             <Button
               className={cn('FixedMessagesButtonRemove')}
               onClick={() => {

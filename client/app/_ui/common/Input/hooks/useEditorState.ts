@@ -19,6 +19,7 @@ export interface EditorPlugin {
   onChange?: (editorState: EditorState) => EditorState
   handleKeyCommand?: (command: string, editorState: EditorState) => DraftHandleValue | EditorState
   keyBindingFn?: (e: KeyboardEvent<Element>) => string | null
+  handleReturn?: (e: KeyboardEvent<Element>, editorState: EditorState) => DraftHandleValue
 }
 
 interface EditorCallbacks {
