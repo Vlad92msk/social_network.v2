@@ -19,7 +19,6 @@ export function FixedMessages() {
   const [isOpen, onOpen, onClose] = useBooleanState(false)
 
   if (!fixedMessages?.length) return null
-  console.log('fixedMessages', fixedMessages)
   return (
     <div
       className={cn('FixedMessages', { isOpen })}

@@ -107,7 +107,9 @@ export function RichTextEditor(props: RichTextEditorProps) {
         blockRendererFn={blockRendererFn}
         {...combinePlugins(plugins, setEditorState)}
       />
-      <ButtonAddEmoji onEmojiClick={handleEmojiClick} />
+      {!readOnly && (
+        <ButtonAddEmoji onEmojiClick={handleEmojiClick} />
+      )}
     </Text>
   )
 }

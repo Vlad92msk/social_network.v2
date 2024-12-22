@@ -69,7 +69,7 @@ export function Body() {
             <Message key={msg.id} message={msg} />
           ))}
           {hasMore && (
-            <div ref={loaderRef}>
+            <div style={{ flexShrink: 0, display: 'flex', height: '10px' }} ref={loaderRef}>
               {isFetching ? <Spinner /> : null}
             </div>
           )}
