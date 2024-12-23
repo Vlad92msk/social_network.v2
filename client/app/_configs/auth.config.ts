@@ -1,26 +1,13 @@
-import { UserInfo } from '@api/users/types/user.type'
-import Google from "next-auth/providers/google"
 import { NextAuthConfig, Profile } from 'next-auth'
+import Google from 'next-auth/providers/google'
 
 interface ExtendedProfile extends Profile {
   email_verified?: boolean
 }
 
-
-interface ExtendedToken {
-  myUserInfo?: UserInfo;
-  email?: string
-  name?: string
-  picture?: string
-  sub?: string
-  iat?: number
-  exp?: number
-}
-
-
 export default {
   callbacks: {
-    async session({ session, token }) {
+    async session({ session }) {
       return session
     },
     async signIn({ account, profile }) {
@@ -38,14 +25,14 @@ export default {
         default: return false
       }
 
-      return !!(profile && account);
+      return !!(profile && account)
     },
-    async jwt({ token, account }) {
+    async jwt({ token }) {
       return token
     },
   },
   providers: [Google({
     clientId: process.env.GOOGLE_ID as string,
     clientSecret: process.env.GOOGLE_SECRET as string,
-  })]
+  })],
 } satisfies NextAuthConfig

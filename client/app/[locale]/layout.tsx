@@ -31,21 +31,21 @@ export default async function RootLayout(props: RootLayoutProps) {
   const profile = await getServerProfile()
 
   return (
-    <ReduxProvider profile={{ profile }}>
+    <NextIntlClientProvider messages={messages}>
       <ThemeProvider contextProps={{ theme: 'default' }}>
-        <NextIntlClientProvider messages={messages}>
-          <Html locale={params.locale}>
-            <SessionProvider>
-              <Body>
+      <Html locale={params.locale}>
+        <Body>
+          <SessionProvider>
+            <ReduxProvider profile={{ profile }}>
                 <NotificationsProvider>
                   {children}
                 </NotificationsProvider>
-              </Body>
-            </SessionProvider>
-          </Html>
-        </NextIntlClientProvider>
+            </ReduxProvider>
+          </SessionProvider>
+        </Body>
+      </Html>
       </ThemeProvider>
-    </ReduxProvider>
+    </NextIntlClientProvider>
   )
 }
 

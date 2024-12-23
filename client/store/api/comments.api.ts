@@ -1,23 +1,8 @@
-import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { CommentEntity, CommentResponseDto } from '../../../swagger/comments/interfaces-comments'
 import { CookieType } from '../../app/types/cookie'
 import { commentsApiInstance } from '../../store/instance'
-import { RootState, store } from '../store'
-// Тип для результатов запросов
-type QueryResult<T> = {
-  data?: T
-  error?: SerializedError
-  endpointName: string
-  fulfilledTimeStamp?: number
-  isError: boolean
-  isLoading: boolean
-  isSuccess: boolean
-  isUninitialized: boolean
-  requestId: string
-  startedTimeStamp?: number
-  status: 'pending' | 'fulfilled' | 'rejected'
-}
+import { RootState } from '../store'
 
 export const commentsApi = createApi({
   reducerPath: 'API_comments',
@@ -111,37 +96,3 @@ export const commentsApi = createApi({
     }),
   }),
 })
-
-// Типизированные функции-обертки в объекте
-export const CommentsApiApi = {
-
-  create: (props: Parameters<typeof commentsApiInstance.create>[0]): Promise<QueryResult<CommentEntity>> =>
-    store.dispatch(commentsApi.endpoints.create.initiate(props)),
-
-  findAll: (props: Parameters<typeof commentsApiInstance.findAll>[0]): Promise<QueryResult<CommentEntity[]>> =>
-    store.dispatch(commentsApi.endpoints.findAll.initiate(props)),
-
-  update: (props: Parameters<typeof commentsApiInstance.update>[0]): Promise<QueryResult<CommentEntity>> =>
-    store.dispatch(commentsApi.endpoints.update.initiate(props)),
-
-  findOne: (props: Parameters<typeof commentsApiInstance.findOne>[0]): Promise<QueryResult<CommentEntity>> =>
-    store.dispatch(commentsApi.endpoints.findOne.initiate(props)),
-
-  remove: (props: Parameters<typeof commentsApiInstance.remove>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(commentsApi.endpoints.remove.initiate(props)),
-
-  findCommentsByPost: (props: Parameters<typeof commentsApiInstance.findComments>[0]): Promise<QueryResult<CommentResponseDto>> =>
-    store.dispatch(commentsApi.endpoints.findComments.initiate(props)),
-
-  getChildComments: (props: Parameters<typeof commentsApiInstance.findChildComments>[0]): Promise<QueryResult<CommentEntity[]>> =>
-    store.dispatch(commentsApi.endpoints.findChildComments.initiate(props)),
-
-  pinComment: (props: Parameters<typeof commentsApiInstance.pinComment>[0]): Promise<QueryResult<CommentEntity>> =>
-    store.dispatch(commentsApi.endpoints.pinComment.initiate(props)),
-
-  findPinnedComments: (props: Parameters<typeof commentsApiInstance.findPinnedComments>[0]): Promise<QueryResult<CommentEntity[]>> =>
-    store.dispatch(commentsApi.endpoints.findPinnedComments.initiate(props))
-};
-
-// Экспорт типов для использования в других частях приложения
-export type CommentsApiApiType = typeof CommentsApiApi

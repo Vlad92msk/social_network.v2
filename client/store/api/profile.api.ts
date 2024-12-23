@@ -1,29 +1,14 @@
-import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { UserProfileInfo } from '../../../swagger/profile/interfaces-profile'
 import { CookieType } from '../../app/types/cookie'
-import { profileApiInstance } from '../../store/instance'
-import { RootState, store } from '../store'
-// Тип для результатов запросов
-type QueryResult<T> = {
-  data?: T
-  error?: SerializedError
-  endpointName: string
-  fulfilledTimeStamp?: number
-  isError: boolean
-  isLoading: boolean
-  isSuccess: boolean
-  isUninitialized: boolean
-  requestId: string
-  startedTimeStamp?: number
-  status: 'pending' | 'fulfilled' | 'rejected'
-}
+import { profileApiInstance } from '../instance'
+import { RootReducer } from '../root.reducer'
 
 export const profileApi = createApi({
   reducerPath: 'API_profile',
   baseQuery: fetchBaseQuery({
     prepareHeaders: (headers, { getState }) => {
-      const state = getState() as RootState
+      const state = getState() as RootReducer
       const profileId = state.profile?.profile?.id
       const userInfoId = state.profile?.profile?.user_info?.id
 
@@ -60,19 +45,3 @@ export const profileApi = createApi({
     }),
   }),
 })
-
-// Типизированные функции-обертки в объекте
-export const ProfileApiApi = {
-
-  getProfileInfo: (props: Parameters<typeof profileApiInstance.getProfileInfo>[0]): Promise<QueryResult<UserProfileInfo>> =>
-    store.dispatch(profileApi.endpoints.getProfileInfo.initiate(props)),
-
-  getProfiles: (props: Parameters<typeof profileApiInstance.getProfiles>[0]): Promise<QueryResult<UserProfileInfo[]>> =>
-    store.dispatch(profileApi.endpoints.getProfiles.initiate(props)),
-
-  removeProfile: (props: Parameters<typeof profileApiInstance.removeProfile>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(profileApi.endpoints.removeProfile.initiate(props))
-};
-
-// Экспорт типов для использования в других частях приложения
-export type ProfileApiApiType = typeof ProfileApiApi

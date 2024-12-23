@@ -1,10 +1,12 @@
 import { combineReducers } from '@reduxjs/toolkit'
+import localforage from 'localforage'
+import { persistReducer } from 'redux-persist'
+import { conferenceReducer, ConferenceSliceState } from '@ui/modules/conference/store/conference.slice'
 import { messengerReducer, MessengerSliceState } from '@ui/modules/messenger/store/messenger.slice'
 import {
   commentsApi, dialogsApi, mediaApi, messagesApi, postsApi, profileApi, reactionsApi, tagsApi, userInfoApi,
 } from './api'
 import { profileInitialState, profileReducer, ProfileSliceState } from './profile.slice'
-import { conferenceReducer, ConferenceSliceState } from '@ui/modules/conference/store/conference.slice'
 
 export interface RootReducer {
   profile: ProfileSliceState
@@ -39,3 +41,22 @@ export const rootReducer = combineReducers({
 export const rootInitialState: Partial<RootReducer> = {
   profile: profileInitialState,
 }
+
+// Оборачиваем корневой reducer
+export const persistedReducer = persistReducer({
+  key: 'root',
+  storage: localforage,
+  blacklist: ['conference', 'profile'],
+  // Указываем, какие reducers хотим сохранять
+  whitelist: [
+    tagsApi.reducerPath,
+    commentsApi.reducerPath,
+    messagesApi.reducerPath,
+    dialogsApi.reducerPath,
+    mediaApi.reducerPath,
+    postsApi.reducerPath,
+    profileApi.reducerPath,
+    userInfoApi.reducerPath,
+    reactionsApi.reducerPath,
+  ],
+}, rootReducer)

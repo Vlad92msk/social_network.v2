@@ -1,24 +1,9 @@
-
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { CookieType } from '../../app/types/cookie';
-import { RootState, store } from '../store'
+// import { HYDRATE } from 'next-redux-wrapper'
+import { MediaEntity, Tag } from '../../../swagger/media/interfaces-media'
+import { CookieType } from '../../app/types/cookie'
 import { mediaApiInstance } from '../../store/instance'
-import { MediaMetadata, UserAbout, PublicationType, DialogEntity, MessageEntity, ReactionEntity, CommentEntity, PostVisibility, PostEntity, Tag, MediaEntity, UserInfo } from '../../../swagger/media/interfaces-media'
-import { SerializedError } from '@reduxjs/toolkit'
-// Тип для результатов запросов
-type QueryResult<T> = {
-  data?: T
-  error?: SerializedError
-  endpointName: string
-  fulfilledTimeStamp?: number
-  isError: boolean
-  isLoading: boolean
-  isSuccess: boolean
-  isUninitialized: boolean
-  requestId: string
-  startedTimeStamp?: number
-  status: 'pending' | 'fulfilled' | 'rejected'
-}
+import { RootState } from '../store'
 
 export const mediaApi = createApi({
   reducerPath: 'API_media',
@@ -43,6 +28,12 @@ export const mediaApi = createApi({
       return headers
     },
   }),
+  keepUnusedDataFor: 3600, // Хранить кэш 1 час
+  // extractRehydrationInfo(action, { reducerPath }) {
+  //   if (action.type === HYDRATE && action.payload) {
+  //     return action.payload[reducerPath]
+  //   }
+  // },
   endpoints: (builder) => ({
 
     uploadFiles: builder.mutation<MediaEntity[], Parameters<typeof mediaApiInstance.uploadFiles>[0]>({
@@ -107,35 +98,3 @@ export const mediaApi = createApi({
     }),
   }),
 })
-
-// Типизированные функции-обертки в объекте
-export const MediaApiApi = {
-
-  uploadFiles: (props: Parameters<typeof mediaApiInstance.uploadFiles>[0]): Promise<QueryResult<MediaEntity[]>> =>
-    store.dispatch(mediaApi.endpoints.uploadFiles.initiate(props)),
-
-  downLoadFile: (props: Parameters<typeof mediaApiInstance.downLoadFile>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(mediaApi.endpoints.downLoadFile.initiate(props)),
-
-  deleteFile: (props: Parameters<typeof mediaApiInstance.deleteFile>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(mediaApi.endpoints.deleteFile.initiate(props)),
-
-  getFiles: (props: Parameters<typeof mediaApiInstance.getFiles>[0]): Promise<QueryResult<MediaEntity[]>> =>
-    store.dispatch(mediaApi.endpoints.getFiles.initiate(props)),
-
-  updateMedia: (props: Parameters<typeof mediaApiInstance.updateMedia>[0]): Promise<QueryResult<any>> =>
-    store.dispatch(mediaApi.endpoints.updateMedia.initiate(props)),
-
-
-  addTagsToMedia: (props: Parameters<typeof mediaApiInstance.addTagsToMedia>[0]): Promise<QueryResult<MediaEntity>> =>
-    store.dispatch(mediaApi.endpoints.addTagsToMedia.initiate(props)),
-
-  removeTagsFromMedia: (props: Parameters<typeof mediaApiInstance.removeTagsFromMedia>[0]): Promise<QueryResult<MediaEntity>> =>
-    store.dispatch(mediaApi.endpoints.removeTagsFromMedia.initiate(props)),
-
-  getMediaTags: (props: Parameters<typeof mediaApiInstance.getMediaTags>[0]): Promise<QueryResult<Tag[]>> =>
-    store.dispatch(mediaApi.endpoints.getMediaTags.initiate(props))
-};
-
-// Экспорт типов для использования в других частях приложения
-export type MediaApiApiType = typeof MediaApiApi
