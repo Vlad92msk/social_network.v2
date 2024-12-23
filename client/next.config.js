@@ -10,6 +10,18 @@ const baseConfig= {
     webpack: (config, { isServer, dev }) => {
         const isDevMode = dev;
 
+        // Обновляем правило для SVG файлов
+        config.module.rules.push({
+            test: /\.svg$/,
+            use: [{
+                loader: '@svgr/webpack',
+                options: {
+                    typescript: true,
+                    dimensions: false
+                }
+            }]
+        });
+
         return config;
     },
     env: {

@@ -1,14 +1,17 @@
-import InlineSVG from 'react-inlinesvg'
-import { Props } from 'react-inlinesvg/src'
+'use client'
+
+import { memo, SVGProps } from 'react'
 import { IconName } from './icon.model'
+import { icons } from './icons'
 
-interface IconBasePros extends Omit<Props, 'src' |'name'>{
+interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName
-  id?: string
+  className?: string
 }
 
-export function Icon({ name, ...props }: IconBasePros) {
-  const svgURL = `/icons/${name}.svg`
+export const Icon = memo(({ name, ...props }: IconProps) => {
+  const IconComponent = icons[name]
+  return IconComponent ? <IconComponent {...props} /> : null
+})
 
-  return <InlineSVG src={svgURL} {...props} />
-}
+Icon.displayName = 'Icon'
