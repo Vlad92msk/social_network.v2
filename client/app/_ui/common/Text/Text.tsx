@@ -1,9 +1,40 @@
+import { flow } from 'lodash'
 import { CSSProperties, PropsWithChildren } from 'react'
 import { AdaptiveVariables, createBreakPoint } from '@ui/styles/variables/media'
 import { classNames, makeCn, rem } from '@utils/others'
 
 import styles from './Text.module.scss'
 
+export type TextPlugin = {
+  name: string;
+  process: (content: React.ReactNode) => React.ReactNode;
+}
+export const urlPlugin: TextPlugin = {
+  name: 'url',
+  process: (content) => {
+    if (typeof content !== 'string') return content
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const parts = content.split(urlRegex)
+
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'rgb(13, 205, 252)', textDecoration: 'none' }}
+          >
+            {part}
+          </a>
+        )
+      }
+      return part
+    })
+  },
+}
 export type TextSizes =
   | '80'
   | '54'
@@ -37,14 +68,31 @@ export interface TextCommonProps {
   nowrap?: boolean
   textElipsis?: boolean
   textAlign?: CSSProperties['textAlign']
+  plugins?: TextPlugin[]; // New prop for plugins
 }
 
 const cn = makeCn('Text', styles)
 
 export function Text(props: PropsWithChildren<TextCommonProps>) {
   const {
-    className, fs, letterSpacing, uppercase, nowrap, textAlign, weight, style, textElipsis, as: As = 'span', children, lineHeight, ...rest
+    className,
+    fs,
+    letterSpacing,
+    uppercase,
+    nowrap,
+    textAlign,
+    weight,
+    style,
+    textElipsis,
+    as: As = 'span',
+    children,
+    lineHeight,
+    plugins = [], // Default to empty array
+    ...rest
   } = props
+
+  const processContent = flow(plugins.map((plugin) => plugin.process))
+  const processedChildren = processContent(children)
 
   return (
     <As
@@ -66,7 +114,7 @@ export function Text(props: PropsWithChildren<TextCommonProps>) {
       )}
       {...rest}
     >
-      {children}
+      {processedChildren}
     </As>
   )
 }

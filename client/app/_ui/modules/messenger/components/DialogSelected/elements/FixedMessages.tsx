@@ -6,7 +6,7 @@ import { useBooleanState, useScrollToElement } from '@hooks'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
 import { editorStateFromString, editorStateToPlainText } from '@ui/common/Input/hooks'
-import { Text } from '@ui/common/Text'
+import { Text, urlPlugin } from '@ui/common/Text'
 import { MessengerSelectors } from '@ui/modules/messenger/store/selectors'
 import { dialogsApi } from '../../../../../../../store/api'
 import { cn } from '../cn'
@@ -38,7 +38,7 @@ export function FixedMessages() {
           <div key={id} className={cn('FixedMessagesBox')}>
             <div className={cn('FixedMessagesContent')}>
               <Text weight="bold" fs="12">Закрепленное сообщение</Text>
-              <Text fs="12">{editorStateToPlainText(editorStateFromString(text))}</Text>
+              <Text fs="12" plugins={[urlPlugin]}>{editorStateToPlainText(editorStateFromString(text))}</Text>
             </div>
             <Button
               className={cn('FixedMessagesButtonRemove')}
