@@ -175,6 +175,7 @@ export class DialogService {
         if (query?.remove_participants) {
             const newParticipants = dialog.participants?.filter(({ id }) => !query.remove_participants.includes(id))
             dialog.participants = newParticipants
+            this.eventEmitter.emit(DialogEvents.EXIT_DIALOG, { id, participants: query?.remove_participants})
         }
 
         if (image) {
@@ -358,6 +359,7 @@ export class DialogService {
         dialog.admins = dialog.admins.filter(admin => admin.id !== userId)
         await this.dialogRepository.save(dialog)
         this.eventEmitter.emit(DialogEvents.DIALOG_UPDATED, dialog)
+
 
         return dialog
     }

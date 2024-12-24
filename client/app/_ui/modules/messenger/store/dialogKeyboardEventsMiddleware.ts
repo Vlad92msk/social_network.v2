@@ -17,7 +17,7 @@ export const dialogKeyboardEventsMiddleware: Middleware<{}, RootReducer> = (stor
         const stack = store.getState().messenger.undoStack
 
         const lastUndoAction = stack[stack.length - 1]
-        if (lastUndoAction.type === MessengerSliceActions.setChattingPanelStatus('close').type) {
+        if (lastUndoAction?.type === MessengerSliceActions.setChattingPanelStatus('close').type) {
           store.dispatch(MessengerSliceActions.removeLastUndoAction())
         }
       }

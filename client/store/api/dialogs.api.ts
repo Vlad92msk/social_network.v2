@@ -91,6 +91,9 @@ export const dialogsApi = createApi({
           const handleExitDialog = (exitDialogId: string) => {
             updateCachedData((draft) => {
               const dialogToRemove = draft.find((m) => m.id === exitDialogId)
+              console.clear()
+              console.log('exitDialogId', exitDialogId)
+              console.log('dialogToRemove', dialogToRemove)
               if (dialogToRemove) return without(draft, dialogToRemove)
 
               return draft

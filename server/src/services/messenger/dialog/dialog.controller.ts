@@ -217,10 +217,10 @@ export class DialogController {
               participants: updatedDialog.participants.map(({ id }) => id),
           })
 
-
-      if (files?.image?.[0] || query.image || query.title || query.type) {
+        const lastMessage = await this.dialogService.getLastMessage(id)
+      // if (files?.image?.[0] || query.image || query.title || query.type) {
           // Создаем из него краткую форму
-          const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: updatedDialog }, params)
+          const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: updatedDialog, lastMessage }, params)
 
           // Оповещаем всех участников, что появилось новое сообщение
           this.eventEmitter.emit(
@@ -229,7 +229,7 @@ export class DialogController {
                 data: updatedDialogShort,
                 participants: updatedDialog.participants.map(({ id }) => id),
             })
-      }
+      // }
 
         return updatedDialog
     }
@@ -265,7 +265,10 @@ export class DialogController {
         @Param('user_id') userId: number,
         @RequestParams() params: RequestParams,
     ) {
-        return await this.dialogService.removeParticipant(id, userId, params)
+       const updatedDialog = await this.dialogService.removeParticipant(id, userId, params)
+        this.eventEmitter.emit(DialogEvents.EXIT_DIALOG, {id, participants: [userId]})
+
+        return updatedDialog
     }
 
     @Post(':id/admins/:user_id')

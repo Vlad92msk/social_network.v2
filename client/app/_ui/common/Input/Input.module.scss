@@ -17,7 +17,8 @@
       // Здесь используем :global для стилизации внутренних классов Draft.js
       .DraftEditor-root {
         width: 100%;
-        border-bottom: rem(1) solid var(--Palette--Oceanic--100--opacity-1)!important;
+        padding: rem(15);
+        background: var(--Color-Bcg--variant-4--theme-default);
       }
 
       .DraftEditor-editorContainer {
