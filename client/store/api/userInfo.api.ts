@@ -4,20 +4,7 @@ import { CookieType } from '../../app/types/cookie'
 import { userInfoApiInstance } from '../instance'
 // eslint-disable-next-line import/no-cycle
 import { RootState } from '../store'
-// Тип для результатов запросов
-// type QueryResult<T> = {
-//   data?: T
-//   error?: SerializedError
-//   endpointName: string
-//   fulfilledTimeStamp?: number
-//   isError: boolean
-//   isLoading: boolean
-//   isSuccess: boolean
-//   isUninitialized: boolean
-//   requestId: string
-//   startedTimeStamp?: number
-//   status: 'pending' | 'fulfilled' | 'rejected'
-// }
+
 
 export const userInfoApi = createApi({
   reducerPath: 'API_userInfo',
@@ -109,16 +96,3 @@ export const userInfoApi = createApi({
     }),
   }),
 })
-
-// Типизированные функции-обертки в объекте
-// export const UserInfoApiApi = {
-//
-//   getUsers: (props: Parameters<typeof userInfoApiInstance.getUsers>[0]): Promise<QueryResult<UserInfoDto[]>> => store.dispatch(userInfoApi.endpoints.getUsers.initiate(props)),
-//
-//   updateUser: (props: Parameters<typeof userInfoApiInstance.updateUser>[0]): Promise<QueryResult<UserInfoDto>> => store.dispatch(userInfoApi.endpoints.updateUser.initiate(props)),
-//
-//   getUserById: (props: Parameters<typeof userInfoApiInstance.getUserById>[0]): Promise<QueryResult<UserInfoDto>> => store.dispatch(userInfoApi.endpoints.getUserById.initiate(props)),
-// }
-
-// Экспорт типов для использования в других частях приложения
-// export type UserInfoApiApiType = typeof UserInfoApiApi

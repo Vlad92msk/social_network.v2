@@ -4,6 +4,11 @@ import { UserInfoDto } from '../../../../../../swagger/userInfo/interfaces-userI
 import { sliceBuilder } from '../../../../../store/utils/other'
 import { UserStatus } from '../../../../types/user-status'
 
+export enum SelectDialogType {
+  PRIVATE ='private',
+  PUBLIC = 'public'
+}
+
 export interface MessengerSliceState {
   isConnected: boolean
   error: string | null
@@ -11,6 +16,8 @@ export interface MessengerSliceState {
   drawerStatus: 'open' | 'close'
   chatingPanelStatus: 'open' | 'close'
   infoPanelStatus: 'open' | 'close'
+  selectType: SelectDialogType
+
   // ID открытого диалога
   currentDialogId: string
   // Пользователь, который выбран для диалога (с которым еще нет диалога)
@@ -31,6 +38,8 @@ export const messengerInitialState: MessengerSliceState = {
   currentDialogId: '',
   targetNewUserToDialog: undefined,
   currentDialog: undefined,
+
+  selectType: SelectDialogType.PUBLIC,
 
   chatingPanelStatus: 'close',
   drawerStatus: 'open',
@@ -55,6 +64,7 @@ export const { actions: MessengerSliceActions, reducer: messengerReducer } = sli
       setTargetUserToDialog: setState<MessengerSliceState, UserInfoDto | undefined>('targetNewUserToDialog'),
 
       setShortDialogs: setState<MessengerSliceState, DialogShortDto[]>('shortDialogs'),
+      setSelectType: setState<MessengerSliceState, SelectDialogType>('selectType'),
 
       setDialogHistory: (state, action: PayloadAction<{ dialog: DialogEntity, activeParticipants: number[] }>) => {
         const { dialog, activeParticipants } = action.payload

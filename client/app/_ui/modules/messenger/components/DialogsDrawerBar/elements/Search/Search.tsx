@@ -9,7 +9,6 @@ import { Icon } from 'app/_ui/common/Icon'
 import { Input, InputGroup } from 'app/_ui/common/Input'
 import style from './Search.module.scss'
 import { userInfoApi } from '../../../../../../../../store/api'
-import { useMessageStore } from '../../../../store'
 import { MessengerSliceActions } from '../../../../store/messenger.slice'
 import { Listitem } from '../Listitem'
 
@@ -22,7 +21,6 @@ interface SearchProps {
 export function Search(props: SearchProps) {
   const { className } = props
   const dispatch = useDispatch()
-  const set = useMessageStore((state) => state.setFilter)
 
   const [isFocus, setFocused] = useState(false)
 
@@ -38,6 +36,8 @@ export function Search(props: SearchProps) {
     onSearch: (value) => {
       if (value?.length) {
         onFindUsersByName({ name: value })
+      } else {
+        setFocused(false)
       }
     },
   })
@@ -65,7 +65,6 @@ export function Search(props: SearchProps) {
           placeholder="Поиск"
           onFocus={() => setFocused(true)}
           onChange={(e) => {
-            set(e.currentTarget.value)
             handleChange(e.currentTarget.value)
           }}
         />

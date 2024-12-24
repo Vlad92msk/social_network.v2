@@ -5,8 +5,8 @@ import { classNames } from '@utils/others'
 import { Image } from 'app/_ui/common/Image'
 import { Text } from 'app/_ui/common/Text'
 import { cn } from './cn'
+import { SelectDialogType } from '../../../../store/messenger.slice'
 import { MessengerSelectors } from '../../../../store/selectors'
-import { SelectDialogType } from '../../../../store/slices/dialogList.slice'
 
 interface ContactInfoProps {
   className?: string

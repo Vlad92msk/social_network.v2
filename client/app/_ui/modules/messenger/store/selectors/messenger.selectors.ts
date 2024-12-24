@@ -9,6 +9,7 @@ export const selectIsConnected = createSelector(selectSelf, (messenger) => messe
 export const selectChatingPanelStatus = createSelector(selectSelf, (messenger) => messenger.chatingPanelStatus)
 export const selectDrawerStatus = createSelector(selectSelf, (messenger) => messenger.drawerStatus)
 export const selectInfoPanelStatus = createSelector(selectSelf, (messenger) => messenger.infoPanelStatus)
+export const selectSelectType = createSelector(selectSelf, (messenger) => messenger.selectType)
 
 export const selectCurrentDialogId = createSelector(selectSelf, (messenger) => messenger.currentDialogId)
 export const selectActiveConference = createSelector(selectSelf, (messenger) => messenger.activeConference)

@@ -91,9 +91,6 @@ export const dialogsApi = createApi({
           const handleExitDialog = (exitDialogId: string) => {
             updateCachedData((draft) => {
               const dialogToRemove = draft.find((m) => m.id === exitDialogId)
-              console.clear()
-              console.log('exitDialogId', exitDialogId)
-              console.log('dialogToRemove', dialogToRemove)
               if (dialogToRemove) return without(draft, dialogToRemove)
 
               return draft
@@ -265,82 +262,3 @@ export const dialogsApi = createApi({
     }),
   }),
 })
-
-// Типизированные функции-обертки в объекте
-// export const DialogsApiApi = {
-//
-//   create: (props: Parameters<typeof dialogsApiInstance.create>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.create.initiate(props)),
-//
-//   findAll: (props: Parameters<typeof dialogsApiInstance.findAll>[0]): Promise<QueryResult<DialogEntity[]>> =>
-//     store.dispatch(dialogsApi.endpoints.findAll.initiate(props)),
-//
-//   findOne: (props: Parameters<typeof dialogsApiInstance.findOne>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.findOne.initiate(props)),
-//
-//   update: (props: Parameters<typeof dialogsApiInstance.update>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.update.initiate(props)),
-//
-//   remove: (props: Parameters<typeof dialogsApiInstance.remove>[0]): Promise<QueryResult<any>> =>
-//     store.dispatch(dialogsApi.endpoints.remove.initiate(props)),
-//
-//   addParticipant: (props: Parameters<typeof dialogsApiInstance.addParticipant>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.addParticipant.initiate(props)),
-//
-//   removeParticipant: (props: Parameters<typeof dialogsApiInstance.removeParticipant>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.removeParticipant.initiate(props)),
-//
-//   addAdmin: (props: Parameters<typeof dialogsApiInstance.addAdmin>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.addAdmin.initiate(props)),
-//
-//   removeAdmin: (props: Parameters<typeof dialogsApiInstance.removeAdmin>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.removeAdmin.initiate(props)),
-//
-//   addFixedMessage: (props: Parameters<typeof dialogsApiInstance.addFixedMessage>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.addFixedMessage.initiate(props)),
-//
-//   removeFixedMessage: (props: Parameters<typeof dialogsApiInstance.removeFixedMessage>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.removeFixedMessage.initiate(props)),
-//
-//   getUnreadMessagesCount: (props: Parameters<typeof dialogsApiInstance.getUnreadMessagesCount>[0]): Promise<QueryResult<number>> =>
-//     store.dispatch(dialogsApi.endpoints.getUnreadMessagesCount.initiate(props)),
-//
-//   markMessagesAsRead: (props: Parameters<typeof dialogsApiInstance.markMessagesAsRead>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.markMessagesAsRead.initiate(props)),
-//
-//   getAllMediaForDialog: (props: Parameters<typeof dialogsApiInstance.getAllMediaForDialog>[0]): Promise<QueryResult<object[]>> =>
-//     store.dispatch(dialogsApi.endpoints.getAllMediaForDialog.initiate(props)),
-//
-//   updateDialogImage: (props: Parameters<typeof dialogsApiInstance.updateDialogImage>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.updateDialogImage.initiate(props)),
-//
-//   updateDialogOptions: (props: Parameters<typeof dialogsApiInstance.updateDialogOptions>[0]): Promise<QueryResult<DialogEntity>> =>
-//     store.dispatch(dialogsApi.endpoints.updateDialogOptions.initiate(props)),
-//
-//   getDialogsByParticipant: (props: Parameters<typeof dialogsApiInstance.getDialogsByParticipant>[0]): Promise<QueryResult<DialogEntity[]>> =>
-//     store.dispatch(dialogsApi.endpoints.getDialogsByParticipant.initiate(props)),
-//
-//   getDialogParticipants: (props: Parameters<typeof dialogsApiInstance.getDialogParticipants>[0]): Promise<QueryResult<object[]>> =>
-//     store.dispatch(dialogsApi.endpoints.getDialogParticipants.initiate(props)),
-//
-//   getDialogAdmins: (props: Parameters<typeof dialogsApiInstance.getDialogAdmins>[0]): Promise<QueryResult<object[]>> =>
-//     store.dispatch(dialogsApi.endpoints.getDialogAdmins.initiate(props)),
-//
-//   leaveDialog: (props: Parameters<typeof dialogsApiInstance.leaveDialog>[0]): Promise<QueryResult<any>> =>
-//     store.dispatch(dialogsApi.endpoints.leaveDialog.initiate(props)),
-//
-//   createVideoConference: (props: Parameters<typeof dialogsApiInstance.createVideoConference>[0]): Promise<QueryResult<string>> =>
-//     store.dispatch(dialogsApi.endpoints.createVideoConference.initiate(props)),
-//
-//   findAllShortDialogs: (props: Parameters<typeof dialogsApiInstance.findAllShortDialogs>[0]): Promise<QueryResult<DialogShortDto[]>> =>
-//     store.dispatch(dialogsApi.endpoints.findAllShortDialogs.initiate(props)),
-//
-//   findOneShortDialog: (props: Parameters<typeof dialogsApiInstance.findOneShortDialog>[0]): Promise<QueryResult<DialogShortDto>> =>
-//     store.dispatch(dialogsApi.endpoints.findOneShortDialog.initiate(props)),
-//
-//   findByUserShortDialog: (props: Parameters<typeof dialogsApiInstance.findByUserShortDialog>[0]): Promise<QueryResult<DialogShortDto[]>> =>
-//     store.dispatch(dialogsApi.endpoints.findByUserShortDialog.initiate(props))
-// };
-
-// Экспорт типов для использования в других частях приложения
-// export type DialogsApiApiType = typeof DialogsApiApi

@@ -18,13 +18,14 @@
 
 .DialogList {
   $this: &;
-  height: 100%;
+  max-height: rem(500);
+  flex-grow: 1;
   gap: rem(10);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   scroll-behavior: smooth;
-  @include hideScrollbar();
+  @include scrollbarMini();
   border-bottom-left-radius: calc(#{$messenger--open--border-radius} / 1.5);
 
   &-Contact {
@@ -82,10 +83,12 @@
     }
     &LastContactName {
       width: 100%;
+      color: var(--Color-Text--variant-1--theme-default);
     }
     &LastMessage {
       width: 100%;
       position: relative;
+      color: var(--Color-Text--variant-2--theme-default);
     }
 
     &HoverActions {
