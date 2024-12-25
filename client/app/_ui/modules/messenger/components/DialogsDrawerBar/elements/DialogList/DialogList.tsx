@@ -36,7 +36,6 @@ export function DialogList(props: DialogListProps) {
   const [onRemoveDialog] = dialogsApi.useRemoveMutation()
   const [onLeaveDialog] = dialogsApi.useLeaveDialogMutation()
 
-  console.log('viewDialogList', viewDialogList)
   return (
     <div className={classNames(cn({ status: drawerStatus }), className)}>
       {/* <Text fs="12">Мои диалоги</Text> */}
@@ -53,9 +52,9 @@ export function DialogList(props: DialogListProps) {
           </div>
           <div className={cn('ContactContentWrapper')}>
             {title && (
-              <Text className={cn('ContactName')} fs="14" weight="bold" textElipsis>{title}</Text>
+              <Text className={cn('ContactName')} fs="12" weight="medium" textElipsis letterSpacing={0.1}>{title}</Text>
             )}
-            <Text className={cn('ContactLastContactName')} fs="12" weight="medium" textElipsis>{last_message?.author?.name}</Text>
+            <Text className={cn('ContactLastContactName')} fs="12" weight="bold" textElipsis>{last_message?.author?.name}</Text>
             <Text className={cn('ContactLastMessage')} fs="12" textElipsis>
               {editorStateToPlainText(editorStateFromString(last_message?.text))}
             </Text>

@@ -16,9 +16,9 @@ export function ReduxProvider(props: PropsWithChildren<Partial<RootReducer>>) {
 
   return (
     <Provider store={storeRef.current}>
-      <PersistGate loading={null} persistor={persistor}>
+      {/* <PersistGate loading={null} persistor={persistor}> */}
         {children}
-      </PersistGate>
+      {/* </PersistGate> */}
     </Provider>
   )
 }

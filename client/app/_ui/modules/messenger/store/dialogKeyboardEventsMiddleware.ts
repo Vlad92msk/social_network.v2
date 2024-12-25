@@ -1,6 +1,6 @@
 import { AnyAction, Middleware } from '@reduxjs/toolkit'
-import { RootReducer } from '../../../../../store/root.reducer'
 import { MessengerSliceActions } from './messenger.slice'
+import { RootReducer } from '../../../../../store/root.reducer'
 
 /**
  * Обработка событий клавиатуры для последовательной отмены действий по клавише Escape
@@ -51,13 +51,16 @@ export const dialogKeyboardEventsMiddleware: Middleware<{}, RootReducer> = (stor
       const state = store.getState().messenger
       const lastUndoAction = state.undoStack[state.undoStack.length - 1]
       if (lastUndoAction) {
-        // Выполняем последнее действие
-        store.dispatch(lastUndoAction)
+        // Создаем новый action с теми же параметрами
+        store.dispatch({
+          type: lastUndoAction.type,
+          payload: lastUndoAction.payload,
+        })
       }
       break
     }
 
-    default: return next(action)
+    default: break
   }
 
   return next(action)

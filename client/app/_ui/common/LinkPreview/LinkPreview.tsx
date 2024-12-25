@@ -12,6 +12,8 @@ export function LinkPreview(props: LinkPreviewProps) {
   const { url, onRemove } = props
   const { previewData, isLoading } = useLinkPreview(url)
 
+  console.log('isLoading', isLoading)
+  console.log('previewData', previewData)
   if (isLoading || !previewData) return null
 
   return (

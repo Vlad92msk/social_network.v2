@@ -40,6 +40,7 @@ export function Text(props: TextProps) {
 
   useReset('text', text)
 
+  console.log('link', link)
   return (
     <div
       className={classNames(cn('Text'), className)}

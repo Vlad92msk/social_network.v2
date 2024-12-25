@@ -46,7 +46,7 @@ export const rootInitialState: Partial<RootReducer> = {
 export const persistedReducer = persistReducer({
   key: 'root',
   storage: localforage,
-  blacklist: ['conference', 'profile'],
+  // blacklist: ['conference', 'profile'],
   // Указываем, какие reducers хотим сохранять
   whitelist: [
     tagsApi.reducerPath,
