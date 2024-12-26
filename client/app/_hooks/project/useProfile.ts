@@ -6,6 +6,5 @@ export const useProfile = () => {
   const session = useSession()
   const { profile } = useSelector(ProfileSelectors.selectProfile)
 
-  console.log(profile)
   return { profile, session, isLoading: session.status === 'loading' }
 }
