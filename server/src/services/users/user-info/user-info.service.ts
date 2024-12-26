@@ -104,20 +104,19 @@ export class UserInfoService {
     async updateUserInfo(data: UpdateUserInfo, params: RequestParams): Promise<UserInfo> {
         const findUser = await this.userInfoRepository.findOne({
             where: { id: params.user_info_id },
+            relations: ['about_info'], // Явно загружаем about_info
         })
 
         if (!findUser) throw new Error('Пользователь не найден')
 
+        // Загрузка изображений
         const uploadImages = pick(data, ['profileImage', 'bannerImage'])
-
-        // Загружаем изображения если они есть
         if (size(uploadImages)) {
             const filesToUpload = pickBy(uploadImages, (file) => !isEmpty(file))
-
             const uploadedFiles = await this.mediaInfoService.uploadFiles(
-                values(filesToUpload),
-                params.user_info_id,
-                MediaEntitySourceType.USER_INFO
+              values(filesToUpload),
+              params.user_info_id,
+              MediaEntitySourceType.USER_INFO
             )
 
             forIn(filesToUpload, (file, key) => {
@@ -130,39 +129,31 @@ export class UserInfoService {
             })
         }
 
-        // Если обновляем фото профиля
+        // Обновление изображений по ID
         if (data.profile_image_id) {
             const { meta } = await this.mediaInfoService.getFileById(data.profile_image_id)
             findUser.profile_image = meta.src
         }
-        // Если обновляем фото баннера
         if (data.banner_image_id) {
+            findUser.about_info = findUser.about_info || new UserAbout()
             const { meta } = await this.mediaInfoService.getFileById(data.banner_image_id)
             findUser.about_info.banner_image = meta.src
         }
 
-        // Обновляем все поля текущей таблицы кроме изображений
+        // Обновление основных полей
         const updateParams = omit(
-            data,
-            ['profileImage', 'bannerImage', 'about_info', 'profile_image_id']
+          data,
+          ['profileImage', 'bannerImage', 'about_info', 'profile_image_id', 'banner_image_id']
         )
-
-        if (size(updateParams)){
-            forIn(updateParams, (value, key) => {
-                if (value !== undefined) {
-                    findUser[key] = value
-                }
-            })
+        if (size(updateParams)) {
+            Object.assign(findUser, pickBy(updateParams, value => value !== undefined))
         }
 
-        // Обновляем все поля вложенной таблицы
+        // Обновление about_info
         if (data.about_info) {
             findUser.about_info = findUser.about_info || new UserAbout()
-            forIn(data.about_info, (value, key) => {
-                if (value !== undefined) {
-                    findUser['about_info'][key] = value
-                }
-            })
+            // Обновляем только переданные поля, сохраняя существующие значения
+            Object.assign(findUser.about_info, pickBy(data.about_info, value => value !== undefined))
         }
 
         return await this.userInfoRepository.save(findUser)

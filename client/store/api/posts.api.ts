@@ -1,24 +1,9 @@
-import { SerializedError } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { set, without } from 'lodash'
+import { without } from 'lodash'
 import { PostEntity, PostResponseDto } from '../../../swagger/posts/interfaces-posts'
 import { CookieType } from '../../app/types/cookie'
 import { postsApiInstance } from '../instance'
-import { RootState, store } from '../store'
-// Тип для результатов запросов
-type QueryResult<T> = {
-  data?: T
-  error?: SerializedError
-  endpointName: string
-  fulfilledTimeStamp?: number
-  isError: boolean
-  isLoading: boolean
-  isSuccess: boolean
-  isUninitialized: boolean
-  requestId: string
-  startedTimeStamp?: number
-  status: 'pending' | 'fulfilled' | 'rejected'
-}
+import { RootState } from '../store'
 
 export const postsApi = createApi({
   reducerPath: 'API_posts',
@@ -154,19 +139,28 @@ export const postsApi = createApi({
         const { url, init } = postsApiInstance.togglePinPostInit(params)
         return { url, ...init }
       },
-      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ id }, { dispatch, queryFulfilled, getState }) {
+        const state = getState() as RootState
+        const userInfoId = state.profile?.profile?.user_info?.public_id
+
+        // Обновляем кэш для текущего списка постов
         const patchResult = dispatch(
-          postsApi.util.updateQueryData('findAll', {}, (draft) => {
-            const index = draft.findIndex((post) => post.id === id)
-            if (index !== -1) {
-              draft[index] = ({
-                ...draft[index],
-                pinned: !draft[index].pinned,
-              })
+          postsApi.util.updateQueryData('findAll', { owner_public_id: userInfoId }, (draft) => {
+            const post = draft.find((post) => post.id === id)
+            if (post) {
+              post.pinned = !post.pinned
+
+              // Если пост закрепляется, перемещаем его в начало списка
+              if (post.pinned) {
+                const index = draft.indexOf(post)
+                draft.splice(index, 1)
+                draft.unshift(post)
+              }
             }
-            return draft // Возвращаем исходный массив, если пост не найден
+            return draft
           }),
         )
+
         try {
           await queryFulfilled
         } catch {
@@ -253,50 +247,3 @@ export const postsApi = createApi({
     }),
   }),
 })
-
-// Типизированные функции-обертки в объекте
-export const PostsApiApi = {
-// @ts-ignore
-  create: (props: Parameters<typeof postsApiInstance.create>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.create.initiate(props)),
-
-  findAll: (props: Parameters<typeof postsApiInstance.findAll>[0]): Promise<QueryResult<PostResponseDto[]>> => store.dispatch(postsApi.endpoints.findAll.initiate(props)),
-
-  findOne: (props: Parameters<typeof postsApiInstance.findOne>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.findOne.initiate(props)),
-
-  update: (props: Parameters<typeof postsApiInstance.update>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.update.initiate(props)),
-
-  remove: (props: Parameters<typeof postsApiInstance.remove>[0]): Promise<QueryResult<any>> => store.dispatch(postsApi.endpoints.remove.initiate(props)),
-
-  createRepost: (props: Parameters<typeof postsApiInstance.createRepost>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.createRepost.initiate(props)),
-
-  createReply: (props: Parameters<typeof postsApiInstance.createReply>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.createReply.initiate(props)),
-
-  getPinnedPosts: (props: Parameters<typeof postsApiInstance.getPinnedPosts>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getPinnedPosts.initiate(props)),
-
-  togglePinPost: (props: Parameters<typeof postsApiInstance.togglePinPost>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.togglePinPost.initiate(props)),
-
-  updatePostVisibility: (props: Parameters<typeof postsApiInstance.updatePostVisibility>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.updatePostVisibility.initiate(props)),
-
-  createForwardedPost: (props: Parameters<typeof postsApiInstance.createForwardedPost>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.createForwardedPost.initiate(props)),
-
-  getAllMediaForPost: (props: Parameters<typeof postsApiInstance.getAllMediaForPost>[0]): Promise<QueryResult<object[]>> => store.dispatch(postsApi.endpoints.getAllMediaForPost.initiate(props)),
-
-  updatePostLocation: (props: Parameters<typeof postsApiInstance.updatePostLocation>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.updatePostLocation.initiate(props)),
-
-  getPostsByLocation: (props: Parameters<typeof postsApiInstance.getPostsByLocation>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getPostsByLocation.initiate(props)),
-
-  getRepostsOfPost: (props: Parameters<typeof postsApiInstance.getRepostsOfPost>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getRepostsOfPost.initiate(props)),
-
-  getRepliesOfPost: (props: Parameters<typeof postsApiInstance.getRepliesOfPost>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getRepliesOfPost.initiate(props)),
-
-  getForwardsOfPost: (props: Parameters<typeof postsApiInstance.getForwardsOfPost>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getForwardsOfPost.initiate(props)),
-
-  getAllRelatedPosts: (props: Parameters<typeof postsApiInstance.getAllRelatedPosts>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getAllRelatedPosts.initiate(props)),
-
-  getReplyChain: (props: Parameters<typeof postsApiInstance.getReplyChain>[0]): Promise<QueryResult<PostEntity[]>> => store.dispatch(postsApi.endpoints.getReplyChain.initiate(props)),
-
-  incrementViewCount: (props: Parameters<typeof postsApiInstance.incrementViewCount>[0]): Promise<QueryResult<PostEntity>> => store.dispatch(postsApi.endpoints.incrementViewCount.initiate(props)),
-}
-
-// Экспорт типов для использования в других частях приложения
-export type PostsApiApiType = typeof PostsApiApi

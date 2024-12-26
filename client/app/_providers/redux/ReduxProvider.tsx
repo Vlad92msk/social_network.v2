@@ -4,7 +4,7 @@ import { PropsWithChildren, useRef } from 'react'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { RootReducer } from '../../../store/root.reducer'
-import { AppStore, makeStore, persistor } from '../../../store/store'
+import { AppStore, makeStore } from '../../../store/store'
 
 export function ReduxProvider(props: PropsWithChildren<Partial<RootReducer>>) {
   const { children, ...preloadedState } = props

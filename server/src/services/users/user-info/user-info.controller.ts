@@ -98,6 +98,7 @@ export class UserInfoController {
             };
 
             const user = await this.userService.updateUserInfo(userData, params);
+            console.log('user__', user)
             return user;
         } catch (error) {
             console.error('Error in updateUser:', error);

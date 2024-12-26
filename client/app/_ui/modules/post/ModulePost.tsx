@@ -40,6 +40,7 @@ export function ModulePost() {
     submit({ body: formData })
   }
 
+  console.log('data', data)
   return (
     <PostsList
       title="Мои публикации"

@@ -277,12 +277,21 @@ $padding: rem(6);
       max-height: 80vh;
       display: flex;
       gap: rem(10);
+      padding: $paddings--medium;
       flex-wrap: wrap;
       overflow-y: auto;
+      background: var(--Color-Bcg--variant-4--theme-default);
 
       & > * {
+        aspect-ratio: 16 / 9;
+        max-width: 35vw;
         width: 100%;
         height: 100%;
+      }
+
+      img {
+        object-fit: contain;
+
       }
     }
 
