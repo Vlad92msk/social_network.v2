@@ -1,6 +1,8 @@
 'use client'
 
-import { ComponentType, createContext, PropsWithChildren, use, useRef, useSyncExternalStore } from 'react'
+import {
+  ComponentType, createContext, PropsWithChildren, use, useEffect, useRef, useSyncExternalStore,
+} from 'react'
 import { DeepPartial } from '../tsUtils'
 
 export interface Options<Store> {
@@ -19,7 +21,6 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     const subscribers = useRef(new Set<VoidFunction>())
 
     const get = () => store.current
-
     const set = (update: (s: Store) => Partial<Store>) => {
       const newState = { ...store.current, ...update(store.current) }
       if (!Object.is(store.current, newState)) {
@@ -27,21 +28,24 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
         subscribers.current.forEach((callback) => callback())
       }
     }
-
     const subscribe = (callback: VoidFunction) => {
       subscribers.current.add(callback)
       return () => subscribers.current.delete(callback)
     }
-
     return { get, set, subscribe }
   }
 
   function ContextProvider({ children, initialState }: PropsWithChildren<{ initialState?: Partial<Store> }>) {
     const storeData = useStoreData()
-    if (initialState) {
-      storeData.set(() => initialState)
-    }
-    return <StoreContext value={storeData}>{children}</StoreContext>
+
+    // Используем useEffect для установки начального состояния
+    useEffect(() => {
+      if (initialState) {
+        storeData.set(() => initialState)
+      }
+    }, []) // Пустой массив зависимостей для выполнения только при монтировании
+
+    return <StoreContext.Provider value={storeData}>{children}</StoreContext.Provider>
   }
 
   // Для React 18 и новее
@@ -63,7 +67,7 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     return store.set
   }
 
-  const contextWrapper = <SelfComponentProps, PublicContextProps extends Partial<Store>> (
+  const contextWrapper = <SelfComponentProps, PublicContextProps extends Partial<Store>>(
     Module: ComponentType<SelfComponentProps & { contextProps?: PublicContextProps }>,
   ) => function ({ contextProps, ...props }: SelfComponentProps & { contextProps?: PublicContextProps }) {
       return (

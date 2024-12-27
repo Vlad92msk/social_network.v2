@@ -5,12 +5,10 @@ const userSettings = {
 export type UserSettings = typeof userSettings
 
 interface RouteQueryParams {
-  params: { userId: string }
+  params: Promise<{ userId: string }>
 }
 
 export async function GET(req: Request, queryParams: RouteQueryParams) {
-  const providerData = queryParams.params.userId
-
   const success = true // Это должно определяться на основе логики обработки providerData
 
   if (success) {

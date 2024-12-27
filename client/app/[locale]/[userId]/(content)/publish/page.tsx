@@ -1,11 +1,11 @@
 import { Locale } from '@middlewares/variables'
 
 interface UserPageProps {
-  params: {
+  params: Promise<{
     locale: Locale
     userId: string
-  }
-  searchParams: {}
+  }>
+  searchParams: Promise<{}>
 }
 
 export default async function PublishContent(props: UserPageProps) {

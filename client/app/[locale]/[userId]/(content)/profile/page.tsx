@@ -8,11 +8,11 @@ import style from './Page.module.scss'
 const cn = makeCn('Page', style)
 
 export interface UserPageProps {
-  params: {
+  params: Promise<{
     locale: Locale
     userId: string
-  }
-  searchParams: {}
+  }>
+  searchParams: Promise<{}>
 }
 
 export default async function ProfileContent(props: UserPageProps) {

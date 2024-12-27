@@ -12,7 +12,9 @@ import { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations } from 'next-intl/server'
 
-export async function generateMetadata({ params: { locale } }) {
+export async function generateMetadata(props) {
+  const { locale } = await props.params
+
   const t = await getTranslations({ locale, namespace: 'Metadata' })
   const meta: Metadata = {
     title: t('title'),
@@ -23,27 +25,32 @@ export async function generateMetadata({ params: { locale } }) {
 
 interface RootLayoutProps {
   children: React.ReactNode
-  params: { locale: Locale }
+  params: Promise<{ locale: Locale }>
 }
 export default async function RootLayout(props: RootLayoutProps) {
-  const { children, params } = props
-  const messages = await getMessages()
+  const { children } = props
+  // Дожидаемся разрешения params перед использованием
+  const resolvedParams = await props.params
+  const { locale } = resolvedParams
+
+  // Теперь передаем разрешенную локаль в getMessages
+  const messages = await getMessages({ locale })
   const profile = await getServerProfile()
 
   return (
     <NextIntlClientProvider messages={messages}>
       <ThemeProvider contextProps={{ theme: 'default' }}>
-      <Html locale={params.locale}>
-        <Body>
-          <SessionProvider>
-            <ReduxProvider profile={{ profile }}>
+        <Html locale={locale}>
+          <Body>
+            <SessionProvider>
+              <ReduxProvider profile={{ profile }}>
                 <NotificationsProvider>
                   {children}
                 </NotificationsProvider>
-            </ReduxProvider>
-          </SessionProvider>
-        </Body>
-      </Html>
+              </ReduxProvider>
+            </SessionProvider>
+          </Body>
+        </Html>
       </ThemeProvider>
     </NextIntlClientProvider>
   )

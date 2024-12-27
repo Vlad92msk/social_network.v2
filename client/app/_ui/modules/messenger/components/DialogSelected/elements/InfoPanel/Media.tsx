@@ -31,7 +31,7 @@ export function Media() {
         </TabsList>
         <TabPanel className={cn('MediaTabPanel')} value={0}>
           {image.map(({ meta }) => (
-            <img src={meta.src} alt={meta.name} style={{ maxHeight: 'auto', height: 'auto' }} />
+            <img key={meta.src} src={meta.src} alt={meta.name} style={{ maxHeight: 'auto', height: 'auto' }} />
           ))}
         </TabPanel>
         <TabPanel className={cn('MediaTabPanel')} value={1}>
@@ -52,7 +52,7 @@ export function Media() {
         </TabPanel>
         <TabPanel className={cn('MediaTabPanel')} value={3}>
           {video.map(({ meta }) => (
-            <video controls>
+            <video key={meta.src} controls>
               <source src={meta.src} type={meta.mimeType} />
               Your browser does not support the video element.
             </video>
@@ -61,7 +61,7 @@ export function Media() {
 
         <TabPanel className={cn('MediaTabPanel')} value={4}>
           {other.map((data) => (
-            <div className={cn('MediaContainerMediaOtherItem')}>
+            <div key={data.meta.src} className={cn('MediaContainerMediaOtherItem')}>
               <ButtonDownload file={data} />
             </div>
           ))}

@@ -6,22 +6,25 @@ import { Locale } from '@middlewares/variables'
 import { Messenger } from '@ui/modules/messenger'
 import { getServerProfile } from '@utils/server'
 import { ContentArea, Layout, MainMenu, SecondMenu } from './_components'
-import { getDialogsShortQuery } from './_serverQueries/getDialogsShortQuery.query'
 import { getUserQuery } from './_serverQueries/getUser.query'
 import { CookieType } from '../../types/cookie'
 
 interface UserPageProps {
-  params: {
+  params: Promise<{
     locale: Locale
     userId: string
-  }
-  searchParams: {}
+  }>
+  searchParams: Promise<{}>
   children: React.ReactNode
 }
 
 export default async function UserPage(props: UserPageProps) {
-  const { params: { userId, locale }, children } = props
-  const cookieStore = cookies()
+  // Получаем params с помощью await
+  const params = await props.params
+  const { userId, locale } = params
+  const { children } = props
+
+  const cookieStore = await cookies()
 
   const { layoutVariant } = await getSettings(userId)
   const profile = await getServerProfile()
@@ -32,10 +35,6 @@ export default async function UserPage(props: UserPageProps) {
     profileIdCookie: cookieStore.get(CookieType.USER_PROFILE_ID),
   })
 
-  /**
-   * Если public_id пользователя из URL не относится к зарегистрированным пользователям
-   * то редиректим пользователя на его страничку
-   */
   if (!checkedUser) redirect(`/${locale}/${profile?.user_info.public_id}/profile`)
 
   return (
@@ -49,10 +48,9 @@ export default async function UserPage(props: UserPageProps) {
             {children}
             <Suspense fallback={<div>.........Loading..........</div>}>
               <Messenger
-                params={props.params}
-                searchParams={props.searchParams}
+                params={params} // Теперь передаем уже разрешенные params
+                searchParams={(await props.searchParams)}
                 profile={profile}
-                // dialogs={data}
               />
             </Suspense>
           </ContentArea>
