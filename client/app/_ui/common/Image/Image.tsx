@@ -3,9 +3,6 @@
 import NextImage, { ImageProps as NextImageProps } from 'next/image'
 import { MediaBreakKeys, mediaBreakpoints } from '@ui/styles/variables/media'
 
-// Импортируем изображение для blur по умолчанию
-import defaultBlurImage from "app/_assets/images/base/blur_img.webp"
-
 export type Test = Partial<Record<MediaBreakKeys, string>> | string | undefined
 
 export interface ImageCommonProps extends Omit<NextImageProps, 'src' | 'loading' | 'sizes'> {
@@ -37,7 +34,7 @@ export function Image(props: ImageCommonProps) {
   const {
     src,
     pictureClassName,
-    blurDataURL = defaultBlurImage.src, // Используем импортированное изображение
+    blurDataURL = '/images/base/blur_img.webp', // Используем импортированное изображение
     placeholder = 'blur',
     sizes,
     srcSet,

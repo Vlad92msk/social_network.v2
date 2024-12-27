@@ -1,72 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Session } from 'next-auth'
 import { authMiddleware } from '@middlewares/authMiddleware'
 import { intlMiddleware } from '@middlewares/intlMiddleware'
-import { profileApiInstance } from './store/instance'
 import { CookieType } from './app/types/cookie'
 import { auth } from './auth'
+import { profileApiInstance } from './store/instance'
 
+// Helpers
+const createCookieOptions = (maxAge: number) => ({
+  maxAge,
+  path: '/',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+})
+
+const calculateMaxAge = (expiresDate: Date): number => Math.floor((expiresDate.getTime() - Date.now()) / 1000)
+
+// Middlewares
+const handleIntl = (request: NextRequest) => {
+  const response = intlMiddleware(request)
+  return response || NextResponse.next()
+}
+
+const handleAuth = async (request: NextRequest, session: Session | null) => (
+  authMiddleware(request, session)
+)
+
+const attachProfileCookies = async (response: NextResponse, session: Session, maxAge: number) => {
+  if (!session?.user?.email) return
+
+  const profile = await profileApiInstance
+    .getProfileInfo({ body: { email: session.user.email } })
+    .then((res) => res)
+
+  if (!profile) return
+
+  const cookieOptions = createCookieOptions(maxAge)
+
+  response.cookies.set(CookieType.USER_PROFILE_ID, String(profile.id), cookieOptions)
+  response.cookies.set(CookieType.USER_INFO_ID, String(profile.user_info.id), cookieOptions)
+
+  return profile.user_info.public_id
+}
+
+const handleUUID = async (request: NextRequest, userPublicId: string | undefined) => {
+  const { pathname } = request.nextUrl
+  const [, locale, uuid] = pathname.split('/')
+
+  if (uuid === 'undefined' || uuid === '') {
+    if (userPublicId) {
+      return NextResponse.redirect(
+        new URL(`/${locale}/${userPublicId}/profile`, request.url),
+      )
+    }
+    console.log('UUID не найден ни в URL, ни в сессии')
+  }
+  return null
+}
+
+// Main middleware
 export default auth(async (request: NextRequest) => {
   try {
     console.log(`Обработка запроса на путь: ${request.nextUrl.pathname}`)
 
-    // Применяем intlMiddleware
-    let response = intlMiddleware(request)
-    if (!response) {
-      response = NextResponse.next()
-    }
+    // 1. Обработка интернационализации
+    const response = handleIntl(request)
 
-    // Получаем сессию один раз
+    // 2. Получение и проверка сессии
     const session = await auth()
-
-    // Применяем authMiddleware, передавая сессию
-    const authResponse = await authMiddleware(request, session)
-
-    let userPublicId
-
-    if (session) {
-      // Преобразуем expires в maxAge
-      const expiresDate = new Date(session.expires)
-      const maxAge = Math.floor((expiresDate.getTime() - Date.now()) / 1000) // конвертируем в секунды
-
-      // @ts-ignore
-      const profile = await profileApiInstance.getProfileInfo({ body: { email: session?.user?.email } }).then((response) => response)
-      userPublicId = profile?.user_info?.public_id
-
-      // Добавляем cookie
-      response.cookies.set(CookieType.USER_PROFILE_ID, String(profile?.id), {
-        maxAge,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      })
-
-      response.cookies.set(CookieType.USER_INFO_ID, String(profile?.user_info?.id), {
-        maxAge,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      })
-    }
-
+    const authResponse = await handleAuth(request, session)
     if (authResponse) return authResponse
-    const { 1: locale, 2: uuid } = request.nextUrl.pathname.split('/')
 
-    /**
-     * Если в URL нет UUID пользователя - устанавливаем его из авторизации
-     * В дальнейшем нужно расширить это
-     * чтобы можно было проверять UUID в базе и есть он есть - редиректить на него
-     * если нет - то на страницу текщего пользователя
-     */
-    if (uuid === 'undefined' || uuid === '') {
-      const userId = userPublicId
-      if (userId) {
-        // Если uuid отсутствует в URL, но есть в сессии, перенаправляем на URL с uuid
-        return NextResponse.redirect(new URL(`/${locale}/${userId}/profile`, request.url))
-      }
-      // Если uuid нет ни в URL, ни в сессии, возможно, стоит перенаправить на страницу входа или домашнюю страницу
-      console.log('UUID не найден ни в URL, ни в сессии')
-      // Пример: return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
+    // 3. Установка куки профиля
+    let userPublicId
+    if (session) {
+      const maxAge = calculateMaxAge(new Date(session.expires))
+      userPublicId = await attachProfileCookies(response, session, maxAge)
     }
+
+    // 4. Обработка UUID в URL
+    const uuidResponse = await handleUUID(request, userPublicId)
+    if (uuidResponse) return uuidResponse
 
     return response
   } catch (error) {
