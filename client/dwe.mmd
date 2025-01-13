@@ -1,0 +1,146 @@
+classDiagram
+    Client ..> Core
+    Core *-- Store
+    Core *-- EventEmitter
+    Core *-- MiddlewareSystem
+    Core *-- PluginSystem
+    Core *-- CacheManager
+    Core *-- QueryBuilder
+    Core *-- StorageAdapter
+    Core *-- WorkerAdapter
+
+    CacheManager *-- CacheStrategy
+    CacheManager *-- CacheStorage
+
+    QueryBuilder *-- QueryExecutor
+    QueryExecutor *-- QueryCache
+
+    StorageAdapter *-- StorageStrategy
+    WorkerAdapter *-- MessageBroker
+    MessageBroker *-- SyncManager
+
+    class Client {
+        +createQuery()
+        +dispatch()
+        +subscribe()
+    }
+
+    class Core {
+        -store: Store
+        -eventEmitter: EventEmitter
+        -middlewareSystem: MiddlewareSystem
+        -pluginSystem: PluginSystem
+        +initialize()
+        +registerPlugin()
+        +createQuery()
+    }
+
+    class Store {
+        -state: any
+        -listeners: Set
+        +getState()
+        +setState()
+        +subscribe()
+        +unsubscribe()
+    }
+
+    class EventEmitter {
+        -events: Map
+        +on()
+        +off()
+        +emit()
+    }
+
+    class MiddlewareSystem {
+        -middlewares: Array
+        +use()
+        +execute()
+        +next()
+    }
+
+    class PluginSystem {
+        -plugins: Map
+        +register()
+        +unregister()
+        +getPlugin()
+    }
+
+    class CacheManager {
+        -storage: CacheStorage
+        -strategy: CacheStrategy
+        +get()
+        +set()
+        +invalidate()
+        +clear()
+    }
+
+    class CacheStrategy {
+        <<interface>>
+        +shouldCache()
+        +shouldInvalidate()
+    }
+
+    class CacheStorage {
+        <<interface>>
+        +get()
+        +set()
+        +delete()
+    }
+
+    class QueryBuilder {
+        -endpoint: string
+        -options: Options
+        +setEndpoint()
+        +setOptions()
+        +build()
+        +execute()
+    }
+
+    class QueryExecutor {
+        -cache: CacheManager
+        -store: Store
+        +execute()
+        +handleSuccess()
+        +handleError()
+    }
+
+    class QueryCache {
+        -ttl: number
+        -invalidationRules: Array
+        +isValid()
+        +update()
+        +invalidate()
+    }
+
+    class StorageAdapter {
+        <<interface>>
+        +read()
+        +write()
+        +delete()
+    }
+
+    class StorageStrategy {
+        <<interface>>
+        +sync()
+        +merge()
+    }
+
+    class WorkerAdapter {
+        <<interface>>
+        +postMessage()
+        +onMessage()
+    }
+
+    class MessageBroker {
+        -subscribers: Map
+        +publish()
+        +subscribe()
+        +unsubscribe()
+    }
+
+    class SyncManager {
+        -broker: MessageBroker
+        -strategy: StorageStrategy
+        +sync()
+        +handleConflicts()
+    }

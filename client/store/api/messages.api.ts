@@ -78,7 +78,7 @@ export const messagesApi = createApi({
       },
       async onCacheEntryAdded(
         arg,
-        { updateCachedData, cacheDataLoaded, cacheEntryRemoved },
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch, getCacheEntry, getState, requestId, extra },
       ) {
         const socket = getSocket()
 

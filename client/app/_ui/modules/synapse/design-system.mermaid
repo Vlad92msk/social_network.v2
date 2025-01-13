@@ -1,0 +1,37 @@
+stateDiagram-v2
+    [*] --> ServiceContainer: Initialize System
+
+    state ServiceContainer {
+        [*] --> EventBus
+        EventBus --> PluginManager
+        PluginManager --> StateStore
+        StateStore --> QueryManager
+        QueryManager --> WorkerManager
+    }
+
+    state "Data Flow" as Flow {
+state "Event Flow" as EventFlow {
+Events --> EventBus: Emit
+EventBus --> Listeners: Notify
+}
+
+state "State Flow" as StateFlow {
+Action --> Middleware: Process
+Middleware --> StateStore: Modify
+StateStore --> Subscribers: Update
+}
+
+state "Query Flow" as QueryFlow {
+Request --> QueryMiddleware: Intercept
+QueryMiddleware --> Cache: Check
+Cache --> QueryExecutor: Execute
+QueryExecutor --> StateStore: Update
+}
+
+state "Worker Flow" as WorkerFlow {
+MainThread --> MessageBroker: Send
+MessageBroker --> Workers: Distribute
+Workers --> SyncManager: Sync
+SyncManager --> StateStore: Update
+}
+    }
