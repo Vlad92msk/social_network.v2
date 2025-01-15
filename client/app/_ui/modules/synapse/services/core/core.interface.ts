@@ -15,6 +15,30 @@ export interface IModule {
   destroy(): Promise<void>
 }
 
+export interface IPlugin {
+  name: string
+  initialize?(): Promise<void>
+  destroy?(): Promise<void>
+}
+
+export interface IPluginManager<T extends IPlugin> {
+  add(plugin: T): void
+  remove(name: string): void
+  get(name: string): T | undefined
+  getAll(): T[]
+  initialize(): Promise<void>
+  destroy(): Promise<void>
+}
+
+export interface ICoreConfig {
+  plugins?: IPlugin[]
+  debug?: boolean
+}
+
+export interface Middleware {}
+
+
+// ПОКА НЕ ИСПОЛЬЗУЮ (ВОЗМОЖНО И НЕ ПОНАДОБИТСЯ)
 /** Конфигурация модуля */
 export interface ModuleConfig {
   /** Уникальное имя модуля */

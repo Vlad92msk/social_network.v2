@@ -2,8 +2,8 @@
 import 'reflect-metadata'
 
 // Ключи для метаданных
-const INJECTABLE_METADATA_KEY = Symbol('INJECTABLE_METADATA')
-const INJECT_METADATA_KEY = Symbol('INJECT_METADATA')
+export const INJECTABLE_METADATA_KEY = Symbol('INJECTABLE_METADATA')
+export const INJECT_METADATA_KEY = Symbol('INJECT_METADATA')
 
 // Декоратор для классов, которые можно внедрять
 export function Injectable(): ClassDecorator {

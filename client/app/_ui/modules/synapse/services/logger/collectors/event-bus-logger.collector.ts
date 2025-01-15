@@ -1,5 +1,5 @@
 import { SegmentedEventBus } from '../../event-bus/event-bus.service'
-import { LogEntry } from '../logger.interface'
+import { LogCollector, LogEntry } from '../logger.interface'
 import { Logger } from '../logger.service'
 
 export class EventBusLogger implements LogCollector {
@@ -15,11 +15,6 @@ export class EventBusLogger implements LogCollector {
   }
 }
 
-// Использование
-// Создаем базовый логгер
-const logger = new Logger()
-
 // Где-то в проекте, где нужна интеграция с EventBus
 const eventBus = new SegmentedEventBus()
-const eventBusAdapter = new EventBusLogger(eventBus)
-logger.addCollector(eventBusAdapter)
+const logger = new Logger().addCollector(new EventBusLogger(eventBus))

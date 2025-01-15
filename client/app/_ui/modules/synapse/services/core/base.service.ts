@@ -9,13 +9,11 @@ import type { ILogger } from '../logger/logger.interface'
 export abstract class BaseModule implements IModule {
   abstract readonly name: string
 
-  abstract readonly dependencies?: string[]
+  protected abstract container: IDIContainer
 
-  constructor(
-    protected readonly container: IDIContainer,
-    protected readonly logger: ILogger,
-    protected readonly eventBus: IEventBus,
-  ) {}
+  protected abstract logger: ILogger
+
+  protected abstract eventBus: IEventBus
 
   async initialize(): Promise<void> {
     try {

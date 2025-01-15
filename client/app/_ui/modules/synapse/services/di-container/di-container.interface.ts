@@ -56,17 +56,22 @@ export interface ContainerConfig {
 /** Параметры для регистрации сервиса */
 export interface ServiceRegistration<T = any> {
   /** Уникальный идентификатор сервиса */
-  id: ServiceIdentifier;
+  id: ServiceIdentifier
 
   /** Класс сервиса (если используется конструктор) */
-  type?: Type<T>;
+  type?: Type<T>
 
   /** Фабричная функция (если не используется конструктор) */
-  factory?: ServiceFactory<T>;
+  factory?: ServiceFactory<T>
 
   /** Дополнительные метаданные сервиса */
-  metadata?: Partial<ServiceMetadata>;
+  metadata?: Partial<ServiceMetadata>
+
+  /** возможность регистрации готового экземпляра */
+  instance?: T
 }
+
+type Constructor<T> = new (...args: any[]) => T;
 
 /** Основной интерфейс DI контейнера */
 export interface IDIContainer {
@@ -107,4 +112,14 @@ export interface IDIContainer {
    * @param middleware - Объект middleware
    */
   use(middleware: ServiceMiddleware): void;
+
+  /**
+   * Создает экземпляр класса, разрешая его зависимости
+   * @param target - Класс для создания
+   * @param params - Дополнительные параметры конструктора
+   */
+  resolve<T>(target: Constructor<T>, params?: any[]): T;
 }
+
+// register - это как "регистрация в телефонной книге". Мы говорим DI-контейнеру: "Вот сервис logger, вот eventBus - запомни их, они могут понадобиться другим".
+// resolve - это когда мы говорим: "Создай мне экземпляр CorePluginManager и подставь в его конструктор все нужные зависимости из тех, что ты знаешь (которые были зарегистрированы через register)"

@@ -10,6 +10,7 @@ import {
   ServiceRegistration,
   Type,
 } from './di-container.interface'
+import { INJECT_METADATA_KEY } from '../../decorators'
 
 export class DIContainer implements IDIContainer {
   private services: Map<ServiceIdentifier, any> = new Map()
@@ -67,6 +68,46 @@ export class DIContainer implements IDIContainer {
     }
 
     this.log(`Registered service: ${id.toString()}`, serviceMetadata)
+  }
+
+  public resolve<T>(target: Type<T>, params: any[] = []): T {
+    // Получаем метаданные о зависимостях из декоратора
+    const dependencies = Reflect.getMetadata('design:paramtypes', target) || []
+
+    try {
+      // Разрешаем зависимости
+      const resolvedDeps = dependencies.map((dep: Type, index: number) => {
+        // Если для этого индекса есть параметр в params, используем его
+        if (params[index] !== undefined) {
+          return params[index]
+        }
+
+        // Получаем токен внедрения, если он есть
+        const injectionTokens = Reflect.getMetadata(INJECT_METADATA_KEY, target) || []
+        const token = injectionTokens[index]
+
+        if (token) {
+          // Если есть токен, получаем сервис по нему
+          return this.get(token)
+        }
+
+        // Иначе пытаемся создать экземпляр по типу
+        return this.get(dep)
+      })
+
+      // Применяем middleware перед созданием
+      const processedArgs = this.applyMiddlewareBefore(target.name, resolvedDeps)
+
+      // Создаем экземпляр
+      const instance = new target(...processedArgs)
+
+      // Применяем middleware после создания
+      return this.applyMiddlewareAfter(target.name, instance)
+    } catch (error) {
+      throw new Error(
+        `Error resolving dependencies for "${target.name}": ${error.message}`,
+      )
+    }
   }
 
   public get<T>(identifier: ServiceIdentifier): T {
