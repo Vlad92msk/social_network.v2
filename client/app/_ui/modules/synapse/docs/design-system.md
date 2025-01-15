@@ -25,15 +25,11 @@
       - прочие настройки
     - на уровне группы (нечто похожее на createApi из RTK Query)
     - на уровне самого эндроинта
-- Имеет многоуровневую систему расширений:
-  - Middlewares:
-    - Глобальные (для Core Module).
-    - Сервисные (для состояния, запросов, кэша и т.д.).
-    - Единый интерфейс для их создания.
-  - Плагины:
-    - Глобальные (для Core Module).
-    - Сервисные (для состояния, запросов, кэша и т.д.).
-    - Единый интерфейс для их создания.
+- Имеет модульную систему расширений:
+  - Каждый модуль предоставляет свой API для плагинов/middlewares
+  - Плагины/middlewares устанавливаются через конфигурацию модуля
+  - Модули сами управляют своими плагинами/middlewares
+  - Единый интерфейс создания плагинов/middlewares в рамках каждого модуля
 - Поддерживает гибкие варианты хранения данных:
   - В оперативной памяти (по умолчанию).
   - В localStorage/sessionStorage.
@@ -75,10 +71,10 @@
 - Инициализацию системы и порядок загрузки модулей.
 
 Компоненты Core Module:
-- ServiceContainer: Контейнер для управления сервисами.
-- SegmentedEventBus: Система событий с поддержкой приоритетов и сегментации.
-- ModuleInitializer: Управление порядком загрузки и инициализации модулей.
-- Logger: Гибкая система логирования.
+- LoggerService (Гибкая система логирования)
+- SegmentedEventBus (система событий с поддержкой приоритетов и сегментации)
+- DIContainer (DI контейнер)
+- ModuleInitializer (Управление порядком загрузки и инициализации модулей)
 
 2. StateManagement Module
 
@@ -137,255 +133,46 @@
 
 
 ```mermaid
-classDiagram
-  direction TB
-%% Core Module
-  namespace Core {
+stateDiagram-v2
+  [*] --> Synapse
 
-    class SynapseBuilder {
-      +withStorage(config: StorageConfig)
-      +withWorkers(config: WorkerConfig)
-      +withQuery(config: QueryConfig)
-      +build(): Synapse
-    }
-    
-    class ModuleInitializer {
-      -modules: Map~string, Module~
-      -initialized: Set~string~
-      +initialize()
-      +registerModule(module: Module)
-      -initializeModule(module: Module)
-    }
+  Synapse --> CoreModule
+  CoreModule --> StateModule
+  CoreModule --> QueryModule
+  CoreModule --> WorkerModule
 
-    class ServiceContainer {
-      -services: Map~string, any~
-      -globalMiddleware: GlobalMiddleware[]
-      +register(service: Service)
-      +get(name: string)
-      +use(middleware: GlobalMiddleware)
-      +installPlugin(plugin: GlobalPlugin)
-    }
-
-    class SegmentedEventBus {
-      -segments: Map~string, EventBusSegment~
-      -subscribers: Map~string, Set~Subscriber~~
-      +createSegment(name: string, config: EventBusConfig)
-      +publish(event: Event)
-      +subscribe(segmentName: string, subscriber: Subscriber)
-    }
-
-    class PluginManager {
-      -plugins: Map~string, Plugin~
-      -lifecycle: PluginLifecycle
-      +installGlobal(plugin: GlobalPlugin)
-      +installService(name: string, plugin: ServicePlugin)
-      +resolveConflicts(metadata: PluginMetadata)
-    }
-
-    class Logger {
-      -eventBus: SegmentedEventBus
-      -collectors: LogCollector[]
-      +log(level: LogLevel, message: string, data?: any)
-      +addCollector(collector: LogCollector)
-      +enableDebugMode()
-    }
+  state CoreModule {
+    DIContainer
+    Logger
+    EventBus
+    ModuleInitializer
   }
 
-  namespace StateManagement {
-    class StateStore {
-      -storage: StateStorage
-      -eventBus: SegmentedEventBus
-      -middleware: StoreMiddleware[]
-      +get(key: string): any
-      +set(key: string, value: any)
-      +select(selector): Observable
-    }
-
-    class StateStorage {
-      -adapter: StorageAdapter
-      -type: StorageType
-      -strategy: CacheStrategy
-      +read(key: string)
-      +write(key: string, value: any)
-    }
-
-    class StorageAdapter {
-      <<interface>>
-      +read(key: string)
-      +write(key: string, value: any)
-      +clear()
-    }
-
-    class CacheStrategy {
-      <<interface>>
-      +isValid(entry: CacheEntry)
-      +shouldRevalidate(entry: CacheEntry)
-    }
+  state StateModule {
+    StateStore
+    StatePluginManager
+    StateMiddlewareManager
+  }
+  state WorkerModule {
+    WorkerManager
+    WorkerPluginManager
+    WorkerMiddlewareManager
+    SyncManager
   }
 
-  namespace Query {
-
-    class QueryApi {
-      -name: string
-      -config: QueryConfig
-      +createEndpoint(config: EndpointConfig): QueryEndpoint
-    }
-
-    class QueryEndpoint {
-      -config: EndpointConfig
-      +execute(params: any): Promise
-      +on(event: string, handler: Function): void
-      +off(event: string, handler: Function): void
-    }
-    
-    class QueryManager {
-      -store: StateStore
-      -eventBus: SegmentedEventBus
-      -middleware: QueryMiddleware[]
-      -effectsManager: EffectsManager
-      -retryManager: RetryPolicyManager
-      +createQuery(config: QueryConfig)
-      +createApi(name: string, config: QueryConfig): QueryApi
-      +execute(query: Query)
-      +use(middleware: QueryMiddleware)
-    }
-
-    class QueryConfig {
-      -rootConfig: RootConfig
-      -groupConfig: GroupConfig
-      -endpointConfig: EndpointConfig
-    }
-    
-    class QueryBuilder {
-      +setMethod(method: string)
-      +setURL(url: string)
-      +setData(data: any)
-      +setRetryPolicy(policy: RetryPolicy)
-      +build(): Query
-    }
-
-    class QueryExecutor {
-      -store: StateStore
-      -middleware: QueryMiddleware[]
-      -retryManager: RetryPolicyManager
-      +execute(query: Query)
-      +cancel(queryId: string)
-    }
-
-    class RetryPolicyManager {
-      -policies: Map~string, RetryPolicy~
-      +addPolicy(name: string, policy: RetryPolicy)
-      +getPolicy(name: string)
-      +executeWithRetry(fn: Function, policy: RetryPolicy)
-    }
-
-    class BaseEffectBuilder~T~ {
-      #source$: Observable~T~
-      +withLatestFrom(observable: Observable): BaseEffectBuilder
-      +switchMap(project: Function): Observable
-      +addOptions(configFn: Function): BaseEffectBuilder
-    }
-
-    class QueryEffectBuilder~T~ {
-      #source$: Observable~T~
-      -queries: Query[]
-      +ofTypeSuccess(options: QueryEffectOptions): QueryEffectBuilder
-      +ofTypeError(options: QueryEffectOptions): QueryEffectBuilder
-    }
-
-    class SelectorEffectBuilder~T~ {
-      #source$: Observable~T~
-      -selectors: Selector[]
-      +ofTypeValues(options?: QueryEffectOptions): SelectorEffectBuilder
-    }
-
-    class EffectsManager {
-      -store: StateStore
-      -eventBus: SegmentedEventBus
-      -effectMiddleware: EffectMiddleware
-      +watchQueryEffects(queries: Query[]): QueryEffectBuilder
-      +watchSelectorEffects(selectors: Selector[]): SelectorEffectBuilder
-      +combine(...effects: Effect[]): Effect
-    }
-
-    class EffectMiddleware {
-      -dependencies: EffectDependencies
-      +run(effect: Effect): void
-      +combine(...effects: Effect[]): Effect
-    }
+  state QueryModule {
+    QueryManager
+    QueryPluginManager
+    QueryMiddlewareManager
+    EffectsManager
   }
 
-  namespace Worker {
-    class WorkerManager {
-      -store: StateStore
-      -eventBus: SegmentedEventBus
-      -strategyManager: WorkerStrategyManager
-      -messageBroker: MessageBroker
-      +register(worker: Worker)
-      +broadcast(message: any)
-    }
 
-    class WorkerStrategyManager {
-      -strategies: WorkerStrategy[]
-      +addStrategy(strategy: WorkerStrategy)
-      +getAvailableStrategy()
-      +executeWithStrategy(task: Task)
-    }
 
-    class MessageBroker {
-      -workers: Set~WorkerAdapter~
-      +addWorker(worker: WorkerAdapter)
-      +removeWorker(worker: WorkerAdapter)
-      +broadcast(message: any)
-    }
-
-    class SyncManager {
-      -store: StateStore
-      -eventBus: SegmentedEventBus
-      +sync()
-      +getSyncState()
-    }
-  }
-
-%% Inheritance Relationships
-  QueryEffectBuilder --|> BaseEffectBuilder
-  SelectorEffectBuilder --|> BaseEffectBuilder
-
-%% Component Relationships
-  QueryManager --> EffectsManager
-  EffectsManager --> QueryEffectBuilder
-  EffectsManager --> SelectorEffectBuilder
-  EffectsManager --> EffectMiddleware
-  QueryManager --> QueryApi
-  QueryApi --> QueryEndpoint
-  
-%% Core Relationships
-  ServiceContainer --> ModuleInitializer
-  ServiceContainer --> SegmentedEventBus
-  ServiceContainer --> PluginManager
-  ServiceContainer --> Logger
-
-%% State Management Relationships
-  StateStore --> StateStorage
-  StateStore --> SegmentedEventBus
-  StateStore --> CacheStrategy
-  StateStorage --> StorageAdapter
-
-%% Query Relationships
-  QueryManager --> StateStore
-  QueryManager --> SegmentedEventBus
-  QueryManager --> QueryExecutor
-  QueryManager --> RetryPolicyManager
-  QueryExecutor --> StateStore
-  QueryExecutor --> RetryPolicyManager
-
-%% Worker Relationships
-  WorkerManager --> StateStore
-  WorkerManager --> SegmentedEventBus
-  WorkerManager --> MessageBroker
-  WorkerManager --> SyncManager
-  WorkerManager --> WorkerStrategyManager
-  WorkerManager --> PluginManager
+  StateModule --> QueryModule : Provides state
+  StateModule --> WorkerModule : Provides state
+  QueryModule --> StateModule : Updates state
+  WorkerModule --> StateModule : Syncs state
 ```
 
 

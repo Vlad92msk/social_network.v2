@@ -1,22 +1,4 @@
 // types/core.ts
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warn',
-  ERROR = 'error'
-}
-
-export interface LogEntry {
-  level: LogLevel;
-  message: string;
-  data?: any;
-  timestamp: number;
-}
-
-export interface LogCollector {
-  collect(entry: LogEntry): void;
-}
-
 export interface Event {
   type: string;
   payload?: any;

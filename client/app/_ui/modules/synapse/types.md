@@ -3,7 +3,7 @@
 // Общий тип для контекста
 interface MiddlewareContext<T> {
   state: StateStore;
-  logger: Logger;
+  logger: LoggerService;
   eventBus: SegmentedEventBus;
   config: T;
 }
@@ -136,7 +136,7 @@ class Container {
 class StateModule {
   constructor(
     @Inject() private eventBus: SegmentedEventBus,
-    @Inject() private logger: Logger
+    @Inject() private logger: LoggerService
   ) {}
 }
 

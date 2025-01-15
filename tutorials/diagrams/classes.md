@@ -35,7 +35,7 @@ classDiagram
     namespace Base {
         class BaseService {
             <<abstract>>
-            #logger: Logger
+            #logger: LoggerService
             +process() void
         }
         class Store {
@@ -48,7 +48,7 @@ classDiagram
     namespace UserModule {
         class UserService {
             -users: User[] "Список пользователей"
-            -logger: Logger "Сервис логирования"
+            -logger: LoggerService "Сервис логирования"
             +getUser(id: string) User "Получить пользователя по ID"
             +createUser(data: UserDTO) User "Создать нового пользователя"
             #validateUser(user: User) boolean "Внутренняя валидация пользователя"
@@ -95,7 +95,7 @@ classDiagram
 
     class UserService {
         -users: User[] "Список пользователей"
-        -logger: Logger "Сервис логирования"
+        -logger: LoggerService "Сервис логирования"
         +getUser(id: string) User "Получить пользователя по ID"
         +createUser(data: UserDTO) User "Создать нового пользователя"
         #validateUser(user: User) boolean "Внутренняя валидация пользователя"
@@ -109,14 +109,14 @@ classDiagram
         }
         class BaseService {
             <<abstract>>
-            #logger: Logger
+            #logger: LoggerService
             +execute() void
         }
     }
     
     %% Infrastructure Layer
     namespace Infrastructure {
-        class Logger {
+        class LoggerService {
             +log(message: string) void
         }
         class Store {
@@ -141,7 +141,7 @@ classDiagram
     IService <|.. BaseService
     BaseService <|-- UserService
     BaseService <|-- OrderService
-    BaseService --> Logger
+    BaseService --> LoggerService
     UserService --> Store
     OrderService --> Store
 ```

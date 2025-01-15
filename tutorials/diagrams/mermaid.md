@@ -39,7 +39,7 @@ classDiagram
 
    class BaseService {
       <<abstract>>
-      #logger: Logger "Сервис логирования"
+      #logger: LoggerService "Сервис логирования"
       #config: Config "Конфигурация"
       +initialize()* void
       #validateConfig()* boolean
@@ -82,7 +82,7 @@ classDiagram
    }
 
 %% Вспомогательные классы
-   class Logger {
+   class LoggerService {
       +info(message: string) void
       +error(error: Error) void
       +warn(message: string) void
@@ -108,7 +108,7 @@ classDiagram
    UserService o-- ApiService
    NotificationService o-- EventBus
    NotificationService o-- StoreService
-   BaseService o-- Logger
+   BaseService o-- LoggerService
 
 %% Примечания
    note for EventBus "Реализация паттерна Observer"
@@ -123,7 +123,7 @@ classDiagram
     direction LR
     
     namespace Infrastructure {
-        class Logger {
+        class LoggerService {
             +log(message) void
         }
         class Config {
@@ -155,7 +155,7 @@ classDiagram
     BaseService <|-- AuthService
 
     %% Композиция
-    BaseService *-- Logger
+    BaseService *-- LoggerService
     BaseService *-- Config
 
     %% Зависимости
@@ -163,7 +163,7 @@ classDiagram
     AuthService ..> EventBus
 
     %% Агрегация
-    EventBus o-- Logger
+    EventBus o-- LoggerService
 ```
 
 

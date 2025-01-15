@@ -225,17 +225,26 @@ const initialState = {
 
 // Лучше использовать builder pattern
 const synapse = new SynapseBuilder()
+  .withCore({
+    // Добавляем пользовательские плагины
+    plugins: [new LoggerPlugin(), new SyncPlugin()], // Идут в CorePluginManager
+  })
   .withStorage({
     initialState,
     type: 'memory', // indexDB/localStorage
     options: {
       prefix: 'app:', // Для основных данных
       query: 'api:' // Отдельное место в состоянии для хранения результатов запросов
-    }
+    },
+    plugins: [new CustomStoragePlugin()], // Идут в StatePluginManager
+    // Добавляем пользовательские middlewares
+    middlewares: ((getDefaultStateMiddleware) => getDefaultStateMiddleware().concat([stateLogger, stateValidator])),
     //... другие настройки (пока я не знаю какие и как их организовать)
   })
   .withWorkers({
     broadcast: true, // Шаринг состояния на все вкладки
+    // Добавляем пользовательские middlewares
+    middlewares: ((getDefaultWorkersMiddleware) => getDefaultWorkersMiddleware().concat([workerMonitor]))
     //... другие настройки (пока я не знаю какие и как их организовать)
   })
   .withQuery({
@@ -246,19 +255,10 @@ const synapse = new SynapseBuilder()
     defineComponents: {
       loading: <div>loading </div>,
       error: <div>error </div>, 
-    }
+    },
+    // Добавляем пользовательские middlewares
+    middlewares: ((getDefaultWorkersMiddleware) => getDefaultWorkersMiddleware().concat([workerMonitor]))
     //... другие настройки (пока я не знаю какие и как их организовать)
-  })
-  // Добавляем пользовательские плагины
-  .plagins({
-    core: [new SyncPlugin()],
-    state: [new CustomStoragePlugin()],
-  })
-  // Добавляем пользовательские middlewares
-  .middlewares({
-    state: (getDefaultStateMiddleware) => getDefaultStateMiddleware().concat([stateLogger, stateValidator]),
-    query: (getDefaultQueryMiddleware) => getDefaultQueryMiddleware().concat([authMiddleware, queryMiddleware, cacheMiddleware, effectMiddleware]),
-    workers: (getDefaultWorkersMiddleware) => getDefaultWorkersMiddleware().concat([workerMonitor])
   })
   // Регистрация эффектов
   .createEffects([someEffect, someEffect1])

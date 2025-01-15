@@ -1,0 +1,118 @@
+classDiagram
+    class Synapse {
+        -container: DIContainer
+        -logger: Logger
+        -eventBus: SegmentedEventBus
+        -moduleInitializer: ModuleInitializer
+        +initialize(config: SynapseConfig): Promise~void~
+        +destroy(): Promise~void~
+        +getContainer(): DIContainer
+        +getEventBus(): SegmentedEventBus
+    }
+
+    class BaseModule {
+        <<abstract>>
+        #container: DIContainer
+        #logger: Logger
+        #eventBus: SegmentedEventBus
+        +name: string
+        +dependencies: string[]
+        +initialize(): Promise~void~
+        +destroy(): Promise~void~
+        #registerServices(): void
+        #setupEventHandlers(): void
+    }
+
+    class LogLevel {
+        <<enumeration>>
+        DEBUG
+        INFO
+        WARN
+        ERROR
+        FATAL
+        TRACE
+    }
+
+    class Logger {
+        -collectors: LogCollector[]
+        -debugMode: boolean
+        -context: Record<string,any>
+        -formatters: LogFormatter[]
+        -defaultMetadata: Partial<LogMetadata>
+        +log(level: LogLevel, message: string, data?: any): void
+        +debug(message: string, data?: any): void
+        +info(message: string, data?: any): void
+        +warn(message: string, data?: any): void
+        +error(message: string, data?: any): void
+        +fatal(message: string, data?: any): void
+        +trace(message: string, data?: any): void
+        +addCollector(collector: LogCollector): Logger
+        +removeCollector(collector: LogCollector): boolean
+        +clearCollectors(): void
+        +enableDebugMode(): void
+        +disableDebugMode(): void
+        +isDebugEnabled(): boolean
+        +setContext(context: Record<string,any>): void
+        +getContext(): Record<string,any>
+        +withContext(context: Record<string,any>): Logger
+        +addFormatter(formatter: LogFormatter): Logger
+        +flush(): Promise~void~
+        +destroy(): Promise~void~
+    }
+
+    class DIContainer {
+        -services: Map~ServiceIdentifier, any~
+        -factories: Map~ServiceIdentifier, ServiceFactory~
+        -metadata: Map~ServiceIdentifier, ServiceMetadata~
+        -middleware: ServiceMiddleware[]
+        -config: ContainerConfig
+        +register(registration: ServiceRegistration): void
+        +get(identifier: ServiceIdentifier): any
+        +has(identifier: ServiceIdentifier): boolean
+        +remove(identifier: ServiceIdentifier): boolean
+        +clear(): void
+        +use(middleware: ServiceMiddleware): void
+        -isConstructor(func: unknown): boolean
+        -resolveDependencies(target: Type | ServiceFactory): ServiceIdentifier[]
+        -applyMiddlewareBefore(serviceId: ServiceIdentifier, args: any[]): any[]
+        -applyMiddlewareAfter(serviceId: ServiceIdentifier, result: any): any
+    }
+
+    class SegmentedEventBus {
+        -segments: Map~string, EventBusSegment~
+        +createSegment(name: string, config?: EventBusConfig): void
+        +publish(event: Event): Promise~void~
+        +subscribe(segmentName: string, subscriber: Subscriber): () => void
+        +hasSegment(name: string): boolean
+        +getSegment(name: string): EventBusSegment
+        +removeSegment(name: string): boolean
+    }
+
+    class ModuleInitializer {
+        -modules: Map~string, CoreModule~
+        -initialized: Set~string~
+        -container: DIContainer
+        +registerModule(module: CoreModule): void
+        +initialize(): Promise~void~
+        +destroy(): Promise~void~
+        +getModule(name: string): CoreModule
+        +isInitialized(name: string): boolean
+        +getDependencyGraph(): Map~string, string[]~
+        -initializeModule(module: CoreModule): Promise~void~
+        -topologicalSort(modules: CoreModule[]): CoreModule[]
+    }
+
+%% Relationships
+    Synapse *-- DIContainer
+    Synapse *-- Logger
+    Synapse *-- SegmentedEventBus
+    Synapse *-- ModuleInitializer
+
+    BaseModule --> DIContainer
+    BaseModule --> Logger
+    BaseModule --> SegmentedEventBus
+
+    ModuleInitializer --> DIContainer
+    ModuleInitializer --> BaseModule
+
+    Logger ..> SegmentedEventBus: Optional

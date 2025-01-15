@@ -1,0 +1,69 @@
+classDiagram
+    direction LR
+
+    class StateModule {
+        -store: StateStore
+        -config: StorageConfig
+        -pluginManager: StatePluginManager
+        -middlewareManager: StateMiddlewareManager
+        +initialize(): Promise~void~
+        +destroy(): Promise~void~
+    }
+
+    class StateStore {
+        -storage: StateStorage
+        -eventBus: SegmentedEventBus
+        -middleware: StoreMiddleware[]
+        +get(key: string): any
+        +set(key: string, value: any)
+        +select(selector): Observable
+    }
+
+    class StateStorage {
+        -adapter: StorageAdapter
+        -type: StorageType
+        -strategy: CacheStrategy
+        +read(key: string)
+        +write(key: string, value: any)
+    }
+
+    class StatePluginManager {
+        -plugins: Map~string, StatePlugin~
+        +installPlugin(plugin: StatePlugin)
+        +getDefaultPlugins()
+        +hasPlugin(name: string)
+        +getPlugin(name: string)
+    }
+
+    class StateMiddlewareManager {
+        -middleware: StateMiddleware[]
+        +use(middleware: StateMiddleware)
+        +getDefaultMiddleware()
+        +execute(ctx: StateContext)
+        +remove(name: string)
+    }
+
+    class StorageAdapter {
+        <<interface>>
+        +read(key: string)
+        +write(key: string, value: any)
+        +clear()
+    }
+
+    class CacheStrategy {
+        <<interface>>
+        +isValid(entry: CacheEntry)
+        +shouldRevalidate(entry: CacheEntry)
+    }
+
+    CoreModule <|-- StateModule
+    StateModule *-- StateStore
+    StateModule *-- StatePluginManager
+    StateModule *-- StateMiddlewareManager
+    StateStore --> StateStorage
+    StateStore --> SegmentedEventBus
+    StateStorage --> StorageAdapter
+    StateStorage --> CacheStrategy
+    StatePluginManager --> Logger
+    StatePluginManager --> SegmentedEventBus
+    StateMiddlewareManager --> StateStore
