@@ -23,6 +23,8 @@ export class DIContainer implements IDIContainer {
 
   private config: ContainerConfig
 
+  private parent?: IDIContainer
+
   constructor(config: ContainerConfig = {}) {
     this.config = {
       defaultSingleton: true,
@@ -34,6 +36,10 @@ export class DIContainer implements IDIContainer {
     if (this.config.middleware) {
       this.middleware.push(...this.config.middleware)
     }
+
+    if (this.config.parent) {
+      this.parent = this.config.parent
+    }
   }
 
   private log(message: string, ...args: any[]): void {
@@ -42,21 +48,24 @@ export class DIContainer implements IDIContainer {
     }
   }
 
-  public register<T>({ id, type, factory, metadata = {} }: ServiceRegistration<T>): void {
+  public register<T>({ id, type, factory, instance, metadata = {} }: ServiceRegistration<T>): void {
     if (this.services.has(id)) {
       throw new Error(`Service "${id.toString()}" is already registered`)
     }
 
     const serviceMetadata: ServiceMetadata = {
       id,
-      dependencies: this.resolveDependencies(type || factory),
+      dependencies: instance ? [] : this.resolveDependencies(type || factory),
       singleton: metadata.singleton ?? this.config.defaultSingleton ?? true,
       tags: metadata.tags ?? [],
     }
 
     this.metadata.set(id, serviceMetadata)
 
-    if (type) {
+    if (instance) {
+      // Если передан готовый экземпляр, просто сохраняем его
+      this.services.set(id, instance)
+    } else if (type) {
       if (!this.isConstructor(type)) {
         throw new Error(`Invalid constructor for service "${id.toString()}"`)
       }
@@ -64,7 +73,7 @@ export class DIContainer implements IDIContainer {
     } else if (factory) {
       this.factories.set(id, factory)
     } else {
-      throw new Error(`Either type or factory must be provided for service "${id.toString()}"`)
+      throw new Error(`Either type, factory or instance must be provided for service "${id.toString()}"`)
     }
 
     this.log(`Registered service: ${id.toString()}`, serviceMetadata)
@@ -111,10 +120,21 @@ export class DIContainer implements IDIContainer {
   }
 
   public get<T>(identifier: ServiceIdentifier): T {
-    const metadata = this.metadata.get(identifier)
-    if (!metadata) {
-      throw new Error(`Service "${identifier.toString()}" not found`)
+    // Сначала ищем в текущем контейнере
+    if (this.metadata.has(identifier)) {
+      return this.resolveService<T>(identifier)
     }
+
+    // Если не нашли и есть родительский контейнер - ищем там
+    if (this.parent?.has(identifier)) {
+      return this.parent.get<T>(identifier)
+    }
+
+    throw new Error(`Service "${identifier.toString()}" not found`)
+  }
+
+  private resolveService<T>(identifier: ServiceIdentifier): T {
+    const metadata = this.metadata.get(identifier)!
 
     if (metadata.singleton && this.services.has(identifier)) {
       return this.services.get(identifier)

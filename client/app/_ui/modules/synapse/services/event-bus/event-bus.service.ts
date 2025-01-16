@@ -29,7 +29,7 @@ export class SegmentedEventBus implements IEventBus {
    * События обрабатываются в порядке приоритета сегментов
    * @param event - Событие для публикации
    */
-  public async publish(event: Event): Promise<void> {
+  public async emit(event: Event): Promise<void> {
     const enrichedEvent = {
       ...event,
       timestamp: event.timestamp ?? Date.now(),

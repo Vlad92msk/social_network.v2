@@ -1,7 +1,7 @@
+import type { IEventBus } from '../event-bus/event-bus.interface'
 import { IStoragePlugin } from './storage.interface'
-import { Injectable } from '../../decorators'
+import { Inject, Injectable } from '../../decorators'
 import { IPluginManager } from '../core/core.interface'
-import type { IDIContainer } from '../di-container/di-container.interface'
 import type { ILogger } from '../logger/logger.interface'
 
 @Injectable()
@@ -9,8 +9,8 @@ export class StoragePluginManager implements IPluginManager<IStoragePlugin> {
   private plugins: Map<string, IStoragePlugin> = new Map()
 
   constructor(
-    protected readonly container: IDIContainer,
-    protected readonly logger: ILogger,
+    @Inject('moduleEventBus') private readonly eventBus: IEventBus,
+    private readonly logger: ILogger,
   ) {}
 
   add(plugin: IStoragePlugin): void {

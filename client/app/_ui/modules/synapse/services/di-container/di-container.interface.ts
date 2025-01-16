@@ -44,13 +44,16 @@ export interface ServiceMiddleware {
 /** Конфигурация DI контейнера */
 export interface ContainerConfig {
   /** Значение по умолчанию для флага singleton при регистрации сервисов */
-  defaultSingleton?: boolean;
+  defaultSingleton?: boolean
 
   /** Включение/выключение логирования */
-  enableLogging?: boolean;
+  enableLogging?: boolean
 
   /** Массив middleware, применяемых ко всем сервисам */
-  middleware?: ServiceMiddleware[];
+  middleware?: ServiceMiddleware[]
+
+  /** Родительский контейнер для поиска сервисов */
+  parent?: IDIContainer
 }
 
 /** Параметры для регистрации сервиса */

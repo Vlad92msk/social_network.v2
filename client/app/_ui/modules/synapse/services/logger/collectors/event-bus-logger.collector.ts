@@ -8,7 +8,7 @@ export class EventBusLogger implements LogCollector {
   }
 
   async collect(entry: LogEntry): Promise<void> {
-    await this.eventBus.publish({
+    await this.eventBus.emit({
       type: 'logger:entry',
       payload: entry,
     })

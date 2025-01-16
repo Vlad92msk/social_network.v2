@@ -26,7 +26,7 @@ export interface IEventBus {
   createSegment(name: string, config?: EventBusConfig): void;
 
   // Публикация события
-  publish(event: Event): Promise<void>;
+  emit(event: Event): Promise<void>;
 
   // Подписка на события в сегменте
   subscribe(segmentName: string, subscriber: Subscriber): () => void;

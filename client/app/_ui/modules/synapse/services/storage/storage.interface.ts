@@ -1,7 +1,7 @@
 import { IPlugin, Middleware } from '../core/core.interface'
 
 export interface IStorage {
-  get<T>(key: string): T | undefined
+  get<T>(key: string): Promise<T | undefined>
   set<T>(key: string, value: T): void
   has(key: string): boolean
   delete(key: string): void
