@@ -2,23 +2,69 @@
 import { IModule } from './core.interface'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import type { IEventBus } from '../event-bus/event-bus.interface'
+import { SegmentedEventBus } from '../event-bus/event-bus.service'
+import { EventBusLogger } from '../logger/collectors/event-bus-logger.collector'
 import type { ILogger } from '../logger/logger.interface'
+import { Logger } from '../logger/logger.service'
 
 export abstract class BaseModule implements IModule {
-  abstract readonly name: string;
+  abstract readonly name: string
 
-  constructor(
+  protected children: Map<string, BaseModule> = new Map()
+
+  protected get eventBus(): IEventBus {
+    return this.container.get('eventBus')
+  }
+
+  protected get logger(): ILogger {
+    return this.container.get('logger')
+  }
+
+  protected constructor(
     protected readonly container: IDIContainer,
-    protected readonly logger: ILogger,
-    protected readonly eventBus: IEventBus,
-  ) {}
+  ) {
+    if (!container.getParent()) {
+      this.setupBaseServices()
+    }
+  }
 
+  private setupBaseServices(): void {
+    if (!this.container.has('eventBus')) {
+      const eventBus = new SegmentedEventBus()
+      this.container.register({ id: 'eventBus', instance: eventBus })
+    }
+
+    if (!this.container.has('logger')) {
+      const eventBus = this.container.get<SegmentedEventBus>('eventBus')
+      const logger = new Logger()
+      logger.addCollector(new EventBusLogger(eventBus))
+      this.container.register({ id: 'logger', instance: logger })
+    }
+  }
+
+  // Управление дочерними модулями
+  protected registerChildModule<T extends BaseModule>(id: string, child: T): T {
+    // Регистрируем в контейнере
+    this.container.register({ id, instance: child })
+    // Добавляем в Map детей для управления жизненным циклом
+    this.children.set(child.name, child)
+    return child
+  }
+
+  protected getChildModule<T extends BaseModule>(id: string): T {
+    return this.container.get<T>(id)
+  }
+
+  // Жизненный цикл
   async initialize(): Promise<void> {
     try {
-      this.logger.debug(`Initializing module: ${this.name}`)
       await this.registerServices()
       await this.setupEventHandlers()
-      this.logger.info(`Module ${this.name} initialized successfully`)
+
+      // Инициализируем дочерние модули
+      for (const child of this.children.values()) {
+        await child.initialize()
+      }
     } catch (error) {
       this.logger.error(`Failed to initialize module ${this.name}`, error)
       throw error
@@ -27,18 +73,23 @@ export abstract class BaseModule implements IModule {
 
   async destroy(): Promise<void> {
     try {
-      this.logger.debug(`Destroying module: ${this.name}`)
+      // Уничтожаем дочерние модули
+      for (const child of this.children.values()) {
+        await child.destroy()
+      }
+
       await this.cleanupResources()
-      this.logger.info(`Module ${this.name} destroyed successfully`)
+      this.children.clear()
     } catch (error) {
       this.logger.error(`Failed to destroy module ${this.name}`, error)
       throw error
     }
   }
 
-  protected abstract registerServices(): Promise<void>;
+  // Абстрактные методы
+  protected abstract registerServices(): Promise<void>
 
-  protected abstract setupEventHandlers(): Promise<void>;
+  protected abstract setupEventHandlers(): Promise<void>
 
-  protected abstract cleanupResources(): Promise<void>;
+  protected abstract cleanupResources(): Promise<void>
 }

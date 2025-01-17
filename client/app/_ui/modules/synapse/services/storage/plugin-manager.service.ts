@@ -1,7 +1,7 @@
-import type { IEventBus } from '../event-bus/event-bus.interface'
 import { IStoragePlugin } from './storage.interface'
 import { Inject, Injectable } from '../../decorators'
 import { IPluginManager } from '../core/core.interface'
+import type { IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
 
 @Injectable()
@@ -9,16 +9,39 @@ export class StoragePluginManager implements IPluginManager<IStoragePlugin> {
   private plugins: Map<string, IStoragePlugin> = new Map()
 
   constructor(
-    @Inject('moduleEventBus') private readonly eventBus: IEventBus,
+    @Inject('eventBus') private readonly eventBus: IEventBus,
     private readonly logger: ILogger,
-  ) {}
+  ) {
+    // Создаем сегмент для событий плагинов
+    this.eventBus.createSegment('storage:plugins', {
+      priority: 100,
+      filters: [
+        (event) => event.type.startsWith('storage:plugin:'),
+      ],
+    })
+  }
 
-  add(plugin: IStoragePlugin): void {
+  async add(plugin: IStoragePlugin): Promise<void> {
     if (this.plugins.has(plugin.name)) {
-      this.logger.warn(`Plugin ${plugin.name} already registered, skipping`)
+      this.logger.warn(`Plugin ${plugin.name} already registered`)
       return
     }
-    this.plugins.set(plugin.name, plugin)
+
+    try {
+      if (plugin.initialize) {
+        await plugin.initialize()
+      }
+
+      this.plugins.set(plugin.name, plugin)
+
+      await this.eventBus.emit({
+        type: 'storage:plugin:added',
+        payload: { name: plugin.name },
+      })
+    } catch (error) {
+      this.logger.error(`Failed to register plugin ${plugin.name}`, error)
+      throw error
+    }
   }
 
   remove(name: string): void {

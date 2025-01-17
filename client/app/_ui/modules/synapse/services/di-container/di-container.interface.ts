@@ -122,6 +122,9 @@ export interface IDIContainer {
    * @param params - Дополнительные параметры конструктора
    */
   resolve<T>(target: Constructor<T>, params?: any[]): T;
+
+  getParent(): IDIContainer | undefined
+  createChild(config?: Partial<ContainerConfig>,): IDIContainer
 }
 
 // register - это как "регистрация в телефонной книге". Мы говорим DI-контейнеру: "Вот сервис logger, вот eventBus - запомни их, они могут понадобиться другим".

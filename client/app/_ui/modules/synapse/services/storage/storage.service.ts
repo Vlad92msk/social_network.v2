@@ -3,146 +3,108 @@ import { StoragePluginManager } from './plugin-manager.service'
 import type { IStorage, IStorageConfig } from './storage.interface'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
+import { Middleware } from '../core/core.interface'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
 import type { Event, IEventBus } from '../event-bus/event-bus.interface'
-import { SegmentedEventBus } from '../event-bus/event-bus.service'
 import type { ILogger } from '../logger/logger.interface'
-import { Logger } from '../logger/logger.service'
 
 @Injectable()
 export class StorageModule extends BaseModule {
   readonly name = 'storage'
 
-  // Собственная шина событий модуля
-  private readonly moduleEventBus: IEventBus
-
   constructor(
-    @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
     container: IDIContainer,
-    logger: ILogger,
-    eventBus: IEventBus,
+    @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
   ) {
-    super(container, logger, eventBus) // Передаем в базовый класс
+    super(container)
+    // Меняем проверку, так как type теперь опционален
     if (!config) throw new Error('StorageConfig is required')
-
-    this.moduleEventBus = new SegmentedEventBus()
   }
 
-  /**
-   * Создает полностью независимый экземпляр модуля
-   */
-  static create(config: IStorageConfig): StorageModule {
-    // Создаем новый контейнер
-    const container = new DIContainer()
+  // Используем общий статический метод из BaseModule
+  static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
+    const container = new DIContainer({ parent: parentContainer })
 
-    // Создаем базовые сервисы
-    const logger = new Logger()
-    const eventBus = new SegmentedEventBus()
-
-    // Регистрируем все необходимые сервисы
+    // Регистрируем конфиг
     container.register({ id: 'STORAGE_CONFIG', instance: config })
-    container.register({ id: 'logger', instance: logger })
-    container.register({ id: 'eventBus', instance: eventBus })
-    container.register({ id: 'storagePluginManager', type: StoragePluginManager })
 
-    // Создаем модуль через DI
     return container.resolve(StorageModule)
   }
 
-  /**
-   * Создает экземпляр модуля, связанный с родительским контейнером
-   */
-  static createWithParent(
-    config: IStorageConfig,
-    parentContainer: IDIContainer,
-  ): StorageModule {
-    // Создаем контейнер с доступом к родительскому
-    const moduleContainer = new DIContainer({
-      parent: parentContainer,
-    })
-
-    // Регистрируем только специфичные для модуля сервисы
-    // Остальные будут браться из родительского контейнера
-    moduleContainer.register({ id: 'STORAGE_CONFIG', instance: config })
-    moduleContainer.register({ id: 'storagePluginManager', type: StoragePluginManager })
-
-    return moduleContainer.resolve(StorageModule)
-  }
-
-  /**
-   * Регистрация сервисов модуля (из BaseModule)
-   */
   protected async registerServices(): Promise<void> {
-    // Регистрируем локальную шину событий
-    this.container.register({
-      id: 'moduleEventBus',
-      instance: this.moduleEventBus,
-    })
+    // Регистрируем плагин менеджер
+    const pluginManager = this.container.resolve(StoragePluginManager)
 
-    // Регистрируем тип хранилища
-    this.container.register({
-      id: 'memoryStorage',
-      type: MemoryStorage,
-    })
+    // Регистрируем плагины из конфига
+    if (this.config.plugins) {
+      for (const plugin of this.config.plugins) {
+        await pluginManager.add(plugin)
+      }
+    }
 
-    // Создаем и регистрируем экземпляр хранилища
-    const storage = this.createStorage()
-    this.container.register({
-      id: 'storage',
-      instance: storage,
-    })
+    // Регистрируем middlewares если они есть
+    if (this.config.middlewares) {
+      const defaultMiddleware = this.getDefaultMiddleware()
+      const middlewares = this.config.middlewares(
+        () => defaultMiddleware,
+      )
+      for (const middleware of middlewares) {
+        this.container.use(middleware)
+      }
+    }
+
+    this.container.register({ id: 'pluginManager', instance: pluginManager })
+    this.container.register({ id: 'storage', instance: this.createStorage() })
   }
 
-  /**
-   * Настройка обработчиков событий (из BaseModule)
-   */
   protected async setupEventHandlers(): Promise<void> {
-    // Пробрасываем локальные события в глобальную шину
-    this.moduleEventBus.subscribe('storage:changed', async (event: Event) => {
-      await this.eventBus.emit(event)
+    const eventBus = this.container.get<IEventBus>('eventBus')
+    const logger = this.container.get<ILogger>('logger')
+
+    eventBus.subscribe('storage:changed', async (event) => {
+      logger.debug('Storage changed:', event.payload)
     })
 
-    // Слушаем глобальные события
-    this.eventBus.subscribe('app:cleanup', async (event: Event) => {
-      await this.moduleEventBus.emit({
-        type: 'cleanup',
-        payload: event.payload,
-      })
+    eventBus.subscribe('app:cleanup', async () => {
+      await this.cleanupResources()
     })
   }
 
-  /**
-   * Очистка ресурсов при уничтожении модуля (из BaseModule)
-   */
   protected async cleanupResources(): Promise<void> {
     const storage = this.getStorage()
     await storage.clear()
   }
 
-  /**
-   * Создание экземпляра хранилища
-   */
   private createStorage(): IStorage {
     switch (this.config.type) {
-      case 'localStorage':
-        // Здесь можно добавить другие типы хранилищ
-        throw new Error('LocalStorage not implemented yet')
+      // case 'localStorage':
+      //   return this.container.resolve(LocalStorage)
+      // case 'indexedDB':
+      //   return this.container.resolve(IndexedDBStorage)
+      // case 'memory':
       default:
         return this.container.resolve(MemoryStorage)
     }
   }
 
-  // Публичное API модуля
+  private getDefaultMiddleware(): Middleware[] {
+    return [
+      // Добавьте здесь дефолтные middleware
+    ]
+  }
 
+  // Публичный API
   public getStorage(): IStorage {
     return this.container.get<IStorage>('storage')
   }
 
   public async set(key: string, value: any): Promise<void> {
     const storage = this.getStorage()
+    const eventBus = this.container.get<IEventBus>('eventBus')
+
     await storage.set(key, value)
-    await this.moduleEventBus.emit({
+    await eventBus.emit({
       type: 'storage:changed',
       payload: { key, value },
     })
@@ -153,3 +115,6 @@ export class StorageModule extends BaseModule {
     return storage.get<T>(key)
   }
 }
+
+// Единый factory-метод
+export const createStorage = (config: IStorageConfig, parentContainer?: IDIContainer) => StorageModule.create(config, parentContainer)

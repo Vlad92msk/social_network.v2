@@ -1,41 +1,31 @@
+import { BaseStorage } from './base-storage.service'
 import { StoragePluginManager } from './plugin-manager.service'
-import type { IStorage, IStorageConfig } from './storage.interface'
+import type { IStorageConfig } from './storage.interface'
 import { Inject, Injectable } from '../../decorators'
 import type { IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
 
 @Injectable()
-export class MemoryStorage implements IStorage {
-  // Внутреннее хранилище данных
-  private storage: Map<string, any> = new Map()
+export class MemoryStorage extends BaseStorage {
+  private storage: Map<string, any>
 
   constructor(
-    // Конфиг из StorageModule
-    @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
-    // Менеджер плагинов для обработки данных
-    private readonly pluginManager: StoragePluginManager,
-    // Локальная шина событий модуля
-    @Inject('moduleEventBus') private readonly eventBus: IEventBus,
-    // Сервис логирования
-    private readonly logger: ILogger,
-  ) {}
+    @Inject('STORAGE_CONFIG') config: IStorageConfig,
+    @Inject('eventBus') eventBus: IEventBus,
+      pluginManager: StoragePluginManager,
+      logger: ILogger,
+  ) {
+    super(config, pluginManager, eventBus, logger)
+    this.storage = new Map(Object.entries(config.initialState || {}))
+  }
 
-  /**
-   * Получение значения из хранилища
-   */
   async get<T>(key: string): Promise<T | undefined> {
     try {
-      // Даем плагинам возможность обработать ключ
       const processedKey = this.pluginManager.executeBeforeGet(key)
-
-      // Получаем значение
       const value = this.storage.get(processedKey) as T | undefined
-
-      // Даем плагинам возможность обработать значение
       const processedValue = this.pluginManager.executeAfterGet(processedKey, value)
 
-      // Уведомляем о получении значения
-      await this.eventBus.emit({
+      await this.emitEvent({
         type: 'storage:value:accessed',
         payload: { key: processedKey, value: processedValue },
       })
@@ -47,28 +37,17 @@ export class MemoryStorage implements IStorage {
     }
   }
 
-  /**
-   * Сохранение значения в хранилище
-   */
-  async set<T>(key: string, value: T): Promise<void> {
+  set<T>(key: string, value: T): void {
     try {
-      // Даем плагинам возможность обработать значение перед сохранением
       const processedValue = this.pluginManager.executeBeforeSet(key, value)
-
-      // Сохраняем значение
       this.storage.set(key, processedValue)
-
-      // Уведомляем плагины о сохранении
       this.pluginManager.executeAfterSet(key, processedValue)
 
-      // Отправляем событие об изменении значения
-      await this.eventBus.emit({
+      this.emitEvent({
         type: 'storage:value:changed',
         payload: { key, value: processedValue },
-        metadata: {
-          timestamp: Date.now(),
-          storageType: 'memory',
-        },
+      }).catch((error) => {
+        this.logger.error('Error emitting event', { error })
       })
 
       this.logger.debug('Value set successfully', { key })
@@ -78,29 +57,21 @@ export class MemoryStorage implements IStorage {
     }
   }
 
-  /**
-   * Проверка наличия значения
-   */
   has(key: string): boolean {
     return this.storage.has(key)
   }
 
-  /**
-   * Удаление значения
-   */
-  async delete(key: string): Promise<void> {
+  delete(key: string): void {
     try {
-      // Спрашиваем у плагинов разрешение на удаление
       if (this.pluginManager.executeBeforeDelete(key)) {
         this.storage.delete(key)
-
-        // Уведомляем плагины об удалении
         this.pluginManager.executeAfterDelete(key)
 
-        // Отправляем событие об удалении
-        await this.eventBus.emit({
+        this.emitEvent({
           type: 'storage:value:deleted',
           payload: { key },
+        }).catch((error) => {
+          this.logger.error('Error emitting event', { error })
         })
 
         this.logger.debug('Value deleted successfully', { key })
@@ -111,20 +82,15 @@ export class MemoryStorage implements IStorage {
     }
   }
 
-  /**
-   * Очистка всего хранилища
-   */
-  async clear(): Promise<void> {
+  clear(): void {
     try {
-      // Уведомляем плагины о начале очистки
       this.pluginManager.executeOnClear()
-
-      // Очищаем хранилище
       this.storage.clear()
 
-      // Отправляем событие об очистке
-      await this.eventBus.emit({
+      this.emitEvent({
         type: 'storage:cleared',
+      }).catch((error) => {
+        this.logger.error('Error emitting event', { error })
       })
 
       this.logger.debug('Storage cleared successfully')

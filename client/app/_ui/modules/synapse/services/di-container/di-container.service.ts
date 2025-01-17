@@ -214,4 +214,16 @@ export class DIContainer implements IDIContainer {
       result,
     )
   }
+
+  public getParent(): IDIContainer | undefined {
+    return this.parent
+  }
+
+  public createChild(config: Partial<ContainerConfig> = {}): IDIContainer {
+    return new DIContainer({
+      ...this.config,
+      ...config,
+      parent: this,
+    })
+  }
 }

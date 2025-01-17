@@ -14,6 +14,13 @@ export interface Subscriber {
   (event: Event): void | Promise<void>
 }
 
+export interface EventBusHierarchyConfig {
+  parent?: IEventBus
+  propagateUp?: boolean
+  propagateDown?: boolean
+  namespace?: string
+}
+
 export interface EventBusSegment {
   name: string
   config: EventBusConfig
@@ -39,4 +46,7 @@ export interface IEventBus {
 
   // Удаление сегмента
   removeSegment(name: string): boolean;
+
+  createChild(config?: EventBusHierarchyConfig): IEventBus;
+  getParent(): IEventBus | undefined;
 }

@@ -1,8 +1,47 @@
-import { Event, EventBusConfig, EventBusSegment, IEventBus, Subscriber } from './event-bus.interface'
+import { Event, EventBusConfig, EventBusHierarchyConfig, EventBusSegment, IEventBus, Subscriber } from './event-bus.interface'
 
 export class SegmentedEventBus implements IEventBus {
-  // Хранит все сегменты с их подписчиками
   private segments: Map<string, EventBusSegment> = new Map()
+
+  private parent?: IEventBus
+
+  private children: Set<IEventBus> = new Set()
+
+  private readonly namespace?: string
+
+  private readonly propagateUp: boolean
+
+  private readonly propagateDown: boolean
+
+  constructor(config: EventBusHierarchyConfig = {}) {
+    this.parent = config.parent
+    this.namespace = config.namespace
+    this.propagateUp = config.propagateUp ?? true
+    this.propagateDown = config.propagateDown ?? true
+
+    if (this.parent && this.parent instanceof SegmentedEventBus) {
+      (this.parent as SegmentedEventBus).addChild(this)
+    }
+  }
+
+  private addChild(child: IEventBus): void {
+    this.children.add(child)
+  }
+
+  private removeChild(child: IEventBus): void {
+    this.children.delete(child)
+  }
+
+  public createChild(config: EventBusHierarchyConfig = {}): IEventBus {
+    return new SegmentedEventBus({
+      ...config,
+      parent: this,
+    })
+  }
+
+  public getParent(): IEventBus | undefined {
+    return this.parent
+  }
 
   /**
    * Создает новый сегмент для группировки определенных типов событий
@@ -24,34 +63,42 @@ export class SegmentedEventBus implements IEventBus {
     })
   }
 
-  /**
-   * Публикует событие во все соответствующие сегменты
-   * События обрабатываются в порядке приоритета сегментов
-   * @param event - Событие для публикации
-   */
   public async emit(event: Event): Promise<void> {
     const enrichedEvent = {
       ...event,
       timestamp: event.timestamp ?? Date.now(),
+      namespace: this.namespace,
     }
 
-    // Получаем отсортированные по приоритету сегменты
+    // Обрабатываем локально
+    await this.processLocalEvent(enrichedEvent)
+
+    // Пробрасываем вверх к родителю
+    if (this.propagateUp && this.parent) {
+      await this.parent.emit(enrichedEvent)
+    }
+
+    // Пробрасываем вниз к детям
+    if (this.propagateDown) {
+      await Promise.all(
+        Array.from(this.children).map((child) => child.emit(enrichedEvent)),
+      )
+    }
+  }
+
+  private async processLocalEvent(event: Event): Promise<void> {
     const sortedSegments = Array.from(this.segments.values())
       .sort((a, b) => (b.config.priority ?? 0) - (a.config.priority ?? 0))
 
-    // Обрабатываем все сегменты параллельно
     await Promise.all(
       sortedSegments.map(async (segment) => {
-        // Проверяем фильтры
-        if (segment.config.filters?.some((filter) => !filter(enrichedEvent))) {
+        if (segment.config.filters?.some((filter) => !filter(event))) {
           return
         }
 
         const subscribers = Array.from(segment.subscribers)
-
-        // Обрабатываем всех подписчиков сегмента параллельно
         await Promise.all(
-          subscribers.map((subscriber) => Promise.resolve(subscriber(enrichedEvent)).catch((error) => {
+          subscribers.map((subscriber) => Promise.resolve(subscriber(event)).catch((error) => {
             console.error(
               `Error in event subscriber for segment "${segment.name}":`,
               error,
