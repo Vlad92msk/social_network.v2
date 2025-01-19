@@ -29,13 +29,38 @@ export abstract class BaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Получение значения по ключу
+   * @param key Ключ для получения значения
+   * @returns Promise с значением или undefined, если значение не найдено
+   */
   abstract get<T>(key: string): Promise<T | undefined>
 
-  abstract set<T>(key: string, value: T): void
+  /**
+   * Установка значения по ключу
+   * @param key Ключ для сохранения значения
+   * @param value Значение для сохранения
+   * @returns Promise завершающийся после сохранения
+   */
+  abstract set<T>(key: string, value: T): Promise<void>
 
+  /**
+   * Проверка наличия значения по ключу
+   * @param key Ключ для проверки
+   * @returns Флаг наличия значения
+   */
   abstract has(key: string): boolean
 
-  abstract delete(key: string): void
+  /**
+   * Удаление значения по ключу
+   * @param key Ключ для удаления
+   * @returns Promise завершающийся после удаления
+   */
+  abstract delete(key: string): Promise<void>
 
-  abstract clear(): void
+  /**
+   * Очистка всего хранилища
+   * @returns Promise завершающийся после очистки
+   */
+  abstract clear(): Promise<void>
 }

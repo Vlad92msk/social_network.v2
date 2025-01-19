@@ -37,17 +37,15 @@ export class MemoryStorage extends BaseStorage {
     }
   }
 
-  set<T>(key: string, value: T): void {
+  async set<T>(key: string, value: T): Promise<void> {
     try {
       const processedValue = this.pluginManager.executeBeforeSet(key, value)
       this.storage.set(key, processedValue)
       this.pluginManager.executeAfterSet(key, processedValue)
 
-      this.emitEvent({
+      await this.emitEvent({
         type: 'storage:value:changed',
         payload: { key, value: processedValue },
-      }).catch((error) => {
-        this.logger.error('Error emitting event', { error })
       })
 
       this.logger.debug('Value set successfully', { key })
@@ -61,17 +59,15 @@ export class MemoryStorage extends BaseStorage {
     return this.storage.has(key)
   }
 
-  delete(key: string): void {
+  async delete(key: string): Promise<void> {
     try {
       if (this.pluginManager.executeBeforeDelete(key)) {
         this.storage.delete(key)
         this.pluginManager.executeAfterDelete(key)
 
-        this.emitEvent({
+        await this.emitEvent({
           type: 'storage:value:deleted',
           payload: { key },
-        }).catch((error) => {
-          this.logger.error('Error emitting event', { error })
         })
 
         this.logger.debug('Value deleted successfully', { key })
@@ -82,15 +78,13 @@ export class MemoryStorage extends BaseStorage {
     }
   }
 
-  clear(): void {
+  async clear(): Promise<void> {
     try {
       this.pluginManager.executeOnClear()
       this.storage.clear()
 
-      this.emitEvent({
+      await this.emitEvent({
         type: 'storage:cleared',
-      }).catch((error) => {
-        this.logger.error('Error emitting event', { error })
       })
 
       this.logger.debug('Storage cleared successfully')

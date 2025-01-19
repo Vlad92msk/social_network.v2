@@ -44,8 +44,19 @@ export class StoragePluginManager implements IPluginManager<IStoragePlugin> {
     }
   }
 
-  remove(name: string): void {
-    this.plugins.delete(name)
+  async remove(name: string) {
+    const plugin = this.plugins.get(name)
+    if (plugin) {
+      if (plugin.destroy) {
+        await plugin.destroy()
+      }
+      this.plugins.delete(name)
+
+      await this.eventBus.emit({
+        type: 'storage:plugin:removed',
+        payload: { name },
+      })
+    }
   }
 
   get(name: string): IStoragePlugin | undefined {

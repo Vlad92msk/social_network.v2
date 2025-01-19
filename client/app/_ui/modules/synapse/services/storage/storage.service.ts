@@ -18,11 +18,9 @@ export class StorageModule extends BaseModule {
     @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
   ) {
     super(container)
-    // Меняем проверку, так как type теперь опционален
     if (!config) throw new Error('StorageConfig is required')
   }
 
-  // Используем общий статический метод из BaseModule
   static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
     const container = new DIContainer({ parent: parentContainer })
 
@@ -76,7 +74,7 @@ export class StorageModule extends BaseModule {
     await storage.clear()
   }
 
-  private createStorage(): IStorage {
+  private async createStorage() {
     switch (this.config.type) {
       // case 'localStorage':
       //   return this.container.resolve(LocalStorage)
@@ -99,13 +97,13 @@ export class StorageModule extends BaseModule {
     return this.container.get<IStorage>('storage')
   }
 
-  public async set(key: string, value: any): Promise<void> {
+  public async set<T>(key: string, value: T): Promise<void> {
     const storage = this.getStorage()
     const eventBus = this.container.get<IEventBus>('eventBus')
 
     await storage.set(key, value)
     await eventBus.emit({
-      type: 'storage:changed',
+      type: 'storage:value:changed',
       payload: { key, value },
     })
   }
@@ -115,6 +113,3 @@ export class StorageModule extends BaseModule {
     return storage.get<T>(key)
   }
 }
-
-// Единый factory-метод
-export const createStorage = (config: IStorageConfig, parentContainer?: IDIContainer) => StorageModule.create(config, parentContainer)
