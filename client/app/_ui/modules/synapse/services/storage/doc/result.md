@@ -1,130 +1,379 @@
-Давайте проанализируем:
-
-1. Противоречия в диаграммах:
-- В целом диаграммы согласованы и дополняют друг друга
-- Каждая диаграмма описывает свой уровень абстракции
-- Единственное небольшое расхождение: в sequence диаграмме StorageModule метод destroy() напрямую вызывает clear() у Storage, хотя по архитектуре это должно идти через cleanupResources()
-
-2. Понятность работы StorageModule:
-   ✅ Да, понятно:
-- Это фасад для работы с хранилищем
-- Управляет жизненным циклом хранилища и плагинов
-- Предоставляет DI для всех компонентов
-- Поддерживает middleware и систему событий
-- Позволяет конфигурировать через IStorageConfig
-
-3. Понятность реализации:
-   ✅ Да, видно что:
-- Наследуется от BaseModule для базовой функциональности
-- Использует DIContainer для управления зависимостями
-- Поддерживает разные типы хранилищ через factory метод
-- Имеет четкое разделение на публичный и приватный API
-- Использует плагины через PluginManager
-
-4. Сильные стороны архитектуры:
-- Модульность и расширяемость через плагины
-- Инверсия зависимостей через DI
-- Гибкая конфигурация
-- Событийно-ориентированная архитектура
-- Типобезопасность (TypeScript)
-
-Слабые стороны:
-- Возможная избыточность для простых случаев
-- Сложность первоначальной настройки
-- Потенциальные проблемы производительности при большом количестве плагинов
-- Сложность отладки из-за множества слоев абстракции
-
-5. Масштабируемость:
-   ✅ Хорошая за счет:
-- Поддержки разных типов хранилищ
-- Системы плагинов
-- Middleware для расширения функциональности
-- Событийной модели для слабого связывания
-- Возможности переопределения компонентов
-
-6. Примеры использования:
-
-Как самостоятельный сервис:
 ```typescript
-// Простое использование
-const storage = StorageModule.create({
-  type: 'memory',
-  initialState: { user: { name: 'John' } }
-})
+// 1. Определяем типы и интерфейсы
+interface UserState {
+  profile: {
+    personal: {
+      name: string;
+      email: string;
+      age: number;
+    };
+    settings: {
+      theme: {
+        mode: 'light' | 'dark';
+        colors: string[];
+      };
+      notifications: {
+        email: boolean;
+        push: boolean;
+        frequency: 'daily' | 'weekly' | 'never';
+      };
+    };
+  };
+  preferences: {
+    language: string;
+    timezone: string;
+  };
+}
 
-await storage.set('settings', { theme: 'dark' })
-const settings = await storage.get('settings')
+interface AppState {
+  version: string;
+  lastUpdate: number;
+  features: {
+    [key: string]: boolean;
+  };
+}
 
-// С плагинами
-const encryptionPlugin = new EncryptionPlugin('secret-key')
-const validationPlugin = new ValidationPlugin(schemas)
+// 2. Создаем плагины
+class ValidationPlugin implements IStoragePlugin {
+  name = 'validation';
 
-const storage = StorageModule.create({
-  plugins: [encryptionPlugin, validationPlugin],
-  middlewares: (defaults) => [...defaults, loggingMiddleware]
-})
-```
+  constructor(private schemas: Record<string, (value: any) => boolean>) {}
 
-В Angular:
-```typescript
-@NgModule({
-  providers: [
-    {
-      provide: StorageModule,
-      useFactory: () => StorageModule.create({
-        type: 'localStorage',
-        plugins: [new NgZonePlugin()]
-      })
+  executeBeforeSet<T>(key: string, value: T): T {
+    const validator = this.getValidator(key);
+    if (validator && !validator(value)) {
+      throw new Error(`Validation failed for key: ${key}`);
     }
-  ]
-})
-export class AppModule {}
-```
-
-В React/NextJS:
-```typescript
-// Custom hook
-function useStorage() {
-  const storageRef = useRef<StorageModule>()
-  
-  if (!storageRef.current) {
-    storageRef.current = StorageModule.create({
-      type: 'memory',
-      plugins: [new ReactStatePlugin()]
-    })
+    return value;
   }
-  
-  return storageRef.current
+
+  private getValidator(key: string) {
+    return this.schemas[key.split('.')[0]];
+  }
 }
 
-// Provider
-function StorageProvider({ children }) {
-  const storage = useStorage()
-  return (
-    <StorageContext.Provider value={storage}>
-      {children}
-    </StorageContext.Provider>
-  )
-}
-```
+class EncryptionPlugin implements IStoragePlugin {
+  name = 'encryption';
 
-В NestJS:
-```typescript
-@Module({
-  providers: [
-    {
-      provide: StorageModule,
-      useFactory: async (config: ConfigService) => {
-        return StorageModule.create({
-          type: config.get('storage.type'),
-          plugins: [new TypeOrmPlugin()]
-        })
-      },
-      inject: [ConfigService]
+  constructor(
+    private secretKey: string, 
+    private sensitiveFields: string[] = ['email']
+  ) {}
+
+  executeBeforeSet<T>(key: string, value: T): T {
+    if (this.isSensitive(key)) {
+      return this.encrypt(value) as T;
     }
-  ]
-})
-export class AppModule {}
-```
+    return value;
+  }
 
-Из документации видно, что модуль спроектирован достаточно гибко и может быть использован в разных контекстах, от простых приложений до сложных enterprise решений.
+  executeAfterGet<T>(key: string, value: T): T {
+    if (this.isSensitive(key)) {
+      return this.decrypt(value) as T;
+    }
+    return value;
+  }
+
+  private isSensitive(key: string): boolean {
+    return this.sensitiveFields.some(field => key.includes(field));
+  }
+
+  private encrypt<T>(value: T): T {
+    // Имитация шифрования
+    return value;
+  }
+
+  private decrypt<T>(value: T): T {
+    // Имитация дешифрования
+    return value;
+  }
+}
+
+// 3. Создаем middleware
+// Types
+interface MiddlewareOptions {
+  segments?: string[];
+  [key: string]: any;
+}
+
+// Обертка для middleware с поддержкой segments
+function withSegments(middleware: Middleware, segments?: string[]): Middleware {
+  return (next: NextFunction) => async (context: StorageContext) => {
+    // Если segments не указаны - применяем ко всем
+    if (!segments) {
+      return middleware(next)(context);
+    }
+
+    // Получаем имя сегмента из ключа (например, из "user.profile.name" получаем "user")
+    const segmentName = context.key?.split('.')[0];
+
+    // Если ключ нет или сегмент входит в список - применяем middleware
+    if (!context.key || segments.includes(segmentName)) {
+      return middleware(next)(context);
+    }
+
+    // Иначе пропускаем этот middleware
+    return next(context);
+  };
+}
+
+// Фабрики middleware с поддержкой сегментов
+interface LoggerOptions extends MiddlewareOptions {
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  prefix?: string;
+}
+
+const createLoggerMiddleware: MiddlewareFactory<LoggerOptions> = (options = {}) => {
+  const { logLevel = 'info', prefix = '', segments } = options;
+
+  const middleware: Middleware = (next) => async (context) => {
+    console[logLevel](`${prefix}Before:`, context);
+    const result = await next(context);
+    console[logLevel](`${prefix}After:`, { context, result });
+    return result;
+  };
+
+  return withSegments(middleware, segments);
+};
+
+interface CacheOptions extends MiddlewareOptions {
+  ttl?: number;
+  maxSize?: number;
+}
+
+const createCacheMiddleware: MiddlewareFactory<CacheOptions> = (options = {}) => {
+  const { ttl = 5000, maxSize = 100, segments } = options;
+  const cache = new Map<string, { value: any; timestamp: number }>();
+
+  const middleware: Middleware = (next) => async (context) => {
+    if (context.type !== 'get' || !context.key) {
+      return next(context);
+    }
+
+    const cached = cache.get(context.key);
+    if (cached && Date.now() - cached.timestamp < ttl) {
+      return cached.value;
+    }
+
+    const value = await next(context);
+
+    if (cache.size >= maxSize) {
+      const oldestKey = [...cache.entries()]
+        .sort(([, a], [, b]) => a.timestamp - b.timestamp)[0][0];
+      cache.delete(oldestKey);
+    }
+
+    cache.set(context.key, { value, timestamp: Date.now() });
+    return value;
+  };
+
+  return withSegments(middleware, segments);
+};
+
+// 4. Создаем конфигурацию
+const validationPlugin = new ValidationPlugin({
+  user: (value: any) => {
+    return value.profile && value.preferences; // Простая валидация
+  },
+  app: (value: any) => {
+    return value.version && value.lastUpdate;
+  }
+});
+
+const encryptionPlugin = new EncryptionPlugin('secret-key', ['email']);
+
+const storageConfig: IStorageConfig = {
+  type: 'memory',
+  initialState: {
+    app: {
+      version: '1.0.0',
+      lastUpdate: Date.now(),
+      features: {
+        darkMode: true,
+        beta: false
+      }
+    }
+  },
+  plugins: [validationPlugin, encryptionPlugin],
+  middlewares: (getDefaultMiddleware) => [
+    ...getDefaultMiddleware({
+      segments: ['user', 'app'] // эти middleware будут применяться только к указанным сегментам
+    }),
+    createLoggerMiddleware({
+      logLevel: 'debug',
+      prefix: '[Storage] ',
+      segments: ['user'] // логирование только для user сегмента
+    }),
+    createCacheMiddleware({
+      ttl: 10000,
+      maxSize: 1000,
+      // segments не указаны - будет применяться ко всем сегментам
+    }),
+  ],
+};
+
+// 5. Создаем класс для управления хранилищем
+export class AppStorage {
+  private static instance: StorageModule;
+  private static initialized = false;
+
+  static getInstance(): StorageModule {
+    if (!this.instance) {
+      this.instance = StorageModule.create(storageConfig);
+    }
+    return this.instance;
+  }
+
+  static async initialize(): Promise<void> {
+    if (this.initialized) return;
+    
+    const storage = this.getInstance();
+    await storage.initialize();
+    this.initialized = true;
+  }
+
+  static async destroy(): Promise<void> {
+    if (!this.instance) return;
+    
+    await this.instance.destroy();
+    this.instance = null;
+    this.initialized = false;
+  }
+}
+
+// 6. Пример использования
+async function example() {
+  // Инициализация
+  await AppStorage.initialize();
+  const storage = AppStorage.getInstance();
+
+  // Создаем сегменты
+  const userSegment = storage.createSegment<UserState>({
+    name: 'user',
+    initialState: {
+      profile: {
+        personal: {
+          name: 'John Doe',
+          email: 'john@example.com',
+          age: 25
+        },
+        settings: {
+          theme: {
+            mode: 'light',
+            colors: ['#ffffff', '#000000']
+          },
+          notifications: {
+            email: true,
+            push: true,
+            frequency: 'daily'
+          }
+        }
+      },
+      preferences: {
+        language: 'en',
+        timezone: 'UTC'
+      }
+    }
+  });
+
+  const appSegment = storage.createSegment<AppState>({
+    name: 'app',
+    initialState: {
+      version: '1.0.0',
+      lastUpdate: Date.now(),
+      features: {
+        darkMode: true,
+        beta: false
+      }
+    }
+  });
+
+  // Создаем селекторы
+  const themeSelector = storage.createSelector<
+    { user: UserState },
+    { mode: string; colors: string[] }
+  >(state => state.user.profile.settings.theme);
+
+  const appStatusSelector = storage.createSelector<
+    { app: AppState; user: UserState },
+    { version: string; username: string; darkMode: boolean }
+  >(state => ({
+    version: state.app.version,
+    username: state.user.profile.personal.name,
+    darkMode: state.app.features.darkMode
+  }));
+
+  // Подписываемся на изменения
+  const unsubscribeUser = userSegment.subscribe(state => {
+    console.log('User state changed:', state);
+  });
+
+  const unsubscribeApp = appSegment.subscribe(state => {
+    console.log('App state changed:', state);
+  });
+
+  try {
+    // Используем различные методы для работы с данными
+    
+    // 1. Простое обновление через update
+    await userSegment.update(state => {
+      state.profile.personal.age += 1;
+    });
+
+    // 2. Работа с путями
+    const notificationSettings = await userSegment.getByPath(
+      'profile.settings.notifications'
+    );
+    
+    await userSegment.setByPath(
+      'profile.settings.theme.mode',
+      'dark'
+    );
+
+    // 3. Частичное обновление через patch
+    await userSegment.patch({
+      profile: {
+        settings: {
+          notifications: {
+            frequency: 'weekly'
+          }
+        }
+      }
+    });
+
+    // 4. Получение данных через селекторы
+    const theme = await themeSelector();
+    const appStatus = await appStatusSelector();
+
+    console.log('Current theme:', theme);
+    console.log('App status:', appStatus);
+
+    // 5. Работа с несколькими сегментами
+    await Promise.all([
+      userSegment.setByPath('preferences.language', 'es'),
+      appSegment.patch({
+        features: {
+          beta: true
+        }
+      })
+    ]);
+
+    // 6. Получение полного состояния
+    const fullState = await storage.getState();
+    console.log('Full state:', fullState);
+
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    // Очищаем подписки
+    unsubscribeUser();
+    unsubscribeApp();
+  }
+
+  // Очищаем ресурсы
+  await AppStorage.destroy();
+}
+
+// Запускаем пример
+example().catch(console.error);
+```

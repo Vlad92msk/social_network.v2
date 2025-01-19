@@ -1,4 +1,4 @@
-import { IModule, IPlugin, Middleware } from '../core/core.interface'
+import { IPlugin, Middleware, MiddlewareOptions } from '../core/core.interface'
 
 
 /** Интерфейс для базовых операций хранилища */
@@ -10,13 +10,16 @@ export interface IStorage {
   set<T>(key: string, value: T): Promise<void>
 
   /** Проверка наличия значения по ключу */
-  has(key: string): boolean
+  has(key: string): Promise<boolean> // Меняем на Promise для консистентности
 
   /** Удаление значения по ключу */
   delete(key: string): Promise<void>
 
   /** Очистка всего хранилища */
   clear(): Promise<void>
+
+  /** Получение всех ключей */
+  keys(): Promise<string[]>
 }
 
 /**
@@ -75,16 +78,26 @@ export interface IStorageConfig {
   /** Тип хранилища */
   type?: 'memory' | 'indexDB' | 'localStorage'
 
-  /** Дополнительные опции */
+  /** Опции для разных типов хранилища */
   options?: {
-    prefix?: string
-    query?: string
-  };
-
+    /** Название базы данных для IndexedDB */
+    dbName?: string
+    /** Версия базы данных для IndexedDB */
+    dbVersion?: number
+    /** Название хранилища для IndexedDB */
+    storeName?: string
+  }
   /** Массив плагинов */
   plugins?: IStoragePlugin[]
 
   /** Функция для получения middleware */
-  middlewares?: (getDefaultMiddleware: () => Middleware[]) => Middleware[]
+  middlewares?: (getDefaultMiddleware: (options?: MiddlewareOptions) => Middleware[]) => Middleware[]
 }
 
+/** API для сегмента */
+export interface SegmentAPI<T> {
+  select: <R>(selector: (state: T) => R) => Promise<R>;
+  update: (updater: (state: T) => void) => Promise<void>;
+  getAll: () => Promise<T>;
+  subscribe: (listener: (state: T) => void) => () => void;
+}

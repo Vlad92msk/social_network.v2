@@ -1,70 +1,64 @@
 ```mermaid
 classDiagram
-%% Базовые интерфейсы и абстракции
-    class BaseModule {
-        <<abstract>>
-        +name: string
-        #container: IDIContainer
-        +constructor(container)
-        #registerServices()* Promise~void~
-        #setupEventHandlers()* Promise~void~
-        #cleanupResources()* Promise~void~
+%% Базовые интерфейсы
+    class IStorage {
+        <<interface>>
+        +get~T~(key: string)* Promise~T|undefined~
+        +set~T~(key: string, value: T)* Promise~void~
+        +has(key: string)* boolean
+        +delete(key: string)* Promise~void~
+        +clear()* Promise~void~
+        +keys()* Promise~string[]~
     }
-    note for BaseModule "Базовый класс модуля:
-    - Регистрация сервисов
-    - Настройка обработчиков
-    - Очистка ресурсов"
 
     class IStorageConfig {
         <<interface>>
         +type?: 'memory'|'indexDB'|'localStorage'
         +initialState?: Record~string,any~
-        +options?: StorageOptions
         +plugins?: IStoragePlugin[]
         +middlewares?: (getDefault: () => Middleware[]) => Middleware[]
     }
-    note for IStorageConfig "Конфигурация хранилища:
-    - Тип хранилища
-    - Начальное состояние
-    - Плагины и middleware"
 
-    class IDIContainer {
+    class SegmentAPI~T~ {
         <<interface>>
-        +register(config)
-        +resolve~T~(target) T
-        +get~T~(id) T
-        +use(middleware)
+        +select~R~(selector: (state: T) => R)* Promise~R~
+        +update(updater: (state: T) => void)* Promise~void~
+        +getAll()* Promise~T~
+        +subscribe(listener: (state: T) => void)* () => void
     }
-    note for IDIContainer "Контейнер зависимостей:
-    - Регистрация сервисов
-    - Разрешение зависимостей
-    - Применение middleware"
 
-%% Основной класс модуля
+%% Основной модуль
     class StorageModule {
+        -subscribers: Map~string, Set~
+        -selectors: Map~string, Function~
         +name: "storage"
-        -config: IStorageConfig
         +static create(config, container?) StorageModule
-        +getStorage() IStorage
-        +set~T~(key, value) Promise~void~
+        +createSelector~T,R~(selector) () => Promise~R~
+        +createSegment~T~(config) SegmentAPI~T~
+        +getState() Promise~Record~string,any~~
         +get~T~(key) Promise~T|undefined~
-        -createStorage() Promise~IStorage~
-        -getDefaultMiddleware() Middleware[]
-        #registerServices() Promise~void~
-        #setupEventHandlers() Promise~void~
-        #cleanupResources() Promise~void~
+        -notifySubscribers(key, value) void
+        -getAllKeys() Promise~string[]~
+        -getAllValues~T~(segment) Promise~T~
     }
-    note for StorageModule "Модуль хранилища:
-    - Фабричный метод создания
-    - Управление конфигурацией
-    - Публичный API для работы
-    с данными"
+
+%% Реализация хранилища
+    class MemoryStorage {
+        -storage: Map~string,any~
+        +constructor(config, pluginManager, eventBus, logger)
+        +keys() Promise~string[]~
+        +get~T~(key) Promise~T|undefined~
+        +set~T~(key, value) Promise~void~
+        +has(key) boolean
+        +delete(key) Promise~void~
+        +clear() Promise~void~
+    }
 
 %% Связи
-    BaseModule <|-- StorageModule : extends
-    StorageModule --> IDIContainer : uses
+    IStorage <|.. MemoryStorage : implements
+    StorageModule --> IStorage : uses
+    StorageModule --> SegmentAPI : creates
     StorageModule --> IStorageConfig : configured by
-    StorageModule --> IStorage : creates and manages
 ```
 
 
@@ -72,59 +66,40 @@ classDiagram
 sequenceDiagram
     participant App
     participant SM as StorageModule
-    participant DI as DIContainer
+    participant Seg as Segment
+    participant MS as MemoryStorage
     participant PM as PluginManager
-    participant S as Storage
     participant EB as EventBus
 
-    Note over App,EB: Создание модуля
-    App->>+SM: create(config)
-    SM->>DI: new DIContainer()
-    SM->>DI: register('STORAGE_CONFIG', config)
-    SM->>DI: resolve(StorageModule)
+    Note over App,EB: Создание и инициализация
+    App->>SM: create(config)
+    SM->>MS: new MemoryStorage()
+    SM->>PM: add plugins
 
-    Note over App,EB: Инициализация сервисов
-    SM->>+DI: resolve(PluginManager)
-    DI-->>-SM: pluginManager
+    Note over App,EB: Работа с сегментами
+    App->>SM: createSegment({ name: "user", initialState })
+    SM->>MS: set("user.name", "John")
+    SM->>MS: set("user.age", 25)
+    SM-->>App: SegmentAPI
 
-    loop Для каждого плагина из config.plugins
-        SM->>PM: add(plugin)
-    end
+    Note over App,EB: Селекторы и подписки
+    App->>SM: createSelector(state => state.user.name)
+    SM-->>App: selectorFn
 
-    alt Есть middlewares в конфиге
-        SM->>SM: getDefaultMiddleware()
-        SM->>SM: config.middlewares(defaultMiddleware)
-        loop Для каждого middleware
-            SM->>DI: use(middleware)
-        end
-    end
+    App->>Seg: subscribe(listener)
+    Seg-->>App: unsubscribe
 
-    SM->>+SM: createStorage()
-    alt config.type
-        SM->>DI: resolve(MemoryStorage)
-        SM->>DI: resolve(LocalStorage)
-        SM->>DI: resolve(IndexedDBStorage)
-    end
-    SM-->>-DI: storage
+    Note over App,EB: Обновление данных
+    App->>Seg: update(state => { state.name = "Doe" })
+    Seg->>MS: set("user.name", "Doe")
+    MS->>EB: emit("storage:value:changed")
+    SM->>SM: notifySubscribers("user.name", "Doe")
 
-    SM->>DI: register('pluginManager')
-    SM->>DI: register('storage')
-
-    Note over App,EB: Настройка обработчиков событий
-    SM->>EB: subscribe('storage:changed')
-    SM->>EB: subscribe('app:cleanup')
-
-    SM-->>App: storageModule
-
-    Note over App,EB: Использование хранилища
-    App->>+SM: set(key, value)
-    SM->>S: set(key, value)
-    SM->>EB: emit('storage:value:changed')
-    SM-->>-App: void
-
-    Note over App,EB: Очистка ресурсов
-    App->>+SM: destroy()
-    SM->>S: clear()
-    SM->>EB: emit('storage:destroyed')
-    SM-->>-App: void
+    Note over App,EB: Получение данных
+    App->>Seg: select(state => state.name)
+    Seg->>MS: keys()
+    MS-->>Seg: ["user.name", "user.age"]
+    Seg->>MS: get("user.name")
+    MS-->>Seg: "Doe"
+    Seg-->>App: "Doe"
 ```

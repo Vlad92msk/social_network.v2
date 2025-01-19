@@ -72,4 +72,24 @@ export interface ICoreConfig {
   debug?: boolean
 }
 
-export interface Middleware {}
+
+export interface MiddlewareOptions {
+  segments?: string[];
+  [key: string]: any;
+}
+
+type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys';
+
+export interface StorageContext<T = any> {
+  type: OperationType;
+  key?: string;
+  value?: T;
+  metadata?: Record<string, any>;
+}
+
+type NextFunction = (context: StorageContext) => Promise<any>;
+
+export type Middleware = (next: NextFunction) => (context: StorageContext) => Promise<any>;
+
+export type MiddlewareFactory<TOptions = MiddlewareOptions> = (options?: TOptions) => Middleware;
+

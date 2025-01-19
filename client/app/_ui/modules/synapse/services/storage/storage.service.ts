@@ -1,6 +1,9 @@
+import { IndexedDBStorage } from '@ui/modules/synapse/services/storage/indexed-DB.service'
+import { LocalStorage } from '@ui/modules/synapse/services/storage/local-storage.service'
 import { MemoryStorage } from './memory-storage.service'
 import { StoragePluginManager } from './plugin-manager.service'
 import type { IStorage, IStorageConfig } from './storage.interface'
+import { dataUtils, pathUtils } from './storage.utils'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import { Middleware } from '../core/core.interface'
@@ -13,6 +16,10 @@ import type { ILogger } from '../logger/logger.interface'
 export class StorageModule extends BaseModule {
   readonly name = 'storage'
 
+  private subscribers = new Map<string, Set<(value: any) => void>>()
+
+  private selectors = new Map<string, (state: any) => any>()
+
   constructor(
     container: IDIContainer,
     @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
@@ -23,37 +30,35 @@ export class StorageModule extends BaseModule {
 
   static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
     const container = new DIContainer({ parent: parentContainer })
-
-    // Регистрируем конфиг
     container.register({ id: 'STORAGE_CONFIG', instance: config })
-
     return container.resolve(StorageModule)
   }
 
   protected async registerServices(): Promise<void> {
-    // Регистрируем плагин менеджер
     const pluginManager = this.container.resolve(StoragePluginManager)
 
-    // Регистрируем плагины из конфига
     if (this.config.plugins) {
       for (const plugin of this.config.plugins) {
         await pluginManager.add(plugin)
       }
     }
 
-    // Регистрируем middlewares если они есть
-    if (this.config.middlewares) {
-      const defaultMiddleware = this.getDefaultMiddleware()
-      const middlewares = this.config.middlewares(
-        () => defaultMiddleware,
-      )
-      for (const middleware of middlewares) {
-        this.container.use(middleware)
-      }
-    }
-
+    const storage = await this.createStorage()
     this.container.register({ id: 'pluginManager', instance: pluginManager })
-    this.container.register({ id: 'storage', instance: this.createStorage() })
+    this.container.register({ id: 'storage', instance: storage })
+
+    if (this.config.initialState) {
+      await this.initializeState(this.config.initialState)
+    }
+  }
+
+  private async initializeState(initialState: Record<string, any>): Promise<void> {
+    const storage = this.getStorage()
+    const flatState = dataUtils.flatten(initialState)
+
+    for (const [key, value] of Object.entries(flatState)) {
+      await storage.set(key, value)
+    }
   }
 
   protected async setupEventHandlers(): Promise<void> {
@@ -61,6 +66,7 @@ export class StorageModule extends BaseModule {
     const logger = this.container.get<ILogger>('logger')
 
     eventBus.subscribe('storage:changed', async (event) => {
+      this.notifySubscribers(event.payload.key, event.payload.value)
       logger.debug('Storage changed:', event.payload)
     })
 
@@ -69,18 +75,141 @@ export class StorageModule extends BaseModule {
     })
   }
 
+  private notifySubscribers(key: string, value: any): void {
+    const subscribers = this.subscribers.get(key)
+    if (subscribers) {
+      subscribers.forEach((callback) => callback(value))
+    }
+  }
+
+  public createSelector<T, R>(selector: (state: T) => R): () => Promise<R> {
+    const id = Math.random().toString(36).substr(2, 9)
+    this.selectors.set(id, selector)
+
+    return async () => {
+      const state = await this.getState()
+      return selector(state as T)
+    }
+  }
+
+  public createSegment<T extends Record<string, any>>(
+    config: { name: string; initialState?: T },
+  ) {
+    const { name, initialState } = config
+    const storage = this.getStorage()
+
+    if (initialState) {
+      const flatState = dataUtils.flatten(initialState)
+      Object.entries(flatState).forEach(([key, value]) => {
+        storage.set(pathUtils.join(name, key), value)
+      })
+    }
+
+    const getAllValues = async (): Promise<T> => {
+      const storage = this.getStorage()
+      const allKeys = await storage.keys()
+      const segmentKeys = allKeys.filter((key) => key.startsWith(`${name}.`))
+      const flatState: Record<string, any> = {}
+
+      for (const key of segmentKeys) {
+        const value = await storage.get(key)
+        const pureKey = key.replace(`${name}.`, '')
+        flatState[pureKey] = value
+      }
+
+      return dataUtils.unflatten(flatState) as T
+    }
+
+    return {
+      // Стандартные методы
+      select: async <R>(selector: (state: T) => R): Promise<R> => {
+        const state = await getAllValues()
+        return selector(state)
+      },
+
+      update: async (updater: (state: T) => void): Promise<void> => {
+        const state = await getAllValues()
+        updater(state)
+        const flatState = dataUtils.flatten(state)
+        for (const [key, value] of Object.entries(flatState)) {
+          await storage.set(pathUtils.join(name, key), value)
+        }
+      },
+
+      // Новые методы для работы с путями
+      getByPath: async <R>(path: string): Promise<R | undefined> => {
+        const fullPath = pathUtils.join(name, path)
+        return storage.get<R>(fullPath)
+      },
+
+      setByPath: async <R>(path: string, value: R): Promise<void> => {
+        const fullPath = pathUtils.join(name, path)
+        await storage.set(fullPath, value)
+      },
+
+      // Частичное обновление
+      patch: async (partialState: Partial<T>): Promise<void> => {
+        const current = await getAllValues()
+        const merged = dataUtils.merge(current, partialState)
+        const flatState = dataUtils.flatten(merged)
+        for (const [key, value] of Object.entries(flatState)) {
+          await storage.set(pathUtils.join(name, key), value)
+        }
+      },
+
+      subscribe: (listener: (state: T) => void) => {
+        const callback = async () => {
+          const state = await getAllValues()
+          listener(state)
+        }
+
+        const segmentKeys = new Set<string>()
+        this.getAllKeys()
+          .then((keys) => {
+            keys.forEach((key) => {
+              if (key.startsWith(`${name}.`)) {
+                segmentKeys.add(key)
+                if (!this.subscribers.has(key)) {
+                  this.subscribers.set(key, new Set())
+                }
+                this.subscribers.get(key)!.add(callback)
+              }
+            })
+          })
+
+        return () => {
+          segmentKeys.forEach((key) => {
+            const subscribers = this.subscribers.get(key)
+            if (subscribers) {
+              subscribers.delete(callback)
+              if (subscribers.size === 0) {
+                this.subscribers.delete(key)
+              }
+            }
+          })
+        }
+      },
+    }
+  }
+
+  private async getAllKeys(): Promise<string[]> {
+    const storage = this.getStorage()
+    return storage.keys()
+  }
+
   protected async cleanupResources(): Promise<void> {
     const storage = this.getStorage()
     await storage.clear()
+    this.subscribers.clear()
   }
 
-  private async createStorage() {
+  private async createStorage(): Promise<IStorage> {
     switch (this.config.type) {
-      // case 'localStorage':
-      //   return this.container.resolve(LocalStorage)
-      // case 'indexedDB':
-      //   return this.container.resolve(IndexedDBStorage)
-      // case 'memory':
+      case 'localStorage':
+        return this.container.resolve(LocalStorage)
+      case 'indexDB':
+        return this.container.resolve(IndexedDBStorage)
+      case 'memory':
       default:
         return this.container.resolve(MemoryStorage)
     }
@@ -93,19 +222,21 @@ export class StorageModule extends BaseModule {
   }
 
   // Публичный API
-  public getStorage(): IStorage {
-    return this.container.get<IStorage>('storage')
+  public async getState(): Promise<Record<string, any>> {
+    const storage = this.getStorage()
+    const keys = await storage.keys()
+    const flatState: Record<string, any> = {}
+
+    for (const key of keys) {
+      const value = await storage.get(key)
+      flatState[key] = value
+    }
+
+    return dataUtils.unflatten(flatState)
   }
 
-  public async set<T>(key: string, value: T): Promise<void> {
-    const storage = this.getStorage()
-    const eventBus = this.container.get<IEventBus>('eventBus')
-
-    await storage.set(key, value)
-    await eventBus.emit({
-      type: 'storage:value:changed',
-      payload: { key, value },
-    })
+  private getStorage(): IStorage {
+    return this.container.get<IStorage>('storage')
   }
 
   public async get<T>(key: string): Promise<T | undefined> {

@@ -6,9 +6,7 @@ import type { IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
 
 @Injectable()
-export class MemoryStorage extends BaseStorage {
-  private storage = new Map<string, any>()
-
+export class LocalStorage extends BaseStorage {
   constructor(
     @Inject('STORAGE_CONFIG') config: IStorageConfig,
     @Inject('pluginManager') pluginManager: StoragePluginManager,
@@ -18,37 +16,40 @@ export class MemoryStorage extends BaseStorage {
     super(config, pluginManager, eventBus, logger)
     if (config.initialState) {
       Object.entries(config.initialState).forEach(([key, value]) => {
-        this.storage.set(key, value)
+        localStorage.setItem(key, JSON.stringify(value))
       })
     }
   }
 
   protected async doGet(key: string): Promise<any> {
-    return this.storage.get(key)
+    const value = localStorage.getItem(key)
+    return value ? JSON.parse(value) : undefined
   }
 
   protected async doSet(key: string, value: any): Promise<void> {
-    this.storage.set(key, value)
+    localStorage.setItem(key, JSON.stringify(value))
   }
 
   protected async doDelete(key: string): Promise<boolean> {
-    return this.storage.delete(key)
+    const exists = await this.doHas(key)
+    localStorage.removeItem(key)
+    return exists
   }
 
   protected async doClear(): Promise<void> {
-    this.storage.clear()
+    localStorage.clear()
   }
 
   protected async doKeys(): Promise<string[]> {
-    return Array.from(this.storage.keys())
+    return Object.keys(localStorage)
   }
 
   protected async doHas(key: string): Promise<boolean> {
-    return this.storage.has(key)
+    return localStorage.getItem(key) !== null
   }
 
   protected async doDestroy(): Promise<void> {
-    // Для MemoryStorage достаточно очистки Map
-    this.storage.clear()
+    // Для LocalStorage специфичной очистки не требуется
+    return Promise.resolve()
   }
 }
