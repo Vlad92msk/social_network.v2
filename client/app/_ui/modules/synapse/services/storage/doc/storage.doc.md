@@ -16,90 +16,59 @@ classDiagram
         +type?: 'memory'|'indexDB'|'localStorage'
         +initialState?: Record~string,any~
         +plugins?: IStoragePlugin[]
-        +middlewares?: (getDefault: () => Middleware[]) => Middleware[]
     }
 
-    class SegmentAPI~T~ {
+    class IStorageSegment~T~ {
         <<interface>>
         +select~R~(selector: (state: T) => R)* Promise~R~
         +update(updater: (state: T) => void)* Promise~void~
-        +getAll()* Promise~T~
+        +getByPath~R~(path: string)* Promise~R|undefined~
+        +setByPath~R~(path: string, value: R)* Promise~void~
+        +patch(partialState: Partial~T~)* Promise~void~
         +subscribe(listener: (state: T) => void)* () => void
+        +clear()* Promise~void~
     }
 
 %% Основной модуль
     class StorageModule {
-        -subscribers: Map~string, Set~
-        -selectors: Map~string, Function~
+        -subscribers: Map~string, Set~(value: any) => void~~
+        -selectors: Map~string, (state: any) => any~
+        -segmentStorages: Map~string, IStorage~
         +name: "storage"
-        +static create(config, container?) StorageModule
-        +createSelector~T,R~(selector) () => Promise~R~
-        +createSegment~T~(config) SegmentAPI~T~
-        +getState() Promise~Record~string,any~~
-        +get~T~(key) Promise~T|undefined~
-        -notifySubscribers(key, value) void
-        -getAllKeys() Promise~string[]~
-        -getAllValues~T~(segment) Promise~T~
+        +constructor(container: IDIContainer, config: IStorageConfig)
+        +static create(config: IStorageConfig, parentContainer?: IDIContainer)* StorageModule
+        +createSelector~T,R~(selector: (state: T) => R)* () => Promise~R~
+        +createSegment~T~(config: SegmentConfig)* Promise~IStorageSegment~T~~
+        +getState()* Promise~Record~string,any~~
+        +get~T~(key: string)* Promise~T|undefined~
+        #registerServices()* Promise~void~
+        #setupEventHandlers()* Promise~void~
+        #cleanupResources()* Promise~void~
+        -createStorage(type: IStorageConfig['type'])* Promise~IStorage~
+        -getStorage()* IStorage
+        -notifySubscribers(key: string, value: any)* void
+        -initializeState(initialState: Record~string,any~)* Promise~void~
     }
 
-%% Реализация хранилища
+%% Реализации хранилища
+    class LocalStorage {
+        <<class>>
+    }
+
+    class IndexedDBStorage {
+        <<class>>
+    }
+
     class MemoryStorage {
-        -storage: Map~string,any~
-        +constructor(config, pluginManager, eventBus, logger)
-        +keys() Promise~string[]~
-        +get~T~(key) Promise~T|undefined~
-        +set~T~(key, value) Promise~void~
-        +has(key) boolean
-        +delete(key) Promise~void~
-        +clear() Promise~void~
+        <<class>>
     }
 
 %% Связи
+    IStorage <|.. LocalStorage : implements
+    IStorage <|.. IndexedDBStorage : implements
     IStorage <|.. MemoryStorage : implements
     StorageModule --> IStorage : uses
-    StorageModule --> SegmentAPI : creates
+    StorageModule --> IStorageSegment : creates
     StorageModule --> IStorageConfig : configured by
-```
-
-
-```mermaid
-sequenceDiagram
-    participant App
-    participant SM as StorageModule
-    participant Seg as Segment
-    participant MS as MemoryStorage
-    participant PM as PluginManager
-    participant EB as EventBus
-
-    Note over App,EB: Создание и инициализация
-    App->>SM: create(config)
-    SM->>MS: new MemoryStorage()
-    SM->>PM: add plugins
-
-    Note over App,EB: Работа с сегментами
-    App->>SM: createSegment({ name: "user", initialState })
-    SM->>MS: set("user.name", "John")
-    SM->>MS: set("user.age", 25)
-    SM-->>App: SegmentAPI
-
-    Note over App,EB: Селекторы и подписки
-    App->>SM: createSelector(state => state.user.name)
-    SM-->>App: selectorFn
-
-    App->>Seg: subscribe(listener)
-    Seg-->>App: unsubscribe
-
-    Note over App,EB: Обновление данных
-    App->>Seg: update(state => { state.name = "Doe" })
-    Seg->>MS: set("user.name", "Doe")
-    MS->>EB: emit("storage:value:changed")
-    SM->>SM: notifySubscribers("user.name", "Doe")
-
-    Note over App,EB: Получение данных
-    App->>Seg: select(state => state.name)
-    Seg->>MS: keys()
-    MS-->>Seg: ["user.name", "user.age"]
-    Seg->>MS: get("user.name")
-    MS-->>Seg: "Doe"
-    Seg-->>App: "Doe"
+    StorageModule --|> BaseModule : extends
 ```

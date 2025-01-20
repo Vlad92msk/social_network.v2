@@ -2,6 +2,7 @@
 import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from './middlewares'
 import { StoragePluginManager } from './plugin-manager.service'
 import type { IStorage, IStorageConfig } from './storage.interface'
+import { MiddlewareChain } from './utils/middleware-chain.utils'
 import { Middleware, MiddlewareOptions, StorageContext } from '../core/core.interface'
 import type { Event, IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
@@ -9,19 +10,22 @@ import type { ILogger } from '../logger/logger.interface'
 export interface DefaultMiddlewareOptions extends MiddlewareOptions {
   batching?: BatchingMiddlewareOptions | false
   shallowCompare?: ShallowCompareMiddlewareOptions | false
-  // В будущем можно добавлять опции для других базовых middleware:
-  // validation?: ValidationMiddlewareOptions | false
-  // serialization?: SerializationMiddlewareOptions | false
-  // и т.д.
 }
 
 export abstract class BaseStorage implements IStorage {
+  private middlewareChain: MiddlewareChain
+
   constructor(
     protected readonly config: IStorageConfig,
     protected readonly pluginManager: StoragePluginManager,
     protected readonly eventBus: IEventBus,
     protected readonly logger: ILogger,
-  ) {}
+  ) {
+    this.middlewareChain = new MiddlewareChain(
+      this.getDefaultMiddleware.bind(this),
+      config,
+    )
+  }
 
   // Абстрактные методы для реализации в конкретных хранилищах
   protected abstract doGet(key: string): Promise<any>;
@@ -173,12 +177,8 @@ export abstract class BaseStorage implements IStorage {
     return middlewares
   }
 
-  protected async applyMiddlewares(context: StorageContext): Promise<any> {
-    const middlewares = this.config.middlewares?.(
-      (options) => this.getDefaultMiddleware(options),
-    ) || []
-
-    const baseOperation = async (ctx: StorageContext) => {
+  private createBaseOperation() {
+    return async (ctx: StorageContext) => {
       switch (ctx.type) {
         case 'get':
           return this.doGet(ctx.key!)
@@ -196,13 +196,17 @@ export abstract class BaseStorage implements IStorage {
           throw new Error(`Unknown operation: ${ctx.type}`)
       }
     }
+  }
 
-    const handler = middlewares.reduceRight(
-      (next, middleware) => middleware(next),
-      baseOperation,
-    )
+  protected async applyMiddlewares(context: StorageContext): Promise<any> {
+    // Извлекаем сегмент из ключа, если он есть
+    const segment = context.key?.split('.')[0]
 
-    return handler(context)
+    return this.middlewareChain.execute({
+      ...context,
+      segment,
+      baseOperation: this.createBaseOperation(),
+    })
   }
 
   protected async emitEvent(event: Event): Promise<void> {
@@ -239,42 +243,3 @@ export abstract class BaseStorage implements IStorage {
     }
   }
 }
-
-// const storage = await StorageModule.create({
-//   type: 'indexDB',
-//   name: 'user',
-//   initialState: {
-//     sum: 30
-//   },
-//   middlewares: (getDefaultMiddleware) => [
-//     ...getDefaultMiddleware({
-//       equalityCheck: {
-//         segments: ['user'],
-//         // Можно передать свой компаратор для сложных объектов
-//         comparator: (prev, next) => deepEqual(prev, next)
-//       },
-//       batching: {
-//         segments: ['user', 'cache'] // батчинг только для этих сегментов
-//         batchSize: 100,
-//         batchDelay: 50,
-//       },
-//     })
-//   ]
-// })
-
-// Это не вызовет обновление состояния
-// await segment.setByPath('sum', 30)
-
-// А это вызовет
-// await segment.setByPath('sum', 35)
-
-//
-//
-// const storage = await StorageModule.create({
-//   type: 'indexDB',
-//   middlewares: (getDefaultMiddleware) => [
-//     ...getDefaultMiddleware({
-//       batching: false,
-//     })
-//   ]
-// })

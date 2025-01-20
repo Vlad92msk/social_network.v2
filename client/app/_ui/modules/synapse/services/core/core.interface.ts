@@ -63,17 +63,8 @@ export interface IPluginManager<T extends IPlugin> {
   destroy(): Promise<void>
 }
 
-/** Конфигурация ядра системы */
-export interface ICoreConfig {
-  /** Массив начальных плагинов */
-  plugins?: IPlugin[]
-
-  /** Режим отладки */
-  debug?: boolean
-}
-
-
 export interface MiddlewareOptions {
+  segments?: string[] // Явно указываем сегменты
   // Базовый интерфейс для всех опций middleware
   [key: string]: any
 }
@@ -81,14 +72,20 @@ export interface MiddlewareOptions {
 type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys';
 
 export interface StorageContext<T = any> {
-  type: OperationType
-  key?: string
-  value?: T
-  metadata?: Record<string, any>
+  type: OperationType;
+  key?: string;
+  value?: T;
+  metadata?: Record<string, any>;
+  segment?: string;
+  baseOperation?: NextFunction;
 }
 
-export type NextFunction = (context: StorageContext) => Promise<any>
+export type NextFunction = (context: StorageContext) => Promise<any>;
 
-export type Middleware = (next: NextFunction) => (context: StorageContext) => Promise<any>
+export interface Middleware {
+  (next: NextFunction): NextFunction;
+  options?: MiddlewareOptions;
+}
 
-export type MiddlewareFactory<TOptions = MiddlewareOptions> = (options?: TOptions) => Middleware
+export type MiddlewareFactory<TOptions = MiddlewareOptions> =
+  (options?: TOptions) => Middleware;

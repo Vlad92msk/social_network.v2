@@ -2,7 +2,7 @@ import { IndexedDBStorage } from './indexed-DB.service'
 import { LocalStorage } from './local-storage.service'
 import { MemoryStorage } from './memory-storage.service'
 import { StoragePluginManager } from './plugin-manager.service'
-import type { IStorage, IStorageConfig, IStorageSegment } from './storage.interface'
+import type { IStorage, IStorageConfig, IStorageSegment, SegmentConfig } from './storage.interface'
 import { dataUtils, pathUtils } from './storage.utils'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
@@ -95,16 +95,16 @@ export class StorageModule extends BaseModule {
   }
 
   public async createSegment<T extends Record<string, any>>(
-    config: { name: string; initialState?: T; type?: IStorageConfig['type']; },
+    config: SegmentConfig<T>,
   ): Promise<IStorageSegment<T>> {
     const { name, initialState, type } = config
+    // Создаем отдельное хранилище для сегмента, если указан тип
     // Создаем отдельное хранилище для сегмента, если указан тип
     let segmentStorage: IStorage
     if (type) {
       segmentStorage = await this.createStorage(type)
       this.segmentStorages.set(name, segmentStorage)
     } else {
-      // Если тип не указан, используем основное хранилище
       segmentStorage = this.getStorage()
     }
 

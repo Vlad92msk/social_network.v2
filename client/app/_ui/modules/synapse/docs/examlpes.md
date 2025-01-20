@@ -225,21 +225,34 @@ const initialState = {
 
 // Лучше использовать builder pattern
 const synapse = new SynapseBuilder()
-  .withCore({
-    // Добавляем пользовательские плагины
-    plugins: [new LoggerPlugin(), new SyncPlugin()], // Идут в CorePluginManager
-  })
   .withStorage({
-    initialState,
-    type: 'memory', // indexDB/localStorage
-    options: {
-      prefix: 'app:', // Для основных данных
-      query: 'api:' // Отдельное место в состоянии для хранения результатов запросов
+    type: 'memory',
+    initialState: {
+      app: {
+        version: '1.0.0',
+        lastUpdate: Date.now(),
+        features: {
+          darkMode: true,
+          beta: false
+        }
+      }
     },
-    plugins: [new CustomStoragePlugin()], // Идут в StatePluginManager
-    // Добавляем пользовательские middlewares
-    middlewares: ((getDefaultStateMiddleware) => getDefaultStateMiddleware().concat([stateLogger, stateValidator])),
-    //... другие настройки (пока я не знаю какие и как их организовать)
+    plugins: [validationPlugin, encryptionPlugin],
+    middlewares: (getDefaultMiddleware) => [
+      ...getDefaultMiddleware({
+        segments: ['user', 'app'] // эти middleware будут применяться только к указанным сегментам
+      }),
+      createLoggerMiddleware({
+        logLevel: 'debug',
+        prefix: '[Storage] ',
+        segments: ['user'] // логирование только для user сегмента
+      }),
+      createCacheMiddleware({
+        ttl: 10000,
+        maxSize: 1000,
+        // segments не указаны - будет применяться ко всем сегментам
+      }),
+    ],
   })
   .withWorkers({
     broadcast: true, // Шаринг состояния на все вкладки
@@ -267,6 +280,19 @@ const synapse = new SynapseBuilder()
 // Запуск
 const cleanup = synapse.effects.run();
 
+
+const appSegment = synapse.storage.createSegment<AppState>({
+  name: 'app',
+  type: 'indexDB',
+  initialState: {
+    version: '1.0.0',
+    lastUpdate: Date.now(),
+    features: {
+      darkMode: true,
+      beta: false
+    }
+  }
+});
 
 
 // Определение для группы запросов

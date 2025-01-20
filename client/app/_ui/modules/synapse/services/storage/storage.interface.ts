@@ -94,6 +94,12 @@ export interface IStorageConfig {
   middlewares?: (getDefaultMiddleware: (options?: MiddlewareOptions) => Middleware[]) => Middleware[]
 }
 
+export interface SegmentConfig<T> {
+  name: string
+  initialState?: T
+  type?: IStorageConfig['type']
+}
+
 /** API для сегмента */
 export interface IStorageSegment<T extends Record<string, any>> {
   // Выборка данных
