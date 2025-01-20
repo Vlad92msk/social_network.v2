@@ -95,9 +95,23 @@ export interface IStorageConfig {
 }
 
 /** API для сегмента */
-export interface SegmentAPI<T> {
-  select: <R>(selector: (state: T) => R) => Promise<R>;
-  update: (updater: (state: T) => void) => Promise<void>;
-  getAll: () => Promise<T>;
-  subscribe: (listener: (state: T) => void) => () => void;
+export interface IStorageSegment<T extends Record<string, any>> {
+  // Выборка данных
+  select: <R>(selector: (state: T) => R) => Promise<R>
+
+  // Обновление состояния
+  update: (updater: (state: T) => void) => Promise<void>
+
+  // Работа с путями
+  getByPath: <R>(path: string) => Promise<R | undefined>
+  setByPath: <R>(path: string, value: R) => Promise<void>
+
+  // Частичное обновление
+  patch: (partialState: Partial<T>) => Promise<void>
+
+  // Подписка на изменения
+  subscribe: (listener: (state: T) => void) => () => void
+
+  // Очистка сегмента
+  clear: () => Promise<void>
 }

@@ -278,6 +278,7 @@ async function example() {
 
   const appSegment = storage.createSegment<AppState>({
     name: 'app',
+    type: 'indexDB',
     initialState: {
       version: '1.0.0',
       lastUpdate: Date.now(),

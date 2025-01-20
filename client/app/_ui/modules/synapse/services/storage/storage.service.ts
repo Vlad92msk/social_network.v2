@@ -1,15 +1,14 @@
-import { IndexedDBStorage } from '@ui/modules/synapse/services/storage/indexed-DB.service'
-import { LocalStorage } from '@ui/modules/synapse/services/storage/local-storage.service'
+import { IndexedDBStorage } from './indexed-DB.service'
+import { LocalStorage } from './local-storage.service'
 import { MemoryStorage } from './memory-storage.service'
 import { StoragePluginManager } from './plugin-manager.service'
-import type { IStorage, IStorageConfig } from './storage.interface'
+import type { IStorage, IStorageConfig, IStorageSegment } from './storage.interface'
 import { dataUtils, pathUtils } from './storage.utils'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
-import { Middleware } from '../core/core.interface'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
-import type { Event, IEventBus } from '../event-bus/event-bus.interface'
+import type { IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
 
 @Injectable()
@@ -19,6 +18,8 @@ export class StorageModule extends BaseModule {
   private subscribers = new Map<string, Set<(value: any) => void>>()
 
   private selectors = new Map<string, (state: any) => any>()
+
+  private segmentStorages = new Map<string, IStorage>()
 
   constructor(
     container: IDIContainer,
@@ -43,9 +44,10 @@ export class StorageModule extends BaseModule {
       }
     }
 
-    const storage = await this.createStorage()
+    // Создаем основное хранилище для данных из конфига
+    const defaultStorage = await this.createStorage(this.config.type)
     this.container.register({ id: 'pluginManager', instance: pluginManager })
-    this.container.register({ id: 'storage', instance: storage })
+    this.container.register({ id: 'storage', instance: defaultStorage })
 
     if (this.config.initialState) {
       await this.initializeState(this.config.initialState)
@@ -92,27 +94,34 @@ export class StorageModule extends BaseModule {
     }
   }
 
-  public createSegment<T extends Record<string, any>>(
-    config: { name: string; initialState?: T },
-  ) {
-    const { name, initialState } = config
-    const storage = this.getStorage()
+  public async createSegment<T extends Record<string, any>>(
+    config: { name: string; initialState?: T; type?: IStorageConfig['type']; },
+  ): Promise<IStorageSegment<T>> {
+    const { name, initialState, type } = config
+    // Создаем отдельное хранилище для сегмента, если указан тип
+    let segmentStorage: IStorage
+    if (type) {
+      segmentStorage = await this.createStorage(type)
+      this.segmentStorages.set(name, segmentStorage)
+    } else {
+      // Если тип не указан, используем основное хранилище
+      segmentStorage = this.getStorage()
+    }
 
     if (initialState) {
       const flatState = dataUtils.flatten(initialState)
       Object.entries(flatState).forEach(([key, value]) => {
-        storage.set(pathUtils.join(name, key), value)
+        segmentStorage.set(pathUtils.join(name, key), value)
       })
     }
 
     const getAllValues = async (): Promise<T> => {
-      const storage = this.getStorage()
-      const allKeys = await storage.keys()
+      const allKeys = await segmentStorage.keys()
       const segmentKeys = allKeys.filter((key) => key.startsWith(`${name}.`))
       const flatState: Record<string, any> = {}
 
       for (const key of segmentKeys) {
-        const value = await storage.get(key)
+        const value = await segmentStorage.get(key)
         const pureKey = key.replace(`${name}.`, '')
         flatState[pureKey] = value
       }
@@ -132,19 +141,19 @@ export class StorageModule extends BaseModule {
         updater(state)
         const flatState = dataUtils.flatten(state)
         for (const [key, value] of Object.entries(flatState)) {
-          await storage.set(pathUtils.join(name, key), value)
+          await segmentStorage.set(pathUtils.join(name, key), value)
         }
       },
 
       // Новые методы для работы с путями
       getByPath: async <R>(path: string): Promise<R | undefined> => {
         const fullPath = pathUtils.join(name, path)
-        return storage.get<R>(fullPath)
+        return segmentStorage.get<R>(fullPath)
       },
 
       setByPath: async <R>(path: string, value: R): Promise<void> => {
         const fullPath = pathUtils.join(name, path)
-        await storage.set(fullPath, value)
+        await segmentStorage.set(fullPath, value)
       },
 
       // Частичное обновление
@@ -153,7 +162,7 @@ export class StorageModule extends BaseModule {
         const merged = dataUtils.merge(current, partialState)
         const flatState = dataUtils.flatten(merged)
         for (const [key, value] of Object.entries(flatState)) {
-          await storage.set(pathUtils.join(name, key), value)
+          await segmentStorage.set(pathUtils.join(name, key), value)
         }
       },
 
@@ -164,7 +173,7 @@ export class StorageModule extends BaseModule {
         }
 
         const segmentKeys = new Set<string>()
-        this.getAllKeys()
+        segmentStorage.keys()
           .then((keys) => {
             keys.forEach((key) => {
               if (key.startsWith(`${name}.`)) {
@@ -189,6 +198,15 @@ export class StorageModule extends BaseModule {
           })
         }
       },
+
+      // Добавляем метод для очистки сегмента
+      clear: async (): Promise<void> => {
+        const keys = await segmentStorage.keys()
+        const segmentKeys = keys.filter((key) => key.startsWith(`${name}.`))
+        for (const key of segmentKeys) {
+          await segmentStorage.delete(key)
+        }
+      },
     }
   }
 
@@ -198,13 +216,17 @@ export class StorageModule extends BaseModule {
   }
 
   protected async cleanupResources(): Promise<void> {
-    const storage = this.getStorage()
-    await storage.clear()
+    // Очищаем все хранилища
+    await this.getStorage().clear()
+    for (const storage of this.segmentStorages.values()) {
+      await storage.clear()
+    }
+    this.segmentStorages.clear()
     this.subscribers.clear()
   }
 
-  private async createStorage(): Promise<IStorage> {
-    switch (this.config.type) {
+  private async createStorage(type: IStorageConfig['type']): Promise<IStorage> {
+    switch (type) {
       case 'localStorage':
         return this.container.resolve(LocalStorage)
       case 'indexDB':
@@ -213,12 +235,6 @@ export class StorageModule extends BaseModule {
       default:
         return this.container.resolve(MemoryStorage)
     }
-  }
-
-  private getDefaultMiddleware(): Middleware[] {
-    return [
-      // Добавьте здесь дефолтные middleware
-    ]
   }
 
   // Публичный API
