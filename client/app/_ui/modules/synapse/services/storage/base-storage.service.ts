@@ -1,9 +1,19 @@
 // base-storage.service.ts
+import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from './middlewares'
 import { StoragePluginManager } from './plugin-manager.service'
 import type { IStorage, IStorageConfig } from './storage.interface'
 import { Middleware, MiddlewareOptions, StorageContext } from '../core/core.interface'
 import type { Event, IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
+
+export interface DefaultMiddlewareOptions extends MiddlewareOptions {
+  batching?: BatchingMiddlewareOptions | false
+  shallowCompare?: ShallowCompareMiddlewareOptions | false
+  // В будущем можно добавлять опции для других базовых middleware:
+  // validation?: ValidationMiddlewareOptions | false
+  // serialization?: SerializationMiddlewareOptions | false
+  // и т.д.
+}
 
 export abstract class BaseStorage implements IStorage {
   constructor(
@@ -134,8 +144,33 @@ export abstract class BaseStorage implements IStorage {
   }
 
   // Защищенные методы для внутреннего использования
-  protected getDefaultMiddleware(options?: MiddlewareOptions): Middleware[] {
-    return []
+  protected getDefaultMiddleware(options?: DefaultMiddlewareOptions): Middleware[] {
+    const middlewares: Middleware[] = []
+
+    // Добавляем equality check middleware
+    if (options?.shallowCompare !== false) {
+      const equalityOptions = options?.shallowCompare || {}
+      middlewares.push(
+        createShallowCompareMiddleware(equalityOptions),
+      )
+    }
+
+    // Добавляем батчинг middleware если он не отключен
+    if (options?.batching !== false) {
+      const batchingOptions = options?.batching || {}
+      middlewares.push(
+        createBatchingMiddleware({
+          batchSize: batchingOptions.batchSize || 100,
+          batchDelay: batchingOptions.batchDelay || 50,
+          segments: batchingOptions.segments || [],
+        }),
+      )
+    }
+
+    // В будущем можно добавить другие базовые middleware
+    // например для сериализации, валидации и т.д.
+
+    return middlewares
   }
 
   protected async applyMiddlewares(context: StorageContext): Promise<any> {
@@ -204,3 +239,42 @@ export abstract class BaseStorage implements IStorage {
     }
   }
 }
+
+// const storage = await StorageModule.create({
+//   type: 'indexDB',
+//   name: 'user',
+//   initialState: {
+//     sum: 30
+//   },
+//   middlewares: (getDefaultMiddleware) => [
+//     ...getDefaultMiddleware({
+//       equalityCheck: {
+//         segments: ['user'],
+//         // Можно передать свой компаратор для сложных объектов
+//         comparator: (prev, next) => deepEqual(prev, next)
+//       },
+//       batching: {
+//         segments: ['user', 'cache'] // батчинг только для этих сегментов
+//         batchSize: 100,
+//         batchDelay: 50,
+//       },
+//     })
+//   ]
+// })
+
+// Это не вызовет обновление состояния
+// await segment.setByPath('sum', 30)
+
+// А это вызовет
+// await segment.setByPath('sum', 35)
+
+//
+//
+// const storage = await StorageModule.create({
+//   type: 'indexDB',
+//   middlewares: (getDefaultMiddleware) => [
+//     ...getDefaultMiddleware({
+//       batching: false,
+//     })
+//   ]
+// })
