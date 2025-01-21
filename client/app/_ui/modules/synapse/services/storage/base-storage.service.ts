@@ -14,6 +14,7 @@ export interface DefaultMiddlewareOptions extends MiddlewareOptions {
 
 export abstract class BaseStorage implements IStorage {
   private middlewareChain: MiddlewareChain
+  protected subscribers = new Map<string, Set<(value: any) => void>>();
 
   constructor(
     protected readonly config: IStorageConfig,
@@ -78,6 +79,9 @@ export abstract class BaseStorage implements IStorage {
 
       this.pluginManager.executeAfterSet(key, processedValue)
 
+      // Уведомляем подписчиков
+      this.notifySubscribers(key, processedValue)
+
       await this.emitEvent({
         type: 'storage:value:changed',
         payload: { key, value: processedValue },
@@ -110,6 +114,31 @@ export abstract class BaseStorage implements IStorage {
     } catch (error) {
       this.logger.error('Error deleting value', { key, error })
       throw error
+    }
+  }
+
+  protected notifySubscribers(key: string, value: any): void {
+    console.log('Notifying subscribers for:', key, value)
+    const subscribers = this.subscribers.get(key)
+    if (subscribers) {
+      subscribers.forEach(callback => callback(value))
+    }
+  }
+
+  public subscribe(key: string, callback: (value: any) => void): () => void {
+    if (!this.subscribers.has(key)) {
+      this.subscribers.set(key, new Set())
+    }
+    this.subscribers.get(key)!.add(callback)
+
+    return () => {
+      const subscribers = this.subscribers.get(key)
+      if (subscribers) {
+        subscribers.delete(callback)
+        if (subscribers.size === 0) {
+          this.subscribers.delete(key)
+        }
+      }
     }
   }
 

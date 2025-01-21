@@ -10,8 +10,10 @@ export const useCounter = () => {
       // Получаем начальное значение
       counterSegment.select(state => state.value).then(setCount)
 
+      console.log('counterSegment', counterSegment)
       // Подписываемся на изменения
       const unsubscribe = counterSegment.subscribe((state) => {
+        console.log('subscribe', state)
         setCount(state.value)
       })
 
@@ -22,7 +24,9 @@ export const useCounter = () => {
   const increment = async () => {
     const { segments: { counterSegment } } = await synapse
     await counterSegment.update((state) => {
+      console.log('before', state)
       state.value += 1
+      console.log('after', state)
     })
   }
 

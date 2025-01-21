@@ -20,6 +20,8 @@ export interface IStorage {
 
   /** Получение всех ключей */
   keys(): Promise<string[]>
+
+  subscribe(key: string, callback: (value: any) => void): () => void
 }
 
 /**

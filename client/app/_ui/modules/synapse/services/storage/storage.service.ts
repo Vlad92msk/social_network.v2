@@ -156,8 +156,7 @@ export class StorageModule extends BaseModule {
     config: SegmentConfig<T>,
   ): Promise<IStorageSegment<T>> {
     const { name, initialState, type } = config
-    // Создаем отдельное хранилище для сегмента, если указан тип
-    // Создаем отдельное хранилище для сегмента, если указан тип
+
     let segmentStorage: IStorage
     if (type) {
       segmentStorage = await this.createStorage(type)
@@ -168,14 +167,14 @@ export class StorageModule extends BaseModule {
 
     if (initialState) {
       const flatState = dataUtils.flatten(initialState)
-      Object.entries(flatState).forEach(([key, value]) => {
-        segmentStorage.set(pathUtils.join(name, key), value)
-      })
+      for (const [key, value] of Object.entries(flatState)) {
+        await segmentStorage.set(pathUtils.join(name, key), value)
+      }
     }
 
-    const getAllValues = async (): Promise<T> => {
+    async function getAllValues(): Promise<T> {
       const allKeys = await segmentStorage.keys()
-      const segmentKeys = allKeys.filter((key) => key.startsWith(`${name}.`))
+      const segmentKeys = allKeys.filter(key => key.startsWith(`${name}.`))
       const flatState: Record<string, any> = {}
 
       for (const key of segmentKeys) {
@@ -198,8 +197,11 @@ export class StorageModule extends BaseModule {
         const state = await getAllValues()
         updater(state)
         const flatState = dataUtils.flatten(state)
+
+        // Обновляем все значения
         for (const [key, value] of Object.entries(flatState)) {
-          await segmentStorage.set(pathUtils.join(name, key), value)
+          const fullKey = pathUtils.join(name, key)
+          await segmentStorage.set(fullKey, value)
         }
       },
 
@@ -225,35 +227,27 @@ export class StorageModule extends BaseModule {
       },
 
       subscribe: (listener: (state: T) => void) => {
+        // Создаем callback для преобразования плоского состояния
         const callback = async () => {
           const state = await getAllValues()
           listener(state)
         }
 
-        const segmentKeys = new Set<string>()
-        segmentStorage.keys()
-          .then((keys) => {
-            keys.forEach((key) => {
-              if (key.startsWith(`${name}.`)) {
-                segmentKeys.add(key)
-                if (!this.subscribers.has(key)) {
-                  this.subscribers.set(key, new Set())
-                }
-                this.subscribers.get(key)!.add(callback)
-              }
-            })
-          })
+        const unsubscribers: Array<() => void> = []
 
-        return () => {
-          segmentKeys.forEach((key) => {
-            const subscribers = this.subscribers.get(key)
-            if (subscribers) {
-              subscribers.delete(callback)
-              if (subscribers.size === 0) {
-                this.subscribers.delete(key)
-              }
+        // Подписываемся на все ключи сегмента
+        segmentStorage.keys().then(keys => {
+          keys.forEach(key => {
+            if (key.startsWith(`${name}.`)) {
+              // Подписываемся на изменение каждого ключа
+              unsubscribers.push(segmentStorage.subscribe(key, callback))
             }
           })
+        })
+
+        // Возвращаем функцию отписки
+        return () => {
+          unsubscribers.forEach(unsubscribe => unsubscribe())
         }
       },
 
