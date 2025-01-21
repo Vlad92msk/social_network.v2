@@ -2,14 +2,18 @@ import { IndexedDBStorage } from './indexed-DB.service'
 import { LocalStorage } from './local-storage.service'
 import { MemoryStorage } from './memory-storage.service'
 import { StoragePluginManager } from './plugin-manager.service'
-import type { IStorage, IStorageConfig, IStorageSegment, SegmentConfig } from './storage.interface'
-import { dataUtils, pathUtils } from './storage.utils'
+import { StateManager } from './segment-manager.service'
+import { SelectorManager } from './selector-manager.service'
+import { StorageSegmentManager } from './state-manager.service'
+import type {
+  IStorage, IStorageConfig, IStorageSegment, SegmentConfig, Selector, SelectorAPI, SelectorOptions,
+} from './storage.interface'
+import { dataUtils } from './storage.utils'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
 import type { EventBusSegmentConfig, IEventBus } from '../event-bus/event-bus.interface'
-import type { ILogger } from '../logger/logger.interface'
 
 // Создаем конфигурацию для storage сегмента
 export const StorageSegmentConfig: EventBusSegmentConfig = {
@@ -21,19 +25,13 @@ export const StorageSegmentConfig: EventBusSegmentConfig = {
     'storage:value:changed',
     'storage:value:deleted',
     'storage:cleared',
-    'storage:destroyed'
-  ]
-};
+    'storage:destroyed',
+  ],
+}
 
 @Injectable()
 export class StorageModule extends BaseModule {
   readonly name = 'storage'
-
-  private subscribers = new Map<string, Set<(value: any) => void>>()
-
-  private selectors = new Map<string, (state: any) => any>()
-
-  private segmentStorages = new Map<string, IStorage>()
 
   constructor(
     @Inject('container') container: IDIContainer,
@@ -46,22 +44,87 @@ export class StorageModule extends BaseModule {
   static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
     const container = new DIContainer({ parent: parentContainer })
 
-    // Регистрируем зависимости с явным указанием типов
-    container.register<IDIContainer>({
-      id: 'container',
-      instance: container,
+    // Базовая регистрация
+    container.register<IDIContainer>({ id: 'container', instance: container })
+    container.register<IStorageConfig>({ id: 'STORAGE_CONFIG', instance: config })
+
+    // Регистрируем базовые хранилища
+    container.register({
+      id: MemoryStorage,
+      type: MemoryStorage,
+    })
+    container.register({
+      id: LocalStorage,
+      type: LocalStorage,
+    })
+    container.register({
+      id: IndexedDBStorage,
+      type: IndexedDBStorage,
     })
 
-    container.register<IStorageConfig>({
-      id: 'STORAGE_CONFIG',
-      instance: config,
+    // Функция создания хранилища
+    const createStorageInstance = async (type: IStorageConfig['type']): Promise<IStorage> => {
+      switch (type) {
+        case 'localStorage':
+          return container.resolve(LocalStorage)
+        case 'indexDB':
+          return container.resolve(IndexedDBStorage)
+        case 'memory':
+        default:
+          return container.resolve(MemoryStorage)
+      }
+    }
+
+    container.register({
+      id: 'createStorage',
+      instance: createStorageInstance,
     })
 
-    container.register<StorageModule>({
+    // Регистрируем менеджеры
+    container.register({
+      id: StateManager,
+      type: StateManager,
+      metadata: {
+        dependencies: ['storage', 'eventBus'],
+      },
+    })
+
+    container.register({
+      id: SelectorManager,
+      type: SelectorManager,
+      metadata: {
+        dependencies: [StateManager],
+      },
+    })
+
+    container.register({
+      id: StorageSegmentManager,
+      type: StorageSegmentManager,
+      metadata: {
+        dependencies: ['storage', StateManager, SelectorManager, 'createStorage'],
+      },
+    })
+
+    // Регистрируем тип менеджера плагинов
+    container.register({
+      id: StoragePluginManager,
+      type: StoragePluginManager,
+      metadata: {
+        dependencies: ['container'],
+      },
+    })
+
+    // Создаем экземпляр плагин-менеджера и регистрируем его как сервис
+    container.register({
+      id: 'pluginManager',
+      instance: container.resolve(StoragePluginManager),
+    })
+
+    container.register({
       id: StorageModule,
       type: StorageModule,
       metadata: {
-        dependencies: ['container', 'STORAGE_CONFIG'], // Явно указываем токены
+        dependencies: ['container', 'STORAGE_CONFIG'],
       },
     })
 
@@ -69,64 +132,76 @@ export class StorageModule extends BaseModule {
   }
 
   protected async registerServices(): Promise<void> {
+    // 1. Настраиваем EventBus
     const eventBus = this.container.get<IEventBus>('eventBus')
-    // Создаем сегмент storage
     eventBus.createSegment(StorageSegmentConfig)
 
-    // 1. Создаем и сразу регистрируем pluginManager
-    const pluginManager = this.container.resolve(StoragePluginManager)
-    this.container.register({
-      id: 'pluginManager',
-      instance: pluginManager,
-    })
+    // 2. Создаем и регистрируем базовое хранилище
+    const createStorage = this.container.get<(type: IStorageConfig['type']) => Promise<IStorage>>('createStorage')
+    const defaultStorage = await createStorage(this.config.type)
 
-    // 2. Регистрируем плагины если они есть
-    if (this.config.plugins) {
-      for (const plugin of this.config.plugins) {
-        await pluginManager.add(plugin)
-      }
-    }
-
-    // 3. Регистрируем тип хранилища
-    // Добавляем эту строку
-    this.container.register({
-      id: MemoryStorage,
-      type: MemoryStorage,
-    })
-
-    // 4. Создаем основное хранилище
-    const defaultStorage = await this.createStorage(this.config.type)
     this.container.register({
       id: 'storage',
       instance: defaultStorage,
     })
 
-    // 5. Инициализируем состояние если нужно
+    // 3. Инициализируем менеджеры как дочерние модули
+    const stateManager = this.container.resolve(StateManager)
+    this.registerChildModule('stateManager', stateManager)
+
+    const selectorManager = this.container.resolve(SelectorManager)
+    this.registerChildModule('selectorManager', selectorManager)
+
+    const segmentManager = this.container.resolve(StorageSegmentManager)
+    this.registerChildModule('segmentManager', segmentManager)
+
+    // 4. Инициализируем плагины если есть
+    if (this.config.plugins) {
+      const pluginManager = this.container.resolve(StoragePluginManager)
+      this.registerChildModule('pluginManager', pluginManager)
+
+      await Promise.all(this.config.plugins.map((plugin) => pluginManager.add(plugin)))
+    }
+
+    // 5. Инициализируем начальное состояние если есть
     if (this.config.initialState) {
       await this.initializeState(this.config.initialState)
     }
   }
 
-  private async initializeState(initialState: Record<string, any>): Promise<void> {
-    const storage = this.getStorage()
-    const flatState = dataUtils.flatten(initialState)
+  // Public API methods now delegate to appropriate managers
+  public async getState(): Promise<Record<string, any>> {
+    const stateManager = this.getChildModule<StateManager>('stateManager')
+    return stateManager.getState()
+  }
 
-    for (const [key, value] of Object.entries(flatState)) {
-      await storage.set(key, value)
-    }
+  public async get<T>(key: string): Promise<T | undefined> {
+    const stateManager = this.getChildModule<StateManager>('stateManager')
+    return stateManager.get(key)
+  }
+
+  public async set<T>(key: string, value: T): Promise<void> {
+    const stateManager = this.getChildModule<StateManager>('stateManager')
+    return stateManager.set(key, value)
+  }
+
+  public createSelector<State extends Record<string, any>, R>(
+    selector: Selector<State, R>,
+    options?: SelectorOptions<R>,
+  ): SelectorAPI<R> {
+    const selectorManager = this.getChildModule<SelectorManager>('selectorManager')
+    return selectorManager.createSelector(selector, options)
+  }
+
+  public async createSegment<T extends Record<string, any>>(
+    config: SegmentConfig<T>,
+  ): Promise<IStorageSegment<T>> {
+    const segmentManager = this.getChildModule<StorageSegmentManager>('segmentManager')
+    return segmentManager.createSegment(config)
   }
 
   protected async setupEventHandlers(): Promise<void> {
     const eventBus = this.container.get<IEventBus>('eventBus')
-    const logger = this.container.get<ILogger>('logger')
-
-    // Меняем с 'storage:changed' на 'storage'
-    eventBus.subscribe('storage', async (event) => {
-      if (event.type === 'storage:changed') {
-        this.notifySubscribers(event.payload.key, event.payload.value)
-        logger.debug('Storage changed:', event.payload)
-      }
-    })
 
     eventBus.subscribe('app', async (event) => {
       if (event.type === 'app:cleanup') {
@@ -135,180 +210,18 @@ export class StorageModule extends BaseModule {
     })
   }
 
-  private notifySubscribers(key: string, value: any): void {
-    const subscribers = this.subscribers.get(key)
-    if (subscribers) {
-      subscribers.forEach((callback) => callback(value))
-    }
-  }
-
-  public createSelector<T, R>(selector: (state: T) => R): () => Promise<R> {
-    const id = Math.random().toString(36).substr(2, 9)
-    this.selectors.set(id, selector)
-
-    return async () => {
-      const state = await this.getState()
-      return selector(state as T)
-    }
-  }
-
-  public async createSegment<T extends Record<string, any>>(
-    config: SegmentConfig<T>,
-  ): Promise<IStorageSegment<T>> {
-    const { name, initialState, type } = config
-
-    let segmentStorage: IStorage
-    if (type) {
-      segmentStorage = await this.createStorage(type)
-      this.segmentStorages.set(name, segmentStorage)
-    } else {
-      segmentStorage = this.getStorage()
-    }
-
-    if (initialState) {
-      const flatState = dataUtils.flatten(initialState)
-      for (const [key, value] of Object.entries(flatState)) {
-        await segmentStorage.set(pathUtils.join(name, key), value)
-      }
-    }
-
-    async function getAllValues(): Promise<T> {
-      const allKeys = await segmentStorage.keys()
-      const segmentKeys = allKeys.filter(key => key.startsWith(`${name}.`))
-      const flatState: Record<string, any> = {}
-
-      for (const key of segmentKeys) {
-        const value = await segmentStorage.get(key)
-        const pureKey = key.replace(`${name}.`, '')
-        flatState[pureKey] = value
-      }
-
-      return dataUtils.unflatten(flatState) as T
-    }
-
-    return {
-      // Стандартные методы
-      select: async <R>(selector: (state: T) => R): Promise<R> => {
-        const state = await getAllValues()
-        return selector(state)
-      },
-
-      update: async (updater: (state: T) => void): Promise<void> => {
-        const state = await getAllValues()
-        updater(state)
-        const flatState = dataUtils.flatten(state)
-
-        // Обновляем все значения
-        for (const [key, value] of Object.entries(flatState)) {
-          const fullKey = pathUtils.join(name, key)
-          await segmentStorage.set(fullKey, value)
-        }
-      },
-
-      // Новые методы для работы с путями
-      getByPath: async <R>(path: string): Promise<R | undefined> => {
-        const fullPath = pathUtils.join(name, path)
-        return segmentStorage.get<R>(fullPath)
-      },
-
-      setByPath: async <R>(path: string, value: R): Promise<void> => {
-        const fullPath = pathUtils.join(name, path)
-        await segmentStorage.set(fullPath, value)
-      },
-
-      // Частичное обновление
-      patch: async (partialState: Partial<T>): Promise<void> => {
-        const current = await getAllValues()
-        const merged = dataUtils.merge(current, partialState)
-        const flatState = dataUtils.flatten(merged)
-        for (const [key, value] of Object.entries(flatState)) {
-          await segmentStorage.set(pathUtils.join(name, key), value)
-        }
-      },
-
-      subscribe: (listener: (state: T) => void) => {
-        // Создаем callback для преобразования плоского состояния
-        const callback = async () => {
-          const state = await getAllValues()
-          listener(state)
-        }
-
-        const unsubscribers: Array<() => void> = []
-
-        // Подписываемся на все ключи сегмента
-        segmentStorage.keys().then(keys => {
-          keys.forEach(key => {
-            if (key.startsWith(`${name}.`)) {
-              // Подписываемся на изменение каждого ключа
-              unsubscribers.push(segmentStorage.subscribe(key, callback))
-            }
-          })
-        })
-
-        // Возвращаем функцию отписки
-        return () => {
-          unsubscribers.forEach(unsubscribe => unsubscribe())
-        }
-      },
-
-      // Добавляем метод для очистки сегмента
-      clear: async (): Promise<void> => {
-        const keys = await segmentStorage.keys()
-        const segmentKeys = keys.filter((key) => key.startsWith(`${name}.`))
-        for (const key of segmentKeys) {
-          await segmentStorage.delete(key)
-        }
-      },
-    }
-  }
-
-  private async getAllKeys(): Promise<string[]> {
-    const storage = this.getStorage()
-    return storage.keys()
-  }
-
   protected async cleanupResources(): Promise<void> {
-    // Очищаем все хранилища
-    await this.getStorage().clear()
-    for (const storage of this.segmentStorages.values()) {
-      await storage.clear()
+    // Очистка происходит автоматически через BaseModule.destroy()
+    // который вызывает destroy() для всех дочерних модулей
+    await super.destroy()
+  }
+
+  private async initializeState(initialState: Record<string, any>): Promise<void> {
+    const stateManager = this.getChildModule<StateManager>('stateManager')
+    const flatState = dataUtils.flatten(initialState)
+
+    for (const [key, value] of Object.entries(flatState)) {
+      await stateManager.set(key, value)
     }
-    this.segmentStorages.clear()
-    this.subscribers.clear()
-  }
-
-  private async createStorage(type: IStorageConfig['type']): Promise<IStorage> {
-    switch (type) {
-      case 'localStorage':
-        return this.container.resolve(LocalStorage)
-      case 'indexDB':
-        return this.container.resolve(IndexedDBStorage)
-      case 'memory':
-      default:
-        return this.container.resolve(MemoryStorage)
-    }
-  }
-
-  // Публичный API
-  public async getState(): Promise<Record<string, any>> {
-    const storage = this.getStorage()
-    const keys = await storage.keys()
-    const flatState: Record<string, any> = {}
-
-    for (const key of keys) {
-      const value = await storage.get(key)
-      flatState[key] = value
-    }
-
-    return dataUtils.unflatten(flatState)
-  }
-
-  private getStorage(): IStorage {
-    return this.container.get<IStorage>('storage')
-  }
-
-  public async get<T>(key: string): Promise<T | undefined> {
-    const storage = this.getStorage()
-    return storage.get<T>(key)
   }
 }

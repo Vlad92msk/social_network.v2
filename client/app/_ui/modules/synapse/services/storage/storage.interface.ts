@@ -102,6 +102,21 @@ export interface SegmentConfig<T> {
   type?: IStorageConfig['type']
 }
 
+export type Selector<T, R> = (state: T) => R;
+export type ResultFunction<Deps extends any[], R> = (...args: Deps) => R;
+export type EqualityFn<T> = (a: T, b: T) => boolean;
+
+export interface SelectorOptions<R> {
+  equals?: EqualityFn<R>;
+  name?: string; // для отладки
+}
+
+export interface SelectorAPI<R> {
+  select: () => Promise<R>;
+  subscribe: (listener: (value: R) => void) => () => void;
+}
+
+
 /** API для сегмента */
 export interface IStorageSegment<T extends Record<string, any>> {
   // Выборка данных
@@ -122,4 +137,42 @@ export interface IStorageSegment<T extends Record<string, any>> {
 
   // Очистка сегмента
   clear: () => Promise<void>
+
+  createSelector<R>(
+    selector: Selector<T, R>,
+    options?: SelectorOptions<R>
+  ): SelectorAPI<R>;
+  createSelector<Deps extends any[], R>(
+    dependencies: Array<Selector<T, Deps[number]>>,
+    resultFn: ResultFunction<Deps, R>,
+    options?: SelectorOptions<R>
+  ): SelectorAPI<R>;
 }
+
+// 1. select - для одноразового получения данных
+// await messengerSegment.select(state => state.unreadCount)
+// Используйте когда:
+// - Нужно просто получить значение один раз
+// - Не нужно следить за изменениями
+// - В обработчиках событий
+
+// 2. subscribe - для отслеживания всех изменений в сегменте
+// messengerSegment.subscribe(state => {
+//   // Вызывается при ЛЮБОМ изменении в сегменте
+// })
+// Используйте когда:
+// - Нужно реагировать на любые изменения в сегменте
+// - Для общего мониторинга/логирования
+// - Для синхронизации всего состояния
+
+// 3. createSelector - для оптимизированной подписки на конкретные данные
+// const unreadSelector = messengerSegment.createSelector(
+//   state => state.unreadCount
+// )
+// unreadSelector.subscribe(count => {
+//   // Вызывается ТОЛЬКО при изменении unreadCount
+// })
+// Используйте когда:
+// - Нужно следить за конкретными данными
+// - В React компонентах для оптимизации рендеринга
+// - Для сложных вычислений на основе состояния

@@ -1,24 +1,40 @@
 import { IStoragePlugin } from './storage.interface'
 import { Inject, Injectable } from '../../decorators'
+import { BaseModule } from '../core/base.service'
 import { IPluginManager } from '../core/core.interface'
-import type { IEventBus } from '../event-bus/event-bus.interface'
-import type { ILogger } from '../logger/logger.interface'
+import type { IDIContainer } from '../di-container/di-container.interface'
 
 @Injectable()
-export class StoragePluginManager implements IPluginManager<IStoragePlugin> {
+export class StoragePluginManager extends BaseModule implements IPluginManager<IStoragePlugin> {
+  readonly name = 'pluginManager'
+
   private plugins: Map<string, IStoragePlugin> = new Map()
 
   constructor(
-    @Inject('eventBus') private readonly eventBus: IEventBus,
-    @Inject('logger') private readonly logger: ILogger,
+    @Inject('container') container: IDIContainer,
   ) {
+    super(container)
     // Создаем сегмент для событий плагинов
-    this.eventBus.createSegment('storage:plugins', {
-      priority: 100,
-      filters: [
-        (event) => event.type.startsWith('storage:plugin:'),
-      ],
+    this.eventBus.createSegment({
+      name: 'storage-plugins',
+      eventTypes: ['storage:plugin:added', 'storage:plugin:removed'],
+      priority: 1000,
     })
+  }
+
+  protected async registerServices(): Promise<void> {
+    // Нет необходимости регистрировать дополнительные сервисы
+  }
+
+  protected async setupEventHandlers(): Promise<void> {
+    // Нет необходимости настраивать дополнительные обработчики
+  }
+
+  protected async cleanupResources(): Promise<void> {
+    await Promise.all(
+      Array.from(this.plugins.values()).map((plugin) => plugin.destroy?.() ?? Promise.resolve()),
+    )
+    this.plugins.clear()
   }
 
   async add(plugin: IStoragePlugin): Promise<void> {
@@ -65,22 +81,6 @@ export class StoragePluginManager implements IPluginManager<IStoragePlugin> {
 
   getAll(): IStoragePlugin[] {
     return Array.from(this.plugins.values())
-  }
-
-  async initialize(): Promise<void> {
-    for (const plugin of this.plugins.values()) {
-      if (plugin.initialize) {
-        await plugin.initialize()
-      }
-    }
-  }
-
-  async destroy(): Promise<void> {
-    for (const plugin of this.plugins.values()) {
-      if (plugin.destroy) {
-        await plugin.destroy()
-      }
-    }
   }
 
   // Методы для выполнения хуков плагинов
