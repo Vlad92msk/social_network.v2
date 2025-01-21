@@ -1,4 +1,6 @@
-import { Event, EventBusConfig, EventBusHierarchyConfig, EventBusSegment, IEventBus, Subscriber } from './event-bus.interface'
+import {
+  Event, EventBusConfig, EventBusHierarchyConfig, EventBusSegment, EventBusSegmentConfig, IEventBus, Subscriber,
+} from './event-bus.interface'
 
 export class SegmentedEventBus implements IEventBus {
   private segments: Map<string, EventBusSegment> = new Map()
@@ -45,40 +47,53 @@ export class SegmentedEventBus implements IEventBus {
 
   /**
    * Создает новый сегмент для группировки определенных типов событий
-   * @param name - Уникальное имя сегмента (например, 'logger', 'users', 'notifications')
-   * @param config - Конфигурация сегмента (приоритет, фильтры)
    */
-  public createSegment(name: string, config: EventBusConfig = {}): void {
-    if (this.segments.has(name)) {
-      throw new Error(`Segment "${name}" already exists`)
+  public createSegment(config: EventBusSegmentConfig | string, oldConfig: EventBusConfig = {}): void {
+    const segmentConfig = typeof config === 'string'
+      ? {
+        name: config,
+        eventTypes: [],
+        priority: oldConfig.priority ?? 0,
+        filters: oldConfig.filters ?? [],
+      }
+      : config
+
+    if (this.segments.has(segmentConfig.name)) {
+      throw new Error(`Segment "${segmentConfig.name}" already exists`)
     }
 
-    this.segments.set(name, {
-      name,
+    this.segments.set(segmentConfig.name, {
+      name: segmentConfig.name,
       config: {
-        priority: config.priority ?? 0,
-        filters: config.filters ?? [],
+        name: segmentConfig.name,
+        priority: segmentConfig.priority ?? 0,
+        filters: segmentConfig.filters ?? [],
+        eventTypes: segmentConfig.eventTypes ?? [],
       },
       subscribers: new Set(),
     })
   }
 
   public async emit(event: Event): Promise<void> {
+    // Проверяем, что тип события поддерживается хотя бы одним сегментом
+    const isSupported = Array.from(this.segments.values()).some((segment) => segment.config.eventTypes.includes(event.type))
+
+    if (!isSupported) {
+      console.warn(`Warning: Event type "${event.type}" is not registered in any segment`)
+    }
+
     const enrichedEvent = {
       ...event,
       timestamp: event.timestamp ?? Date.now(),
       namespace: this.namespace,
     }
 
-    // Обрабатываем локально
     await this.processLocalEvent(enrichedEvent)
 
-    // Пробрасываем вверх к родителю
     if (this.propagateUp && this.parent) {
       await this.parent.emit(enrichedEvent)
     }
 
-    // Пробрасываем вниз к детям
     if (this.propagateDown) {
       await Promise.all(
         Array.from(this.children).map((child) => child.emit(enrichedEvent)),
@@ -92,6 +107,13 @@ export class SegmentedEventBus implements IEventBus {
 
     await Promise.all(
       sortedSegments.map(async (segment) => {
+        // Проверяем eventTypes только если они определены
+        if (segment.config.eventTypes?.length
+          && !segment.config.eventTypes.includes(event.type)) {
+          return
+        }
+
+        // Проверяем фильтры только если они определены
         if (segment.config.filters?.some((filter) => !filter(event))) {
           return
         }
@@ -111,9 +133,6 @@ export class SegmentedEventBus implements IEventBus {
 
   /**
    * Добавляет подписчика к определенному сегменту
-   * @param segmentName - Имя сегмента для подписки
-   * @param subscriber - Функция-обработчик событий
-   * @returns Функция для отписки
    */
   public subscribe(segmentName: string, subscriber: Subscriber): () => void {
     const segment = this.segments.get(segmentName)
@@ -122,8 +141,6 @@ export class SegmentedEventBus implements IEventBus {
     }
 
     segment.subscribers.add(subscriber)
-
-    // Возвращаем функцию отписки
     return () => {
       segment.subscribers.delete(subscriber)
     }

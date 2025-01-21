@@ -12,17 +12,10 @@ export class Synapse extends BaseModule {
     super(container)
   }
 
-  // Когда Synapse самостоятельный модуль (+ убираем Injectable)
   static create(parentContainer?: IDIContainer): Synapse {
     const container = new DIContainer({ parent: parentContainer })
     return new Synapse(container)
   }
-
-  // Когда Synapse часть другого модуля (+ Injectable)
-  // static create(parentContainer?: IDIContainer): Synapse {
-  //   const container = new DIContainer({ parent: parentContainer })
-  //   return container.resolve(Synapse)
-  // }
 
   withStorage(config: IStorageConfig): this {
     try {
@@ -43,24 +36,12 @@ export class Synapse extends BaseModule {
   protected async setupEventHandlers(): Promise<void> {
     const eventBus = this.container.get<IEventBus>('eventBus')
 
-    // Подписываемся на события очистки
-    eventBus.subscribe('app:cleanup', async () => {
-      await this.cleanupResources()
+    // Меняем с 'app:cleanup' на 'app'
+    eventBus.subscribe('app', async (event) => {
+      if (event.type === 'app:cleanup') {
+        await this.cleanupResources()
+      }
     })
-
-    // Подписываемся на системные события
-    // this.eventBus.subscribe('system:error', this.handleSystemError)
-    // this.eventBus.subscribe('network:status', this.handleNetworkStatus)
-    //
-    // // Синхронизация между вкладками
-    // window.addEventListener('storage', this.handleStorageEvent)
-    //
-    // // Обработка выгрузки страницы
-    // window.addEventListener('beforeunload', this.handleBeforeUnload)
-    //
-    // // Можем создать свой канал событий
-    // this.broadcastChannel = new BroadcastChannel('synapse')
-    // this.broadcastChannel.onmessage = this.handleBroadcastMessage
   }
 
   protected async cleanupResources(): Promise<void> {
@@ -73,13 +54,8 @@ export class Synapse extends BaseModule {
       throw new Error('Storage module is required but not initialized')
     }
 
-    // Сначала инициализация:
-    // - registerServices зарегистрирует все сервисы
-    // - setupEventHandlers настроит все обработчики
-    // - рекурсивно инициализирует все дочерние модули
     await this.initialize()
 
-    // После этого можем вернуть полностью инициализированные модули
     return { storage }
   }
 }

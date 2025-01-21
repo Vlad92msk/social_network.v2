@@ -1,12 +1,23 @@
+export type EventType = string
+
 export interface Event {
-  type: string
+  type: EventType
   payload?: any
   metadata?: Record<string, any>
   timestamp?: number
+  namespace?: string
 }
 
 export interface EventBusConfig {
   priority?: number
+  filters?: Array<(event: Event) => boolean>
+}
+
+// Базовый тип для конфигурации сегмента
+export interface EventBusSegmentConfig {
+  name: string
+  priority?: number
+  eventTypes?: string[]
   filters?: Array<(event: Event) => boolean>
 }
 
@@ -23,30 +34,35 @@ export interface EventBusHierarchyConfig {
 
 export interface EventBusSegment {
   name: string
-  config: EventBusConfig
+  config: {
+    name: string
+    priority: number
+    eventTypes: string[]
+    filters: Array<(event: Event) => boolean>
+  }
   subscribers: Set<Subscriber>
 }
 
 
 export interface IEventBus {
   // Создание сегмента
-  createSegment(name: string, config?: EventBusConfig): void;
+  createSegment(config: EventBusSegmentConfig): void
 
   // Публикация события
-  emit(event: Event): Promise<void>;
+  emit(event: Event): Promise<void>
 
   // Подписка на события в сегменте
-  subscribe(segmentName: string, subscriber: Subscriber): () => void;
+  subscribe(segmentName: string, subscriber: Subscriber): VoidFunction
 
   // Проверка существования сегмента
-  hasSegment(name: string): boolean;
+  hasSegment(name: string): boolean
 
   // Получение сегмента
-  getSegment(name: string): EventBusSegment | undefined;
+  getSegment(name: string): EventBusSegment | undefined
 
   // Удаление сегмента
-  removeSegment(name: string): boolean;
+  removeSegment(name: string): boolean
 
-  createChild(config?: EventBusHierarchyConfig): IEventBus;
-  getParent(): IEventBus | undefined;
+  createChild(config?: EventBusHierarchyConfig): IEventBus
+  getParent(): IEventBus | undefined
 }

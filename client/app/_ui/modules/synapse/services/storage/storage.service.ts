@@ -8,8 +8,22 @@ import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
-import type { IEventBus } from '../event-bus/event-bus.interface'
+import type { EventBusSegmentConfig, IEventBus } from '../event-bus/event-bus.interface'
 import type { ILogger } from '../logger/logger.interface'
+
+// Создаем конфигурацию для storage сегмента
+export const StorageSegmentConfig: EventBusSegmentConfig = {
+  name: 'storage',
+  priority: 100,
+  eventTypes: [
+    'storage:changed',
+    'storage:value:accessed',
+    'storage:value:changed',
+    'storage:value:deleted',
+    'storage:cleared',
+    'storage:destroyed'
+  ]
+};
 
 @Injectable()
 export class StorageModule extends BaseModule {
@@ -30,34 +44,64 @@ export class StorageModule extends BaseModule {
   }
 
   static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
-    // const container = new DIContainer({ parent: parentContainer })
-    // container.register({ id: 'STORAGE_CONFIG', instance: config })
-    // return container.resolve(StorageModule)
-
     const container = new DIContainer({ parent: parentContainer })
-    // Регистрируем container
-    container.register({ id: 'container', instance: container })
-    // Регистрируем конфиг
-    container.register({ id: 'STORAGE_CONFIG', instance: config })
-    // Регистрируем сам модуль
-    container.register({ id: StorageModule, type: StorageModule })
+
+    // Регистрируем зависимости с явным указанием типов
+    container.register<IDIContainer>({
+      id: 'container',
+      instance: container,
+    })
+
+    container.register<IStorageConfig>({
+      id: 'STORAGE_CONFIG',
+      instance: config,
+    })
+
+    container.register<StorageModule>({
+      id: StorageModule,
+      type: StorageModule,
+      metadata: {
+        dependencies: ['container', 'STORAGE_CONFIG'], // Явно указываем токены
+      },
+    })
+
     return container.resolve(StorageModule)
   }
 
   protected async registerServices(): Promise<void> {
-    const pluginManager = this.container.resolve(StoragePluginManager)
+    const eventBus = this.container.get<IEventBus>('eventBus')
+    // Создаем сегмент storage
+    eventBus.createSegment(StorageSegmentConfig)
 
+    // 1. Создаем и сразу регистрируем pluginManager
+    const pluginManager = this.container.resolve(StoragePluginManager)
+    this.container.register({
+      id: 'pluginManager',
+      instance: pluginManager,
+    })
+
+    // 2. Регистрируем плагины если они есть
     if (this.config.plugins) {
       for (const plugin of this.config.plugins) {
         await pluginManager.add(plugin)
       }
     }
 
-    // Создаем основное хранилище для данных из конфига
-    const defaultStorage = await this.createStorage(this.config.type)
-    this.container.register({ id: 'pluginManager', instance: pluginManager })
-    this.container.register({ id: 'storage', instance: defaultStorage })
+    // 3. Регистрируем тип хранилища
+    // Добавляем эту строку
+    this.container.register({
+      id: MemoryStorage,
+      type: MemoryStorage,
+    })
 
+    // 4. Создаем основное хранилище
+    const defaultStorage = await this.createStorage(this.config.type)
+    this.container.register({
+      id: 'storage',
+      instance: defaultStorage,
+    })
+
+    // 5. Инициализируем состояние если нужно
     if (this.config.initialState) {
       await this.initializeState(this.config.initialState)
     }
@@ -76,13 +120,18 @@ export class StorageModule extends BaseModule {
     const eventBus = this.container.get<IEventBus>('eventBus')
     const logger = this.container.get<ILogger>('logger')
 
-    eventBus.subscribe('storage:changed', async (event) => {
-      this.notifySubscribers(event.payload.key, event.payload.value)
-      logger.debug('Storage changed:', event.payload)
+    // Меняем с 'storage:changed' на 'storage'
+    eventBus.subscribe('storage', async (event) => {
+      if (event.type === 'storage:changed') {
+        this.notifySubscribers(event.payload.key, event.payload.value)
+        logger.debug('Storage changed:', event.payload)
+      }
     })
 
-    eventBus.subscribe('app:cleanup', async () => {
-      await this.cleanupResources()
+    eventBus.subscribe('app', async (event) => {
+      if (event.type === 'app:cleanup') {
+        await this.cleanupResources()
+      }
     })
   }
 

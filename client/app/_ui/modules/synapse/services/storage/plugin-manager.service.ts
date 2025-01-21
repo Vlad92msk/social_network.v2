@@ -10,7 +10,7 @@ export class StoragePluginManager implements IPluginManager<IStoragePlugin> {
 
   constructor(
     @Inject('eventBus') private readonly eventBus: IEventBus,
-    private readonly logger: ILogger,
+    @Inject('logger') private readonly logger: ILogger,
   ) {
     // Создаем сегмент для событий плагинов
     this.eventBus.createSegment('storage:plugins', {

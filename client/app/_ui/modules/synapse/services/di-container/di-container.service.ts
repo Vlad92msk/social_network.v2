@@ -80,11 +80,14 @@ export class DIContainer implements IDIContainer {
   }
 
   public resolve<T>(target: Type<T>, params: any[] = []): T {
-    const dependencies = Reflect.getMetadata('design:paramtypes', target) || []
+    const injectionTokens = Reflect.getMetadata(INJECT_METADATA_KEY, target) || []
+    const dependencies = (Reflect.getMetadata('design:paramtypes', target) || [])
+      .map((dep: any, index: number) => injectionTokens[index] || dep)
+
     console.log('Resolving:', {
       target: target.name,
-      dependencies: dependencies.map(d => d?.name || d),
-      params
+      dependencies: dependencies.map((d) => (typeof d === 'string' ? d : (d?.name || 'Unknown'))),
+      params,
     })
 
     try {
@@ -92,7 +95,7 @@ export class DIContainer implements IDIContainer {
         console.log('Resolving dependency:', {
           index,
           dep: dep?.name || dep,
-          hasParam: params[index] !== undefined
+          hasParam: params[index] !== undefined,
         })
 
         if (params[index] !== undefined) {
@@ -114,7 +117,7 @@ export class DIContainer implements IDIContainer {
     } catch (error) {
       console.error('Resolution error:', error)
       throw new Error(
-        `Error resolving dependencies for "${target.name}": ${error.message}`
+        `Error resolving dependencies for "${target.name}": ${error.message}`,
       )
     }
   }

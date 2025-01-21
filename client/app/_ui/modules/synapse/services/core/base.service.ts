@@ -33,11 +33,14 @@ export abstract class BaseModule implements IModule {
   private setupBaseServices(): void {
     if (!this.container.has('eventBus')) {
       const eventBus = new SegmentedEventBus()
-      // Создаем базовые сегменты
-      eventBus.createSegment('app:cleanup')
+      // Создаем сегмент 'app' вместо 'app:cleanup'
+      eventBus.createSegment({
+        name: 'app',
+        eventTypes: ['app:cleanup', 'app:initialize'], // список поддерживаемых типов событий
+        priority: 1000,
+      })
       this.container.register({ id: 'eventBus', instance: eventBus })
     }
-
     if (!this.container.has('logger')) {
       const eventBus = this.container.get<SegmentedEventBus>('eventBus')
       const logger = new Logger()
@@ -64,6 +67,11 @@ export abstract class BaseModule implements IModule {
     try {
       await this.registerServices()
       await this.setupEventHandlers()
+
+      await this.eventBus.emit({
+        type: 'app:initialize',
+        payload: { moduleName: this.name },
+      })
 
       // Инициализируем дочерние модули
       for (const child of this.children.values()) {
