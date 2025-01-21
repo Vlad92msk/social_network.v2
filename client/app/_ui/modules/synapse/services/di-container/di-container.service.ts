@@ -80,41 +80,41 @@ export class DIContainer implements IDIContainer {
   }
 
   public resolve<T>(target: Type<T>, params: any[] = []): T {
-    // Получаем метаданные о зависимостях из декоратора
     const dependencies = Reflect.getMetadata('design:paramtypes', target) || []
+    console.log('Resolving:', {
+      target: target.name,
+      dependencies: dependencies.map(d => d?.name || d),
+      params
+    })
 
     try {
-      // Разрешаем зависимости
       const resolvedDeps = dependencies.map((dep: Type, index: number) => {
-        // Если для этого индекса есть параметр в params, используем его
+        console.log('Resolving dependency:', {
+          index,
+          dep: dep?.name || dep,
+          hasParam: params[index] !== undefined
+        })
+
         if (params[index] !== undefined) {
           return params[index]
         }
 
-        // Получаем токен внедрения, если он есть
         const injectionTokens = Reflect.getMetadata(INJECT_METADATA_KEY, target) || []
         const token = injectionTokens[index]
+        console.log('Injection token:', { index, token })
 
         if (token) {
-          // Если есть токен, получаем сервис по нему
           return this.get(token)
         }
 
-        // Иначе пытаемся создать экземпляр по типу
         return this.get(dep)
       })
 
-      // Применяем middleware перед созданием
-      const processedArgs = this.applyMiddlewareBefore(target.name, resolvedDeps)
-
-      // Создаем экземпляр
-      const instance = new target(...processedArgs)
-
-      // Применяем middleware после создания
-      return this.applyMiddlewareAfter(target.name, instance)
+      return new target(...resolvedDeps)
     } catch (error) {
+      console.error('Resolution error:', error)
       throw new Error(
-        `Error resolving dependencies for "${target.name}": ${error.message}`,
+        `Error resolving dependencies for "${target.name}": ${error.message}`
       )
     }
   }

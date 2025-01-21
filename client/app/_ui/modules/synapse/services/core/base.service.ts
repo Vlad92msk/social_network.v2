@@ -1,4 +1,5 @@
 // base.service.ts
+import { Injectable } from '@ui/modules/synapse/decorators'
 import { IModule } from './core.interface'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import type { IEventBus } from '../event-bus/event-bus.interface'
@@ -7,6 +8,7 @@ import { EventBusLogger } from '../logger/collectors/event-bus-logger.collector'
 import type { ILogger } from '../logger/logger.interface'
 import { Logger } from '../logger/logger.service'
 
+@Injectable()
 export abstract class BaseModule implements IModule {
   abstract readonly name: string
 
@@ -31,6 +33,8 @@ export abstract class BaseModule implements IModule {
   private setupBaseServices(): void {
     if (!this.container.has('eventBus')) {
       const eventBus = new SegmentedEventBus()
+      // Создаем базовые сегменты
+      eventBus.createSegment('app:cleanup')
       this.container.register({ id: 'eventBus', instance: eventBus })
     }
 

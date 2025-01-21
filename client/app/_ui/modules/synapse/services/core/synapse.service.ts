@@ -26,13 +26,8 @@ export class Synapse extends BaseModule {
 
   withStorage(config: IStorageConfig): this {
     try {
-      // Проверка нужна чтобы:
-      // - Предотвратить дублирование модулей
-      // - Избежать утечек памяти
-      // - Гарантировать консистентность состояния
-      const existingStorage = this.getChildModule<StorageModule>('storage')
-      if (existingStorage) {
-        throw new Error('Storage module is already registered')
+      if (this.container.has('storage')) {
+        return this
       }
 
       const storageModule = StorageModule.create(config, this.container)

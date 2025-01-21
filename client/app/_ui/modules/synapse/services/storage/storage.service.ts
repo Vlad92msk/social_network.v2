@@ -22,7 +22,7 @@ export class StorageModule extends BaseModule {
   private segmentStorages = new Map<string, IStorage>()
 
   constructor(
-    container: IDIContainer,
+    @Inject('container') container: IDIContainer,
     @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
   ) {
     super(container)
@@ -30,8 +30,17 @@ export class StorageModule extends BaseModule {
   }
 
   static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
+    // const container = new DIContainer({ parent: parentContainer })
+    // container.register({ id: 'STORAGE_CONFIG', instance: config })
+    // return container.resolve(StorageModule)
+
     const container = new DIContainer({ parent: parentContainer })
+    // Регистрируем container
+    container.register({ id: 'container', instance: container })
+    // Регистрируем конфиг
     container.register({ id: 'STORAGE_CONFIG', instance: config })
+    // Регистрируем сам модуль
+    container.register({ id: StorageModule, type: StorageModule })
     return container.resolve(StorageModule)
   }
 
