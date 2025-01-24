@@ -1,33 +1,15 @@
-import { IndexedDBStorage } from './indexed-DB.service'
-import { LocalStorage } from './local-storage.service'
-import { MemoryStorage } from './memory-storage.service'
-import { StoragePluginManager } from './plugin-manager.service'
-import { StateManager } from './segment-manager.service'
-import { SelectorManager } from './selector-manager.service'
-import { StorageSegmentManager } from './state-manager.service'
-import type {
-  IStorage, IStorageConfig, IStorageSegment, SegmentConfig, Selector, SelectorAPI, SelectorOptions,
-} from './storage.interface'
-import { dataUtils } from './storage.utils'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
-import type { EventBusSegmentConfig, IEventBus } from '../event-bus/event-bus.interface'
-
-// Создаем конфигурацию для storage сегмента
-export const StorageSegmentConfig: EventBusSegmentConfig = {
-  name: 'storage',
-  priority: 100,
-  eventTypes: [
-    'storage:changed',
-    'storage:value:accessed',
-    'storage:value:changed',
-    'storage:value:deleted',
-    'storage:cleared',
-    'storage:destroyed',
-  ],
-}
+import { IndexedDBStorage } from './adapters/indexed-DB.service'
+import { LocalStorage } from './adapters/local-storage.service'
+import { MemoryStorage } from './adapters/memory-storage.service'
+import { StateOperationsManager } from './modules/operations-manager/operations-manager.service'
+import { StorageSegmentManager } from './modules/segment-manager/segment-manager.service'
+import { StateManager } from './modules/state-manager/state-manager.service'
+import { StoragePluginManager } from './plugin-manager.service'
+import type { IStorage, IStorageConfig, IStorageSegment, SegmentConfig, SelectorAPI, SelectorOptions } from './storage.interface'
 
 @Injectable()
 export class StorageModule extends BaseModule {
@@ -41,71 +23,22 @@ export class StorageModule extends BaseModule {
     if (!config) throw new Error('StorageConfig is required')
   }
 
-  static create(config: IStorageConfig, parentContainer?: IDIContainer): StorageModule {
+  /**
+   * Фабричный метод для создания StorageModule.
+   * Используется для:
+   * 1. Инициализации DI-контейнера
+   * 2. Регистрации всех зависимостей
+   * 3. Создания и инициализации модуля
+   */
+  static async create(config: IStorageConfig, parentContainer?: IDIContainer): Promise<StorageModule> {
+    // Создаем новый контейнер, связанный с родительским (если есть)
     const container = new DIContainer({ parent: parentContainer })
 
-    // Базовая регистрация
-    container.register<IDIContainer>({ id: 'container', instance: container })
-    container.register<IStorageConfig>({ id: 'STORAGE_CONFIG', instance: config })
+    // Регистрируем базовые зависимости
+    container.register({ id: 'container', instance: container })
+    container.register({ id: 'STORAGE_CONFIG', instance: config })
 
-    // Регистрируем базовые хранилища
-    container.register({
-      id: MemoryStorage,
-      type: MemoryStorage,
-    })
-    container.register({
-      id: LocalStorage,
-      type: LocalStorage,
-    })
-    container.register({
-      id: IndexedDBStorage,
-      type: IndexedDBStorage,
-    })
-
-    // Функция создания хранилища
-    const createStorageInstance = async (type: IStorageConfig['type']): Promise<IStorage> => {
-      switch (type) {
-        case 'localStorage':
-          return container.resolve(LocalStorage)
-        case 'indexDB':
-          return container.resolve(IndexedDBStorage)
-        case 'memory':
-        default:
-          return container.resolve(MemoryStorage)
-      }
-    }
-
-    container.register({
-      id: 'createStorage',
-      instance: createStorageInstance,
-    })
-
-    // Регистрируем менеджеры
-    container.register({
-      id: StateManager,
-      type: StateManager,
-      metadata: {
-        dependencies: ['storage', 'eventBus'],
-      },
-    })
-
-    container.register({
-      id: SelectorManager,
-      type: SelectorManager,
-      metadata: {
-        dependencies: [StateManager],
-      },
-    })
-
-    container.register({
-      id: StorageSegmentManager,
-      type: StorageSegmentManager,
-      metadata: {
-        dependencies: ['storage', StateManager, SelectorManager, 'createStorage'],
-      },
-    })
-
-    // Регистрируем тип менеджера плагинов
+    // Регистрируем PluginManager до создания хранилищ
     container.register({
       id: StoragePluginManager,
       type: StoragePluginManager,
@@ -114,96 +47,140 @@ export class StorageModule extends BaseModule {
       },
     })
 
-    // Создаем экземпляр плагин-менеджера и регистрируем его как сервис
+    // Регистрируем все доступные реализации хранилищ
     container.register({
-      id: 'pluginManager',
-      instance: container.resolve(StoragePluginManager),
-    })
-
-    container.register({
-      id: StorageModule,
-      type: StorageModule,
+      id: MemoryStorage,
+      type: MemoryStorage,
       metadata: {
-        dependencies: ['container', 'STORAGE_CONFIG'],
+        dependencies: ['STORAGE_CONFIG', 'pluginManager', 'eventBus', 'logger'],
+      },
+    })
+    container.register({
+      id: LocalStorage,
+      type: LocalStorage,
+      metadata: {
+        dependencies: ['STORAGE_CONFIG', 'pluginManager', 'eventBus', 'logger'],
+      },
+    })
+    container.register({
+      id: IndexedDBStorage,
+      type: IndexedDBStorage,
+      metadata: {
+        dependencies: ['STORAGE_CONFIG', 'pluginManager', 'eventBus', 'logger'],
       },
     })
 
-    return container.resolve(StorageModule)
-  }
+    /**
+     * Фабричная функция для создания хранилища нужного типа.
+     * Регистрируется как сервис, чтобы другие компоненты могли создавать
+     * дополнительные экземпляры хранилищ при необходимости.
+     */
+    const createStorage = async (type: IStorageConfig['type']): Promise<IStorage> => {
+      switch (type) {
+        case 'localStorage': return container.resolve(LocalStorage)
+        case 'indexDB': return container.resolve(IndexedDBStorage)
+        case 'memory':
+        default: return container.resolve(MemoryStorage)
+      }
+    }
 
-  protected async registerServices(): Promise<void> {
-    // 1. Настраиваем EventBus
-    const eventBus = this.container.get<IEventBus>('eventBus')
-    eventBus.createSegment(StorageSegmentConfig)
+    container.register({ id: 'createStorage', instance: createStorage })
 
-    // 2. Создаем и регистрируем базовое хранилище
-    const createStorage = this.container.get<(type: IStorageConfig['type']) => Promise<IStorage>>('createStorage')
-    const defaultStorage = await createStorage(this.config.type)
+    // Создаем и регистрируем основное хранилище
+    const defaultStorage = await createStorage(config.type)
+    container.register({ id: 'storage', instance: defaultStorage })
 
-    this.container.register({
-      id: 'storage',
-      instance: defaultStorage,
+    /**
+     * Регистрируем основные менеджеры.
+     * Важно: metadata.dependencies указывает порядок параметров конструктора
+     */
+    container.register({
+      id: StateManager,
+      type: StateManager,
+      metadata: {
+        dependencies: ['container', 'storage'],
+      },
     })
 
-    // 3. Инициализируем менеджеры как дочерние модули
+    container.register({
+      id: StateOperationsManager,
+      type: StateOperationsManager,
+      metadata: {
+        dependencies: ['container', 'stateManager'],
+      },
+    })
+
+    container.register({
+      id: StorageSegmentManager,
+      type: StorageSegmentManager,
+      metadata: {
+        dependencies: ['container', 'stateManager', 'operationsManager', 'createStorage'],
+      },
+    })
+
+    // Создаем и инициализируем модуль
+    const storageModule = container.resolve<StorageModule>(StorageModule)
+    await storageModule.initialize()
+
+    if (config.initialState) {
+      await storageModule.initializeState(config.initialState)
+    }
+
+    return storageModule
+  }
+
+  /**
+   * Регистрация дочерних модулей.
+   * Здесь мы:
+   * 1. Создаем экземпляры через container.resolve (используя зависимости из metadata)
+   * 2. Инициализируем их
+   * 3. Регистрируем как дочерние модули для управления жизненным циклом
+   */
+  protected async registerServices(): Promise<void> {
+    const pluginManager = this.container.resolve(StoragePluginManager)
+    await pluginManager.initialize()
+    this.registerChildModule('pluginManager', pluginManager)
+
+    // Затем StateManager так как другие зависят от него
     const stateManager = this.container.resolve(StateManager)
+    await stateManager.initialize()
     this.registerChildModule('stateManager', stateManager)
 
-    const selectorManager = this.container.resolve(SelectorManager)
-    this.registerChildModule('selectorManager', selectorManager)
+    const operationsManager = this.container.resolve(StateOperationsManager)
+    await operationsManager.initialize()
+    this.registerChildModule('operationsManager', operationsManager)
 
     const segmentManager = this.container.resolve(StorageSegmentManager)
+    await segmentManager.initialize()
     this.registerChildModule('segmentManager', segmentManager)
+  }
 
-    // 4. Инициализируем плагины если есть
-    if (this.config.plugins) {
-      const pluginManager = this.container.resolve(StoragePluginManager)
-      this.registerChildModule('pluginManager', pluginManager)
-
-      await Promise.all(this.config.plugins.map((plugin) => pluginManager.add(plugin)))
-    }
-
-    // 5. Инициализируем начальное состояние если есть
-    if (this.config.initialState) {
-      await this.initializeState(this.config.initialState)
+  public async initializeState(initialState: Record<string, any>): Promise<void> {
+    const stateManager = this.getChildModule<StateManager>('stateManager')
+    for (const [key, value] of Object.entries(initialState)) {
+      await stateManager.set(key, value)
     }
   }
 
-  // Public API methods now delegate to appropriate managers
-  public async getState(): Promise<Record<string, any>> {
-    const stateManager = this.getChildModule<StateManager>('stateManager')
-    return stateManager.getState()
+  // Public API
+  // @ts-ignore
+  public async createSegment<T>(config: SegmentConfig<T>): Promise<IStorageSegment<T>> {
+    // @ts-ignore
+    return this.getChildModule<StorageSegmentManager>('segmentManager')
+      .createSegment(config)
   }
 
-  public async get<T>(key: string): Promise<T | undefined> {
-    const stateManager = this.getChildModule<StateManager>('stateManager')
-    return stateManager.get(key)
-  }
-
-  public async set<T>(key: string, value: T): Promise<void> {
-    const stateManager = this.getChildModule<StateManager>('stateManager')
-    return stateManager.set(key, value)
-  }
-
-  public createSelector<State extends Record<string, any>, R>(
-    selector: Selector<State, R>,
-    options?: SelectorOptions<R>,
-  ): SelectorAPI<R> {
-    const selectorManager = this.getChildModule<SelectorManager>('selectorManager')
-    return selectorManager.createSelector(selector, options)
-  }
-
-  public async createSegment<T extends Record<string, any>>(
-    config: SegmentConfig<T>,
-  ): Promise<IStorageSegment<T>> {
-    const segmentManager = this.getChildModule<StorageSegmentManager>('segmentManager')
-    return segmentManager.createSegment(config)
+  public createSelector<T>(
+    selectorOrDeps: ((state: any) => T) | Array<SelectorAPI<any>>,
+    resultFn?: (...values: any[]) => T,
+    options?: SelectorOptions<T>,
+  ): SelectorAPI<T> {
+    return this.getChildModule<StateOperationsManager>('operationsManager')
+      .createSelector(selectorOrDeps, resultFn, options)
   }
 
   protected async setupEventHandlers(): Promise<void> {
-    const eventBus = this.container.get<IEventBus>('eventBus')
-
-    eventBus.subscribe('app', async (event) => {
+    this.eventBus.subscribe('app', async (event) => {
       if (event.type === 'app:cleanup') {
         await this.cleanupResources()
       }
@@ -211,17 +188,6 @@ export class StorageModule extends BaseModule {
   }
 
   protected async cleanupResources(): Promise<void> {
-    // Очистка происходит автоматически через BaseModule.destroy()
-    // который вызывает destroy() для всех дочерних модулей
     await super.destroy()
-  }
-
-  private async initializeState(initialState: Record<string, any>): Promise<void> {
-    const stateManager = this.getChildModule<StateManager>('stateManager')
-    const flatState = dataUtils.flatten(initialState)
-
-    for (const [key, value] of Object.entries(flatState)) {
-      await stateManager.set(key, value)
-    }
   }
 }

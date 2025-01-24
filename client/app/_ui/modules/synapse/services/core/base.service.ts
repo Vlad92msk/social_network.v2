@@ -33,7 +33,7 @@ export abstract class BaseModule implements IModule {
   private setupBaseServices(): void {
     if (!this.container.has('eventBus')) {
       const eventBus = new SegmentedEventBus()
-      // Создаем сегмент 'app' вместо 'app:cleanup'
+      // Создаем сегмент 'app'
       eventBus.createSegment({
         name: 'app',
         eventTypes: ['app:cleanup', 'app:initialize'], // список поддерживаемых типов событий
@@ -98,10 +98,24 @@ export abstract class BaseModule implements IModule {
     }
   }
 
-  // Абстрактные методы
+  /**
+   * Регистрирует сервисы модуля в DI контейнере
+   * Переопределите для добавления своих сервисов
+   * Пример: this.container.register({ id: 'userService', instance: new UserService() })
+   */
   protected abstract registerServices(): Promise<void>
 
+  /**
+   * Устанавливает обработчики событий
+   * Переопределите для подписки на события
+   * Пример: this.eventBus.subscribe('user:created', this.handleUserCreated)
+   */
   protected abstract setupEventHandlers(): Promise<void>
 
+  /**
+   * Очищает ресурсы модуля
+   * Переопределите для очистки таймеров, отписки от событий и т.д.
+   * Пример: clearInterval(this.syncInterval)
+   */
   protected abstract cleanupResources(): Promise<void>
 }

@@ -108,14 +108,28 @@ export type EqualityFn<T> = (a: T, b: T) => boolean;
 
 export interface SelectorOptions<R> {
   equals?: EqualityFn<R>;
-  name?: string; // для отладки
+  name?: string;
+}
+
+// Интерфейс подписчика
+export interface Subscriber<T> {
+  id: string // Для идентификации при отписке
+  notify(value: T): Promise<void> // Метод получения обновлений
+}
+
+// Базовый интерфейс для всех сущностей, поддерживающих подписку
+export interface Subscribable<T> {
+  id: string // Уникальный идентификатор
+  subscribers: Set<Subscriber<T>> // Множество подписчиков
+  notify(value: T): Promise<void> // Уведомление всех подписчиков
+  subscribe(subscriber: Subscriber<T>): () => void// Добавление подписчика
+  unsubscribe(subscriber: Subscriber<T>): void // Удаление подписчика
 }
 
 export interface SelectorAPI<R> {
   select: () => Promise<R>;
-  subscribe: (listener: (value: R) => void) => () => void;
+  subscribe: (listener: Subscriber<R>) => () => void;
 }
-
 
 /** API для сегмента */
 export interface IStorageSegment<T extends Record<string, any>> {
@@ -143,7 +157,7 @@ export interface IStorageSegment<T extends Record<string, any>> {
     options?: SelectorOptions<R>
   ): SelectorAPI<R>;
   createSelector<Deps extends any[], R>(
-    dependencies: Array<Selector<T, Deps[number]>>,
+    dependencies: Array<Selector<T, Deps[number]> | SelectorAPI<Deps[number]>>,
     resultFn: ResultFunction<Deps, R>,
     options?: SelectorOptions<R>
   ): SelectorAPI<R>;

@@ -1,5 +1,5 @@
 import { Middleware, NextFunction, StorageContext } from '../../core/core.interface'
-import { DefaultMiddlewareOptions } from '../base-storage.service'
+import { DefaultMiddlewareOptions } from '../adapters/base-storage.service'
 import { IStorageConfig } from '../storage.interface'
 
 export class MiddlewareChain {

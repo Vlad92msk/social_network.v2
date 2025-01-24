@@ -1,11 +1,11 @@
 // base-storage.service.ts
-import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from './middlewares'
-import { StoragePluginManager } from './plugin-manager.service'
-import type { IStorage, IStorageConfig } from './storage.interface'
-import { MiddlewareChain } from './utils/middleware-chain.utils'
-import { Middleware, MiddlewareOptions, StorageContext } from '../core/core.interface'
-import type { Event, IEventBus } from '../event-bus/event-bus.interface'
-import type { ILogger } from '../logger/logger.interface'
+import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from '../middlewares'
+import { StoragePluginManager } from '../plugin-manager.service'
+import type { IStorage, IStorageConfig } from '../storage.interface'
+import { MiddlewareChain } from '../utils/middleware-chain.utils'
+import { Middleware, MiddlewareOptions, StorageContext } from '../../core/core.interface'
+import type { Event, IEventBus } from '../../event-bus/event-bus.interface'
+import type { ILogger } from '../../logger/logger.interface'
 
 export interface DefaultMiddlewareOptions extends MiddlewareOptions {
   batching?: BatchingMiddlewareOptions | false
