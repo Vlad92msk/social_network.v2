@@ -47,9 +47,15 @@ export class StorageModule extends BaseModule {
       },
     })
 
+    // Создаем экземпляр плагин-менеджера и регистрируем его как сервис
+    container.register({
+      id: 'pluginManager',
+      instance: container.resolve(StoragePluginManager),
+    })
+
     // Регистрируем все доступные реализации хранилищ
     container.register({
-      id: MemoryStorage,
+      id: 'MemoryStorage',
       type: MemoryStorage,
       metadata: {
         dependencies: ['STORAGE_CONFIG', 'pluginManager', 'eventBus', 'logger'],
@@ -137,10 +143,6 @@ export class StorageModule extends BaseModule {
    * 3. Регистрируем как дочерние модули для управления жизненным циклом
    */
   protected async registerServices(): Promise<void> {
-    const pluginManager = this.container.resolve(StoragePluginManager)
-    await pluginManager.initialize()
-    this.registerChildModule('pluginManager', pluginManager)
-
     // Затем StateManager так как другие зависят от него
     const stateManager = this.container.resolve(StateManager)
     await stateManager.initialize()
@@ -153,6 +155,14 @@ export class StorageModule extends BaseModule {
     const segmentManager = this.container.resolve(StorageSegmentManager)
     await segmentManager.initialize()
     this.registerChildModule('segmentManager', segmentManager)
+
+    // 4. Инициализируем плагины если есть
+    if (this.config.plugins) {
+      const pluginManager = this.container.resolve(StoragePluginManager)
+      this.registerChildModule('pluginManager', pluginManager)
+
+      await Promise.all(this.config.plugins.map((plugin) => pluginManager.add(plugin)))
+    }
   }
 
   public async initializeState(initialState: Record<string, any>): Promise<void> {

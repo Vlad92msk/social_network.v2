@@ -26,6 +26,14 @@ class StorageSegment<T> {
     })
   }
 
+  async patch(value: Partial<T>): Promise<void> {
+    const state = await this.stateManager.getState()
+    await this.stateManager.set(this.name, {
+      ...state[this.name],
+      ...value,
+    })
+  }
+
   createSelector<R>(selector: (state: T) => R, options?: SelectorOptions<R>): SelectorAPI<R> {
     return this.operationsManager.createSelector(
       (state) => selector(state[this.name]),
@@ -87,7 +95,7 @@ export class StorageSegmentManager extends BaseModule {
   }
 
   protected async cleanupResources(): Promise<void> {
-    await Promise.all(Array.from(this.segments.values()).map(s => s.destroy()))
+    await Promise.all(Array.from(this.segments.values()).map((s) => s.destroy()))
     this.segments.clear()
     this.storages.clear()
   }
