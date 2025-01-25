@@ -1,12 +1,14 @@
 import { BaseStorage } from './base-storage.service'
-import { StoragePluginManager } from '../plugin-manager.service'
-import type { IStorageConfig } from '../storage.interface'
 import { Inject, Injectable } from '../../../decorators'
 import type { IEventBus } from '../../event-bus/event-bus.interface'
 import type { ILogger } from '../../logger/logger.interface'
+import { StoragePluginManager } from '../plugin-manager.service'
+import type { IStorageConfig } from '../storage.interface'
 
 @Injectable()
 export class IndexedDBStorage extends BaseStorage {
+  private initPromise: Promise<void> | null = null
+
   private db: IDBDatabase | null = null
 
   private readonly DB_NAME: string
@@ -61,21 +63,38 @@ export class IndexedDBStorage extends BaseStorage {
     return this.db!.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME)
   }
 
-  protected async doGet(key: string): Promise<any> {
-    const store = await this.transaction()
-    return new Promise((resolve, reject) => {
-      const request = store.get(key)
-      request.onsuccess = () => resolve(request.result)
-      request.onerror = () => reject(request.error)
-    })
+  private async ensureInitialized() {
+    if (!this.initPromise) {
+      this.initPromise = this.initDB()
+    }
+    return this.initPromise
   }
 
   protected async doSet(key: string, value: any): Promise<void> {
+    await this.ensureInitialized()
     const store = await this.transaction('readwrite')
     return new Promise((resolve, reject) => {
       const request = store.put(value, key)
-      request.onsuccess = () => resolve()
-      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        resolve()
+      }
+      request.onerror = () => {
+        reject(request.error)
+      }
+    })
+  }
+
+  protected async doGet(key: string): Promise<any> {
+    await this.ensureInitialized()
+    const store = await this.transaction()
+    return new Promise((resolve, reject) => {
+      const request = store.get(key)
+      request.onsuccess = () => {
+        resolve(request.result)
+      }
+      request.onerror = () => {
+        reject(request.error)
+      }
     })
   }
 

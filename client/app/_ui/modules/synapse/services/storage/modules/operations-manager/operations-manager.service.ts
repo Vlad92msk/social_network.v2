@@ -4,7 +4,7 @@ import type { IDIContainer } from '../../../di-container/di-container.interface'
 import { SelectorAPI, SelectorOptions, Subscribable, Subscriber } from '../../storage.interface'
 import { StateManager } from '../state-manager/state-manager.service'
 
-class SelectorSubscription<T> implements Subscribable<T> {
+export class SelectorSubscription<T> implements Subscribable<T> {
   readonly id: string
 
   readonly subscribers = new Set<Subscriber<T>>()
@@ -21,11 +21,10 @@ class SelectorSubscription<T> implements Subscribable<T> {
   // Обработка обновлений
   async notify(state: any): Promise<void> {
     const newValue = await this.selector(state)
-    // Уведомляем подписчиков только если значение изменилось
-    if (!this.lastValue || !this.equals(newValue, this.lastValue)) {
+    if (this.lastValue === undefined || !this.equals(newValue, this.lastValue)) {
       this.lastValue = newValue
       await Promise.all(
-        Array.from(this.subscribers).map((sub) => sub.notify(newValue)),
+        Array.from(this.subscribers).map((sub) => sub.notify(newValue))
       )
     }
   }
@@ -66,7 +65,7 @@ export class StateOperationsManager extends BaseModule {
   }
 
   createSelector<T>(
-    selectorOrDeps: ((state: any) => T) | Array<SelectorAPI<any>>,
+    selectorOrDeps: ((state: any) => T | Promise<T>) | Array<SelectorAPI<any>>,
     resultFnOrOptions?: ((...values: any[]) => T) | SelectorOptions<T>,
     options?: SelectorOptions<T>,
   ): SelectorAPI<T> {
@@ -83,9 +82,15 @@ export class StateOperationsManager extends BaseModule {
     )
   }
 
-  private createSimpleSelector<T>(selector: (state: any) => T, options: SelectorOptions<T>): SelectorAPI<T> {
+  private createSimpleSelector<T>(
+    selector: (state: any) => T | Promise<T>,
+    options: SelectorOptions<T>
+  ): SelectorAPI<T> {
     const id = this.generateId()
-    const subscription = new SelectorSubscription(selector, options.equals || ((a, b) => a === b))
+    const subscription = new SelectorSubscription(
+      selector,
+      options.equals || ((a, b) => a === b)
+    )
 
     this.selectorSubscriptions.set(id, subscription)
     this.stateManager.getState().then((state) => subscription.notify(state))
@@ -98,12 +103,10 @@ export class StateOperationsManager extends BaseModule {
       subscribe: (listener) => {
         const unsubscribe = subscription.subscribe(listener)
         return () => {
-          const isEmpty = unsubscribe()
-          if (Boolean(isEmpty)) {
-            this.selectorSubscriptions.delete(id)
-          }
+          unsubscribe()
+          this.selectorSubscriptions.delete(id)
         }
-      },
+      }
     }
   }
 

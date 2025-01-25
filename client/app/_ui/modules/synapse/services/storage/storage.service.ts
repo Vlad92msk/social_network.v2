@@ -1,3 +1,4 @@
+import { SegmentedEventBus } from '@ui/modules/synapse/services/event-bus/event-bus.service'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
@@ -9,7 +10,9 @@ import { StateOperationsManager } from './modules/operations-manager/operations-
 import { StorageSegmentManager } from './modules/segment-manager/segment-manager.service'
 import { StateManager } from './modules/state-manager/state-manager.service'
 import { StoragePluginManager } from './plugin-manager.service'
-import type { IStorage, IStorageConfig, IStorageSegment, SegmentConfig, SelectorAPI, SelectorOptions } from './storage.interface'
+import type {
+  IndexDBConfig, IStorage, IStorageConfig, IStorageSegment, SegmentConfig, SelectorAPI, SelectorOptions,
+} from './storage.interface'
 
 @Injectable()
 export class StorageModule extends BaseModule {
@@ -81,7 +84,16 @@ export class StorageModule extends BaseModule {
      * Регистрируется как сервис, чтобы другие компоненты могли создавать
      * дополнительные экземпляры хранилищ при необходимости.
      */
-    const createStorage = async (type: IStorageConfig['type']): Promise<IStorage> => {
+    const createStorage = async (type: IStorageConfig['type'], options?: IndexDBConfig): Promise<IStorage> => {
+      if (type === 'indexDB' && options) {
+        const currentConfig: IStorageConfig = {
+          ...config,
+          type,
+          options,
+        }
+        container.remove('STORAGE_CONFIG')
+        container.register({ id: 'STORAGE_CONFIG', instance: currentConfig })
+      }
       switch (type) {
         case 'localStorage': return container.resolve(LocalStorage)
         case 'indexDB': return container.resolve(IndexedDBStorage)
@@ -194,6 +206,18 @@ export class StorageModule extends BaseModule {
       if (event.type === 'app:cleanup') {
         await this.cleanupResources()
       }
+    })
+
+    const eventBus = this.container.get<SegmentedEventBus>('eventBus')
+
+    // Регистрируем сегмент для событий хранилища
+    eventBus.createSegment({
+      name: 'storage',
+      eventTypes: [
+        'storage:value:changed',
+        'storage:value:accessed',
+      ],
+      priority: 100,
     })
   }
 

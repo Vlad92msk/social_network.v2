@@ -72,6 +72,15 @@ export interface IStoragePlugin extends IPlugin {
   onClear?(): void
 }
 
+export interface IndexDBConfig {
+  /** Название базы данных для IndexedDB */
+  dbName?: string
+  /** Версия базы данных для IndexedDB */
+  dbVersion?: number
+  /** Название хранилища для IndexedDB */
+  storeName?: string
+}
+
 /** Конфигурация хранилища */
 export interface IStorageConfig {
   /** Начальное состояние */
@@ -81,14 +90,7 @@ export interface IStorageConfig {
   type?: 'memory' | 'indexDB' | 'localStorage'
 
   /** Опции для разных типов хранилища */
-  options?: {
-    /** Название базы данных для IndexedDB */
-    dbName?: string
-    /** Версия базы данных для IndexedDB */
-    dbVersion?: number
-    /** Название хранилища для IndexedDB */
-    storeName?: string
-  }
+  options?: IndexDBConfig
   /** Массив плагинов */
   plugins?: IStoragePlugin[]
 
@@ -100,6 +102,7 @@ export interface SegmentConfig<T> {
   name: string
   initialState?: T
   type?: IStorageConfig['type']
+  options?: IndexDBConfig
 }
 
 export type Selector<T, R> = (state: T) => R;
@@ -128,7 +131,7 @@ export interface Subscribable<T> {
 
 export interface SelectorAPI<R> {
   select: () => Promise<R>;
-  subscribe: (listener: Subscriber<R>) => () => void;
+  subscribe: (listener: Subscriber<R | Promise<R>>) => () => void;
 }
 
 /** API для сегмента */
