@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@ui/modules/synapse/decorators'
 import { BaseModule } from '../../../core/base.service'
 import type { IDIContainer } from '../../../di-container/di-container.interface'
 import { SelectorAPI, SelectorOptions, Subscribable, Subscriber } from '../../storage.interface'
-import { StateManager } from '../state-manager/state-manager.service'
 
 export class SelectorSubscription<T> implements Subscribable<T> {
   readonly id: string
@@ -12,25 +11,25 @@ export class SelectorSubscription<T> implements Subscribable<T> {
   private lastValue?: T
 
   constructor(
-    readonly selector: (state: any) => T | Promise<T>,
+    readonly selector: () => Promise<T>,
     private equals: (a: T, b: T) => boolean,
   ) {
     this.id = `selector_${Date.now()}_${Math.random().toString(36).slice(2)}`
   }
 
-  // Обработка обновлений
-  async notify(state: any): Promise<void> {
-    const newValue = await this.selector(state)
+  async notify(): Promise<void> {
+    const newValue = await this.selector()
     if (this.lastValue === undefined || !this.equals(newValue, this.lastValue)) {
       this.lastValue = newValue
       await Promise.all(
-        Array.from(this.subscribers).map((sub) => sub.notify(newValue))
+        Array.from(this.subscribers).map((sub) => sub.notify(newValue)),
       )
     }
   }
 
   subscribe(subscriber: Subscriber<T>): () => void {
     this.subscribers.add(subscriber)
+    this.notify() // Сразу отправляем текущее значение
     return () => this.unsubscribe(subscriber)
   }
 
@@ -44,28 +43,17 @@ export class SelectorSubscription<T> implements Subscribable<T> {
 }
 
 @Injectable()
-export class StateOperationsManager extends BaseModule {
-  readonly name = 'operationsManager'
+export class SelectorManager extends BaseModule {
+  readonly name = 'selectorManager'
 
   private selectorSubscriptions = new Map<string, SelectorSubscription<any>>()
 
-  private unsubscribeFromState: (() => void) | null = null
-
-  constructor(
-    @Inject('container') container: IDIContainer,
-    @Inject('stateManager') private stateManager: StateManager,
-  ) {
+  constructor(@Inject('container') container: IDIContainer) {
     super(container)
   }
 
-  protected async setupEventHandlers(): Promise<void> {
-    this.eventBus.subscribe('app', (event) => {
-      if (event.type === 'app:cleanup') this.cleanupResources()
-    })
-  }
-
   createSelector<T>(
-    selectorOrDeps: ((state: any) => T | Promise<T>) | Array<SelectorAPI<any>>,
+    selectorOrDeps: (() => Promise<T>) | Array<SelectorAPI<any>>,
     resultFnOrOptions?: ((...values: any[]) => T) | SelectorOptions<T>,
     options?: SelectorOptions<T>,
   ): SelectorAPI<T> {
@@ -83,30 +71,26 @@ export class StateOperationsManager extends BaseModule {
   }
 
   private createSimpleSelector<T>(
-    selector: (state: any) => T | Promise<T>,
-    options: SelectorOptions<T>
+    selector: () => Promise<T>,
+    options: SelectorOptions<T>,
   ): SelectorAPI<T> {
     const id = this.generateId()
     const subscription = new SelectorSubscription(
       selector,
-      options.equals || ((a, b) => a === b)
+      options.equals || ((a, b) => a === b),
     )
 
     this.selectorSubscriptions.set(id, subscription)
-    this.stateManager.getState().then((state) => subscription.notify(state))
 
     return {
-      select: async () => {
-        const state = await this.stateManager.getState()
-        return selector(state)
-      },
+      select: selector,
       subscribe: (listener) => {
         const unsubscribe = subscription.subscribe(listener)
         return () => {
           unsubscribe()
           this.selectorSubscriptions.delete(id)
         }
-      }
+      },
     }
   }
 
@@ -115,44 +99,42 @@ export class StateOperationsManager extends BaseModule {
     resultFn: (...values: any[]) => T,
     options: SelectorOptions<T>,
   ): SelectorAPI<T> {
+    const selector = async () => {
+      const values = await Promise.all(deps.map((dep) => dep.select()))
+      return resultFn(...values)
+    }
+
     const subscription = new SelectorSubscription(
-      async (state: any) => {
-        const values = await Promise.all(deps.map((dep) => dep.select()))
-        return resultFn(...values)
-      },
+      selector,
       options.equals || ((a, b) => a === b),
     )
 
     deps.forEach((dep) => {
       dep.subscribe({
-        id: subscription.id,
-        notify: async () => {
-          const state = await this.stateManager.getState()
-          await subscription.notify(state)
-        },
+        notify: async () => subscription.notify(),
       })
     })
 
     return {
-      select: async () => {
-        const state = await this.stateManager.getState()
-        return subscription.selector(state)
-      },
+      select: selector,
       subscribe: (listener) => subscription.subscribe(listener),
     }
   }
 
-  protected async registerServices(): Promise<void> {
-    this.unsubscribeFromState = this.stateManager.subscribe((state) => this.selectorSubscriptions.forEach((sub) => sub.notify(state)))
+  protected async cleanupResources(): Promise<void> {
+    this.selectorSubscriptions.forEach((sub) => sub.cleanup())
+    this.selectorSubscriptions.clear()
+  }
+
+  protected async registerServices(): Promise<void> {}
+
+  protected async setupEventHandlers(): Promise<void> {
+    this.eventBus.subscribe('app', (event) => {
+      if (event.type === 'app:cleanup') this.cleanupResources()
+    })
   }
 
   private generateId(): string {
     return `selector_${Date.now()}_${Math.random().toString(36).slice(2)}`
-  }
-
-  protected async cleanupResources(): Promise<void> {
-    if (this.unsubscribeFromState) this.unsubscribeFromState()
-    this.selectorSubscriptions.forEach((sub) => sub.cleanup())
-    this.selectorSubscriptions.clear()
   }
 }

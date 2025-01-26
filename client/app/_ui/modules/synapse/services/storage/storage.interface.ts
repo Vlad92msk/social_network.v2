@@ -116,13 +116,13 @@ export interface SelectorOptions<R> {
 
 // Интерфейс подписчика
 export interface Subscriber<T> {
-  id: string // Для идентификации при отписке
+  // id: string // Для идентификации при отписке
   notify(value: T): Promise<void> // Метод получения обновлений
 }
 
 // Базовый интерфейс для всех сущностей, поддерживающих подписку
 export interface Subscribable<T> {
-  id: string // Уникальный идентификатор
+  id?: string // Уникальный идентификатор
   subscribers: Set<Subscriber<T>> // Множество подписчиков
   notify(value: T): Promise<void> // Уведомление всех подписчиков
   subscribe(subscriber: Subscriber<T>): () => void// Добавление подписчика

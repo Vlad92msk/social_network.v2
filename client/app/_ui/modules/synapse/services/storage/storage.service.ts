@@ -1,14 +1,13 @@
-import { SegmentedEventBus } from '@ui/modules/synapse/services/event-bus/event-bus.service'
 import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
+import { SegmentedEventBus } from '../event-bus/event-bus.service'
 import { IndexedDBStorage } from './adapters/indexed-DB.service'
 import { LocalStorage } from './adapters/local-storage.service'
 import { MemoryStorage } from './adapters/memory-storage.service'
-import { StateOperationsManager } from './modules/operations-manager/operations-manager.service'
+import { SelectorManager } from './modules/operations-manager/selector-manager.service'
 import { StorageSegmentManager } from './modules/segment-manager/segment-manager.service'
-import { StateManager } from './modules/state-manager/state-manager.service'
 import { StoragePluginManager } from './plugin-manager.service'
 import type {
   IndexDBConfig, IStorage, IStorageConfig, IStorageSegment, SegmentConfig, SelectorAPI, SelectorOptions,
@@ -18,6 +17,8 @@ import type {
 export class StorageModule extends BaseModule {
   readonly name = 'storage'
 
+  private rootSegment: IStorageSegment<Record<string, any>>
+
   constructor(
     @Inject('container') container: IDIContainer,
     @Inject('STORAGE_CONFIG') private readonly config: IStorageConfig,
@@ -26,22 +27,20 @@ export class StorageModule extends BaseModule {
     if (!config) throw new Error('StorageConfig is required')
   }
 
-  /**
-   * Фабричный метод для создания StorageModule.
-   * Используется для:
-   * 1. Инициализации DI-контейнера
-   * 2. Регистрации всех зависимостей
-   * 3. Создания и инициализации модуля
-   */
   static async create(config: IStorageConfig, parentContainer?: IDIContainer): Promise<StorageModule> {
-    // Создаем новый контейнер, связанный с родительским (если есть)
     const container = new DIContainer({ parent: parentContainer })
 
-    // Регистрируем базовые зависимости
+    // Базовые зависимости
     container.register({ id: 'container', instance: container })
     container.register({ id: 'STORAGE_CONFIG', instance: config })
 
-    // Регистрируем PluginManager до создания хранилищ
+    // Регистрация менеджеров
+    container.register({
+      id: SelectorManager,
+      type: SelectorManager,
+      metadata: { dependencies: ['container'] },
+    })
+
     container.register({
       id: StoragePluginManager,
       type: StoragePluginManager,
@@ -50,15 +49,22 @@ export class StorageModule extends BaseModule {
       },
     })
 
-    // Создаем экземпляр плагин-менеджера и регистрируем его как сервис
     container.register({
       id: 'pluginManager',
-      instance: container.resolve(StoragePluginManager),
+      instance: container.resolve(StoragePluginManager)
     })
 
-    // Регистрируем все доступные реализации хранилищ
     container.register({
-      id: 'MemoryStorage',
+      id: StorageSegmentManager,
+      type: StorageSegmentManager,
+      metadata: {
+        dependencies: ['container', 'selectorManager', 'createStorage'],
+      },
+    })
+
+    // Хранилища
+    container.register({
+      id: MemoryStorage,
       type: MemoryStorage,
       metadata: {
         dependencies: ['STORAGE_CONFIG', 'pluginManager', 'eventBus', 'logger'],
@@ -79,18 +85,9 @@ export class StorageModule extends BaseModule {
       },
     })
 
-    /**
-     * Фабричная функция для создания хранилища нужного типа.
-     * Регистрируется как сервис, чтобы другие компоненты могли создавать
-     * дополнительные экземпляры хранилищ при необходимости.
-     */
     const createStorage = async (type: IStorageConfig['type'], options?: IndexDBConfig): Promise<IStorage> => {
       if (type === 'indexDB' && options) {
-        const currentConfig: IStorageConfig = {
-          ...config,
-          type,
-          options,
-        }
+        const currentConfig = { ...config, type, options }
         container.remove('STORAGE_CONFIG')
         container.register({ id: 'STORAGE_CONFIG', instance: currentConfig })
       }
@@ -104,92 +101,37 @@ export class StorageModule extends BaseModule {
 
     container.register({ id: 'createStorage', instance: createStorage })
 
-    // Создаем и регистрируем основное хранилище
-    const defaultStorage = await createStorage(config.type)
-    container.register({ id: 'storage', instance: defaultStorage })
-
-    /**
-     * Регистрируем основные менеджеры.
-     * Важно: metadata.dependencies указывает порядок параметров конструктора
-     */
-    container.register({
-      id: StateManager,
-      type: StateManager,
-      metadata: {
-        dependencies: ['container', 'storage'],
-      },
-    })
-
-    container.register({
-      id: StateOperationsManager,
-      type: StateOperationsManager,
-      metadata: {
-        dependencies: ['container', 'stateManager'],
-      },
-    })
-
-    container.register({
-      id: StorageSegmentManager,
-      type: StorageSegmentManager,
-      metadata: {
-        dependencies: ['container', 'stateManager', 'operationsManager', 'createStorage'],
-      },
-    })
-
-    // Создаем и инициализируем модуль
+    // Создание и инициализация
     const storageModule = container.resolve<StorageModule>(StorageModule)
     await storageModule.initialize()
 
-    if (config.initialState) {
-      await storageModule.initializeState(config.initialState)
-    }
+    // Создание корневого сегмента
+    const segmentManager = storageModule.getChildModule<StorageSegmentManager>('segmentManager')
+    storageModule.rootSegment = await segmentManager.createSegment({
+      name: 'root',
+      type: config.type,
+      options: config.options,
+      initialState: config.initialState,
+    })
 
     return storageModule
   }
 
-  /**
-   * Регистрация дочерних модулей.
-   * Здесь мы:
-   * 1. Создаем экземпляры через container.resolve (используя зависимости из metadata)
-   * 2. Инициализируем их
-   * 3. Регистрируем как дочерние модули для управления жизненным циклом
-   */
-  protected async registerServices(): Promise<void> {
-    // Затем StateManager так как другие зависят от него
-    const stateManager = this.container.resolve(StateManager)
-    await stateManager.initialize()
-    this.registerChildModule('stateManager', stateManager)
-
-    const operationsManager = this.container.resolve(StateOperationsManager)
-    await operationsManager.initialize()
-    this.registerChildModule('operationsManager', operationsManager)
-
-    const segmentManager = this.container.resolve(StorageSegmentManager)
-    await segmentManager.initialize()
-    this.registerChildModule('segmentManager', segmentManager)
-
-    // 4. Инициализируем плагины если есть
-    if (this.config.plugins) {
-      const pluginManager = this.container.resolve(StoragePluginManager)
-      this.registerChildModule('pluginManager', pluginManager)
-
-      await Promise.all(this.config.plugins.map((plugin) => pluginManager.add(plugin)))
-    }
+  // Public API для работы с корневым сегментом
+  public async select<T>(selector: (state: any) => T): Promise<T> {
+    return this.rootSegment.select(selector)
   }
 
-  public async initializeState(initialState: Record<string, any>): Promise<void> {
-    const stateManager = this.getChildModule<StateManager>('stateManager')
-    for (const [key, value] of Object.entries(initialState)) {
-      await stateManager.set(key, value)
-    }
+  public async update(updater: (state: any) => void): Promise<void> {
+    return this.rootSegment.update(updater)
   }
 
-  // Public API
-  // @ts-ignore
-  public async createSegment<T>(config: SegmentConfig<T>): Promise<IStorageSegment<T>> {
-    // @ts-ignore
-    return this.getChildModule<StorageSegmentManager>('segmentManager')
-      .createSegment(config)
+  public async patch(value: any): Promise<void> {
+    return this.rootSegment.patch(value)
+  }
+
+  public async createSegment<T extends Record<string, any>>(config: SegmentConfig<T>): Promise<IStorageSegment<T>> {
+    return this.getChildModule<StorageSegmentManager>('segmentManager').createSegment(config)
   }
 
   public createSelector<T>(
@@ -197,8 +139,27 @@ export class StorageModule extends BaseModule {
     resultFn?: (...values: any[]) => T,
     options?: SelectorOptions<T>,
   ): SelectorAPI<T> {
-    return this.getChildModule<StateOperationsManager>('operationsManager')
-      .createSelector(selectorOrDeps, resultFn, options)
+    if (Array.isArray(selectorOrDeps)) {
+      return this.getChildModule<SelectorManager>('selectorManager')
+        .createSelector(selectorOrDeps, resultFn!, options)
+    }
+    return this.rootSegment.createSelector(selectorOrDeps, options)
+  }
+
+  protected async registerServices(): Promise<void> {
+    const selectorManager = this.container.resolve(SelectorManager)
+    await selectorManager.initialize()
+    this.registerChildModule('selectorManager', selectorManager)
+
+    const segmentManager = this.container.resolve(StorageSegmentManager)
+    await segmentManager.initialize()
+    this.registerChildModule('segmentManager', segmentManager)
+
+    if (this.config.plugins) {
+      const pluginManager = this.container.resolve(StoragePluginManager)
+      this.registerChildModule('pluginManager', pluginManager)
+      await Promise.all(this.config.plugins.map((plugin) => pluginManager.add(plugin)))
+    }
   }
 
   protected async setupEventHandlers(): Promise<void> {
@@ -209,8 +170,6 @@ export class StorageModule extends BaseModule {
     })
 
     const eventBus = this.container.get<SegmentedEventBus>('eventBus')
-
-    // Регистрируем сегмент для событий хранилища
     eventBus.createSegment({
       name: 'storage',
       eventTypes: [
@@ -222,6 +181,6 @@ export class StorageModule extends BaseModule {
   }
 
   protected async cleanupResources(): Promise<void> {
-    await super.destroy()
+    await this.rootSegment.clear()
   }
 }
