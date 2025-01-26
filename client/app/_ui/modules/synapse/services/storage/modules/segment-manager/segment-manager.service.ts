@@ -1,9 +1,7 @@
 import { Inject, Injectable } from '../../../../decorators'
 import { BaseModule } from '../../../core/base.service'
 import type { IDIContainer } from '../../../di-container/di-container.interface'
-import {
-  type IndexDBConfig, IStorage, IStorageConfig, IStorageSegment, ResultFunction, SegmentConfig, Selector, SelectorAPI, SelectorOptions,
-} from '../../storage.interface'
+import { type IndexDBConfig, IStorage, IStorageConfig, IStorageSegment, ResultFunction, SegmentConfig, Selector, SelectorAPI, SelectorOptions, } from '../../storage.interface'
 import { SelectorManager, SelectorSubscription } from '../operations-manager/selector-manager.service'
 
 export class StorageSegment<T extends Record<string, any>> implements IStorageSegment<T> {
@@ -26,12 +24,13 @@ export class StorageSegment<T extends Record<string, any>> implements IStorageSe
 
   async select<R>(selector: (state: T) => R): Promise<R> {
     const state = await this.storage.get<T>(this.name)
-    return selector(state as T)
+    const result = selector(state as T)
+    return result
   }
 
   async update(updater: (state: T) => void): Promise<void> {
-    const currentState = await this.storage.get<T>(this.name) || {} as T
-    const newState = { ...currentState }
+    const oldState = await this.storage.get<T>(this.name) || {} as T
+    const newState = { ...oldState }
     updater(newState)
     await this.storage.set(this.name, newState)
   }
@@ -45,8 +44,8 @@ export class StorageSegment<T extends Record<string, any>> implements IStorageSe
   }
 
   async patch(value: Partial<T>): Promise<void> {
-    const currentState = await this.storage.get<T>(this.name) || {} as T
-    const newState = { ...currentState, ...value }
+    const oldState = await this.storage.get<T>(this.name) || {} as T
+    const newState = { ...oldState, ...value }
     await this.storage.set(this.name, newState)
   }
 

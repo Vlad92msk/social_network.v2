@@ -1,5 +1,6 @@
 // base.service.ts
 import { Injectable } from '@ui/modules/synapse/decorators'
+import { StorageEvents } from '@ui/modules/synapse/services/storage/storage.interface'
 import { IModule } from './core.interface'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import type { IEventBus } from '../event-bus/event-bus.interface'
@@ -33,14 +34,28 @@ export abstract class BaseModule implements IModule {
   private setupBaseServices(): void {
     if (!this.container.has('eventBus')) {
       const eventBus = new SegmentedEventBus()
-      // Создаем сегмент 'app'
+
       eventBus.createSegment({
         name: 'app',
-        eventTypes: ['app:cleanup', 'app:initialize'], // список поддерживаемых типов событий
+        eventTypes: ['app:cleanup', 'app:initialize'],
         priority: 1000,
       })
+
+      eventBus.createSegment({
+        name: 'storage',
+        eventTypes: Object.values(StorageEvents),
+        priority: 100,
+      })
+
+      eventBus.createSegment({
+        name: 'logger',
+        eventTypes: ['logger:entry', 'logger:error'],
+        priority: 100,
+      })
+
       this.container.register({ id: 'eventBus', instance: eventBus })
     }
+
     if (!this.container.has('logger')) {
       const eventBus = this.container.get<SegmentedEventBus>('eventBus')
       const logger = new Logger()

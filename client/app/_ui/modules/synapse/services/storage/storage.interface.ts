@@ -24,6 +24,14 @@ export interface IStorage {
   subscribe(key: string, callback: (value: any) => void): () => void
 }
 
+export enum StorageEvents {
+  STORAGE_UPDATE = 'storage:update',
+  STORAGE_PATCH = 'storage:patch',
+  STORAGE_SELECT = 'storage:select',
+  STORAGE_CLEAR = 'storage:clear',
+  STORAGE_ERROR = 'storage:error',
+}
+
 /**
  * Расширенный интерфейс плагина для хранилища
  * @description Определяет хуки для всех операций с данными

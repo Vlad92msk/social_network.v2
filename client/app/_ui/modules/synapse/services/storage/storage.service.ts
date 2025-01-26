@@ -2,16 +2,16 @@ import { Inject, Injectable } from '../../decorators'
 import { BaseModule } from '../core/base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
-import { SegmentedEventBus } from '../event-bus/event-bus.service'
 import { IndexedDBStorage } from './adapters/indexed-DB.service'
 import { LocalStorage } from './adapters/local-storage.service'
 import { MemoryStorage } from './adapters/memory-storage.service'
 import { SelectorManager } from './modules/operations-manager/selector-manager.service'
 import { StorageSegmentManager } from './modules/segment-manager/segment-manager.service'
 import { StoragePluginManager } from './plugin-manager.service'
-import type {
-  IndexDBConfig, IStorage, IStorageConfig, IStorageSegment, SegmentConfig, SelectorAPI, SelectorOptions,
+import {
+  IndexDBConfig, IStorage, IStorageSegment, SegmentConfig, SelectorAPI, SelectorOptions, StorageEvents,
 } from './storage.interface'
+import type { IStorageConfig } from './storage.interface'
 
 @Injectable()
 export class StorageModule extends BaseModule {
@@ -51,7 +51,7 @@ export class StorageModule extends BaseModule {
 
     container.register({
       id: 'pluginManager',
-      instance: container.resolve(StoragePluginManager)
+      instance: container.resolve(StoragePluginManager),
     })
 
     container.register({
@@ -169,14 +169,14 @@ export class StorageModule extends BaseModule {
       }
     })
 
-    const eventBus = this.container.get<SegmentedEventBus>('eventBus')
-    eventBus.createSegment({
-      name: 'storage',
-      eventTypes: [
-        'storage:value:changed',
-        'storage:value:accessed',
-      ],
-      priority: 100,
+    // Подписываемся напрямую на сегмент storage
+    this.eventBus.subscribe('storage', (event) => {
+      if (event.type === StorageEvents.STORAGE_UPDATE) {
+        this.logger.info('Storage обновлен:', event)
+      }
+      if (event.type === StorageEvents.STORAGE_SELECT) {
+        this.logger.info('Storage получен:', event)
+      }
     })
   }
 

@@ -1,11 +1,11 @@
 // base-storage.service.ts
-import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from '../middlewares'
-import { StoragePluginManager } from '../plugin-manager.service'
-import type { IStorage, IStorageConfig } from '../storage.interface'
-import { MiddlewareChain } from '../utils/middleware-chain.utils'
 import { Middleware, MiddlewareOptions, StorageContext } from '../../core/core.interface'
 import type { Event, IEventBus } from '../../event-bus/event-bus.interface'
 import type { ILogger } from '../../logger/logger.interface'
+import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from '../middlewares'
+import { StoragePluginManager } from '../plugin-manager.service'
+import { IStorage, IStorageConfig, StorageEvents } from '../storage.interface'
+import { MiddlewareChain } from '../utils/middleware-chain.utils'
 
 export interface DefaultMiddlewareOptions extends MiddlewareOptions {
   batching?: BatchingMiddlewareOptions | false
@@ -14,7 +14,8 @@ export interface DefaultMiddlewareOptions extends MiddlewareOptions {
 
 export abstract class BaseStorage implements IStorage {
   private middlewareChain: MiddlewareChain
-  protected subscribers = new Map<string, Set<(value: any) => void>>();
+
+  protected subscribers = new Map<string, Set<(value: any) => void>>()
 
   constructor(
     protected readonly config: IStorageConfig,
@@ -56,7 +57,7 @@ export abstract class BaseStorage implements IStorage {
       const processedValue = this.pluginManager.executeAfterGet(processedKey, value)
 
       await this.emitEvent({
-        type: 'storage:value:accessed',
+        type: StorageEvents.STORAGE_SELECT,
         payload: { key: processedKey, value: processedValue },
       })
 
@@ -83,7 +84,7 @@ export abstract class BaseStorage implements IStorage {
       this.notifySubscribers(key, processedValue)
 
       await this.emitEvent({
-        type: 'storage:value:changed',
+        type: StorageEvents.STORAGE_UPDATE,
         payload: { key, value: processedValue },
       })
 
@@ -121,7 +122,7 @@ export abstract class BaseStorage implements IStorage {
     console.log('Notifying subscribers for:', key, value)
     const subscribers = this.subscribers.get(key)
     if (subscribers) {
-      subscribers.forEach(callback => callback(value))
+      subscribers.forEach((callback) => callback(value))
     }
   }
 
@@ -153,7 +154,7 @@ export abstract class BaseStorage implements IStorage {
       await this.doClear()
 
       await this.emitEvent({
-        type: 'storage:cleared',
+        type: StorageEvents.STORAGE_CLEAR,
       })
 
       this.logger.debug('Storage cleared successfully')

@@ -13,7 +13,6 @@ export interface EventBusConfig {
   filters?: Array<(event: Event) => boolean>
 }
 
-// Базовый тип для конфигурации сегмента
 export interface EventBusSegmentConfig {
   name: string
   priority?: number
@@ -27,9 +26,9 @@ export interface Subscriber {
 
 export interface EventBusHierarchyConfig {
   parent?: IEventBus
-  propagateUp?: boolean
-  propagateDown?: boolean
-  namespace?: string
+  propagateUp?: boolean // отправлять ли события родительской шине
+  propagateDown?: boolean // отправлять ли события дочерним шинам
+  namespace?: string // для группировки событий по принадлежности к модулю/компоненту системы
 }
 
 export interface EventBusSegment {
@@ -43,26 +42,13 @@ export interface EventBusSegment {
   subscribers: Set<Subscriber>
 }
 
-
 export interface IEventBus {
-  // Создание сегмента
-  createSegment(config: EventBusSegmentConfig): void
-
-  // Публикация события
+  createSegment(config: EventBusSegmentConfig | string, oldConfig?: EventBusConfig): void
   emit(event: Event): Promise<void>
-
-  // Подписка на события в сегменте
   subscribe(segmentName: string, subscriber: Subscriber): VoidFunction
-
-  // Проверка существования сегмента
   hasSegment(name: string): boolean
-
-  // Получение сегмента
   getSegment(name: string): EventBusSegment | undefined
-
-  // Удаление сегмента
   removeSegment(name: string): boolean
-
   createChild(config?: EventBusHierarchyConfig): IEventBus
   getParent(): IEventBus | undefined
 }

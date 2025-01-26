@@ -1,18 +1,8 @@
-import { EventBusSegmentConfig } from '../../event-bus/event-bus.interface'
 import { SegmentedEventBus } from '../../event-bus/event-bus.service'
 import { LogCollector, LogEntry } from '../logger.interface'
-import { Logger } from '../logger.service'
-
-export const LoggerSegmentConfig: EventBusSegmentConfig = {
-  name: 'logger',
-  priority: 1000,
-  eventTypes: ['logger:entry', 'logger:error'],
-}
 
 export class EventBusLogger implements LogCollector {
-  constructor(private eventBus: SegmentedEventBus) {
-    this.eventBus.createSegment(LoggerSegmentConfig)
-  }
+  constructor(private eventBus: SegmentedEventBus) {}
 
   async collect(entry: LogEntry): Promise<void> {
     await this.eventBus.emit({
@@ -25,7 +15,3 @@ export class EventBusLogger implements LogCollector {
     })
   }
 }
-
-// Где-то в проекте, где нужна интеграция с EventBus
-const eventBus = new SegmentedEventBus()
-const logger = new Logger().addCollector(new EventBusLogger(eventBus))
