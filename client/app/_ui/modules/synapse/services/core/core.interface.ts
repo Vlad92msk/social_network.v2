@@ -66,6 +66,12 @@ export interface IPluginManager<T extends IPlugin> {
   destroy(): Promise<void>
 }
 
+// Базовые типы для middleware
+export type GetDefaultMiddleware = (options?: MiddlewareOptions) => Middleware[]
+export type MiddlewareFunction = (getDefaultMiddleware: GetDefaultMiddleware) => Middleware[]
+export type MiddlewareArray = Middleware[]
+export type MiddlewareConfig = MiddlewareArray | MiddlewareFunction
+
 export interface MiddlewareOptions {
   segments?: string[] // Явно указываем сегменты
   // Базовый интерфейс для всех опций middleware

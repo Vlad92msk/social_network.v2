@@ -12,7 +12,6 @@ export function CounterExample() {
   const sum = useSelector(store?.selectors.sum)
   const user = useSelector(store?.selectors.user)
 
-  console.log('user', user)
   const increment1 = async () => {
     // await store?.segments.counter1.patch({ value: (counter1 || 0) + 1 })
     await store?.segments.counter1.update((state) => {

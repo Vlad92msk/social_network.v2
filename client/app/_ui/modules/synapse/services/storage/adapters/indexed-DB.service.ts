@@ -2,7 +2,7 @@ import { BaseStorage } from './base-storage.service'
 import { Inject, Injectable } from '../../../decorators'
 import type { IEventBus } from '../../event-bus/event-bus.interface'
 import type { ILogger } from '../../logger/logger.interface'
-import { StoragePluginManager } from '../plugin-manager.service'
+import type { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import type { IStorageConfig } from '../storage.interface'
 
 @Injectable()
@@ -19,7 +19,7 @@ export class IndexedDBStorage extends BaseStorage {
 
   constructor(
     @Inject('STORAGE_CONFIG') config: IStorageConfig,
-    @Inject('pluginManager') pluginManager: StoragePluginManager,
+    @Inject('pluginManager') pluginManager: IPluginExecutor,
     @Inject('eventBus') eventBus: IEventBus,
     @Inject('logger') logger: ILogger,
   ) {

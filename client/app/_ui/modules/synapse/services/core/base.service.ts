@@ -65,7 +65,7 @@ export abstract class BaseModule implements IModule {
   }
 
   // Управление дочерними модулями
-  protected registerChildModule<T extends BaseModule>(id: string, child: T): T {
+  public registerChildModule<T extends BaseModule>(id: string, child: T): T {
     // Регистрируем в контейнере
     this.container.register({ id, instance: child })
     // Добавляем в Map детей для управления жизненным циклом

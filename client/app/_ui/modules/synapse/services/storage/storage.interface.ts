@@ -1,4 +1,5 @@
-import { IPlugin, Middleware, MiddlewareOptions } from '../core/core.interface'
+import { DefaultMiddlewareOptions } from '@ui/modules/synapse/services/storage/adapters/base-storage.service'
+import { IPlugin, Middleware, MiddlewareArray, MiddlewareConfig, MiddlewareFunction, MiddlewareOptions } from '../core/core.interface'
 
 
 /** Интерфейс для базовых операций хранилища */
@@ -89,6 +90,36 @@ export interface IndexDBConfig {
   storeName?: string
 }
 
+// Базовый интерфейс с общими полями для всех конфигураций
+export interface BaseStorageConfig {
+  type?: 'memory' | 'indexDB' | 'localStorage'
+  options?: IndexDBConfig
+  plugins?: IStoragePlugin[]
+}
+
+// Конфигурация для обычных сегментов
+export interface SegmentConfig<T> extends BaseStorageConfig {
+  name: string
+  initialState?: T
+  middlewares?: MiddlewareArray
+}
+
+// Конфигурация для корневого сегмента
+export interface RootSegmentConfig<T> extends Omit<SegmentConfig<T>, 'middlewares'> {
+  middlewares?: MiddlewareFunction
+}
+
+// Объединенный тип для createSegment
+export type CreateSegmentConfig<T> =
+  | (SegmentConfig<T> & { isRoot?: false })
+  | (RootSegmentConfig<T> & { isRoot: true })
+
+// Опции для фабрики хранилища
+export interface StorageFactoryOptions extends BaseStorageConfig {
+  middlewares?: MiddlewareConfig
+  isRoot?: boolean
+}
+
 /** Конфигурация хранилища */
 export interface IStorageConfig {
   /** Начальное состояние */
@@ -106,12 +137,16 @@ export interface IStorageConfig {
   middlewares?: (getDefaultMiddleware: (options?: MiddlewareOptions) => Middleware[]) => Middleware[]
 }
 
-export interface SegmentConfig<T> {
-  name: string
-  initialState?: T
-  type?: IStorageConfig['type']
-  options?: IndexDBConfig
+// Тип фабрики хранилища
+export type StorageFactory = (options: StorageFactoryOptions) => Promise<IStorage>
+
+
+// Конфигурация для корневого хранилища
+export interface RootStorageConfig extends BaseStorageConfig {
+  initialState?: Record<string, any>
+  middlewares?: (getDefaultMiddleware: (options?: MiddlewareOptions) => Middleware[]) => Middleware[]
 }
+
 
 export type Selector<T, R> = (state: T) => R;
 export type ResultFunction<Deps extends any[], R> = (...args: Deps) => R;

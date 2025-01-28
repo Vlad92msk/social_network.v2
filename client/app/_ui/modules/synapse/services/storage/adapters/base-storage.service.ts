@@ -3,7 +3,7 @@ import { Middleware, MiddlewareOptions, StorageContext } from '../../core/core.i
 import type { Event, IEventBus } from '../../event-bus/event-bus.interface'
 import type { ILogger } from '../../logger/logger.interface'
 import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from '../middlewares'
-import { StoragePluginManager } from '../plugin-manager.service'
+import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import { IStorage, IStorageConfig, StorageEvents } from '../storage.interface'
 import { MiddlewareChain } from '../utils/middleware-chain.utils'
 
@@ -19,7 +19,7 @@ export abstract class BaseStorage implements IStorage {
 
   constructor(
     protected readonly config: IStorageConfig,
-    protected readonly pluginManager: StoragePluginManager,
+    protected readonly pluginManager: IPluginExecutor,
     protected readonly eventBus: IEventBus,
     protected readonly logger: ILogger,
   ) {
