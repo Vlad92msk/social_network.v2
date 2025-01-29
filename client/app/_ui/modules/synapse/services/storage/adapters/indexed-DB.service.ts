@@ -1,11 +1,6 @@
+import type { StorageDependencies } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
-import { Inject, Injectable } from '../../../decorators'
-import type { IEventBus } from '../../event-bus/event-bus.interface'
-import type { ILogger } from '../../logger/logger.interface'
-import type { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
-import type { IStorageConfig } from '../storage.interface'
 
-@Injectable()
 export class IndexedDBStorage extends BaseStorage {
   private initPromise: Promise<void> | null = null
 
@@ -17,16 +12,12 @@ export class IndexedDBStorage extends BaseStorage {
 
   private readonly DB_VERSION: number
 
-  constructor(
-    @Inject('STORAGE_CONFIG') config: IStorageConfig,
-    @Inject('pluginManager') pluginManager: IPluginExecutor,
-    @Inject('eventBus') eventBus: IEventBus,
-    @Inject('logger') logger: ILogger,
-  ) {
-    super(config, pluginManager, eventBus, logger)
-    this.DB_NAME = config.options?.dbName || 'app_storage'
-    this.STORE_NAME = config.options?.storeName || 'keyValueStore'
-    this.DB_VERSION = config.options?.dbVersion || 1
+  constructor(params: StorageDependencies) {
+    super(params)
+
+    this.DB_NAME = params.config.options?.dbName || 'app_storage'
+    this.STORE_NAME = params.config.options?.storeName || 'keyValueStore'
+    this.DB_VERSION = params.config.options?.dbVersion || 1
   }
 
   private initDB(): Promise<void> {

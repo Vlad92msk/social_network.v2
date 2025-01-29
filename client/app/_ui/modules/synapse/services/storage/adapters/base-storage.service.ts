@@ -1,10 +1,11 @@
 // base-storage.service.ts
+import { ConsoleLogger, NoopEventBus, NoopPluginManager } from './default-implementations'
 import { Middleware, MiddlewareOptions, StorageContext } from '../../core/core.interface'
 import type { Event, IEventBus } from '../../event-bus/event-bus.interface'
-import type { ILogger } from '../../logger/logger.interface'
+import { ILogger } from '../../logger/logger.interface'
 import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from '../middlewares'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
-import { IStorage, IStorageConfig, StorageEvents } from '../storage.interface'
+import { IStorage, IStorageConfig, StorageDependencies, StorageEvents } from '../storage.interface'
 import { MiddlewareChain } from '../utils/middleware-chain.utils'
 
 export interface DefaultMiddlewareOptions extends MiddlewareOptions {
@@ -17,12 +18,26 @@ export abstract class BaseStorage implements IStorage {
 
   protected subscribers = new Map<string, Set<(value: any) => void>>()
 
-  constructor(
-    protected readonly config: IStorageConfig,
-    protected readonly pluginManager: IPluginExecutor,
-    protected readonly eventBus: IEventBus,
-    protected readonly logger: ILogger,
-  ) {
+  protected readonly pluginManager: IPluginExecutor
+
+  protected readonly eventBus: IEventBus | NoopEventBus
+
+  protected readonly logger: ILogger | ConsoleLogger
+
+  protected readonly config: IStorageConfig
+
+  constructor(params: StorageDependencies) {
+    const { config, pluginManager, eventBus, logger } = params
+
+    // Сохраняем конфигурацию
+    this.config = config
+
+    // Устанавливаем зависимости или используем default implementations
+    this.pluginManager = pluginManager || new NoopPluginManager()
+    this.eventBus = eventBus || new NoopEventBus()
+    this.logger = logger || new ConsoleLogger()
+
+    // Инициализируем middleware chain
     this.middlewareChain = new MiddlewareChain(
       this.getDefaultMiddleware.bind(this),
       config,
@@ -119,7 +134,6 @@ export abstract class BaseStorage implements IStorage {
   }
 
   protected notifySubscribers(key: string, value: any): void {
-    console.log('Notifying subscribers for:', key, value)
     const subscribers = this.subscribers.get(key)
     if (subscribers) {
       subscribers.forEach((callback) => callback(value))
@@ -246,7 +260,7 @@ export abstract class BaseStorage implements IStorage {
         metadata: {
           ...(event.metadata || {}),
           timestamp: Date.now(),
-          storageType: this.config.type || 'memory',
+          storageType: this.config.type,
         },
       })
     } catch (error) {

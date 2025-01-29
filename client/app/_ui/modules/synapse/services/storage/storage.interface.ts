@@ -1,4 +1,7 @@
+import { IEventBus } from '@ui/modules/synapse/services/event-bus/event-bus.interface'
+import { ILogger } from '@ui/modules/synapse/services/logger/logger.interface'
 import { DefaultMiddlewareOptions } from '@ui/modules/synapse/services/storage/adapters/base-storage.service'
+import { IPluginExecutor } from '@ui/modules/synapse/services/storage/modules/plugin-manager/plugin-managers.interface'
 import { IPlugin, Middleware, MiddlewareArray, MiddlewareConfig, MiddlewareFunction, MiddlewareOptions } from '../core/core.interface'
 
 
@@ -135,6 +138,13 @@ export interface IStorageConfig {
 
   /** Функция для получения middleware */
   middlewares?: (getDefaultMiddleware: (options?: MiddlewareOptions) => Middleware[]) => Middleware[]
+}
+
+export interface StorageDependencies {
+  config: IStorageConfig
+  pluginManager?: IPluginExecutor
+  eventBus?: IEventBus
+  logger?: ILogger
 }
 
 // Тип фабрики хранилища

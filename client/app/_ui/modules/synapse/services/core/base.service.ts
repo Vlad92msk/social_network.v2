@@ -1,13 +1,14 @@
 // base.service.ts
-import { Injectable } from '@ui/modules/synapse/decorators'
-import { StorageEvents } from '@ui/modules/synapse/services/storage/storage.interface'
 import { IModule } from './core.interface'
+import { Injectable } from '../../decorators'
 import type { IDIContainer } from '../di-container/di-container.interface'
+import { DIContainer } from '../di-container/di-container.service'
 import type { IEventBus } from '../event-bus/event-bus.interface'
 import { SegmentedEventBus } from '../event-bus/event-bus.service'
 import { EventBusLogger } from '../logger/collectors/event-bus-logger.collector'
 import type { ILogger } from '../logger/logger.interface'
 import { Logger } from '../logger/logger.service'
+import { StorageEvents } from '../storage/storage.interface'
 
 @Injectable()
 export abstract class BaseModule implements IModule {
@@ -15,20 +16,25 @@ export abstract class BaseModule implements IModule {
 
   protected children: Map<string, BaseModule> = new Map()
 
-  protected get eventBus(): IEventBus {
-    return this.container.get('eventBus')
+  protected container: IDIContainer
+
+  protected constructor(parentContainer?: IDIContainer) {
+    // Создаем локальный контейнер для каждого модуля
+    this.container = new DIContainer({ parent: parentContainer })
+    this.container.register({ id: 'container', instance: this.container })
+
+    // Регистрируем базовые сервисы только если нет родительского контейнера
+    if (!parentContainer) {
+      this.setupBaseServices()
+    }
   }
 
   protected get logger(): ILogger {
     return this.container.get('logger')
   }
 
-  protected constructor(
-    protected readonly container: IDIContainer,
-  ) {
-    if (!container.getParent()) {
-      this.setupBaseServices()
-    }
+  protected get eventBus(): IEventBus {
+    return this.container.get('eventBus')
   }
 
   private setupBaseServices(): void {
@@ -78,22 +84,23 @@ export abstract class BaseModule implements IModule {
   }
 
   // Жизненный цикл
+
   async initialize(): Promise<void> {
     try {
+      // Регистрируем сервисы до установки обработчиков событий
       await this.registerServices()
       await this.setupEventHandlers()
 
-      await this.eventBus.emit({
+      await this.eventBus?.emit({
         type: 'app:initialize',
         payload: { moduleName: this.name },
       })
 
-      // Инициализируем дочерние модули
       for (const child of this.children.values()) {
         await child.initialize()
       }
     } catch (error) {
-      this.logger.error(`Failed to initialize module ${this.name}`, error)
+      this.logger?.error(`Failed to initialize module ${this.name}`, error)
       throw error
     }
   }

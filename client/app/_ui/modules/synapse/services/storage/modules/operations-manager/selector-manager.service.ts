@@ -1,6 +1,3 @@
-import { Inject, Injectable } from '@ui/modules/synapse/decorators'
-import { BaseModule } from '../../../core/base.service'
-import type { IDIContainer } from '../../../di-container/di-container.interface'
 import { SelectorAPI, SelectorOptions, Subscribable, Subscriber } from '../../storage.interface'
 
 export class SelectorSubscription<T> implements Subscribable<T> {
@@ -42,15 +39,10 @@ export class SelectorSubscription<T> implements Subscribable<T> {
   }
 }
 
-@Injectable()
-export class SelectorManager extends BaseModule {
+export class SelectorManager {
   readonly name = 'selectorManager'
 
   private selectorSubscriptions = new Map<string, SelectorSubscription<any>>()
-
-  constructor(@Inject('container') container: IDIContainer) {
-    super(container)
-  }
 
   createSelector<T>(
     selectorOrDeps: (() => Promise<T>) | Array<SelectorAPI<any>>,
@@ -119,19 +111,6 @@ export class SelectorManager extends BaseModule {
       select: selector,
       subscribe: (listener) => subscription.subscribe(listener),
     }
-  }
-
-  protected async cleanupResources(): Promise<void> {
-    this.selectorSubscriptions.forEach((sub) => sub.cleanup())
-    this.selectorSubscriptions.clear()
-  }
-
-  protected async registerServices(): Promise<void> {}
-
-  protected async setupEventHandlers(): Promise<void> {
-    this.eventBus.subscribe('app', (event) => {
-      if (event.type === 'app:cleanup') this.cleanupResources()
-    })
   }
 
   private generateId(): string {

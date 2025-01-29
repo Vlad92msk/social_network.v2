@@ -1,10 +1,5 @@
-import { Inject, Injectable } from '../../../../decorators'
-import { BaseModule } from '../../../core/base.service'
 import { MiddlewareArray, MiddlewareFunction } from '../../../core/core.interface'
-import type { IDIContainer } from '../../../di-container/di-container.interface'
-import type {
-  CreateSegmentConfig, IStorage, IStorageSegment, ResultFunction, Selector, SelectorAPI, SelectorOptions, StorageFactory,
-} from '../../storage.interface'
+import type { CreateSegmentConfig, IStorage, IStorageSegment, ResultFunction, Selector, SelectorAPI, SelectorOptions, StorageFactory, } from '../../storage.interface'
 import { SelectorManager, SelectorSubscription } from '../operations-manager/selector-manager.service'
 import { GlobalPluginManager } from '../plugin-manager/global-plugin-manager.service'
 import { SegmentPluginManager } from '../plugin-manager/segment-plugin-manager.service'
@@ -140,8 +135,7 @@ export class StorageSegment<T extends Record<string, any>> implements IStorageSe
   }
 }
 
-@Injectable()
-export class StorageSegmentManager extends BaseModule {
+export class StorageSegmentManager {
   readonly name = 'segmentManager'
 
   private segments = new Map<string, StorageSegment<any>>()
@@ -151,13 +145,10 @@ export class StorageSegmentManager extends BaseModule {
   private segmentPluginManagers = new Map<string, SegmentPluginManager>()
 
   constructor(
-    @Inject('container') container: IDIContainer,
-    @Inject('selectorManager') private selectorManager: SelectorManager,
-    @Inject('createStorage') private createStorageInstance: StorageFactory,
-    @Inject('pluginManager') private globalPluginManager: GlobalPluginManager,
-  ) {
-    super(container)
-  }
+    private selectorManager: SelectorManager,
+    private createStorageInstance: StorageFactory,
+    private globalPluginManager: GlobalPluginManager,
+  ) {}
 
   async createSegment<T extends Record<string, any>>(config: CreateSegmentConfig<T>): Promise<StorageSegment<T>> {
     if (this.segments.has(config.name)) {
@@ -201,18 +192,14 @@ export class StorageSegmentManager extends BaseModule {
       config.name,
       this.selectorManager,
       storage,
-      segmentPluginManager, // передаем плагин менеджер
+      segmentPluginManager,
     )
 
     this.segments.set(config.name, segment)
     return segment
   }
 
-  protected async registerServices(): Promise<void> {}
-
-  protected async setupEventHandlers(): Promise<void> {}
-
-  protected async cleanupResources(): Promise<void> {
+  async destroy(): Promise<void> {
     // Очищаем все сегменты и их плагин менеджеры
     for (const [name, segment] of this.segments) {
       await segment.clear()
