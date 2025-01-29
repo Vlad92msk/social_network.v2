@@ -109,8 +109,8 @@ export class StorageModule extends BaseModule {
       const dependencies: StorageDependencies = {
         config: storageConfig,
         pluginManager: this.container.get('pluginManager'),
-        eventBus: this.container.get('eventBus'),
-        logger: this.container.get('logger'),
+        eventBus: this.eventBus,
+        logger: this.logger,
       }
 
       // Создаем нужный тип хранилища
@@ -193,3 +193,15 @@ export class StorageModule extends BaseModule {
     return this.container.get('selectorManager')
   }
 }
+
+// Использование StorageModule как дочернего:
+// class ParentModule extends BaseModule {
+//   protected async registerServices(): Promise<void> {
+//     const storageModule = await StorageModule.create({
+//       type: 'memory',
+//       // другие настройки
+//     }, this.container) // передаем наш контейнер как родительский
+//
+//     this.registerChildModule('storage', storageModule)
+//   }
+// }
