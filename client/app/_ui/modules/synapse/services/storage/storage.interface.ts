@@ -14,7 +14,7 @@ export interface IStorage {
   set<T>(key: string, value: T): Promise<void>
 
   /** Проверка наличия значения по ключу */
-  has(key: string): Promise<boolean> // Меняем на Promise для консистентности
+  has(key: string): Promise<boolean>
 
   /** Удаление значения по ключу */
   delete(key: string): Promise<void>

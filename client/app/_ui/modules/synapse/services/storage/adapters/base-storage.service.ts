@@ -1,4 +1,5 @@
 // base-storage.service.ts
+import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
 import { ConsoleLogger, NoopEventBus, NoopPluginManager } from './default-implementations'
 import { Middleware, MiddlewareOptions, StorageContext } from '../../core/core.interface'
 import type { Event, IEventBus } from '../../event-bus/event-bus.interface'
