@@ -78,7 +78,7 @@ export interface MiddlewareOptions {
   [key: string]: any
 }
 
-type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys';
+export type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys';
 
 export interface StorageContext<T = any> {
   type: OperationType;

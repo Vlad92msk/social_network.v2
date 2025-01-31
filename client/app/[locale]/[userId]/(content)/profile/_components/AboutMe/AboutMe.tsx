@@ -1,8 +1,44 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useState } from 'react'
 import { cn } from './cn'
-import { useSelector, useStore } from '../../../../../../../store/synapse'
+import { cache, usePokemon, useSelector, useStore } from '../../../../../../../store/synapse'
+
+export function PokemonCard({ id }: { id: number }) {
+  const { pokemon, loading, error } = usePokemon(id)
+
+  if (loading) return <div>Loading...</div>
+  if (error) {
+    return (
+      <div>
+        Error:
+        {error.message}
+      </div>
+    )
+  }
+  if (!pokemon) return null
+
+  return (
+    <div>
+      <h2>{pokemon.name}</h2>
+      <img src={pokemon.sprites.front_default} alt={pokemon.name} />
+      <div>
+        Types:
+        {' '}
+        {pokemon.types.map((t) => t.type.name).join(', ')}
+      </div>
+      <button
+        onClick={async () => {
+          // Очищаем кэш для этого покемона, чтобы перезагрузить данные
+          await cache.delete(`pokemon-${id}`)
+          window.location.reload()
+        }}
+      >
+        Refresh
+      </button>
+    </div>
+  )
+}
 
 export function CounterExample() {
   const store = useStore()
@@ -68,9 +104,32 @@ export function CounterExample() {
 }
 
 export function AboutMe(props) {
+  const [pokemonId, setPokemonId] = useState(4)
+
   return (
     <div className={cn()}>
       <CounterExample />
+      <div>
+        <div>
+          <button
+            onClick={() => setPokemonId((id) => Math.max(1, id - 1))}
+            disabled={pokemonId === 1}
+          >
+            Previous
+          </button>
+          <span>
+            Pokemon #
+            {pokemonId}
+          </span>
+          <button
+            onClick={() => setPokemonId((id) => id + 1)}
+          >
+            Next
+          </button>
+        </div>
+
+        <PokemonCard id={pokemonId} />
+      </div>
     </div>
   )
 }
