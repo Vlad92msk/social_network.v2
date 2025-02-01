@@ -1,13 +1,18 @@
-import type { StorageDependencies } from '../storage.interface'
+import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
+import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
 
 export class LocalStorage extends BaseStorage {
   constructor(
-    params: StorageDependencies,
+    config: StorageConfig,
+    pluginExecutor?: IPluginExecutor,
+    eventEmitter?: IEventEmitter,
+    logger?: ILogger,
   ) {
-    super(params)
-    if (params.config.initialState) {
-      Object.entries(params.config.initialState).forEach(([key, value]) => {
+    super(config, pluginExecutor, eventEmitter, logger)
+
+    if (config.initialState) {
+      Object.entries(config.initialState).forEach(([key, value]) => {
         localStorage.setItem(key, JSON.stringify(value))
       })
     }
@@ -41,7 +46,6 @@ export class LocalStorage extends BaseStorage {
   }
 
   protected async doDestroy(): Promise<void> {
-    // Для LocalStorage специфичной очистки не требуется
-    return Promise.resolve()
+    // Специфичной очистки не требуется
   }
 }

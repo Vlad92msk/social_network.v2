@@ -1,38 +1,59 @@
-import { Middleware, NextFunction, StorageContext } from '../../core/core.interface'
-import { DefaultMiddlewareOptions } from '../adapters/base-storage.service'
-import { IStorageConfig } from '../storage.interface'
+import {
+  DefaultMiddlewareOptions,
+  Middleware,
+  StorageConfig,
+  StorageContext,
+} from '../storage.interface'
 
 export class MiddlewareChain {
   private middlewares: Middleware[] = []
 
   constructor(
-    getDefaultMiddleware: (options?: DefaultMiddlewareOptions) => Middleware[],
-    config?: IStorageConfig,
+    private readonly getDefaultMiddleware: (options?: DefaultMiddlewareOptions) => Middleware[],
+    private readonly config?: StorageConfig,
   ) {
-    this.middlewares = [
-      ...getDefaultMiddleware(),
-      ...(config?.middlewares?.(getDefaultMiddleware) || []),
-    ]
+    this.initializeMiddlewares()
   }
 
-  async execute(context: StorageContext): Promise<any> {
+  private initializeMiddlewares(): void {
+    if (this.config?.middlewares) {
+      this.middlewares = this.config.middlewares(this.getDefaultMiddleware)
+    } else {
+      this.middlewares = this.getDefaultMiddleware()
+    }
+  }
+
+  public async execute(context: StorageContext): Promise<any> {
     if (!context.baseOperation) {
-      throw new Error('baseOperation is required for middleware execution')
+      throw new Error('Base operation is required')
     }
 
-    // Фильтруем middleware по сегментам
-    const applicableMiddlewares = this.middlewares.filter((middleware) => {
-      const { options } = middleware
-      return !options?.segments
-        || (context.segment && options.segments.includes(context.segment))
-    })
-
-    // Создаем цепочку выполнения
-    const handler = applicableMiddlewares.reduceRight(
-      (next: NextFunction, middleware: Middleware) => middleware(next),
+    // Создаем цепочку middleware путем последовательного применения каждого middleware
+    const chain = this.middlewares.reduce(
+      (next, middleware) => middleware(next),
       context.baseOperation,
     )
 
-    return handler(context)
+    // Выполняем цепочку middleware
+    return chain(context)
+  }
+
+  public addMiddleware(middleware: Middleware): void {
+    this.middlewares.push(middleware)
+  }
+
+  public removeMiddleware(middleware: Middleware): void {
+    const index = this.middlewares.indexOf(middleware)
+    if (index !== -1) {
+      this.middlewares.splice(index, 1)
+    }
+  }
+
+  public clearMiddlewares(): void {
+    this.middlewares = []
+  }
+
+  public getMiddlewares(): Middleware[] {
+    return [...this.middlewares]
   }
 }

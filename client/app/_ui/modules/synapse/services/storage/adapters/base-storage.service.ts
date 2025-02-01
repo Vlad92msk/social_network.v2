@@ -1,44 +1,29 @@
-// base-storage.service.ts
-import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
-import { ConsoleLogger, NoopEventBus, NoopPluginManager } from './default-implementations'
-import { Middleware, MiddlewareOptions, StorageContext } from '../../core/core.interface'
-import type { Event, IEventBus } from '../../event-bus/event-bus.interface'
-import { ILogger } from '../../logger/logger.interface'
-import { BatchingMiddlewareOptions, createBatchingMiddleware, createShallowCompareMiddleware, ShallowCompareMiddlewareOptions } from '../middlewares'
+import { createBatchingMiddleware, createShallowCompareMiddleware } from '../middlewares'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
-import { IStorage, IStorageConfig, StorageDependencies, StorageEvents } from '../storage.interface'
+import {
+  DefaultMiddlewareOptions,
+  IEventEmitter,
+  ILogger,
+  IStorage,
+  Middleware,
+  StorageConfig,
+  StorageContext,
+  StorageEvent,
+  StorageEvents,
+} from '../storage.interface'
 import { MiddlewareChain } from '../utils/middleware-chain.utils'
-
-export interface DefaultMiddlewareOptions extends MiddlewareOptions {
-  batching?: BatchingMiddlewareOptions | false
-  shallowCompare?: ShallowCompareMiddlewareOptions | false
-}
 
 export abstract class BaseStorage implements IStorage {
   private middlewareChain: MiddlewareChain
 
   protected subscribers = new Map<string, Set<(value: any) => void>>()
 
-  protected readonly pluginManager: IPluginExecutor
-
-  protected readonly eventBus: IEventBus | NoopEventBus
-
-  protected readonly logger: ILogger | ConsoleLogger
-
-  protected readonly config: IStorageConfig
-
-  constructor(params: StorageDependencies) {
-    const { config, pluginManager, eventBus, logger } = params
-
-    // Сохраняем конфигурацию
-    this.config = config
-
-    // Устанавливаем зависимости или используем default implementations
-    this.pluginManager = pluginManager || new NoopPluginManager()
-    this.eventBus = eventBus || new NoopEventBus()
-    this.logger = logger || new ConsoleLogger()
-
-    // Инициализируем middleware chain
+  constructor(
+    protected readonly config: StorageConfig,
+    protected readonly pluginExecutor?: IPluginExecutor,
+    protected readonly eventEmitter?: IEventEmitter,
+    protected readonly logger?: ILogger,
+  ) {
     this.middlewareChain = new MiddlewareChain(
       this.getDefaultMiddleware.bind(this),
       config,
@@ -60,17 +45,16 @@ export abstract class BaseStorage implements IStorage {
 
   protected abstract doDestroy(): Promise<void>;
 
-  // Реализация публичного API
   public async get<T>(key: string): Promise<T | undefined> {
     try {
-      const processedKey = this.pluginManager.executeBeforeGet(key)
+      const processedKey = this.pluginExecutor?.executeBeforeGet(key) ?? key
 
       const value = await this.applyMiddlewares({
         type: 'get',
         key: processedKey,
       }) as T | undefined
 
-      const processedValue = this.pluginManager.executeAfterGet(processedKey, value)
+      const processedValue = this.pluginExecutor?.executeAfterGet(processedKey, value) ?? value
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_SELECT,
@@ -79,14 +63,14 @@ export abstract class BaseStorage implements IStorage {
 
       return processedValue
     } catch (error) {
-      this.logger.error('Error getting value', { key, error })
+      this.logger?.error('Error getting value', { key, error })
       throw error
     }
   }
 
   public async set<T>(key: string, value: T): Promise<void> {
     try {
-      const processedValue = this.pluginManager.executeBeforeSet(key, value)
+      const processedValue = this.pluginExecutor?.executeBeforeSet(key, value) ?? value
 
       await this.applyMiddlewares({
         type: 'set',
@@ -94,9 +78,7 @@ export abstract class BaseStorage implements IStorage {
         value: processedValue,
       })
 
-      this.pluginManager.executeAfterSet(key, processedValue)
-
-      // Уведомляем подписчиков
+      this.pluginExecutor?.executeAfterSet(key, processedValue)
       this.notifySubscribers(key, processedValue)
 
       await this.emitEvent({
@@ -104,40 +86,67 @@ export abstract class BaseStorage implements IStorage {
         payload: { key, value: processedValue },
       })
 
-      this.logger.debug('Value set successfully', { key })
+      this.logger?.debug('Value set successfully', { key })
     } catch (error) {
-      this.logger.error('Error setting value', { key, error })
+      this.logger?.error('Error setting value', { key, error })
       throw error
     }
   }
 
   public async delete(key: string): Promise<void> {
     try {
-      if (this.pluginManager.executeBeforeDelete(key)) {
+      if (this.pluginExecutor?.executeBeforeDelete(key)) {
         await this.applyMiddlewares({
           type: 'delete',
           key,
         })
 
-        this.pluginManager.executeAfterDelete(key)
+        this.pluginExecutor?.executeAfterDelete(key)
 
         await this.emitEvent({
-          type: 'storage:value:deleted',
+          type: StorageEvents.STORAGE_DELETE,
           payload: { key },
         })
 
-        this.logger.debug('Value deleted successfully', { key })
+        this.logger?.debug('Value deleted successfully', { key })
       }
     } catch (error) {
-      this.logger.error('Error deleting value', { key, error })
+      this.logger?.error('Error deleting value', { key, error })
       throw error
     }
   }
 
-  protected notifySubscribers(key: string, value: any): void {
-    const subscribers = this.subscribers.get(key)
-    if (subscribers) {
-      subscribers.forEach((callback) => callback(value))
+  public async clear(): Promise<void> {
+    try {
+      this.pluginExecutor?.executeOnClear()
+
+      await this.applyMiddlewares({
+        type: 'clear',
+      })
+
+      await this.doClear()
+
+      await this.emitEvent({
+        type: StorageEvents.STORAGE_CLEAR,
+      })
+
+      this.logger?.debug('Storage cleared successfully')
+    } catch (error) {
+      this.logger?.error('Error clearing storage', { error })
+      throw error
+    }
+  }
+
+  public async keys(): Promise<string[]> {
+    return this.applyMiddlewares({ type: 'keys' })
+  }
+
+  public async has(key: string): Promise<boolean> {
+    try {
+      return await this.doHas(key)
+    } catch (error) {
+      this.logger?.error('Error checking value existence', { key, error })
+      throw error
     }
   }
 
@@ -158,66 +167,32 @@ export abstract class BaseStorage implements IStorage {
     }
   }
 
-  public async clear(): Promise<void> {
+  public async destroy(): Promise<void> {
     try {
-      this.pluginManager.executeOnClear()
-
-      await this.applyMiddlewares({
-        type: 'clear',
-      })
-
-      await this.doClear()
+      await this.clear()
+      await this.doDestroy()
 
       await this.emitEvent({
-        type: StorageEvents.STORAGE_CLEAR,
+        type: StorageEvents.STORAGE_DESTROY,
       })
-
-      this.logger.debug('Storage cleared successfully')
     } catch (error) {
-      this.logger.error('Error clearing storage', { error })
+      this.logger?.error('Error destroying storage', { error })
       throw error
     }
   }
 
-  public async keys(): Promise<string[]> {
-    return this.applyMiddlewares({ type: 'keys' })
-  }
-
-  public async has(key: string): Promise<boolean> {
-    try {
-      return await this.doHas(key)
-    } catch (error) {
-      this.logger.error('Error checking value existence', { key, error })
-      throw error
-    }
-  }
-
-  // Защищенные методы для внутреннего использования
   protected getDefaultMiddleware(options?: DefaultMiddlewareOptions): Middleware[] {
     const middlewares: Middleware[] = []
 
-    // Добавляем equality check middleware
     if (options?.shallowCompare !== false) {
       const equalityOptions = options?.shallowCompare || {}
-      middlewares.push(
-        createShallowCompareMiddleware(equalityOptions),
-      )
+      middlewares.push(createShallowCompareMiddleware(equalityOptions))
     }
 
-    // Добавляем батчинг middleware если он не отключен
     if (options?.batching !== false) {
       const batchingOptions = options?.batching || {}
-      middlewares.push(
-        createBatchingMiddleware({
-          batchSize: batchingOptions.batchSize || 100,
-          batchDelay: batchingOptions.batchDelay || 50,
-          segments: batchingOptions.segments || [],
-        }),
-      )
+      middlewares.push(createBatchingMiddleware(batchingOptions))
     }
-
-    // В будущем можно добавить другие базовые middleware
-    // например для сериализации, валидации и т.д.
 
     return middlewares
   }
@@ -244,9 +219,7 @@ export abstract class BaseStorage implements IStorage {
   }
 
   protected async applyMiddlewares(context: StorageContext): Promise<any> {
-    // Извлекаем сегмент из ключа, если он есть
     const segment = context.key?.split('.')[0]
-
     return this.middlewareChain.execute({
       ...context,
       segment,
@@ -254,37 +227,35 @@ export abstract class BaseStorage implements IStorage {
     })
   }
 
-  protected async emitEvent(event: Event): Promise<void> {
+  protected notifySubscribers(key: string, value: any): void {
+    const subscribers = this.subscribers.get(key)
+    if (subscribers) {
+      // Оборачиваем в Promise.all для асинхронных подписчиков
+      Promise.all(
+        Array.from(subscribers).map(async (callback) => {
+          try {
+            await callback(value)
+          } catch (error) {
+            this.logger?.error('Error in subscriber callback', { key, error })
+          }
+        }),
+      ).catch((error) => {
+        this.logger?.error('Error notifying subscribers', { key, error })
+      })
+    }
+  }
+
+  protected async emitEvent(event: StorageEvent): Promise<void> {
     try {
-      await this.eventBus.emit({
+      await this.eventEmitter?.emit({
         ...event,
         metadata: {
           ...(event.metadata || {}),
           timestamp: Date.now(),
-          storageType: this.config.type,
         },
       })
     } catch (error) {
-      this.logger.error('Error emitting event', { event, error })
-    }
-  }
-
-  public async destroy(): Promise<void> {
-    try {
-      // Очищаем данные
-      await this.clear()
-
-      // Вызываем специфичную очистку
-      await this.doDestroy()
-
-      // Отправляем событие о уничтожении
-      await this.emitEvent({
-        type: 'storage:destroyed',
-        payload: { type: this.config.type },
-      })
-    } catch (error) {
-      this.logger.error('Error destroying storage', { error })
-      throw error
+      this.logger?.error('Error emitting event', { event, error })
     }
   }
 }

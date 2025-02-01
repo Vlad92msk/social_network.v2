@@ -1,15 +1,20 @@
-import type { StorageDependencies } from '../storage.interface'
+import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
+import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
 
 export class MemoryStorage extends BaseStorage {
   private storage = new Map<string, any>()
 
-  constructor(params: StorageDependencies) {
-    super(params)
+  constructor(
+    config: StorageConfig,
+    pluginExecutor?: IPluginExecutor,
+    eventEmitter?: IEventEmitter,
+    logger?: ILogger,
+  ) {
+    super(config, pluginExecutor, eventEmitter, logger)
 
-    // Инициализируем начальное состояние
-    if (params.config.initialState) {
-      Object.entries(params.config.initialState).forEach(([key, value]) => {
+    if (config.initialState) {
+      Object.entries(config.initialState).forEach(([key, value]) => {
         this.storage.set(key, value)
       })
     }
@@ -40,7 +45,6 @@ export class MemoryStorage extends BaseStorage {
   }
 
   protected async doDestroy(): Promise<void> {
-    // Для MemoryStorage достаточно очистки Map
     this.storage.clear()
   }
 }

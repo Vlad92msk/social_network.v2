@@ -1,5 +1,12 @@
-import type { StorageDependencies } from '../storage.interface'
+import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
+import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
+
+export interface IndexedDBConfig {
+  dbName?: string
+  dbVersion?: number
+  storeName?: string
+}
 
 export class IndexedDBStorage extends BaseStorage {
   private initPromise: Promise<void> | null = null
@@ -12,19 +19,28 @@ export class IndexedDBStorage extends BaseStorage {
 
   private readonly DB_VERSION: number
 
-  constructor(params: StorageDependencies) {
-    super(params)
+  constructor(
+    config: StorageConfig & { options?: IndexedDBConfig },
+    pluginExecutor?: IPluginExecutor,
+    eventEmitter?: IEventEmitter,
+    logger?: ILogger,
+  ) {
+    super(config, pluginExecutor, eventEmitter, logger)
 
-    this.DB_NAME = params.config.options?.dbName || 'app_storage'
-    this.STORE_NAME = params.config.options?.storeName || 'keyValueStore'
-    this.DB_VERSION = params.config.options?.dbVersion || 1
+    const options = config.options as IndexedDBConfig
+    this.DB_NAME = options?.dbName || 'app_storage'
+    this.STORE_NAME = options?.storeName || 'keyValueStore'
+    this.DB_VERSION = options?.dbVersion || 1
   }
 
   private initDB(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION)
 
-      request.onerror = () => reject(request.error)
+      request.onerror = () => {
+        this.logger?.error('Failed to open IndexedDB', { error: request.error })
+        reject(request.error)
+      }
 
       request.onsuccess = () => {
         this.db = request.result
@@ -40,20 +56,6 @@ export class IndexedDBStorage extends BaseStorage {
     })
   }
 
-  private async ensureDB(): Promise<IDBDatabase> {
-    if (!this.db) {
-      await this.initDB()
-    }
-    return this.db!
-  }
-
-  private async transaction(mode: IDBTransactionMode = 'readonly'): Promise<IDBObjectStore> {
-    if (!this.db) {
-      await this.initDB()
-    }
-    return this.db!.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME)
-  }
-
   private async ensureInitialized() {
     if (!this.initPromise) {
       this.initPromise = this.initDB()
@@ -61,31 +63,29 @@ export class IndexedDBStorage extends BaseStorage {
     return this.initPromise
   }
 
-  protected async doSet(key: string, value: any): Promise<void> {
+  private async transaction(mode: IDBTransactionMode = 'readonly'): Promise<IDBObjectStore> {
     await this.ensureInitialized()
-    const store = await this.transaction('readwrite')
-    return new Promise((resolve, reject) => {
-      const request = store.put(value, key)
-      request.onsuccess = () => {
-        resolve()
-      }
-      request.onerror = () => {
-        reject(request.error)
-      }
-    })
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+    return this.db.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME)
   }
 
   protected async doGet(key: string): Promise<any> {
-    await this.ensureInitialized()
     const store = await this.transaction()
     return new Promise((resolve, reject) => {
       const request = store.get(key)
-      request.onsuccess = () => {
-        resolve(request.result)
-      }
-      request.onerror = () => {
-        reject(request.error)
-      }
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  protected async doSet(key: string, value: any): Promise<void> {
+    const store = await this.transaction('readwrite')
+    return new Promise((resolve, reject) => {
+      const request = store.put(value, key)
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
     })
   }
 
@@ -126,9 +126,12 @@ export class IndexedDBStorage extends BaseStorage {
     })
   }
 
-  // Дополнительные методы для IndexedDB
-  private async deleteDatabase(): Promise<void> {
+  protected async doDestroy(): Promise<void> {
     await this.close()
+    await this.deleteDatabase()
+  }
+
+  private async deleteDatabase(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.deleteDatabase(this.DB_NAME)
       request.onsuccess = () => resolve()
@@ -136,15 +139,11 @@ export class IndexedDBStorage extends BaseStorage {
     })
   }
 
-  protected async doDestroy(): Promise<void> {
-    await this.close()
-  }
-
-  // Закрывает соединение с БД
   private async close(): Promise<void> {
     if (this.db) {
       this.db.close()
       this.db = null
+      this.initPromise = null
     }
   }
 }

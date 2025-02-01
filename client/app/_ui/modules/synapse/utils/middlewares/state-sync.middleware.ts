@@ -1,65 +1,101 @@
-import { Middleware, MiddlewareFactory, MiddlewareOptions, NextFunction, OperationType, StorageContext } from '@ui/modules/synapse/services/core/core.interface'
-import { SyncMessage } from '@ui/modules/synapse/services/state-sync/state-sync.interface'
+// state-sync.middleware.ts
+import { Middleware, NextFunction, StorageContext } from '@ui/modules/synapse/services/core/core.interface'
+import { StateStorage, StateSyncConfig } from '@ui/modules/synapse/services/state-sync/state-sync.interface'
+import { StateSyncModule } from '@ui/modules/synapse/services/state-sync/state-sync.service'
 
-export interface StateSyncMiddlewareOptions extends MiddlewareOptions {
-  channelName?: string;
-  debug?: boolean;
-  excludeOperations?: OperationType[];
-}
+export const createStateSyncMiddleware = (
+  config: Omit<StateSyncConfig, 'storage'>
+): Middleware => {
+  let stateSync: StateSyncModule
+  // Храним подписки отдельно для каждого ключа
+  const subscriptions = new Map<string, Set<(value: any) => void>>()
 
-export const createStateSyncMiddleware: MiddlewareFactory<StateSyncMiddlewareOptions> = (
-  options: StateSyncMiddlewareOptions = {},
-) => {
-  const {
-    channelName = 'app_state_sync',
-    debug = false,
-    excludeOperations = ['get', 'keys'],
-    segments = [],
-  } = options
+  const initStateSync = (context: StorageContext) => {
+    if (!stateSync) {
+      const storage: StateStorage = {
+        get: async (key) => {
+          const result = await context.baseOperation?.({
+            ...context,
+            type: 'get',
+            key,
+          })
+          return result
+        },
+        set: async (key, value) => {
+          await context.baseOperation?.({
+            ...context,
+            type: 'set',
+            key,
+            value,
+          })
+          // Уведомляем подписчиков при изменении значения
+          const callbacks = subscriptions.get(key)
+          if (callbacks) {
+            callbacks.forEach((callback) => callback(value))
+          }
+        },
+        delete: async (key) => {
+          await context.baseOperation?.({
+            ...context,
+            type: 'delete',
+            key,
+          })
+          // Уведомляем подписчиков об удалении
+          const callbacks = subscriptions.get(key)
+          if (callbacks) {
+            callbacks.forEach((callback) => callback(undefined))
+          }
+        },
+        clear: async () => {
+          await context.baseOperation?.({
+            ...context,
+            type: 'clear',
+          })
+          // Уведомляем всех подписчиков
+          subscriptions.forEach((callbacks) => {
+            callbacks.forEach((callback) => callback(undefined))
+          })
+        },
+      }
 
-  const channel = new BroadcastChannel(channelName)
-  const tabId = crypto.randomUUID()
+      stateSync = new StateSyncModule({
+        storage,
+        ...config,
+      })
 
-  const log = (...args: any[]) => {
-    if (debug) {
-      console.log('[StateSyncMiddleware]', ...args)
+      // Подписываемся на обновления из других вкладок
+      stateSync.subscribe('*', async (value) => {
+        const callbacks = subscriptions.get('*')
+        if (callbacks) {
+          callbacks.forEach((callback) => callback(value))
+        }
+      })
     }
-  }
-
-  // Обработчик входящих сообщений
-  channel.onmessage = async (event: MessageEvent<SyncMessage>) => {
-    const message = event.data
-    if (message.tabId === tabId) return
-
-    log('Received message:', message)
+    return stateSync
   }
 
   const middleware: Middleware = (next: NextFunction) => async (context: StorageContext) => {
-    // Пропускаем исключенные операции
-    if (excludeOperations.includes(context.type)) {
-      return next(context)
+    const sync = initStateSync(context)
+
+    switch (context.type) {
+      case 'set': {
+        await sync.set(context.key!, context.value)
+        return next(context)
+      }
+
+      case 'delete': {
+        await sync.delete(context.key!)
+        return next(context)
+      }
+
+      case 'clear': {
+        await sync.clear()
+        return next(context)
+      }
+
+      default:
+        return next(context)
     }
-
-    const result = await next(context)
-
-    // Отправляем сообщение другим вкладкам
-    const message: SyncMessage = {
-      //@ts-ignore
-      type: `state:${context.type}`,
-      key: context.key,
-      value: context.value,
-      timestamp: Date.now(),
-      tabId,
-    }
-
-    log('Broadcasting:', message)
-    channel.postMessage(message)
-
-    return result
   }
-
-  // Добавляем опции и cleanup метод
-  middleware.options = { segments }
-  channel.close()
   return middleware
 }

@@ -1,6 +1,6 @@
 // storage-batching.middleware.ts
 
-import { MiddlewareFactory, NextFunction, StorageContext } from '../../core/core.interface'
+import { MiddlewareFactory, NextFunction, StorageContext } from '../storage.interface'
 import { BatchOperation, BatchProcessor } from '../utils/batch.utils'
 
 

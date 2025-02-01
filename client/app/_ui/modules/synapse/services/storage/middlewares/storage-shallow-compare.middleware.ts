@@ -1,6 +1,6 @@
 // storage-shallow-compare.middleware.ts
 
-import { MiddlewareFactory, NextFunction, StorageContext } from '../../core/core.interface'
+import { MiddlewareFactory, NextFunction, StorageContext } from '../storage.interface'
 
 export interface ShallowCompareMiddlewareOptions {
   segments?: string[]
