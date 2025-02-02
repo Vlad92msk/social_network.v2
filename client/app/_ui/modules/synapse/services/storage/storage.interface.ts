@@ -1,16 +1,18 @@
 // storage.interface.ts
-import { IndexedDBConfig } from '@ui/modules/synapse/services/storage/adapters/indexed-DB.service'
-import { IStoragePlugin } from '@ui/modules/synapse/services/storage/modules/plugin-manager/plugin-managers.interface'
+import { IndexedDBConfig } from './adapters/indexed-DB.service'
 
 export interface IStorage {
+  name: string
   get<T>(key: string): Promise<T | undefined>;
+  getState<T>(): Promise<Record<string, any>>
   set<T>(key: string, value: T): Promise<void>;
   has(key: string): Promise<boolean>;
   delete(key: string): Promise<void>;
   clear(): Promise<void>;
   keys(): Promise<string[]>;
-  subscribe(key: string, callback: (value: any) => void): () => void;
+  subscribe(key: string, callback: (value: any) => void): VoidFunction;
   destroy(): Promise<void>;
+  subscribeToAll(callback: (event: { type: string, key?: string, value?: any }) => void): VoidFunction;
 }
 
 export enum StorageEvents {
@@ -87,6 +89,7 @@ export interface DefaultMiddlewareOptions extends MiddlewareOptions {
 
 // Configuration
 export interface StorageConfig {
+  name: string
   initialState?: Record<string, any>;
   middlewares?: MiddlewareFunction;
 }
@@ -107,12 +110,3 @@ export interface IndexedDBStorageConfig extends StorageConfig {
   type: 'indexedDB';
   options: IndexedDBConfig;
 }
-
-// Сделаем StorageModuleConfig более строгим через union type
-export type StorageModuleConfig = {
-  plugins?: IStoragePlugin[];
-} & (
-  | MemoryStorageConfig
-  | LocalStorageConfig
-  | IndexedDBStorageConfig
-  );

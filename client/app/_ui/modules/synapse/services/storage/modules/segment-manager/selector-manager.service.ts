@@ -1,11 +1,5 @@
-import {
-  ResultFunction,
-  Selector,
-  SelectorAPI,
-  SelectorOptions,
-  Subscribable,
-} from './segment.interface'
 import { ILogger } from '../../storage.interface'
+import { ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscribable, } from './segment.interface'
 
 interface Subscriber<T> {
   notify: (value: T) => void;
@@ -28,12 +22,9 @@ export class SelectorSubscription<T> implements Subscribable<T> {
 
   async notify(): Promise<void> {
     try {
-      console.log(`Notifying selector ${this.id}`)
       const newValue = await this.getState()
-      console.log(`New value for selector ${this.id}:`, newValue)
 
       if (this.lastValue === undefined || !this.equals(newValue, this.lastValue)) {
-        console.log(`Value changed for selector ${this.id}, updating subscribers`)
         this.lastValue = newValue
         await Promise.all(
           Array.from(this.subscribers).map((sub) => {
@@ -45,8 +36,6 @@ export class SelectorSubscription<T> implements Subscribable<T> {
             }
           }),
         )
-      } else {
-        console.log(`Value unchanged for selector ${this.id}, skipping update`)
       }
     } catch (error) {
       this.logger?.error(`Error in selector ${this.id} notification`, { error })
@@ -54,22 +43,18 @@ export class SelectorSubscription<T> implements Subscribable<T> {
   }
 
   subscribe(subscriber: Subscriber<T>): () => void {
-    console.log(`Adding subscriber to selector ${this.id}`)
     this.subscribers.add(subscriber)
 
     // Отправляем текущее значение
     if (this.lastValue !== undefined) {
-      console.log(`Sending current value to new subscriber in selector ${this.id}`)
       subscriber.notify(this.lastValue)
     } else {
-      console.log(`Getting initial value for new subscriber in selector ${this.id}`)
       this.notify().catch((error) => {
         this.logger?.error(`Error in initial selector ${this.id} notification`, { error })
       })
     }
 
     return () => {
-      console.log(`Removing subscriber from selector ${this.id}`)
       this.unsubscribe(subscriber)
     }
   }
@@ -79,7 +64,6 @@ export class SelectorSubscription<T> implements Subscribable<T> {
   }
 
   cleanup(): void {
-    console.log(`Cleaning up selector ${this.id}`)
     this.subscribers.clear()
     this.lastValue = undefined
   }
@@ -162,19 +146,13 @@ export class SelectorManager {
         this.segmentSubscriptions.set(segmentName, new Set())
       }
       this.segmentSubscriptions.get(segmentName)!.add(id)
-      console.log(`Selector ${id} registered for segment ${segmentName}`)
     }
 
     return {
-      select: () => {
-        console.log(`Selecting value for selector ${id}`)
-        return subscription.getState()
-      },
+      select: () => subscription.getState(),
       subscribe: (subscriber) => {
-        console.log(`Adding subscriber to selector ${id}`)
         const unsubscribe = subscription.subscribe(subscriber)
         return () => {
-          console.log(`Removing subscriber from selector ${id}`)
           unsubscribe()
           this.selectorSubscriptions.delete(id)
           if (segmentName) {
@@ -191,12 +169,8 @@ export class SelectorManager {
     segmentName: string,
     options: SelectorOptions<T> = {},
   ): SelectorAPI<T> {
-    console.log('Creating combined selector with dependencies')
-
     const getState = async () => {
-      console.log('Getting values from dependencies')
       const values = await Promise.all(deps.map((dep) => dep.select()))
-      console.log('Dependency values:', values)
       return resultFn(...values)
     }
 
@@ -215,15 +189,12 @@ export class SelectorManager {
         this.segmentSubscriptions.set(segmentName, new Set())
       }
       this.segmentSubscriptions.get(segmentName)!.add(id)
-      console.log(`Combined selector ${id} registered for segment ${segmentName}`)
     }
 
     // Подписываемся на все зависимости
     deps.forEach((dep, index) => {
-      console.log(`Subscribing to dependency ${index} for selector ${id}`)
       dep.subscribe({
         notify: async () => {
-          console.log(`Dependency ${index} updated for selector ${id}`)
           await subscription.notify()
         },
       })
@@ -236,29 +207,22 @@ export class SelectorManager {
   }
 
   public getSubscriptionsBySegment(segmentName: string): SelectorSubscription<any>[] {
-    console.log(`Getting subscriptions for segment ${segmentName}`)
     const selectorIds = this.segmentSubscriptions.get(segmentName)
     if (!selectorIds) {
-      console.log(`No subscriptions found for segment ${segmentName}`)
       return []
     }
 
-    const subscriptions = Array.from(selectorIds)
+    return Array.from(selectorIds)
       .map((id) => this.selectorSubscriptions.get(id))
       .filter((sub): sub is SelectorSubscription<any> => sub !== undefined)
-
-    console.log(`Found ${subscriptions.length} subscriptions for segment ${segmentName}`)
-    return subscriptions
   }
 
   async notifySegment(segmentName: string) {
-    console.log(`Notifying all selectors for segment ${segmentName}`)
     const subscriptions = this.getSubscriptionsBySegment(segmentName)
     return Promise.all(subscriptions.map((sub) => sub.notify()))
   }
 
   cleanup(): void {
-    console.log('Cleaning up all selectors')
     this.selectorSubscriptions.forEach((subscription) => subscription.cleanup())
     this.selectorSubscriptions.clear()
     this.segmentSubscriptions.clear()

@@ -12,8 +12,11 @@ export class LocalStorage extends BaseStorage {
     super(config, pluginExecutor, eventEmitter, logger)
 
     if (config.initialState) {
+      // Устанавливаем initialState только для отсутствующих ключей
       Object.entries(config.initialState).forEach(([key, value]) => {
-        localStorage.setItem(key, JSON.stringify(value))
+        if (localStorage.getItem(key) === null) {
+          localStorage.setItem(key, JSON.stringify(value))
+        }
       })
     }
   }

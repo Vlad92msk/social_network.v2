@@ -14,6 +14,11 @@ import {
 import { MiddlewareChain } from '../utils/middleware-chain.utils'
 
 export abstract class BaseStorage implements IStorage {
+  // Константа для глобальной подписки
+  protected static readonly GLOBAL_SUBSCRIPTION_KEY = '*'
+
+  name: string
+
   private middlewareChain: MiddlewareChain
 
   protected subscribers = new Map<string, Set<(value: any) => void>>()
@@ -24,6 +29,7 @@ export abstract class BaseStorage implements IStorage {
     protected readonly eventEmitter?: IEventEmitter,
     protected readonly logger?: ILogger,
   ) {
+    this.name = config.name
     this.middlewareChain = new MiddlewareChain(
       this.getDefaultMiddleware.bind(this),
       config,
@@ -79,7 +85,17 @@ export abstract class BaseStorage implements IStorage {
       })
 
       this.pluginExecutor?.executeAfterSet(key, processedValue)
+      // Уведомляем подписчиков конкретного ключа
       this.notifySubscribers(key, processedValue)
+
+      // Уведомляем глобальных подписчиков
+      if (this.subscribers.has(BaseStorage.GLOBAL_SUBSCRIPTION_KEY)) {
+        this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+          type: 'set',
+          key,
+          value: processedValue,
+        })
+      }
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_UPDATE,
@@ -102,6 +118,14 @@ export abstract class BaseStorage implements IStorage {
         })
 
         this.pluginExecutor?.executeAfterDelete(key)
+
+        // Уведомляем глобальных подписчиков
+        if (this.subscribers.has(BaseStorage.GLOBAL_SUBSCRIPTION_KEY)) {
+          this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+            type: 'delete',
+            key,
+          })
+        }
 
         await this.emitEvent({
           type: StorageEvents.STORAGE_DELETE,
@@ -126,6 +150,13 @@ export abstract class BaseStorage implements IStorage {
 
       await this.doClear()
 
+      // Уведомляем глобальных подписчиков
+      if (this.subscribers.has(BaseStorage.GLOBAL_SUBSCRIPTION_KEY)) {
+        this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+          type: 'clear',
+        })
+      }
+
       await this.emitEvent({
         type: StorageEvents.STORAGE_CLEAR,
       })
@@ -148,6 +179,19 @@ export abstract class BaseStorage implements IStorage {
       this.logger?.error('Error checking value existence', { key, error })
       throw error
     }
+  }
+
+  public async getState(): Promise<Record<string, any>> {
+    const keys = await this.keys()
+    const state: Record<string, any> = {}
+
+    await Promise.all(
+      keys.map(async (key) => {
+        state[key] = await this.get(key)
+      }),
+    )
+
+    return state
   }
 
   public subscribe(key: string, callback: (value: any) => void): () => void {
@@ -228,10 +272,16 @@ export abstract class BaseStorage implements IStorage {
   }
 
   protected notifySubscribers(key: string, value: any): void {
-    const subscribers = this.subscribers.get(key)
-    if (subscribers) {
+    console.log('key', key)
+    console.log('value', value)
+    console.log('this.subscribers.has(key)', this.subscribers.has(key))
+    const hasSubscribers = this.subscribers.has(key)
+    if (hasSubscribers) {
+      const subscribers = this.subscribers.get(key)
+
       // Оборачиваем в Promise.all для асинхронных подписчиков
       Promise.all(
+        // @ts-ignore
         Array.from(subscribers).map(async (callback) => {
           try {
             await callback(value)
@@ -243,6 +293,17 @@ export abstract class BaseStorage implements IStorage {
         this.logger?.error('Error notifying subscribers', { key, error })
       })
     }
+  }
+
+  // Вспомогательный метод для подписки на все изменения
+  public subscribeToAll(
+    callback: (event: {
+      type: 'set' | 'delete' | 'clear',
+      key?: string,
+      value?: any
+    }) => void,
+  ): () => void {
+    return this.subscribe(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, callback)
   }
 
   protected async emitEvent(event: StorageEvent): Promise<void> {

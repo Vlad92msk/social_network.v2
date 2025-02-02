@@ -1,5 +1,5 @@
-import { IStoragePlugin } from '../../services/storage/storage.interface'
 import { SyncMessage } from '../../services/state-sync/state-sync.interface'
+import { IStoragePlugin } from '../../services/storage/modules/plugin-manager/plugin-managers.interface'
 
 export class StateSyncPlugin implements IStoragePlugin {
   private readonly channel: BroadcastChannel

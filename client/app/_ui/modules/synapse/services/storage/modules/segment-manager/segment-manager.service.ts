@@ -47,6 +47,12 @@ export class SegmentManager implements ISegmentManager {
       this.parentPluginExecutor,
       this.logger,
     )
+    if (config.plugins?.length) {
+      await Promise.all(
+        config.plugins.map((plugin) => pluginManager.add(plugin)),
+      )
+    }
+
     this.pluginManagers.set(config.name, pluginManager)
 
     // Устанавливаем начальное состояние

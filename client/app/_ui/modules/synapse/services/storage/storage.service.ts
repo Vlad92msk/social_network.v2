@@ -132,20 +132,20 @@ export class StorageModule extends BaseModule {
 
     this.eventBus.subscribe('storage', (event) => {
       if (event.type === StorageEvents.STORAGE_UPDATE) {
-        this.logger.info('Storage обновлен:', event)
+        // this.logger.info('Storage обновлен:', event)
       }
       if (event.type === StorageEvents.STORAGE_PATCH) {
-        this.logger.info('Storage обновлен:', event)
+        // this.logger.info('Storage обновлен:', event)
       }
       if (event.type === StorageEvents.STORAGE_SELECT) {
-        this.logger.info('Storage получен:', event)
+        // this.logger.info('Storage получен:', event)
       }
     })
 
     this.eventBus.subscribe('logger', (event) => {
       if (event.type === 'logger:entry') {
         const { level, message, data } = event.payload
-        console.log(`[${level}] ${message}`, data)
+        // console.log(`[${level}] ${message}`, data)
       }
     })
   }

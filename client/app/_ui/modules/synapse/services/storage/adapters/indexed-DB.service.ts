@@ -31,6 +31,23 @@ export class IndexedDBStorage extends BaseStorage {
     this.DB_NAME = options?.dbName || 'app_storage'
     this.STORE_NAME = options?.storeName || 'keyValueStore'
     this.DB_VERSION = options?.dbVersion || 1
+
+    // Инициализируем начальное состояние
+    if (config.initialState) {
+      this.initializeState(config.initialState)
+    }
+  }
+
+  private async initializeState(initialState: Record<string, any>) {
+    await this.ensureInitialized()
+
+    // Проверяем, есть ли уже данные
+    const existingState = await this.doGet(this.name)
+
+    // Устанавливаем initialState только если нет существующих данных
+    if (!existingState && initialState) {
+      await this.doSet(this.name, initialState)
+    }
   }
 
   private initDB(): Promise<void> {

@@ -1,10 +1,11 @@
 // state-sync.middleware.ts
-import { Middleware, NextFunction, StorageContext } from '@ui/modules/synapse/services/core/core.interface'
+import { Middleware, NextFunction } from '@ui/modules/synapse/services/core/core.interface'
 import { StateStorage, StateSyncConfig } from '@ui/modules/synapse/services/state-sync/state-sync.interface'
 import { StateSyncModule } from '@ui/modules/synapse/services/state-sync/state-sync.service'
+import { StorageContext } from '@ui/modules/synapse/services/storage/storage.interface'
 
 export const createStateSyncMiddleware = (
-  config: Omit<StateSyncConfig, 'storage'>
+  config: Omit<StateSyncConfig, 'storage'>,
 ): Middleware => {
   let stateSync: StateSyncModule
   // Храним подписки отдельно для каждого ключа
