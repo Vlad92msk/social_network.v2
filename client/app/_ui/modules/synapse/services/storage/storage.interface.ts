@@ -3,16 +3,17 @@ import { IndexedDBConfig } from './adapters/indexed-DB.service'
 
 export interface IStorage {
   name: string
-  get<T>(key: string): Promise<T | undefined>;
+  get<T>(key: string): Promise<T | undefined>
   getState<T>(): Promise<Record<string, any>>
-  set<T>(key: string, value: T): Promise<void>;
-  has(key: string): Promise<boolean>;
-  delete(key: string): Promise<void>;
-  clear(): Promise<void>;
-  keys(): Promise<string[]>;
-  subscribe(key: string, callback: (value: any) => void): VoidFunction;
-  destroy(): Promise<void>;
-  subscribeToAll(callback: (event: { type: string, key?: string, value?: any }) => void): VoidFunction;
+  set<T>(key: string, value: T): Promise<void>
+  update(updater: (state: any) => void): Promise<void>
+  has(key: string): Promise<boolean>
+  delete(key: string): Promise<void>
+  clear(): Promise<void>
+  keys(): Promise<string[]>
+  subscribe(key: string, callback: (value: any) => void): VoidFunction
+  destroy(): Promise<void>
+  subscribeToAll(callback: (event: { type: string, key?: string, value?: any }) => void): VoidFunction
 }
 
 export enum StorageEvents {

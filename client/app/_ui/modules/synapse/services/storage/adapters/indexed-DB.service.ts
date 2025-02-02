@@ -1,3 +1,4 @@
+import { getValueByPath, setValueByPath } from '@ui/modules/synapse/services/storage/adapters/path.utils'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
@@ -89,30 +90,93 @@ export class IndexedDBStorage extends BaseStorage {
   }
 
   protected async doGet(key: string): Promise<any> {
+    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction()
+
     return new Promise((resolve, reject) => {
-      const request = store.get(key)
-      request.onsuccess = () => resolve(request.result)
+      const request = store.get(rootKey)
+
       request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const rootValue = request.result
+
+        if (rootValue === undefined) {
+          resolve(undefined)
+          return
+        }
+
+        if (!pathParts.length) {
+          resolve(rootValue)
+          return
+        }
+
+        resolve(getValueByPath(rootValue, pathParts.join('.')))
+      }
     })
   }
 
   protected async doSet(key: string, value: any): Promise<void> {
+    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction('readwrite')
+
     return new Promise((resolve, reject) => {
-      const request = store.put(value, key)
-      request.onsuccess = () => resolve()
-      request.onerror = () => reject(request.error)
+      if (!pathParts.length) {
+        const request = store.put(value, rootKey)
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => resolve()
+        return
+      }
+
+      // Сначала получаем текущее значение
+      const getRequest = store.get(rootKey)
+
+      getRequest.onerror = () => reject(getRequest.error)
+      getRequest.onsuccess = () => {
+        const rootValue = getRequest.result || {}
+        const newValue = setValueByPath({ ...rootValue }, pathParts.join('.'), value)
+
+        const putRequest = store.put(newValue, rootKey)
+        putRequest.onerror = () => reject(putRequest.error)
+        putRequest.onsuccess = () => resolve()
+      }
     })
   }
 
   protected async doDelete(key: string): Promise<boolean> {
-    const exists = await this.doHas(key)
+    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction('readwrite')
+
     return new Promise((resolve, reject) => {
-      const request = store.delete(key)
-      request.onsuccess = () => resolve(exists)
-      request.onerror = () => reject(request.error)
+      if (!pathParts.length) {
+        const request = store.delete(rootKey)
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => resolve(true)
+        return
+      }
+
+      const getRequest = store.get(rootKey)
+      getRequest.onerror = () => reject(getRequest.error)
+      getRequest.onsuccess = () => {
+        const rootValue = getRequest.result
+        if (!rootValue) {
+          resolve(false)
+          return
+        }
+
+        const parentPath = pathParts.slice(0, -1).join('.')
+        const lastKey = pathParts[pathParts.length - 1]
+        const parent = parentPath ? getValueByPath(rootValue, parentPath) : rootValue
+
+        if (!parent || !(lastKey in parent)) {
+          resolve(false)
+          return
+        }
+
+        delete parent[lastKey]
+        const putRequest = store.put(rootValue, rootKey)
+        putRequest.onerror = () => reject(putRequest.error)
+        putRequest.onsuccess = () => resolve(true)
+      }
     })
   }
 
@@ -135,11 +199,27 @@ export class IndexedDBStorage extends BaseStorage {
   }
 
   protected async doHas(key: string): Promise<boolean> {
+    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction()
+
     return new Promise((resolve, reject) => {
-      const request = store.count(key)
-      request.onsuccess = () => resolve(request.result > 0)
+      const request = store.get(rootKey)
       request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const rootValue = request.result
+        if (!rootValue) {
+          resolve(false)
+          return
+        }
+
+        if (!pathParts.length) {
+          resolve(true)
+          return
+        }
+
+        const value = getValueByPath(rootValue, pathParts.join('.'))
+        resolve(value !== undefined)
+      }
     })
   }
 

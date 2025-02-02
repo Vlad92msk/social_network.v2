@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
 import { cn } from './cn'
 import { cache, usePokemon, useSelector, useStore } from '../../../../../../../store/synapse'
 
@@ -103,33 +104,124 @@ export function CounterExample() {
   )
 }
 
+const storage = new MemoryStorage({
+  name: 'test',
+  initialState: {
+    user: {
+      profile: {
+        name: 'John',
+        age: 25,
+      },
+    },
+  },
+})
+
+
+
+function MyTest() {
+  const [name, setName] = useState()
+  const [age, setAge] = useState()
+
+  useEffect(() => {
+    // Получаем начальное значение
+    storage.get('user.profile.name').then(setName)
+
+    // Подписываемся на изменения
+    const sub = storage.subscribe('user.profile.name', (newName) => {
+      setName(newName)
+    })
+
+    return () => sub()
+  }, [])
+
+  useEffect(() => {
+    // Получаем начальное значение
+    storage.get('user.profile.age').then(setAge)
+
+    // Подписываемся на изменения
+    const sub = storage.subscribe('user.profile.age', (newAge) => {
+      setAge(newAge)
+      console.log('Age changed:', newAge)
+    })
+
+    return () => sub()
+  }, [])
+
+  // Подписка на весь профиль
+  useEffect(() => {
+    const sub = storage.subscribe('user.profile', (newProfile) => {
+      console.log('Profile updated:', newProfile)
+    })
+
+    return () => sub()
+  }, [])
+
+  useEffect(() => {
+    const sub = storage.subscribeToAll(async (newProfile) => {
+      const state = await storage.getState().then(res => {
+        console.log(res)
+        return res
+      })
+      console.log('state', state)
+    })
+
+    return () => sub()
+  }, [])
+
+  return (
+    <div>
+      <span>{name}</span>
+      <button
+        onClick={async () => {
+          // await storage.set('user.profile.name', 'Max')
+          await storage.update((state) => {
+            console.log('updatestate', state)
+            state.user.profile.name = 'Max'
+          })
+        }}
+      >
+        set name
+      </button>
+      <span>{age}</span>
+      <button
+        onClick={async () => {
+          await storage.set('user.profile.age', 26)
+        }}
+      >
+        set age
+      </button>
+    </div>
+  )
+}
+
 export function AboutMe(props) {
   const [pokemonId, setPokemonId] = useState(4)
 
   return (
     <div className={cn()}>
-      <CounterExample />
-      <div>
-        <div>
-          <button
-            onClick={() => setPokemonId((id) => Math.max(1, id - 1))}
-            disabled={pokemonId === 1}
-          >
-            Previous
-          </button>
-          <span>
-            Pokemon #
-            {pokemonId}
-          </span>
-          <button
-            onClick={() => setPokemonId((id) => id + 1)}
-          >
-            Next
-          </button>
-        </div>
+      <MyTest />
+      {/* <CounterExample /> */}
+      {/* <div> */}
+      {/*   <div> */}
+      {/*     <button */}
+      {/*       onClick={() => setPokemonId((id) => Math.max(1, id - 1))} */}
+      {/*       disabled={pokemonId === 1} */}
+      {/*     > */}
+      {/*       Previous */}
+      {/*     </button> */}
+      {/*     <span> */}
+      {/*       Pokemon # */}
+      {/*       {pokemonId} */}
+      {/*     </span> */}
+      {/*     <button */}
+      {/*       onClick={() => setPokemonId((id) => id + 1)} */}
+      {/*     > */}
+      {/*       Next */}
+      {/*     </button> */}
+      {/*   </div> */}
 
-        <PokemonCard id={pokemonId} />
-      </div>
+      {/*   <PokemonCard id={pokemonId} /> */}
+      {/* </div> */}
     </div>
   )
 }

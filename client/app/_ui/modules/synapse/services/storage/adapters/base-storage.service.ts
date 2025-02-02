@@ -109,6 +109,42 @@ export abstract class BaseStorage implements IStorage {
     }
   }
 
+  public async update(updater: (state: any) => void): Promise<void> {
+    try {
+      // Получаем текущее состояние
+      const currentState = await this.getState()
+
+      // Создаем копию для изменений
+      const newState = { ...currentState }
+
+      // Применяем обновление
+      updater(newState)
+
+      // Для каждого измененного пути применяем set
+      for (const key of Object.keys(currentState)) {
+        if (!this.isEqual(currentState[key], newState[key])) {
+          await this.set(key, newState[key])
+        }
+      }
+
+      // Уведомляем глобальных подписчиков
+      if (this.subscribers.has(BaseStorage.GLOBAL_SUBSCRIPTION_KEY)) {
+        this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+          type: StorageEvents.STORAGE_UPDATE,
+          value: newState,
+        })
+      }
+
+      await this.emitEvent({
+        type: StorageEvents.STORAGE_UPDATE,
+        payload: { state: newState },
+      })
+    } catch (error) {
+      this.logger?.error('Error updating state', { error })
+      throw error
+    }
+  }
+
   public async delete(key: string): Promise<void> {
     try {
       if (this.pluginExecutor?.executeBeforeDelete(key)) {
@@ -194,6 +230,17 @@ export abstract class BaseStorage implements IStorage {
     return state
   }
 
+  // Вспомогательный метод для подписки на все изменения
+  public subscribeToAll(
+    callback: (event: {
+      type: 'set' | 'delete' | 'clear',
+      key?: string,
+      value?: any
+    }) => void,
+  ): VoidFunction {
+    return this.subscribe(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, callback)
+  }
+
   public subscribe(key: string, callback: (value: any) => void): () => void {
     if (!this.subscribers.has(key)) {
       this.subscribers.set(key, new Set())
@@ -239,6 +286,12 @@ export abstract class BaseStorage implements IStorage {
     }
 
     return middlewares
+  }
+
+  private isEqual(a: any, b: any): boolean {
+    // Простое сравнение для примера
+    // В реальном приложении здесь должна быть более сложная логика сравнения
+    return JSON.stringify(a) === JSON.stringify(b)
   }
 
   private createBaseOperation() {
@@ -293,17 +346,6 @@ export abstract class BaseStorage implements IStorage {
         this.logger?.error('Error notifying subscribers', { key, error })
       })
     }
-  }
-
-  // Вспомогательный метод для подписки на все изменения
-  public subscribeToAll(
-    callback: (event: {
-      type: 'set' | 'delete' | 'clear',
-      key?: string,
-      value?: any
-    }) => void,
-  ): () => void {
-    return this.subscribe(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, callback)
   }
 
   protected async emitEvent(event: StorageEvent): Promise<void> {
