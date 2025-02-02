@@ -71,7 +71,6 @@ export class SelectorModule {
     private readonly logger?: ILogger,
   ) {
     console.log('SelectorModule initialized with source:', this.source)
-    // @ts-ignore
     this.storageName = source.name
   }
 
@@ -88,13 +87,6 @@ export class SelectorModule {
     resultFnOrOptions?: ResultFunction<any[], T> | SelectorOptions<T>,
     options?: SelectorOptions<T>,
   ): SelectorAPI<T> {
-    console.log('selectorOrDeps', selectorOrDeps)
-    console.log('resultFnOrOptions', resultFnOrOptions)
-    console.log('options', options)
-    console.log('options', options)
-    console.log('storageName', this.storageName)
-    console.log('subscriptions', this.subscriptions)
-    console.log('source', this.source)
     if (Array.isArray(selectorOrDeps)) {
       const deps: SelectorAPI<any>[] = selectorOrDeps.map((dep) => {
         if (typeof dep === 'function') {
@@ -113,7 +105,7 @@ export class SelectorModule {
     return this.createSimpleSelector(selectorOrDeps, resultFnOrOptions as SelectorOptions<T>)
   }
 
-  private createSimpleSelector<S, T>(
+  createSimpleSelector<S, T>(
     selector: Selector<S, T>,
     options: SelectorOptions<T> = {},
   ): SelectorAPI<T> {

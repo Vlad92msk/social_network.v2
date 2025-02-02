@@ -109,9 +109,11 @@ export class CacheModule implements IStorage {
   }
 
   async set<T>(key: string, value: T): Promise<void> {
-    console.log('key', key)
-    console.log('value', value)
     return this.storage.set(key, value)
+  }
+
+  async update(updater: (state: any) => void): Promise<void> {
+    return this.storage.update(updater)
   }
 
   async delete(key: string): Promise<void> {

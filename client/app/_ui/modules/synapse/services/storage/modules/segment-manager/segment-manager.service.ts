@@ -4,7 +4,6 @@ import {
   IStorageSegment,
 } from './segment.interface'
 import { StorageSegment } from './segment.service'
-import { SelectorManager } from './selector-manager.service'
 import {
   ILogger,
   IStorage,
@@ -13,19 +12,17 @@ import {
 import { StoragePluginManager } from '../plugin-manager/plugin-manager.service'
 import { IPluginExecutor } from '../plugin-manager/plugin-managers.interface'
 import { SegmentPluginManager } from '../plugin-manager/segment-plugin-manager.service'
+import { SelectorModule } from '../selector-module/selector.module'
 
 export type StorageFactory = (config: StorageConfig) => Promise<IStorage>;
 
 export class SegmentManager implements ISegmentManager {
   private segments = new Map<string, StorageSegment<any>>()
 
-  private storages = new Map<string, IStorage>()
-
   private pluginManagers = new Map<string, StoragePluginManager>()
 
   constructor(
     private readonly storageFactory: StorageFactory,
-    private readonly selectorManager: SelectorManager,
     private readonly parentPluginExecutor?: IPluginExecutor,
     private readonly logger?: ILogger,
   ) {}
@@ -38,8 +35,14 @@ export class SegmentManager implements ISegmentManager {
     }
 
     // Создаем хранилище для сегмента
+    console.clear()
+    console.log('Создаем хранилище', config)
     const storage = await this.storageFactory(config)
-    this.storages.set(config.name, storage)
+
+    // Создаем менеджер селекторов для сегмента
+    const state = await storage.getState()
+    console.log('storage.getState()', state)
+    const selectorModule = new SelectorModule(storage, this.logger)
 
     // Создаем менеджер плагинов для сегмента
     const pluginManager = new SegmentPluginManager(
@@ -64,7 +67,7 @@ export class SegmentManager implements ISegmentManager {
     const segment = new StorageSegment<T>(
       config.name,
       storage,
-      this.selectorManager,
+      selectorModule,
       pluginManager,
       this.logger,
     )
@@ -73,24 +76,11 @@ export class SegmentManager implements ISegmentManager {
     return segment
   }
 
-  async destroy(): Promise<void> {
-    // Очищаем все сегменты и их ресурсы
+  async destroy() {
     for (const [name, segment] of this.segments) {
       await segment.clear()
-
-      const pluginManager = this.pluginManagers.get(name)
-      if (pluginManager) {
-        await pluginManager.destroy()
-      }
-
-      const storage = this.storages.get(name)
-      if (storage) {
-        await storage.destroy()
-      }
     }
 
     this.segments.clear()
-    this.storages.clear()
-    this.pluginManagers.clear()
   }
 }

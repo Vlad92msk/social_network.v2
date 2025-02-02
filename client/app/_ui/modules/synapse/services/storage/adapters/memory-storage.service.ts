@@ -15,9 +15,7 @@ export class MemoryStorage extends BaseStorage {
     super(config, pluginExecutor, eventEmitter, logger)
 
     if (config.initialState) {
-      Object.entries(config.initialState).forEach(([key, value]) => {
-        this.storage.set(key, value)
-      })
+      this.storage.set(this.name, config.initialState)
     }
   }
 

@@ -218,16 +218,8 @@ export abstract class BaseStorage implements IStorage {
   }
 
   public async getState(): Promise<Record<string, any>> {
-    const keys = await this.keys()
-    const state: Record<string, any> = {}
-
-    await Promise.all(
-      keys.map(async (key) => {
-        state[key] = await this.get(key)
-      }),
-    )
-
-    return state
+    const value = await this.get(this.name)
+    return value || {}
   }
 
   // Вспомогательный метод для подписки на все изменения
@@ -241,7 +233,7 @@ export abstract class BaseStorage implements IStorage {
     return this.subscribe(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, callback)
   }
 
-  public subscribe(key: string, callback: (value: any) => void): () => void {
+  public subscribe(key: string, callback: (value: any) => void): VoidFunction {
     if (!this.subscribers.has(key)) {
       this.subscribers.set(key, new Set())
     }
@@ -325,9 +317,7 @@ export abstract class BaseStorage implements IStorage {
   }
 
   protected notifySubscribers(key: string, value: any): void {
-    console.log('key', key)
-    console.log('value', value)
-    console.log('this.subscribers.has(key)', this.subscribers.has(key))
+    console.log('this.subscribers.has(key)', this.subscribers.entries())
     const hasSubscribers = this.subscribers.has(key)
     if (hasSubscribers) {
       const subscribers = this.subscribers.get(key)

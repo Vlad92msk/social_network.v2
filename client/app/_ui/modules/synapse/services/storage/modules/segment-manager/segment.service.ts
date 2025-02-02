@@ -1,7 +1,7 @@
 import { IStorageSegment, ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscriber } from './segment.interface'
-import { SelectorManager } from './selector-manager.service'
 import { ILogger, IStorage } from '../../storage.interface'
 import { IPluginExecutor } from '../plugin-manager/plugin-managers.interface'
+import { SelectorModule } from '../selector-module/selector.module'
 
 export class StorageSegment<T extends Record<string, any>> implements IStorageSegment<T> {
   private subscriptions = new Set<Subscriber<T>>()
@@ -9,19 +9,13 @@ export class StorageSegment<T extends Record<string, any>> implements IStorageSe
   constructor(
     private readonly name: string,
     private readonly storage: IStorage,
-    private readonly selectorManager: SelectorManager,
+    private readonly selectorModule: SelectorModule,
     private readonly pluginExecutor?: IPluginExecutor,
     private readonly logger?: ILogger,
   ) {
     this.storage.subscribe(this.name, async () => {
       const state = await this.storage.get<T>(this.name)
-      console.log(`Storage ${this.name} updated:`, state)
-
-      // Уведомляем прямых подписчиков
       await this.notifySubscribers(state as T)
-
-      // Получаем селекторы для этого сегмента и уведомляем их
-      await this.selectorManager.notifySegment(this.name)
     })
   }
 
@@ -92,56 +86,27 @@ export class StorageSegment<T extends Record<string, any>> implements IStorageSe
   ): SelectorAPI<R>;
 
   createSelector<R>(
-    selectorOrDeps: Selector<T, R> | Array<SelectorAPI<any> | Selector<T, any>>,
+    selectorOrDeps: Selector<T, R> | Array<Selector<T, any> | SelectorAPI<any>>,
     resultFnOrOptions?: ResultFunction<any[], R> | SelectorOptions<R>,
     options?: SelectorOptions<R>,
   ): SelectorAPI<R> {
     if (Array.isArray(selectorOrDeps)) {
-      const deps: SelectorAPI<any>[] = selectorOrDeps.map((dep) => {
-        if (typeof dep === 'function') {
-          return this.createSimpleSelector(dep)
-        }
-        return dep
-      })
-
-      return this.selectorManager.createSelector(
-        deps,
+      return this.selectorModule.createSelector(
+        selectorOrDeps as Array<Selector<any, any> | SelectorAPI<any>>,
         resultFnOrOptions as ResultFunction<any[], R>,
         options,
-        this.name,
       )
     }
 
-    return this.createSimpleSelector(selectorOrDeps, resultFnOrOptions as SelectorOptions<R>)
-  }
-
-  private createSimpleSelector<R>(
-    selector: Selector<T, R>,
-    options?: SelectorOptions<R>,
-  ): SelectorAPI<R> {
-    const getState = async (): Promise<R> => {
-      const state = await this.storage.get<T>(this.name)
-      const processedKey = this.pluginExecutor?.executeBeforeGet(this.name) ?? this.name
-      const value = state as T
-      const processedValue = this.pluginExecutor?.executeAfterGet(processedKey, value) ?? value
-      return selector(processedValue as T)
-    }
-
-    return this.selectorManager.createSimpleSelector(
-      getState,
-      this.name,
-      options,
+    return this.selectorModule.createSelector(
+      selectorOrDeps,
+      resultFnOrOptions as SelectorOptions<R>,
     )
   }
 
   private async notifySubscribers(value: T): Promise<void> {
-    console.log('this.subscriptions', this.subscriptions)
     await Promise.all(
-      Array.from(this.subscriptions).map((subscriber) => {
-        console.log('subscriber', subscriber)
-        console.log('value', value)
-        return subscriber.notify(value)
-      }),
+      Array.from(this.subscriptions).map((subscriber) => subscriber.notify(value)),
     )
   }
 }

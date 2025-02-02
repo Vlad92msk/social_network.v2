@@ -47,7 +47,6 @@ export function CounterExample() {
   const counter1 = useSelector(store?.selectors.selectCounter1)
   const counter2 = useSelector(store?.selectors.selectCounter2)
   const sum = useSelector(store?.selectors.sum)
-  const user = useSelector(store?.selectors.user)
 
   const increment1 = async () => {
     // await store?.segments.counter1.patch({ value: (counter1 || 0) + 1 })
@@ -199,29 +198,29 @@ export function AboutMe(props) {
 
   return (
     <div className={cn()}>
-      <MyTest />
-      {/* <CounterExample /> */}
-      {/* <div> */}
-      {/*   <div> */}
-      {/*     <button */}
-      {/*       onClick={() => setPokemonId((id) => Math.max(1, id - 1))} */}
-      {/*       disabled={pokemonId === 1} */}
-      {/*     > */}
-      {/*       Previous */}
-      {/*     </button> */}
-      {/*     <span> */}
-      {/*       Pokemon # */}
-      {/*       {pokemonId} */}
-      {/*     </span> */}
-      {/*     <button */}
-      {/*       onClick={() => setPokemonId((id) => id + 1)} */}
-      {/*     > */}
-      {/*       Next */}
-      {/*     </button> */}
-      {/*   </div> */}
+      {/* <MyTest /> */}
+      <CounterExample />
+      <div>
+        <div>
+          <button
+            onClick={() => setPokemonId((id) => Math.max(1, id - 1))}
+            disabled={pokemonId === 1}
+          >
+            Previous
+          </button>
+          <span>
+            Pokemon #
+            {pokemonId}
+          </span>
+          <button
+            onClick={() => setPokemonId((id) => id + 1)}
+          >
+            Next
+          </button>
+        </div>
 
-      {/*   <PokemonCard id={pokemonId} /> */}
-      {/* </div> */}
+        <PokemonCard id={pokemonId} />
+      </div>
     </div>
   )
 }
