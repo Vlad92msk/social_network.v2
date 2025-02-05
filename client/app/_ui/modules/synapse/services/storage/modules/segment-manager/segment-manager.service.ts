@@ -1,3 +1,6 @@
+import { IndexedDBStorage } from '@ui/modules/synapse/services/storage/adapters/indexed-DB.service'
+import { LocalStorage } from '@ui/modules/synapse/services/storage/adapters/local-storage.service'
+import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
 import {
   CreateSegmentConfig,
   ISegmentManager,
@@ -14,7 +17,7 @@ import { IPluginExecutor } from '../plugin-manager/plugin-managers.interface'
 import { SegmentPluginManager } from '../plugin-manager/segment-plugin-manager.service'
 import { SelectorModule } from '../selector-module/selector.module'
 
-export type StorageFactory = (config: StorageConfig) => Promise<IStorage>;
+export type StorageFactory = (config: StorageConfig) => IStorage;
 
 export class SegmentManager implements ISegmentManager {
   private segments = new Map<string, StorageSegment<any>>()
@@ -35,15 +38,13 @@ export class SegmentManager implements ISegmentManager {
     }
 
     // Создаем хранилище для сегмента
-    console.clear()
-    console.log('Создаем хранилище', config)
-    const storage = await this.storageFactory(config)
+    const storage = await this.storageFactory(config).initialize()
 
+
+    console.log('storage', storage)
     // Создаем менеджер селекторов для сегмента
-    const state = await storage.getState()
-    console.log('storage.getState()', state)
     const selectorModule = new SelectorModule(storage, this.logger)
-
+    console.log('selectorModule', selectorModule)
     // Создаем менеджер плагинов для сегмента
     const pluginManager = new SegmentPluginManager(
       config.name,

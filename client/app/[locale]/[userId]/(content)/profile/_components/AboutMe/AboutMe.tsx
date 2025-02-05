@@ -3,11 +3,17 @@
 import { useEffect, useState } from 'react'
 import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
 import { cn } from './cn'
-import { cache, usePokemon, useSelector, useStore } from '../../../../../../../store/synapse'
+import { dddd, myStorage, usePokemon, useSelector, useStore } from '../../../../../../../store/synapse'
 
 export function PokemonCard({ id }: { id: number }) {
   const { pokemon, loading, error } = usePokemon(id)
+  const d = useSelector(dddd)
 
+  //@ts-ignore
+  const data = pokemon?.data
+  console.log('pokemon', pokemon)
+  console.log('data', data)
+  console.log('d', d)
   if (loading) return <div>Loading...</div>
   if (error) {
     return (
@@ -17,21 +23,21 @@ export function PokemonCard({ id }: { id: number }) {
       </div>
     )
   }
-  if (!pokemon) return null
+  if (!data) return null
 
   return (
     <div>
-      <h2>{pokemon.name}</h2>
-      <img src={pokemon.sprites.front_default} alt={pokemon.name} />
+      <h2>{data.name}</h2>
+      <img src={data.sprites.front_default} alt={data.name} />
       <div>
         Types:
         {' '}
-        {pokemon.types.map((t) => t.type.name).join(', ')}
+        {data.types.map((t) => t.type.name).join(', ')}
       </div>
       <button
         onClick={async () => {
           // Очищаем кэш для этого покемона, чтобы перезагрузить данные
-          await cache.delete(`pokemon-${id}`)
+          await myStorage.delete(`pokemon-${id}`)
           window.location.reload()
         }}
       >
@@ -199,7 +205,7 @@ export function AboutMe(props) {
   return (
     <div className={cn()}>
       {/* <MyTest /> */}
-      <CounterExample />
+      {/* <CounterExample /> */}
       <div>
         <div>
           <button

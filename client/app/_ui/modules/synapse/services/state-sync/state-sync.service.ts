@@ -1,147 +1,44 @@
-import { StateStorage, StateSyncConfig, SyncMessage } from './state-sync.interface'
+import { IStorage, Middleware, NextFunction, StorageChangeEvent, StorageContext, StorageType } from '../storage/storage.interface'
 
-export class StateSyncModule {
-  private readonly storage: StateStorage
+export const createSharedStateMiddleware = (storageType: StorageType): Middleware => {
+  const channel = new BroadcastChannel(`storage-sync:${storageType}`)
+  let storage: IStorage | null = null
 
-  private readonly channel: BroadcastChannel
-
-  private readonly tabId: string
-
-  private readonly subscribers = new Map<string, Set<(value: any) => void>>()
-
-  private readonly debug: boolean
-
-  constructor(config: StateSyncConfig) {
-    this.storage = config.storage
-    this.channel = new BroadcastChannel(config.channelName || 'app_state_sync')
-    this.tabId = crypto.randomUUID()
-    this.debug = config.debug || false
-
-    // Инициализируем слушатель событий
-    this.initMessageHandler()
+  const handleMessage = async (event: MessageEvent<StorageChangeEvent>) => {
+    if (storage && event.data.storageName === storage.name) {
+      await storage.handleExternalChange(event.data)
+    }
   }
 
-  private initMessageHandler(): void {
-    this.channel.onmessage = async (event: MessageEvent<SyncMessage>) => {
-      const message = event.data
+  return (context: StorageContext) => {
+    if (!storage && context.storage) {
+      storage = context.storage
+      channel.addEventListener('message', handleMessage)
 
-      // Игнорируем собственные сообщения
-      if (message.tabId === this.tabId) {
-        return
-      }
-
-      this.log('Received message:', message)
-
-      switch (message.type) {
-        case 'state:update':
-          if (message.key) {
-            await this.storage.set(message.key, message.value)
-            this.notifySubscribers(message.key, message.value)
-          }
-          break
-
-        case 'state:delete':
-          if (message.key) {
-            await this.storage.delete(message.key)
-            this.notifySubscribers(message.key, undefined)
-          }
-          break
-
-        case 'state:clear':
-          await this.storage.clear()
-          this.notifyAllSubscribers()
-          break
+      const originalDestroy = storage.destroy.bind(storage)
+      storage.destroy = async () => {
+        channel.removeEventListener('message', handleMessage)
+        channel.close()
+        await originalDestroy()
       }
     }
-  }
 
-  private log(...args: any[]): void {
-    if (this.debug) {
-      console.log('[StateSyncModule]', ...args)
-    }
-  }
+    return async (next: NextFunction) => {
+      const result = await next(context)
 
-  private notifySubscribers(key: string, value: any): void {
-    const subscribers = this.subscribers.get(key)
-    if (subscribers) {
-      subscribers.forEach((callback) => callback(value))
-    }
-  }
-
-  private notifyAllSubscribers(): void {
-    this.subscribers.forEach((subscribers, key) => {
-      subscribers.forEach((callback) => callback(undefined))
-    })
-  }
-
-  private broadcastUpdate<T>(message: SyncMessage<T>): void {
-    this.log('Broadcasting:', message)
-    this.channel.postMessage(message)
-  }
-
-  public async get<T>(key: string): Promise<T | undefined> {
-    return this.storage.get<T>(key)
-  }
-
-  public async set<T>(key: string, value: T): Promise<void> {
-    await this.storage.set(key, value)
-
-    this.broadcastUpdate({
-      type: 'state:update',
-      key,
-      value,
-      timestamp: Date.now(),
-      tabId: this.tabId,
-    })
-
-    this.notifySubscribers(key, value)
-  }
-
-  public async delete(key: string): Promise<void> {
-    await this.storage.delete(key)
-
-    this.broadcastUpdate({
-      type: 'state:delete',
-      key,
-      timestamp: Date.now(),
-      tabId: this.tabId,
-    })
-
-    this.notifySubscribers(key, undefined)
-  }
-
-  public async clear(): Promise<void> {
-    await this.storage.clear()
-
-    this.broadcastUpdate({
-      type: 'state:clear',
-      timestamp: Date.now(),
-      tabId: this.tabId,
-    })
-
-    this.notifyAllSubscribers()
-  }
-
-  public subscribe(key: string, callback: (value: any) => void): () => void {
-    if (!this.subscribers.has(key)) {
-      this.subscribers.set(key, new Set())
-    }
-
-    this.subscribers.get(key)!.add(callback)
-
-    return () => {
-      const subscribers = this.subscribers.get(key)
-      if (subscribers) {
-        subscribers.delete(callback)
-        if (subscribers.size === 0) {
-          this.subscribers.delete(key)
-        }
+      if ((context.type === 'set' || context.type === 'delete' || context.type === 'clear')
+        && context.storage) {
+        channel.postMessage({
+          type: context.type,
+          key: context.key,
+          value: context.type === 'set' ? context.value : undefined,
+          source: 'broadcast',
+          timestamp: Date.now(),
+          storageName: context.storage.name
+        } satisfies StorageChangeEvent)
       }
-    }
-  }
 
-  public destroy(): void {
-    this.channel.close()
-    this.subscribers.clear()
+      return result
+    }
   }
 }

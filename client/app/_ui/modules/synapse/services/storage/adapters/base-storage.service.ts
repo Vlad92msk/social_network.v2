@@ -5,7 +5,7 @@ import {
   IEventEmitter,
   ILogger,
   IStorage,
-  Middleware,
+  Middleware, StorageChangeEvent,
   StorageConfig,
   StorageContext,
   StorageEvent,
@@ -30,13 +30,100 @@ export abstract class BaseStorage implements IStorage {
     protected readonly logger?: ILogger,
   ) {
     this.name = config.name
+    // Инициализация MiddlewareChain с привязанным getDefaultMiddleware
     this.middlewareChain = new MiddlewareChain(
-      this.getDefaultMiddleware.bind(this),
+      (options) => this.getDefaultMiddleware(options),
       config,
     )
   }
 
-  // Абстрактные методы для реализации в конкретных хранилищах
+  protected async initializeWithMiddlewares(): Promise<void> {
+    try {
+      // Инициализируем middleware chain
+      this.middlewareChain.initialize()
+
+      // Получаем текущее состояние
+      const state = await this.getState()
+      const hasExistingState = Object.keys(state).length > 0
+
+      if (hasExistingState) {
+        await this.applyMiddlewares({
+          type: 'init',
+          value: state,
+          storage: this,
+        })
+      } else if (this.config.initialState) {
+        await this.applyMiddlewares({
+          type: 'init',
+          value: this.config.initialState,
+          storage: this,
+        })
+      }
+    } catch (error) {
+      this.logger?.error('Error initializing storage', { error })
+      throw error
+    }
+  }
+
+  public abstract initialize(): Promise<this>;
+
+  protected abstract handleExternalSet(key: string, value: any): Promise<void>;
+
+  protected abstract handleExternalDelete(key: string): Promise<void>;
+
+  protected abstract handleExternalClear(): Promise<void>;
+
+  // Публичный метод, который вызывается извне (например в middleware)
+  public async handleExternalChange(event: StorageChangeEvent): Promise<void> {
+    try {
+      switch (event.type) {
+        case 'set':
+          if (event.key) {
+            // Обновляем данные (только для memory так как в остальных хранилищах пустые реализации) и уведомляем подписчиков
+            await this.handleExternalSet(event.key, event.value)
+            // Уведомляем подписчиков конкретного ключа
+            this.notifySubscribers(event.key, event.value)
+            // Уведомляем глобальных подписчиков
+            this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+              type: 'set',
+              key: event.key,
+              value: event.value,
+              source: event.source,
+            })
+          }
+          break
+        case 'delete':
+          if (event.key) {
+            await this.handleExternalDelete(event.key)
+            this.notifySubscribers(event.key, undefined)
+            // Уведомляем глобальных подписчиков
+            this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+              type: 'set',
+              key: event.key,
+              value: event.value,
+              source: event.source,
+            })
+          }
+          break
+        case 'clear':
+          await this.handleExternalClear()
+          this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+            type: 'clear',
+            source: event.source,
+            timestamp: event.timestamp,
+          })
+          break
+      }
+
+      await this.emitEvent({
+        type: `${StorageEvents.STORAGE_UPDATE}:external`,
+        payload: event,
+      })
+    } catch (error) {
+      this.logger?.error('Error handling external change', { event, error })
+    }
+  }
+
   protected abstract doGet(key: string): Promise<any>;
 
   protected abstract doSet(key: string, value: any): Promise<void>;
@@ -55,12 +142,18 @@ export abstract class BaseStorage implements IStorage {
     try {
       const processedKey = this.pluginExecutor?.executeBeforeGet(key) ?? key
 
+      // Добавим логирование
+      console.log('Before middleware:', { key: processedKey });
+
       const value = await this.applyMiddlewares({
         type: 'get',
         key: processedKey,
       }) as T | undefined
 
+      console.log('After middleware:', { value });
+
       const processedValue = this.pluginExecutor?.executeAfterGet(processedKey, value) ?? value
+
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_SELECT,
@@ -78,28 +171,35 @@ export abstract class BaseStorage implements IStorage {
     try {
       const processedValue = this.pluginExecutor?.executeBeforeSet(key, value) ?? value
 
-      await this.applyMiddlewares({
+      // Применяем middleware перед установкой значения
+      const middlewareResult = await this.applyMiddlewares({
         type: 'set',
         key,
         value: processedValue,
       })
 
-      this.pluginExecutor?.executeAfterSet(key, processedValue)
-      // Уведомляем подписчиков конкретного ключа
-      this.notifySubscribers(key, processedValue)
+      // Сохраняем результат после middleware
+      await this.doSet(key, middlewareResult)
 
-      // Уведомляем глобальных подписчиков
+      // Получаем актуальное значение
+      const newValue = await this.doGet(key)
+
+      this.pluginExecutor?.executeAfterSet(key, newValue)
+
+      // Уведомляем подписчиков
+      this.notifySubscribers(key, newValue)
+
       if (this.subscribers.has(BaseStorage.GLOBAL_SUBSCRIPTION_KEY)) {
         this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
           type: 'set',
           key,
-          value: processedValue,
+          value: newValue,
         })
       }
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_UPDATE,
-        payload: { key, value: processedValue },
+        payload: { key, value: newValue },
       })
 
       this.logger?.debug('Value set successfully', { key })
@@ -120,8 +220,14 @@ export abstract class BaseStorage implements IStorage {
       // Применяем обновление
       updater(newState)
 
-      // Для каждого измененного пути применяем set
-      for (const key of Object.keys(currentState)) {
+      // Получаем все ключи из обоих состояний
+      const allKeys = new Set([
+        ...Object.keys(currentState),
+        ...Object.keys(newState)
+      ])
+
+      // Для каждого ключа проверяем изменения
+      for (const key of allKeys) {
         if (!this.isEqual(currentState[key], newState[key])) {
           await this.set(key, newState[key])
         }
@@ -218,7 +324,7 @@ export abstract class BaseStorage implements IStorage {
   }
 
   public async getState(): Promise<Record<string, any>> {
-    const value = await this.get(this.name)
+    const value = await this.doGet('')  // Используем пустой путь для получения корневого состояния
     return value || {}
   }
 
@@ -267,15 +373,20 @@ export abstract class BaseStorage implements IStorage {
   protected getDefaultMiddleware(options?: DefaultMiddlewareOptions): Middleware[] {
     const middlewares: Middleware[] = []
 
-    if (options?.shallowCompare !== false) {
-      const equalityOptions = options?.shallowCompare || {}
-      middlewares.push(createShallowCompareMiddleware(equalityOptions))
-    }
+    // Теперь поддерживаем как булевые значения, так и объекты с настройками
+    // if (options?.shallowCompare !== false) {
+    //   const equalityOptions = typeof options?.shallowCompare === 'object'
+    //     ? options.shallowCompare
+    //     : {}
+    //   middlewares.push(createShallowCompareMiddleware(equalityOptions))
+    // }
 
-    if (options?.batching !== false) {
-      const batchingOptions = options?.batching || {}
-      middlewares.push(createBatchingMiddleware(batchingOptions))
-    }
+    // if (options?.batching !== false) {
+    //   const batchingOptions = typeof options?.batching === 'object'
+    //     ? options.batching
+    //     : {}
+    //   middlewares.push(createBatchingMiddleware(batchingOptions))
+    // }
 
     return middlewares
   }
@@ -287,55 +398,91 @@ export abstract class BaseStorage implements IStorage {
   }
 
   private createBaseOperation() {
-    return async (ctx: StorageContext) => {
-      switch (ctx.type) {
-        case 'get':
-          return this.doGet(ctx.key!)
-        case 'set':
-          await this.doSet(ctx.key!, ctx.value)
-          return ctx.value
-        case 'delete':
-          return this.doDelete(ctx.key!)
-        case 'clear':
-          await this.doClear()
-          return
-        case 'keys':
-          return this.doKeys()
-        default:
-          throw new Error(`Unknown operation: ${ctx.type}`)
+    return async (ctx: StorageContext): Promise<any> => {
+      const { type, key, value } = ctx
+
+      try {
+        switch (type) {
+          case 'init':
+            // При инициализации устанавливаем начальное состояние
+            if (value) {
+              await this.doSet('', value)  // Используем пустой путь для корневого состояния
+            }
+            return value
+          case 'get':
+            return await this.doGet(key!)
+          case 'set':
+            await this.doSet(key!, value)
+            return value
+          case 'delete':
+            return await this.doDelete(key!)
+          case 'clear':
+            await this.doClear()
+            return
+          case 'keys':
+            return await this.doKeys()
+          default:
+            throw new Error(`Unknown operation: ${type}`)
+        }
+      } catch (error) {
+        this.logger?.error(`Error in base operation: ${type}`, { key, error })
+        throw error
       }
     }
   }
 
+  protected initializeMiddlewares(): void {
+    if (this.config.middlewares) {
+      const middlewares = this.config.middlewares(
+        (options) => this.getDefaultMiddleware(options)
+      )
+      middlewares.forEach(middleware => this.use(middleware))
+    }
+  }
+
   protected async applyMiddlewares(context: StorageContext): Promise<any> {
-    const segment = context.key?.split('.')[0]
     return this.middlewareChain.execute({
       ...context,
-      segment,
       baseOperation: this.createBaseOperation(),
+      metadata: {
+        ...context.metadata,
+        timestamp: Date.now(),
+      },
     })
   }
 
-  protected notifySubscribers(key: string, value: any): void {
-    console.log('this.subscribers.has(key)', this.subscribers.entries())
-    const hasSubscribers = this.subscribers.has(key)
-    if (hasSubscribers) {
-      const subscribers = this.subscribers.get(key)
+  // Метод для управления middleware (для редких случаев в основном в калссах-наследниках)
+  protected use(middleware: Middleware): void {
+    this.middlewareChain.use(middleware)
+  }
 
-      // Оборачиваем в Promise.all для асинхронных подписчиков
-      Promise.all(
-        // @ts-ignore
-        Array.from(subscribers).map(async (callback) => {
-          try {
-            await callback(value)
-          } catch (error) {
-            this.logger?.error('Error in subscriber callback', { key, error })
-          }
-        }),
-      ).catch((error) => {
-        this.logger?.error('Error notifying subscribers', { key, error })
-      })
-    }
+  // Метод для обновления опций middleware
+  public updateMiddlewareOptions(
+    middleware: Middleware,
+    options: Partial<DefaultMiddlewareOptions>,
+  ): void {
+    this.middlewareChain.updateMiddlewareOptions(middleware, options)
+  }
+
+  protected notifySubscribers(key: string, value: any): void {
+    const subscribers = this.subscribers.get(key)
+    if (!subscribers?.size) return
+
+    Promise.all(
+      Array.from(subscribers).map(async (callback) => {
+        try {
+          await callback(value)
+        } catch (error) {
+          this.logger?.error('Error in subscriber callback', {
+            key,
+            error,
+            subscriber: callback.name || 'anonymous',
+          })
+        }
+      }),
+    ).catch((error) => {
+      this.logger?.error('Error notifying subscribers', { key, error })
+    })
   }
 
   protected async emitEvent(event: StorageEvent): Promise<void> {
@@ -345,6 +492,7 @@ export abstract class BaseStorage implements IStorage {
         metadata: {
           ...(event.metadata || {}),
           timestamp: Date.now(),
+          storageName: this.name,
         },
       })
     } catch (error) {

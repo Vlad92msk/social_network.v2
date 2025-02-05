@@ -13,7 +13,11 @@ export interface IStorage {
   keys(): Promise<string[]>
   subscribe(key: string, callback: (value: any) => void): VoidFunction
   destroy(): Promise<void>
-  subscribeToAll(callback: (event: { type: string, key?: string, value?: any }) => void): VoidFunction
+  subscribeToAll(callback: (event: { type: string; key?: string; value?: any }) => void): VoidFunction
+
+  initialize(): Promise<this>
+  // Добавляем метод для внешних изменений
+  handleExternalChange(event: StorageChangeEvent): Promise<void>
 }
 
 export enum StorageEvents {
@@ -43,27 +47,28 @@ export interface ILogger {
 }
 
 // Middleware types
-export type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys';
+export type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys' | 'init'
 
 export interface StorageContext<T = any> {
-  type: OperationType;
-  key?: string;
-  value?: T;
-  metadata?: Record<string, any>;
-  segment?: string;
-  baseOperation?: NextFunction;
+  type: OperationType
+  key?: string
+  value?: T
+  metadata?: Record<string, any>
+  segment?: string
+  baseOperation?: NextFunction
+  storage?: IStorage
 }
 
 export type NextFunction = (context: StorageContext) => Promise<any>;
 
-export interface Middleware {
-  (next: NextFunction): NextFunction;
-  options?: MiddlewareOptions;
+export interface MiddlewareOptions {
+  segments?: string[]
+  [key: string]: any
 }
 
-export interface MiddlewareOptions {
-  segments?: string[];
-  [key: string]: any;
+export interface Middleware {
+  (ctx: StorageContext): (next: NextFunction) => Promise<any>
+  options?: MiddlewareOptions
 }
 
 // Middleware configurations
@@ -75,28 +80,27 @@ export type MiddlewareFactory<TOptions = MiddlewareOptions> = (options?: TOption
 
 // Middleware specific options
 export interface BatchingMiddlewareOptions extends MiddlewareOptions {
-  batchSize?: number;
-  batchDelay?: number;
+  batchSize?: number
+  batchDelay?: number
 }
 
 export interface ShallowCompareMiddlewareOptions extends MiddlewareOptions {
-  comparator?: <T>(prev: T, next: T) => boolean;
+  comparator?: <T>(prev: T, next: T) => boolean
 }
 
 export interface DefaultMiddlewareOptions extends MiddlewareOptions {
-  batching?: BatchingMiddlewareOptions | false;
-  shallowCompare?: ShallowCompareMiddlewareOptions | false;
+  batching?: boolean | BatchingMiddlewareOptions
+  shallowCompare?: boolean | ShallowCompareMiddlewareOptions
 }
 
 // Configuration
 export interface StorageConfig {
   name: string
-  initialState?: Record<string, any>;
-  middlewares?: MiddlewareFunction;
+  initialState?: Record<string, any>
+  middlewares?: MiddlewareFunction
 }
 
 export type StorageType = 'memory' | 'localStorage' | 'indexedDB';
-
 
 // Уточним специфичные конфиги для разных типов хранилищ
 export interface MemoryStorageConfig extends StorageConfig {
@@ -110,4 +114,13 @@ export interface LocalStorageConfig extends StorageConfig {
 export interface IndexedDBStorageConfig extends StorageConfig {
   type: 'indexedDB';
   options: IndexedDBConfig;
+}
+
+export interface StorageChangeEvent {
+  type: 'set' | 'delete' | 'clear';
+  key?: string;
+  value?: any;
+  source?: 'broadcast' | 'websocket' | 'server' | string;
+  timestamp?: number;
+  storageName?: string
 }

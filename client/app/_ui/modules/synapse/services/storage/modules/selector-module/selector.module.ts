@@ -111,6 +111,7 @@ export class SelectorModule {
   ): SelectorAPI<T> {
     const getState = async (): Promise<T> => {
       const state = await this.source.getState()
+      console.log('createSimpleSelector getState', state)
       return selector(state as S)
     }
 

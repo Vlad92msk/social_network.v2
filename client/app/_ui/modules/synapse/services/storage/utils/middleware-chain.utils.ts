@@ -1,5 +1,7 @@
+// middleware-chain.ts
 import {
   DefaultMiddlewareOptions,
+  GetDefaultMiddleware,
   Middleware,
   StorageConfig,
   StorageContext,
@@ -9,13 +11,11 @@ export class MiddlewareChain {
   private middlewares: Middleware[] = []
 
   constructor(
-    private readonly getDefaultMiddleware: (options?: DefaultMiddlewareOptions) => Middleware[],
+    private readonly getDefaultMiddleware: GetDefaultMiddleware,
     private readonly config?: StorageConfig,
-  ) {
-    this.initializeMiddlewares()
-  }
+  ) {}
 
-  private initializeMiddlewares(): void {
+  public initialize(): void {
     if (this.config?.middlewares) {
       this.middlewares = this.config.middlewares(this.getDefaultMiddleware)
     } else {
@@ -24,36 +24,54 @@ export class MiddlewareChain {
   }
 
   public async execute(context: StorageContext): Promise<any> {
-    if (!context.baseOperation) {
-      throw new Error('Base operation is required')
-    }
-
-    // Создаем цепочку middleware путем последовательного применения каждого middleware
-    const chain = this.middlewares.reduce(
-      (next, middleware) => middleware(next),
-      context.baseOperation,
+    const chain = this.middlewares.reduceRight(
+      (next, middleware) => async (ctx: StorageContext) => {
+        const handler = middleware(ctx)
+        return handler(next)
+      },
+      async (ctx: StorageContext) => {
+        if (!ctx.baseOperation) {
+          throw new Error('Base operation is not defined')
+        }
+        return ctx.baseOperation(ctx)
+      },
     )
 
-    // Выполняем цепочку middleware
     return chain(context)
   }
 
-  public addMiddleware(middleware: Middleware): void {
+  // Методы управления middleware
+  public use(middleware: Middleware): void {
     this.middlewares.push(middleware)
   }
 
-  public removeMiddleware(middleware: Middleware): void {
+  public remove(middleware: Middleware): void {
     const index = this.middlewares.indexOf(middleware)
     if (index !== -1) {
       this.middlewares.splice(index, 1)
     }
   }
 
-  public clearMiddlewares(): void {
+  public clear(): void {
     this.middlewares = []
   }
 
   public getMiddlewares(): Middleware[] {
     return [...this.middlewares]
+  }
+
+  // Метод для обновления опций middleware
+  public updateMiddlewareOptions(
+    middleware: Middleware,
+    options: Partial<DefaultMiddlewareOptions>,
+  ): void {
+    const index = this.middlewares.indexOf(middleware)
+    if (index !== -1 && middleware.options) {
+      //@ts-ignore
+      this.middlewares[index] = {
+        ...middleware,
+        options: { ...middleware.options, ...options },
+      }
+    }
   }
 }

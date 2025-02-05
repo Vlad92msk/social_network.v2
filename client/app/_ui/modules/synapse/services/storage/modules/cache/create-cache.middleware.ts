@@ -1,60 +1,98 @@
-import { CacheEntry, CacheMetadata, CacheOptions } from './cache-module.service'
-import { Middleware, NextFunction, StorageContext } from '../../storage.interface'
+import { CacheEntry, CacheOptions, CacheUtils } from './cache-module.service'
+import { IStorage, Middleware, NextFunction, StorageContext } from '../../storage.interface'
 
-export const createCacheMiddleware = (options: CacheOptions): Middleware => {
-  // Функция создания метаданных
-  const createMetadata = (): CacheMetadata => ({
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    expiresAt: Date.now() + (options.ttl || 0),
-    accessCount: 0,
-  })
+export const createCacheMiddleware = (options: CacheOptions = {}): Middleware => {
+  let cleanupInterval: NodeJS.Timeout | undefined
 
-  // Функция проверки срока действия
-  const isExpired = (metadata: CacheMetadata): boolean => Date.now() > metadata.expiresAt
+  const isCachedValue = (value: any): value is CacheEntry<any> => value && 'metadata' in value && 'data' in value
 
-  const middleware: Middleware = (next: NextFunction) => async (
-    context: StorageContext<unknown>,
-  ) => {
-    switch (context.type) {
-      case 'get': {
-        const entry = await next(context) as CacheEntry<unknown> | undefined
-
-        if (!entry) return undefined
-
-        if (isExpired(entry.metadata)) {
-          await context.baseOperation?.({
-            ...context,
-            type: 'delete',
-            key: context.key,
-          })
-          return undefined
-        }
-
-        entry.metadata.accessCount++
-        await context.baseOperation?.({
-          ...context,
-          type: 'set',
-          value: entry,
-        })
-
-        return entry.data
+  // Функция для очистки истекших данных
+  const clearExpired = async (storage: IStorage) => {
+    const keys = await storage.keys()
+    for (const key of keys) {
+      const value = await storage.get<any>(key)
+      if (isCachedValue(value) && CacheUtils.isExpired(value.metadata)) {
+        await storage.delete(key)
       }
-
-      case 'set': {
-        const cacheEntry: CacheEntry<unknown> = {
-          data: context.value,
-          metadata: createMetadata(),
-        }
-
-        context.value = cacheEntry
-        return next(context)
-      }
-
-      default:
-        return next(context)
     }
   }
 
-  return middleware
+  const initCleanup = (storage: IStorage) => {
+    if (options.cleanup?.enabled && options.cleanup.interval) {
+      cleanupInterval = setInterval(
+        () => clearExpired(storage),
+        options.cleanup.interval,
+      )
+    }
+  }
+
+  return (context: StorageContext) => {
+    if (!cleanupInterval && context.storage) {
+      initCleanup(context.storage)
+    }
+
+    return async (next: NextFunction) => {
+      const { type, key, value, storage } = context
+
+      switch (type) {
+        case 'get': {
+          try {
+            const result = await next(context)
+            if (!result) return undefined
+
+            if (isCachedValue(result)) {
+              if (CacheUtils.isExpired(result.metadata)) {
+                await storage?.delete(key!)
+                return undefined
+              }
+
+              const updatedValue: CacheEntry<any> = {
+                data: result.data,
+                metadata: CacheUtils.updateMetadata(result.metadata),
+              }
+              await storage?.set(key!, updatedValue)
+              return updatedValue.data
+            }
+
+            return result
+          } catch (error) {
+            if (options.invalidateOnError) {
+              await storage?.delete(key!)
+            }
+            throw error
+          }
+        }
+
+        case 'set': {
+          const valueWithMetadata: CacheEntry<any> = {
+            data: value,
+            metadata: CacheUtils.createMetadata(options.ttl),
+          }
+          return next({ ...context, value: valueWithMetadata })
+        }
+
+        case 'init': {
+          const result = await next(context)
+
+          if (result) {
+            const processedResult: Record<string, any> = {}
+
+            for (const [key, value] of Object.entries(result)) {
+              processedResult[key] = isCachedValue(value) ? value : {
+                data: value,
+                metadata: CacheUtils.createMetadata(options.ttl),
+              }
+            }
+
+            return processedResult
+          }
+
+          return result
+        }
+
+        default:
+          return next(context)
+      }
+    }
+  }
 }

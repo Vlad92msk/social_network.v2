@@ -1,4 +1,4 @@
-import { getValueByPath, setValueByPath } from '@ui/modules/synapse/services/storage/adapters/path.utils'
+import { getValueByPath, parsePath, setValueByPath } from './path.utils'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
@@ -11,90 +11,100 @@ export class LocalStorage extends BaseStorage {
     logger?: ILogger,
   ) {
     super(config, pluginExecutor, eventEmitter, logger)
+  }
 
-    if (config.initialState) {
-      localStorage.setItem(this.name, JSON.stringify(config.initialState))
+  async initialize(): Promise<this> {
+    try {
+      await this.initializeWithMiddlewares()
+      return this
+    } catch (error) {
+      this.logger?.error('Error initializing LocalStorage', { error })
+      throw error
     }
+  }
+
+  // Для persistent storage не нужно дублировать операции
+  protected async handleExternalSet(): Promise<void> {
+    // Пустая реализация, т.к. данные уже в localStorage
+  }
+
+  protected async handleExternalDelete(): Promise<void> {
+    // Пустая реализация
+  }
+
+  protected async handleExternalClear(): Promise<void> {
+    // Пустая реализация
   }
 
   protected async doGet(key: string): Promise<any> {
-    const [rootKey, ...pathParts] = key.split('.')
-    const rootValue = localStorage.getItem(rootKey)
+    const storageData = localStorage.getItem(this.name)
+    if (!storageData) return undefined
 
-    if (!rootValue) return undefined
-
-    const parsedValue = JSON.parse(rootValue)
-
-    if (!pathParts.length) {
-      return parsedValue
-    }
-
-    return getValueByPath(parsedValue, pathParts.join('.'))
+    const state = JSON.parse(storageData)
+    return getValueByPath(state, key)
   }
 
-
   protected async doSet(key: string, value: any): Promise<void> {
-    const [rootKey, ...pathParts] = key.split('.')
+    const storageData = localStorage.getItem(this.name)
+    const state = storageData ? JSON.parse(storageData) : {}
 
-    if (!pathParts.length) {
-      localStorage.setItem(rootKey, JSON.stringify(value))
-      return
-    }
-
-    const rootValue = localStorage.getItem(rootKey)
-    const parsedValue = rootValue ? JSON.parse(rootValue) : {}
-    const newValue = setValueByPath({ ...parsedValue }, pathParts.join('.'), value)
-    localStorage.setItem(rootKey, JSON.stringify(newValue))
+    const newState = setValueByPath({ ...state }, key, value)
+    localStorage.setItem(this.name, JSON.stringify(newState))
   }
 
   protected async doDelete(key: string): Promise<boolean> {
-    const [rootKey, ...pathParts] = key.split('.')
+    const storageData = localStorage.getItem(this.name)
+    if (!storageData) return false
 
-    if (!pathParts.length) {
-      const exists = localStorage.getItem(rootKey) !== null
-      localStorage.removeItem(rootKey)
-      return exists
-    }
-
-    const rootValue = localStorage.getItem(rootKey)
-    if (!rootValue) return false
-
-    const parsedValue = JSON.parse(rootValue)
+    const state = JSON.parse(storageData)
+    const pathParts = parsePath(key)
     const parentPath = pathParts.slice(0, -1).join('.')
     const lastKey = pathParts[pathParts.length - 1]
-    const parent = parentPath ? getValueByPath(parsedValue, parentPath) : parsedValue
+
+    const parent = parentPath ? getValueByPath(state, parentPath) : state
 
     if (!parent || !(lastKey in parent)) return false
 
     delete parent[lastKey]
-    localStorage.setItem(rootKey, JSON.stringify(parsedValue))
+    localStorage.setItem(this.name, JSON.stringify(state))
     return true
   }
 
   protected async doClear(): Promise<void> {
-    localStorage.clear()
+    localStorage.removeItem(this.name)
   }
 
   protected async doKeys(): Promise<string[]> {
-    return Object.keys(localStorage)
+    const storageData = localStorage.getItem(this.name)
+    if (!storageData) return []
+
+    const state = JSON.parse(storageData)
+    return this.getAllKeys(state)
   }
 
   protected async doHas(key: string): Promise<boolean> {
-    const [rootKey, ...pathParts] = key.split('.')
-
-    if (!pathParts.length) {
-      return localStorage.getItem(rootKey) !== null
-    }
-
-    const rootValue = localStorage.getItem(rootKey)
-    if (!rootValue) return false
-
-    const parsedValue = JSON.parse(rootValue)
-    const value = getValueByPath(parsedValue, pathParts.join('.'))
+    const value = await this.doGet(key)
     return value !== undefined
   }
 
+  private getAllKeys(obj: any, prefix = ''): string[] {
+    let keys: string[] = []
+
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const fullKey = prefix ? `${prefix}.${key}` : key
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          keys = keys.concat(this.getAllKeys(obj[key], fullKey))
+        } else {
+          keys.push(fullKey)
+        }
+      }
+    }
+
+    return keys
+  }
+
   protected async doDestroy(): Promise<void> {
-    // Специфичной очистки не требуется
+    await this.doClear()
   }
 }

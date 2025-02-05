@@ -1,4 +1,4 @@
-import { getValueByPath, setValueByPath } from '@ui/modules/synapse/services/storage/adapters/path.utils'
+import { getValueByPath, parsePath, setValueByPath } from './path.utils'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
@@ -13,80 +13,94 @@ export class MemoryStorage extends BaseStorage {
     logger?: ILogger,
   ) {
     super(config, pluginExecutor, eventEmitter, logger)
+  }
 
-    if (config.initialState) {
-      this.storage.set(this.name, config.initialState)
+  async initialize(): Promise<this> {
+    try {
+      this.initializeMiddlewares()
+      await this.initializeWithMiddlewares()
+      return this
+    } catch (error) {
+      this.logger?.error('Error initializing MemoryStorage', { error })
+      throw error
     }
   }
 
+
   protected async doGet(key: string): Promise<any> {
-    const [rootKey, ...pathParts] = key.split('.')
-    const rootValue = this.storage.get(rootKey)
+    const state = this.storage.get(this.name)
+    if (!state) return undefined
 
-    if (!pathParts.length) {
-      return rootValue
-    }
-
-    return getValueByPath(rootValue, pathParts.join('.'))
+    return getValueByPath(state, key)
   }
 
   protected async doSet(key: string, value: any): Promise<void> {
-    const [rootKey, ...pathParts] = key.split('.')
+    const state = this.storage.get(this.name) || {}
+    const newState = setValueByPath({ ...state }, key, value)
+    this.storage.set(this.name, newState)
+  }
 
-    if (!pathParts.length) {
-      this.storage.set(rootKey, value)
-      return
-    }
+  protected async handleExternalSet(key: string, value: any): Promise<void> {
+    await this.doSet(key, value)
+  }
 
-    const rootValue = this.storage.get(rootKey) || {}
-    const newValue = setValueByPath({ ...rootValue }, pathParts.join('.'), value)
-    this.storage.set(rootKey, newValue)
+  protected async handleExternalDelete(key: string): Promise<void> {
+    await this.doDelete(key)
+  }
+
+  protected async handleExternalClear(): Promise<void> {
+    await this.doClear()
   }
 
   protected async doDelete(key: string): Promise<boolean> {
-    const [rootKey, ...pathParts] = key.split('.')
+    const state = this.storage.get(this.name)
+    if (!state) return false
 
-    if (!pathParts.length) {
-      return this.storage.delete(rootKey)
-    }
-
-    const rootValue = this.storage.get(rootKey)
-    if (!rootValue) return false
-
+    const pathParts = parsePath(key)
     const parentPath = pathParts.slice(0, -1).join('.')
     const lastKey = pathParts[pathParts.length - 1]
-    const parent = parentPath ? getValueByPath(rootValue, parentPath) : rootValue
+    const parent = parentPath ? getValueByPath(state, parentPath) : state
 
     if (!parent || !(lastKey in parent)) return false
 
     delete parent[lastKey]
-    this.storage.set(rootKey, rootValue)
+    this.storage.set(this.name, state)
     return true
   }
 
   protected async doClear(): Promise<void> {
-    this.storage.clear()
+    this.storage.delete(this.name)
   }
 
   protected async doKeys(): Promise<string[]> {
-    return Array.from(this.storage.keys())
+    const state = this.storage.get(this.name)
+    if (!state) return []
+    return this.getAllKeys(state)
   }
 
   protected async doHas(key: string): Promise<boolean> {
-    const [rootKey, ...pathParts] = key.split('.')
-
-    if (!pathParts.length) {
-      return this.storage.has(rootKey)
-    }
-
-    const rootValue = this.storage.get(rootKey)
-    if (!rootValue) return false
-
-    const value = getValueByPath(rootValue, pathParts.join('.'))
+    const value = await this.doGet(key)
     return value !== undefined
   }
 
   protected async doDestroy(): Promise<void> {
-    this.storage.clear()
+    this.storage.delete(this.name)
+  }
+
+  private getAllKeys(obj: any, prefix = ''): string[] {
+    let keys: string[] = []
+
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const fullKey = prefix ? `${prefix}.${key}` : key
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          keys = keys.concat(this.getAllKeys(obj[key], fullKey))
+        } else {
+          keys.push(fullKey)
+        }
+      }
+    }
+
+    return keys
   }
 }

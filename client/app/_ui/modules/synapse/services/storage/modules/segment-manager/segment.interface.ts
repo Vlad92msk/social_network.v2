@@ -1,8 +1,7 @@
 // segment.interface.ts
-import { CacheOptions } from '../cache/cache-module.service'
 import { IndexedDBConfig } from '../../adapters/indexed-DB.service'
 import { StorageConfig, StorageType } from '../../storage.interface'
-import { IStoragePlugin } from '../plugin-manager/plugin-managers.interface'
+import { IPluginExecutor, IStoragePlugin } from '../plugin-manager/plugin-managers.interface'
 
 export interface Selector<T, R> {
   (state: T): R;
@@ -53,7 +52,7 @@ export interface CreateSegmentConfig<T> extends StorageConfig {
   plugins?: IStoragePlugin[]; // локальные плагины для сегмента
   options?: IndexedDBConfig; // специфичные опции для разных типов хранилищ
   isRoot?: boolean;
-  cacheOptions?: boolean | CacheOptions
+  pluginExecutor?: IPluginExecutor
 }
 
 export interface ISegmentManager {

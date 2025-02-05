@@ -1,4 +1,4 @@
-import { getValueByPath, setValueByPath } from '@ui/modules/synapse/services/storage/adapters/path.utils'
+import { getValueByPath, parsePath, setValueByPath } from '@ui/modules/synapse/services/storage/adapters/path.utils'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
@@ -32,22 +32,19 @@ export class IndexedDBStorage extends BaseStorage {
     this.DB_NAME = options?.dbName || 'app_storage'
     this.STORE_NAME = options?.storeName || 'keyValueStore'
     this.DB_VERSION = options?.dbVersion || 1
-
-    // Инициализируем начальное состояние
-    if (config.initialState) {
-      this.initializeState(config.initialState)
-    }
   }
 
-  private async initializeState(initialState: Record<string, any>) {
-    await this.ensureInitialized()
-
-    // Проверяем, есть ли уже данные
-    const existingState = await this.doGet(this.name)
-
-    // Устанавливаем initialState только если нет существующих данных
-    if (!existingState && initialState) {
-      await this.doSet(this.name, initialState)
+  async initialize(): Promise<this> {
+    try {
+      // Сначала инициализируем БД
+      await this.ensureInitialized()
+      this.initializeMiddlewares()
+      // Затем инициализируем данные через middleware
+      await this.initializeWithMiddlewares()
+      return this
+    } catch (error) {
+      this.logger?.error('Error initializing IndexedDB storage', { error })
+      throw error
     }
   }
 
@@ -89,51 +86,71 @@ export class IndexedDBStorage extends BaseStorage {
     return this.db.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME)
   }
 
+  protected async handleExternalSet(): Promise<void> {
+    // Пустая реализация, данные уже в IndexedDB
+  }
+
+  protected async handleExternalDelete(): Promise<void> {
+    // Пустая реализация
+  }
+
+  protected async handleExternalClear(): Promise<void> {
+    // Пустая реализация
+  }
+
   protected async doGet(key: string): Promise<any> {
-    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction()
+    const parts = parsePath(key)
+    const rootKey = parts[0]
 
     return new Promise((resolve, reject) => {
       const request = store.get(rootKey)
 
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
-        const rootValue = request.result
-
-        if (rootValue === undefined) {
+        const value = request.result
+        if (value === undefined) {
           resolve(undefined)
           return
         }
 
-        if (!pathParts.length) {
-          resolve(rootValue)
+        if (parts.length === 1) {
+          resolve(value)
           return
         }
 
-        resolve(getValueByPath(rootValue, pathParts.join('.')))
+        // Получаем значение по вложенному пути, если он есть
+        resolve(getValueByPath(value, parts.slice(1).join('.')))
       }
     })
   }
 
   protected async doSet(key: string, value: any): Promise<void> {
-    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction('readwrite')
+    const parts = parsePath(key)
+    const rootKey = parts[0]
 
     return new Promise((resolve, reject) => {
-      if (!pathParts.length) {
+      if (parts.length === 1) {
+        // Если путь состоит из одного сегмента - сохраняем значение напрямую
         const request = store.put(value, rootKey)
         request.onerror = () => reject(request.error)
         request.onsuccess = () => resolve()
         return
       }
 
-      // Сначала получаем текущее значение
+      // Если путь вложенный - получаем корневой объект
       const getRequest = store.get(rootKey)
 
       getRequest.onerror = () => reject(getRequest.error)
       getRequest.onsuccess = () => {
         const rootValue = getRequest.result || {}
-        const newValue = setValueByPath({ ...rootValue }, pathParts.join('.'), value)
+        // Обновляем значение по вложенному пути
+        const newValue = setValueByPath(
+          { ...rootValue },
+          parts.slice(1).join('.'),
+          value,
+        )
 
         const putRequest = store.put(newValue, rootKey)
         putRequest.onerror = () => reject(putRequest.error)
@@ -143,18 +160,22 @@ export class IndexedDBStorage extends BaseStorage {
   }
 
   protected async doDelete(key: string): Promise<boolean> {
-    const [rootKey, ...pathParts] = key.split('.')
     const store = await this.transaction('readwrite')
+    const parts = parsePath(key)
+    const rootKey = parts[0]
 
     return new Promise((resolve, reject) => {
-      if (!pathParts.length) {
+      if (parts.length === 1) {
+        // Если путь состоит из одного сегмента - удаляем ключ
         const request = store.delete(rootKey)
         request.onerror = () => reject(request.error)
         request.onsuccess = () => resolve(true)
         return
       }
 
+      // Если путь вложенный - получаем и обновляем объект
       const getRequest = store.get(rootKey)
+
       getRequest.onerror = () => reject(getRequest.error)
       getRequest.onsuccess = () => {
         const rootValue = getRequest.result
@@ -163,8 +184,9 @@ export class IndexedDBStorage extends BaseStorage {
           return
         }
 
-        const parentPath = pathParts.slice(0, -1).join('.')
-        const lastKey = pathParts[pathParts.length - 1]
+        const pathToDelete = parts.slice(1).join('.')
+        const parentPath = pathToDelete.split('.').slice(0, -1).join('.')
+        const lastKey = parts[parts.length - 1]
         const parent = parentPath ? getValueByPath(rootValue, parentPath) : rootValue
 
         if (!parent || !(lastKey in parent)) {
@@ -193,33 +215,18 @@ export class IndexedDBStorage extends BaseStorage {
     const store = await this.transaction()
     return new Promise((resolve, reject) => {
       const request = store.getAllKeys()
-      request.onsuccess = () => resolve(Array.from(request.result as string[]))
-      request.onerror = () => reject(request.error)
-    })
-  }
-
-  protected async doHas(key: string): Promise<boolean> {
-    const [rootKey, ...pathParts] = key.split('.')
-    const store = await this.transaction()
-
-    return new Promise((resolve, reject) => {
-      const request = store.get(rootKey)
-      request.onerror = () => reject(request.error)
       request.onsuccess = () => {
-        const rootValue = request.result
-        if (!rootValue) {
-          resolve(false)
-          return
-        }
-
-        if (!pathParts.length) {
-          resolve(true)
-          return
-        }
-
-        const value = getValueByPath(rootValue, pathParts.join('.'))
-        resolve(value !== undefined)
+        // Получаем все ключи и их вложенные пути
+        Promise.all(
+          Array.from(request.result as string[]).map(async (key) => {
+            const value = await this.doGet(key)
+            return this.getAllKeys(value, key)
+          }),
+        ).then((keyArrays) => {
+          resolve(keyArrays.flat())
+        }).catch(reject)
       }
+      request.onerror = () => reject(request.error)
     })
   }
 
@@ -234,6 +241,32 @@ export class IndexedDBStorage extends BaseStorage {
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
+  }
+
+  protected async doHas(key: string): Promise<boolean> {
+    const value = await this.doGet(key)
+    return value !== undefined
+  }
+
+  private getAllKeys(obj: any, prefix = ''): string[] {
+    let keys: string[] = []
+
+    if (typeof obj !== 'object' || obj === null) {
+      return [prefix]
+    }
+
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const fullKey = prefix ? `${prefix}.${key}` : key
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          keys = keys.concat(this.getAllKeys(obj[key], fullKey))
+        } else {
+          keys.push(fullKey)
+        }
+      }
+    }
+
+    return keys
   }
 
   private async close(): Promise<void> {

@@ -4,7 +4,7 @@ import { IDIContainer } from '../di-container/di-container.interface'
 import { IndexedDBStorage } from './adapters/indexed-DB.service'
 import { LocalStorage } from './adapters/local-storage.service'
 import { MemoryStorage } from './adapters/memory-storage.service'
-import { CacheConfig, CacheModule, CacheOptions } from './modules/cache/cache-module.service'
+import { CacheOptions } from './modules/cache/cache-module.service'
 import { GlobalPluginManager } from './modules/plugin-manager/global-plugin-manager.service'
 import { StoragePluginManager } from './modules/plugin-manager/plugin-manager.service'
 import { IStoragePlugin } from './modules/plugin-manager/plugin-managers.interface'
@@ -62,67 +62,20 @@ export class StorageModule extends BaseModule {
   }
 
   protected async registerServices(): Promise<void> {
-    const createStorage: StorageFactory = async (config: CreateSegmentConfig<any>): Promise<IStorage> => {
+    const createStorage = (config: CreateSegmentConfig<any>) => {
       const pluginManager = config.isRoot
         ? this.container.get<GlobalPluginManager>('pluginManager')
-        : undefined
+        : config.pluginExecutor
 
-      // Создаем базовое хранилище в зависимости от типа
-      const createBaseStorage = (storageConfig: CreateSegmentConfig<any>): IStorage => {
-        switch (storageConfig.type) {
-          case 'localStorage':
-            return new LocalStorage(
-              storageConfig,
-              pluginManager,
-              this.eventBus,
-              this.logger,
-            )
-          case 'indexedDB':
-            return new IndexedDBStorage(
-              storageConfig,
-              pluginManager,
-              this.eventBus,
-              this.logger,
-            )
-          case 'memory':
-          default:
-            return new MemoryStorage(
-              storageConfig,
-              pluginManager,
-              this.eventBus,
-              this.logger,
-            )
-        }
+      switch (config.type) {
+        case 'indexedDB':
+          return new IndexedDBStorage(config, pluginManager, this.eventBus, this.logger)
+        case 'localStorage':
+          return new LocalStorage(config, pluginManager, this.eventBus, this.logger)
+        case 'memory':
+          return new MemoryStorage(config, pluginManager, this.eventBus, this.logger)
+        default: return new MemoryStorage(config, pluginManager, this.eventBus, this.logger)
       }
-
-      const storageType: Record<StorageType, any> = {
-        localStorage: LocalStorage,
-        indexedDB: IndexedDBStorage,
-        memory: MemoryStorage,
-      }
-
-      // Проверяем, нужно ли создавать кэшированное хранилище
-      if (this.config.cacheOptions) {
-        const cacheConfig: CacheConfig = {
-          storage: storageType[config.type],
-          storageConfig: config,
-          pluginExecutor: pluginManager,
-          cacheOptions: (typeof config?.cacheOptions === 'boolean' || config?.cacheOptions === undefined)
-            ? {
-              ttl: 1000 * 60 * 30, // 30 минут по умолчанию
-              cleanup: {
-                enabled: true,
-                interval: 1000 * 60 * 60, // 1 час по умолчанию
-              },
-            }
-            : config.cacheOptions,
-        }
-
-        return new CacheModule(cacheConfig)
-      }
-
-      // Если кэширование не требуется, возвращаем обычное хранилище
-      return createBaseStorage(config)
     }
 
     // Регистрируем базовые сервисы
