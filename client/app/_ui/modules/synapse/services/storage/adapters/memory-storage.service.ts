@@ -40,18 +40,6 @@ export class MemoryStorage extends BaseStorage {
     this.storage.set(this.name, newState)
   }
 
-  protected async handleExternalSet(key: string, value: any): Promise<void> {
-    await this.doSet(key, value)
-  }
-
-  protected async handleExternalDelete(key: string): Promise<void> {
-    await this.doDelete(key)
-  }
-
-  protected async handleExternalClear(): Promise<void> {
-    await this.doClear()
-  }
-
   protected async doDelete(key: string): Promise<boolean> {
     const state = this.storage.get(this.name)
     if (!state) return false

@@ -43,18 +43,6 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
     socket.on(DialogEvents.USER_STATUS_CHANGED, (payload: { dialogId: string, userId: number, status: UserStatus }) => {
       store.dispatch(MessengerSliceActions.exitUpdateUserStatus(payload))
     })
-    socket.on(DialogEvents.USER_TYPING, (payload: { dialogId: string, userId: number, isTyping: boolean }) => {
-      store.dispatch(MessengerSliceActions.exitUserTyping(payload))
-    })
-
-    socket.on(DialogEvents.UPDATED_FIXED_MESSAGES, (payload: { dialog_id: string, new_fixed_messages: MessageEntity[]}) => {
-      store.dispatch(MessengerSliceActions.updateFixedMessages(payload))
-    })
-
-    socket.on(DialogEvents.UPDATE_DIALOG_INFO, (payload: { data: DialogEntity }) => {
-      console.log('payload', payload)
-      store.dispatch(MessengerSliceActions.updateDialogInfo(payload))
-    })
 
     socket.on('conference:status', (payload) => {
       store.dispatch(MessengerSliceActions.setActiveConference(payload))
@@ -69,34 +57,7 @@ export const dialogSocketMiddleware: Middleware<{}, RootReducer> = (store) => (n
       socket.emit(event, data)
       break
     }
-    case 'WEBSOCKET_JOIN_DIALOG': {
-      const { event, data } = action.payload
-      if (data.dialogId) {
-        socket.emit(event, data)
-      }
-      break
-    }
-    case 'WEBSOCKET_LEAVE_FROM_DIALOG': {
-      const { event, data } = action.payload
-      if (data.dialogId) {
-        socket.emit(event, data)
-      }
-      break
-    }
-    case 'WEBSOCKET_START_TYPING_TO_DIALOG': {
-      const { event, data } = action.payload
-      if (data.dialogId) {
-        socket.emit(event, data)
-      }
-      break
-    }
-    case 'WEBSOCKET_STOP_TYPING_TO_DIALOG': {
-      const { event, data } = action.payload
-      if (data.dialogId) {
-        socket.emit(event, data)
-      }
-      break
-    }
+//...
     case 'WEBSOCKET_DISCONNECT': {
       socket.disconnect()
       socket = null

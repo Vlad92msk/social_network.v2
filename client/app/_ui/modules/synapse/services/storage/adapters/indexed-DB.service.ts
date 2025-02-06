@@ -1,4 +1,4 @@
-import { getValueByPath, parsePath, setValueByPath } from '@ui/modules/synapse/services/storage/adapters/path.utils'
+import { getValueByPath, parsePath, setValueByPath } from './path.utils'
 import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
@@ -84,18 +84,6 @@ export class IndexedDBStorage extends BaseStorage {
       throw new Error('Database not initialized')
     }
     return this.db.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME)
-  }
-
-  protected async handleExternalSet(): Promise<void> {
-    // Пустая реализация, данные уже в IndexedDB
-  }
-
-  protected async handleExternalDelete(): Promise<void> {
-    // Пустая реализация
-  }
-
-  protected async handleExternalClear(): Promise<void> {
-    // Пустая реализация
   }
 
   protected async doGet(key: string): Promise<any> {

@@ -1,5 +1,7 @@
 // storage.interface.ts
 import { IndexedDBConfig } from './adapters/indexed-DB.service'
+import { BatchingMiddlewareOptions, ShallowCompareMiddlewareOptions } from './middlewares'
+import { Middleware } from './utils/middleware-module'
 
 export interface IStorage {
   name: string
@@ -14,10 +16,7 @@ export interface IStorage {
   subscribe(key: string, callback: (value: any) => void): VoidFunction
   destroy(): Promise<void>
   subscribeToAll(callback: (event: { type: string; key?: string; value?: any }) => void): VoidFunction
-
   initialize(): Promise<this>
-  // Добавляем метод для внешних изменений
-  handleExternalChange(event: StorageChangeEvent): Promise<void>
 }
 
 export enum StorageEvents {
@@ -36,91 +35,49 @@ export interface StorageEvent<T = any> {
 }
 
 export interface IEventEmitter {
-  emit(event: StorageEvent): Promise<void>;
+  emit(event: StorageEvent): Promise<void>
 }
 
 export interface ILogger {
-  debug(message: string, meta?: Record<string, any>): void;
-  info(message: string, meta?: Record<string, any>): void;
-  warn(message: string, meta?: Record<string, any>): void;
-  error(message: string, meta?: Record<string, any>): void;
+  debug(message: string, meta?: Record<string, any>): void
+  info(message: string, meta?: Record<string, any>): void
+  warn(message: string, meta?: Record<string, any>): void
+  error(message: string, meta?: Record<string, any>): void
 }
 
-// Middleware types
-export type OperationType = 'get' | 'set' | 'delete' | 'clear' | 'keys' | 'init'
-
-export interface StorageContext<T = any> {
-  type: OperationType
-  key?: string
-  value?: T
-  metadata?: Record<string, any>
-  segment?: string
-  baseOperation?: NextFunction
-  storage?: IStorage
+// Функции-создатели дефолтных middleware
+export interface DefaultMiddlewares {
+  batching: (options?: BatchingMiddlewareOptions) => Middleware
+  shallowCompare: (options?: ShallowCompareMiddlewareOptions) => Middleware
 }
 
-export type NextFunction = (context: StorageContext) => Promise<any>;
+// Функция для получения дефолтных middleware
+export type GetDefaultMiddleware = () => DefaultMiddlewares
 
-export interface MiddlewareOptions {
-  segments?: string[]
-  [key: string]: any
-}
+// Функция настройки middleware
+export type ConfigureMiddlewares = (
+  getDefaultMiddleware: GetDefaultMiddleware
+) => Middleware[]
 
-export interface Middleware {
-  (ctx: StorageContext): (next: NextFunction) => Promise<any>
-  options?: MiddlewareOptions
-}
-
-// Middleware configurations
-export type GetDefaultMiddleware = (options?: DefaultMiddlewareOptions) => Middleware[];
-export type MiddlewareFunction = (getDefaultMiddleware: GetDefaultMiddleware) => Middleware[];
-export type MiddlewareArray = Middleware[];
-export type MiddlewareConfig = MiddlewareArray | MiddlewareFunction;
-export type MiddlewareFactory<TOptions = MiddlewareOptions> = (options?: TOptions) => Middleware;
-
-// Middleware specific options
-export interface BatchingMiddlewareOptions extends MiddlewareOptions {
-  batchSize?: number
-  batchDelay?: number
-}
-
-export interface ShallowCompareMiddlewareOptions extends MiddlewareOptions {
-  comparator?: <T>(prev: T, next: T) => boolean
-}
-
-export interface DefaultMiddlewareOptions extends MiddlewareOptions {
-  batching?: boolean | BatchingMiddlewareOptions
-  shallowCompare?: boolean | ShallowCompareMiddlewareOptions
-}
-
-// Configuration
+// Основной интерфейс конфигурации
 export interface StorageConfig {
   name: string
   initialState?: Record<string, any>
-  middlewares?: MiddlewareFunction
+  middlewares?: ConfigureMiddlewares
 }
 
-export type StorageType = 'memory' | 'localStorage' | 'indexedDB';
+export type StorageType = 'memory' | 'localStorage' | 'indexedDB'
 
 // Уточним специфичные конфиги для разных типов хранилищ
 export interface MemoryStorageConfig extends StorageConfig {
-  type: 'memory';
+  type: 'memory'
 }
 
 export interface LocalStorageConfig extends StorageConfig {
-  type: 'localStorage';
+  type: 'localStorage'
 }
 
 export interface IndexedDBStorageConfig extends StorageConfig {
-  type: 'indexedDB';
-  options: IndexedDBConfig;
-}
-
-export interface StorageChangeEvent {
-  type: 'set' | 'delete' | 'clear';
-  key?: string;
-  value?: any;
-  source?: 'broadcast' | 'websocket' | 'server' | string;
-  timestamp?: number;
-  storageName?: string
+  type: 'indexedDB'
+  options: IndexedDBConfig
 }

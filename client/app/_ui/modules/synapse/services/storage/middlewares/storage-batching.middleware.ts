@@ -1,6 +1,5 @@
-// storage-batching.middleware.ts
-import { Middleware, NextFunction, StorageContext } from '../storage.interface'
 import { BatchProcessor } from '../utils/batch.utils'
+import { Middleware, StorageAction } from '../utils/middleware-module'
 
 export interface BatchingMiddlewareOptions {
   batchSize?: number
@@ -11,37 +10,33 @@ export interface BatchingMiddlewareOptions {
 export const createBatchingMiddleware = (
   options: BatchingMiddlewareOptions = {},
 ): Middleware => {
-  const batchProcessor = new BatchProcessor<StorageContext>({
+  const batchProcessor = new BatchProcessor<StorageAction>({
     batchSize: options.batchSize,
     batchDelay: options.batchDelay,
-    getSegmentKey: (context) => context.key || 'default',
-    shouldBatch: (context) => {
-      if (context.type === 'get' || context.type === 'keys') return false
+    shouldBatch: (action) => {
+      if (action.type === 'get' || action.type === 'keys') return false
       if (options.segments?.length) {
-        return options.segments.includes(context.key || 'default')
+        return options.segments.includes(action.metadata?.segment ?? 'default')
       }
       return true
     },
-    mergeItems: (contexts) => contexts.reduce((acc, context) => {
-      if (context.type === 'set') {
+    getSegmentKey: (action) => action.key || 'default',
+    mergeItems: (actions) => actions.reduce((acc, action) => {
+      if (action.type === 'set') {
         const existingIndex = acc.findIndex(
-          (existing) => existing.type === 'set' && existing.key === context.key,
+          (existing) => existing.type === 'set' && existing.key === action.key,
         )
         if (existingIndex !== -1) {
-          acc[existingIndex] = context
+          acc[existingIndex] = action
         } else {
-          acc.push(context)
+          acc.push(action)
         }
       } else {
-        acc.push(context)
+        acc.push(action)
       }
       return acc
-    }, [] as StorageContext[]),
+    }, [] as StorageAction[]),
   })
 
-  return (context: StorageContext) => async (next: NextFunction) =>
-    batchProcessor.add({
-      ...context,
-      baseOperation: async () => next(context),
-    })
+  return (api) => (next) => (action) => batchProcessor.add(action, () => next(action))
 }

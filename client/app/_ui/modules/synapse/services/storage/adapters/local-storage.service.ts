@@ -23,19 +23,6 @@ export class LocalStorage extends BaseStorage {
     }
   }
 
-  // Для persistent storage не нужно дублировать операции
-  protected async handleExternalSet(): Promise<void> {
-    // Пустая реализация, т.к. данные уже в localStorage
-  }
-
-  protected async handleExternalDelete(): Promise<void> {
-    // Пустая реализация
-  }
-
-  protected async handleExternalClear(): Promise<void> {
-    // Пустая реализация
-  }
-
   protected async doGet(key: string): Promise<any> {
     const storageData = localStorage.getItem(this.name)
     if (!storageData) return undefined

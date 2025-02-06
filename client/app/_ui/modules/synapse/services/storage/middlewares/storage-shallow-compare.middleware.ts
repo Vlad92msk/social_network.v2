@@ -1,4 +1,4 @@
-import { Middleware, NextFunction, StorageContext } from '../storage.interface'
+import { Middleware } from '../utils/middleware-module'
 
 export interface ShallowCompareMiddlewareOptions {
   segments?: string[]
@@ -27,8 +27,9 @@ export const createShallowCompareMiddleware = (
 
       if (keysA.length !== keysB.length) return false
 
-      return keysA.every((key) => Object.prototype.hasOwnProperty.call(next, key)
-        && prev[key] === next[key])
+      return keysA.every(
+        (key) => Object.prototype.hasOwnProperty.call(next, key) && prev[key] === next[key],
+      )
     },
     segments = [],
   } = options
@@ -36,15 +37,18 @@ export const createShallowCompareMiddleware = (
   // Кэш последних значений
   const valueCache = new Map<string, any>()
 
-  return (context: StorageContext) => async (next: NextFunction) => {
+  return (api) => (next) => async (action) => {
     // Проверяем только операции set
-    if (context.type !== 'set' || (segments.length && !segments.includes(context.segment ?? 'default'))) {
-      return next(context)
+    if (
+      action.type !== 'set'
+      || (segments.length && !segments.includes(action.metadata?.segment ?? 'default'))
+    ) {
+      return next(action)
     }
 
-    const cacheKey = context.key!
+    const cacheKey = action.key!
     const prevValue = valueCache.get(cacheKey)
-    const nextValue = context.value
+    const nextValue = action.value
 
     // Если значения равны, пропускаем операцию
     if (prevValue !== undefined && comparator(prevValue, nextValue)) {
@@ -52,7 +56,7 @@ export const createShallowCompareMiddleware = (
     }
 
     // Иначе обновляем кэш и продолжаем
-    const result = await next(context)
+    const result = await next(action)
     valueCache.set(cacheKey, nextValue)
     return result
   }

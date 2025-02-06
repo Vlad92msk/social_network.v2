@@ -70,7 +70,6 @@ export class SelectorModule {
     private readonly source: IStorage,
     private readonly logger?: ILogger,
   ) {
-    console.log('SelectorModule initialized with source:', this.source)
     this.storageName = source.name
   }
 

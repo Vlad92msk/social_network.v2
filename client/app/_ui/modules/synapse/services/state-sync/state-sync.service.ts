@@ -1,41 +1,77 @@
-import { IStorage, Middleware, NextFunction, StorageChangeEvent, StorageContext, StorageType } from '../storage/storage.interface'
+import { StorageType } from '../storage/storage.interface'
+import { Middleware } from '../storage/utils/middleware-module'
 
-export const createSharedStateMiddleware = (storageType: StorageType): Middleware => {
-  const channel = new BroadcastChannel(`storage-sync:${storageType}`)
-  let storage: IStorage | null = null
+interface SharedStateMiddlewareProps {
+  storageType: StorageType
+  storageName: string
+}
 
-  const handleMessage = async (event: MessageEvent<StorageChangeEvent>) => {
-    if (storage && event.data.storageName === storage.name) {
-      await storage.handleExternalChange(event.data)
-    }
-  }
+export const createSharedStateMiddleware = (props: SharedStateMiddlewareProps): Middleware => {
+  const { storageName, storageType } = props
+  const channel = new BroadcastChannel(`${storageType}-${storageName}`)
 
-  return (context: StorageContext) => {
-    if (!storage && context.storage) {
-      storage = context.storage
-      channel.addEventListener('message', handleMessage)
+  return (api) => {
+    // Подписываемся на внешние события при создании middleware
+    channel.onmessage = async (event) => {
+      const { key, value, type, source, timestamp } = event.data
 
-      const originalDestroy = storage.destroy.bind(storage)
-      storage.destroy = async () => {
-        channel.removeEventListener('message', handleMessage)
-        channel.close()
-        await originalDestroy()
+      // Для memory-хранилища обновляем данные
+      if (storageType === 'memory') {
+        switch (type) {
+          case 'set':
+            await api.storage.doSet(key, value)
+            break
+          case 'delete':
+            await api.storage.doDelete(key)
+            break
+          case 'clear':
+            await api.storage.doClear()
+            break
+        }
+      }
+
+      // Для всех типов хранилищ уведомляем подписчиков
+      if (type === 'set') {
+        // Уведомляем подписчиков конкретного ключа
+        api.storage.notifySubscribers(key, value)
+        // Уведомляем глобальных подписчиков
+        api.storage.notifySubscribers('*', {
+          type: 'set',
+          key,
+          value,
+          source,
+          timestamp,
+        })
+      } else if (type === 'delete') {
+        api.storage.notifySubscribers(key, undefined)
+        api.storage.notifySubscribers('*', {
+          type: 'delete',
+          key,
+          source,
+          timestamp,
+        })
+      } else if (type === 'clear') {
+        api.storage.notifySubscribers('*', {
+          type: 'clear',
+          source,
+          timestamp,
+        })
       }
     }
 
-    return async (next: NextFunction) => {
-      const result = await next(context)
+    // Возвращаем функцию middleware
+    return (next) => async (action) => {
+      const result = await next(action)
 
-      if ((context.type === 'set' || context.type === 'delete' || context.type === 'clear')
-        && context.storage) {
+      // Отправляем изменения в канал только для определенных операций
+      if (['set', 'delete', 'clear'].includes(action.type)) {
         channel.postMessage({
-          type: context.type,
-          key: context.key,
-          value: context.type === 'set' ? context.value : undefined,
+          type: action.type,
+          key: action.key,
+          value: action.value,
           source: 'broadcast',
           timestamp: Date.now(),
-          storageName: context.storage.name
-        } satisfies StorageChangeEvent)
+        })
       }
 
       return result

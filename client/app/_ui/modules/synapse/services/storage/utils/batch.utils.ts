@@ -1,4 +1,6 @@
 // Типы для BatchProcessor
+import { StorageAction } from './middleware-module'
+
 export interface BatchOptions<T> {
   batchSize?: number
   batchDelay?: number
@@ -11,18 +13,19 @@ export interface BatchOptions<T> {
   mergeItems?: (items: T[]) => T[]
 }
 
-export interface BatchQueueItem<T> {
-  item: T
-  resolve: (value: any) => void
-  reject: (error: any) => void
+export interface BatchQueueItem<T extends StorageAction> {
+  action: T;
+  baseOperation: () => Promise<any>;
+  resolve: (value: any) => void;
+  reject: (error: any) => void;
 }
 
-export class BatchProcessor<T> {
+export class BatchProcessor<T extends StorageAction> {
   private readonly options: Required<BatchOptions<T>>
 
-  private queues: Map<string, BatchQueueItem<T>[]> = new Map()
+  private queues = new Map<string, BatchQueueItem<T>[]>()
 
-  private timeouts: Map<string, NodeJS.Timeout> = new Map()
+  private timeouts = new Map<string, NodeJS.Timeout>()
 
   constructor(options: BatchOptions<T>) {
     this.options = {
@@ -35,44 +38,56 @@ export class BatchProcessor<T> {
     }
   }
 
-  public async add(item: T): Promise<any> {
-    // Если элемент не нужно батчить, обрабатываем сразу
-    if (!this.options.shouldBatch(item)) {
-      return this.processSingleItem(item)
+  public async add(action: T, baseOperation: () => Promise<any>): Promise<any> {
+    if (!this.options.shouldBatch(action)) {
+      return baseOperation()
     }
 
     return new Promise((resolve, reject) => {
-      const segment = this.options.getSegmentKey(item)
-      this.addToQueue(segment, { item, resolve, reject })
+      const segment = this.options.getSegmentKey(action)
+      this.addToQueue(segment, { action, baseOperation, resolve, reject })
     })
   }
 
-  private async processSingleItem(item: T): Promise<void> {
-    return this.options.onBatch([item])
-  }
-
   private addToQueue(segment: string, queueItem: BatchQueueItem<T>): void {
-    // Получаем или создаем очередь для сегмента
     let queue = this.queues.get(segment)
     if (!queue) {
       queue = []
       this.queues.set(segment, queue)
     }
 
-    // Добавляем элемент в очередь
     queue.push(queueItem)
-
-    // Очищаем существующий таймаут
     this.clearSegmentTimeout(segment)
 
-    // Если достигли размера батча, обрабатываем сразу
     if (queue.length >= this.options.batchSize) {
       this.processBatch(segment)
     } else {
-      // Иначе устанавливаем таймаут
       this.setSegmentTimeout(segment)
     }
   }
+
+  private async processBatch(segment: string): Promise<void> {
+    const queue = this.queues.get(segment)
+    if (!queue?.length) return
+
+    this.queues.delete(segment)
+    this.clearSegmentTimeout(segment)
+
+    try {
+      // Объединяем похожие действия
+      const mergedActions = this.options.mergeItems(queue.map((item) => item.action))
+
+      // Выполняем операции последовательно
+      for (let i = 0; i < mergedActions.length; i++) {
+        const result = await queue[i].baseOperation()
+        queue[i].resolve(result)
+      }
+    } catch (error) {
+      queue.forEach(({ reject }) => reject(error))
+    }
+  }
+
+  // ... остальные методы остаются теми же ...
 
   private clearSegmentTimeout(segment: string): void {
     const timeout = this.timeouts.get(segment)
@@ -90,43 +105,17 @@ export class BatchProcessor<T> {
     this.timeouts.set(segment, timeout)
   }
 
-  private async processBatch(segment: string): Promise<void> {
-    const queue = this.queues.get(segment)
-    if (!queue?.length) return
-
-    // Очищаем очередь
-    this.queues.delete(segment)
-    this.clearSegmentTimeout(segment)
-
-    try {
-      // Объединяем похожие элементы если нужно
-      const items = this.options.mergeItems(queue.map((item) => item.item))
-
-      // Обрабатываем батч
-      await this.options.onBatch(items)
-
-      // Резолвим все промисы в очереди
-      queue.forEach(({ resolve }) => resolve(undefined))
-    } catch (error) {
-      // В случае ошибки реджектим все промисы
-      queue.forEach(({ reject }) => reject(error))
-    }
-  }
-
-  // Метод для ручной обработки всех оставшихся элементов
   public async flush(): Promise<void> {
     const segments = Array.from(this.queues.keys())
     await Promise.all(segments.map((segment) => this.processBatch(segment)))
   }
 
-  // Очистка всех очередей без обработки
   public clear(): void {
     this.queues.clear()
     Array.from(this.timeouts.values()).forEach(clearTimeout)
     this.timeouts.clear()
   }
 
-  // Получение текущего состояния очередей
   public getState(): { [segment: string]: number } {
     const state: { [segment: string]: number } = {}
     this.queues.forEach((queue, segment) => {
@@ -135,37 +124,3 @@ export class BatchProcessor<T> {
     return state
   }
 }
-
-
-// Пример использования BatchProcessor отдельно от middleware
-/*
-interface QueueItem {
-  type: 'INSERT' | 'UPDATE' | 'DELETE';
-  id: string;
-  data?: any;
-}
-
-const batchProcessor = new BatchProcessor<QueueItem>({
-  batchSize: 5,
-  batchDelay: 1000,
-  getSegmentKey: (item) => item.type,
-  shouldBatch: (item) => item.type !== 'DELETE',
-  mergeItems: (items) => {
-    // Оставляем только последнюю операцию для каждого id
-    return Array.from(
-      items.reduce((map, item) => {
-        map.set(item.id, item);
-        return map;
-      }, new Map<string, QueueItem>()).values()
-    );
-  },
-  async onBatch(items) {
-    console.log('Processing batch:', items);
-    // Обработка батча
-  }
-});
-
-// Использование
-await batchProcessor.add({ type: 'INSERT', id: '1', data: { name: 'John' } });
-await batchProcessor.add({ type: 'UPDATE', id: '1', data: { name: 'Johnny' } });
-*/
