@@ -1,28 +1,46 @@
-import { StorageType } from '../storage/storage.interface'
-import { Middleware } from '../storage/utils/middleware-module'
+import { StorageEvents, StorageType } from '../storage/storage.interface'
+import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../storage/utils/middleware-module'
 
 interface SharedStateMiddlewareProps {
   storageType: StorageType
   storageName: string
 }
 
+interface BroadcastMessage {
+  type: string
+  key?: string
+  value: any
+  source: 'broadcast'
+  timestamp: number
+}
+
 export const createSharedStateMiddleware = (props: SharedStateMiddlewareProps): Middleware => {
   const { storageName, storageType } = props
-  const channel = new BroadcastChannel(`${storageType}-${storageName}`)
+  const channelName = `${storageType}-${storageName}`
+  const channel = new BroadcastChannel(channelName)
+  channel.onmessageerror = (event) => {
+    console.error(`[${channelName}] Ошибка в канале:`, event)
+  }
 
-  return (api) => {
-    // Подписываемся на внешние события при создании middleware
+  console.log(`channel[${channelName}] инициализирован`)
+
+  // Setup функция, которая будет вызвана при инициализации
+  const setup = (api: MiddlewareAPI) => {
     channel.onmessage = async (event) => {
-      const { key, value, type, source, timestamp } = event.data
+      const message = event.data as BroadcastMessage
 
-      // Для memory-хранилища обновляем данные
+      console.log(`[${channelName}] Получено сообщение:`, message)
+
       if (storageType === 'memory') {
-        switch (type) {
+        //@ts-ignore
+        switch (message.type) {
           case 'set':
-            await api.storage.doSet(key, value)
+            //@ts-ignore
+            await api.storage.doSet(message.key, message.value)
             break
           case 'delete':
-            await api.storage.doDelete(key)
+            //@ts-ignore
+            await api.storage.doDelete(message.key)
             break
           case 'clear':
             await api.storage.doClear()
@@ -30,51 +48,47 @@ export const createSharedStateMiddleware = (props: SharedStateMiddlewareProps): 
         }
       }
 
-      // Для всех типов хранилищ уведомляем подписчиков
-      if (type === 'set') {
-        // Уведомляем подписчиков конкретного ключа
-        api.storage.notifySubscribers(key, value)
-        // Уведомляем глобальных подписчиков
+      if (['set', 'update'].includes(message.type)) {
+        console.log(`[${channelName}] Уведомляем подписчиков:`, message)
+        //@ts-ignore
+        api.storage.notifySubscribers(message.key, message.value)
         api.storage.notifySubscribers('*', {
-          type: 'set',
-          key,
-          value,
-          source,
-          timestamp,
-        })
-      } else if (type === 'delete') {
-        api.storage.notifySubscribers(key, undefined)
-        api.storage.notifySubscribers('*', {
-          type: 'delete',
-          key,
-          source,
-          timestamp,
-        })
-      } else if (type === 'clear') {
-        api.storage.notifySubscribers('*', {
-          type: 'clear',
-          source,
-          timestamp,
+          type: StorageEvents.STORAGE_UPDATE,
+          key: message.key,
+          value: message.value,
+          source: message.source,
+          timestamp: message.timestamp,
         })
       }
     }
 
-    // Возвращаем функцию middleware
-    return (next) => async (action) => {
-      const result = await next(action)
+    console.log(`[${channelName}] Канал создан и готов к использованию(обработчик установлен)`)
+  }
 
-      // Отправляем изменения в канал только для определенных операций
-      if (['set', 'delete', 'clear'].includes(action.type)) {
-        channel.postMessage({
-          type: action.type,
-          key: action.key,
-          value: action.value,
-          source: 'broadcast',
-          timestamp: Date.now(),
-        })
+  // Reducer функция для обработки действий
+  const reducer = (api: MiddlewareAPI) => (next: NextFunction) => async (action: StorageAction) => {
+    const result = await next(action)
+
+    console.log('action', action)
+    if (['set', 'delete', 'clear'].includes(action.type)) {
+      const timestamp = Date.now()
+      const message: BroadcastMessage = {
+        type: action.type,
+        key: action.key,
+        value: action.value,
+        source: 'broadcast',
+        timestamp,
       }
 
-      return result
+      console.log(`[${channelName}] Отправляем сообщение:`, message)
+      channel.postMessage(message)
     }
+
+    return result
+  }
+
+  return {
+    setup,
+    reducer,
   }
 }

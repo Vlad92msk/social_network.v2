@@ -3,7 +3,7 @@ import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.inter
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
 
-export class LocalStorage extends BaseStorage {
+export class LocalStorage<T extends Record<string, any>> extends BaseStorage<T> {
   constructor(
     config: StorageConfig,
     pluginExecutor?: IPluginExecutor,

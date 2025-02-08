@@ -3,17 +3,17 @@
 import { useEffect, useState } from 'react'
 import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
 import { cn } from './cn'
-import { dddd, myStorage, usePokemon, useSelector, useStore } from '../../../../../../../store/synapse'
+import {counter1Segment, usePokemon, useSelector, useStore, val1 } from '../../../../../../../store/synapse'
 
 export function PokemonCard({ id }: { id: number }) {
   const { pokemon, loading, error } = usePokemon(id)
-  const d = useSelector(dddd)
+  // const d = useSelector(dddd)
 
   //@ts-ignore
   const data = pokemon?.data
-  console.log('pokemon', pokemon)
-  console.log('data', data)
-  console.log('d', d)
+  // console.log('pokemon', pokemon)
+  // console.log('data', data)
+  // console.log('d', d)
   if (loading) return <div>Loading...</div>
   if (error) {
     return (
@@ -34,40 +34,52 @@ export function PokemonCard({ id }: { id: number }) {
         {' '}
         {data.types.map((t) => t.type.name).join(', ')}
       </div>
-      <button
-        onClick={async () => {
-          // Очищаем кэш для этого покемона, чтобы перезагрузить данные
-          await myStorage.delete(`pokemon-${id}`)
-          window.location.reload()
-        }}
-      >
-        Refresh
-      </button>
+      {/* <button */}
+      {/*   onClick={async () => { */}
+      {/*     // Очищаем кэш для этого покемона, чтобы перезагрузить данные */}
+      {/*     await myStorage.delete(`pokemon-${id}`) */}
+      {/*     window.location.reload() */}
+      {/*   }} */}
+      {/* > */}
+      {/*   Refresh */}
+      {/* </button> */}
     </div>
   )
 }
 
 export function CounterExample() {
-  const store = useStore()
+  // const store = useStore()
 
-  const counter1 = useSelector(store?.selectors.selectCounter1)
-  const counter2 = useSelector(store?.selectors.selectCounter2)
-  const sum = useSelector(store?.selectors.sum)
+  // const counter11 = useSelector(store?.selectors.selectCounter1)
+  // const counter2 = useSelector(store?.selectors.selectCounter2)
+  // const sum = useSelector(store?.selectors.sum)
+
+  // const increment11 = async () => {
+  //   // await store?.segments.counter1.patch({ value: (counter1 || 0) + 1 })
+  //   await store?.segments.counter1.update((state) => {
+  //     state.value += 1
+  //   })
+  // }
 
   const increment1 = async () => {
     // await store?.segments.counter1.patch({ value: (counter1 || 0) + 1 })
-    await store?.segments.counter1.update((state) => {
-      state.value += 1
+    await counter1Segment.update((state) => {
+      const newVal = state.value + 1
+      state.value = newVal
     })
+    // await counter1Segment.set('value', 10)
   }
 
-  const increment2 = async () => {
-    await store?.segments.counter2.patch({ value: (counter2 || 0) + 1 })
-  }
+  const counter1 = useSelector(val1)
 
-  if (!store) {
-    return <div>Loading...</div>
-  }
+
+  // const increment2 = async () => {
+  //   await store?.segments.counter2.patch({ value: (counter2 || 0) + 1 })
+  // }
+
+  // if (!store) {
+  //   return <div>Loading...</div>
+  // }
 
   return (
     <div className="p-4 space-y-4">
@@ -85,26 +97,26 @@ export function CounterExample() {
           </button>
         </div>
 
-        <div className="p-4 border rounded">
-          <h2 className="text-lg font-bold">
-            Counter 2:
-            {counter2}
-          </h2>
-          <button
-            onClick={increment2}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Increment
-          </button>
-        </div>
+        {/* <div className="p-4 border rounded"> */}
+        {/*   <h2 className="text-lg font-bold"> */}
+        {/*     Counter 2: */}
+        {/*     {counter2} */}
+        {/*   </h2> */}
+        {/*   <button */}
+        {/*     onClick={increment2} */}
+        {/*     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" */}
+        {/*   > */}
+        {/*     Increment */}
+        {/*   </button> */}
+        {/* </div> */}
       </div>
 
-      <div className="p-4 border rounded bg-gray-100">
-        <h2 className="text-xl font-bold">
-          Total Sum:
-          {sum}
-        </h2>
-      </div>
+      {/* <div className="p-4 border rounded bg-gray-100"> */}
+      {/*   <h2 className="text-xl font-bold"> */}
+      {/*     Total Sum: */}
+      {/*     {sum} */}
+      {/*   </h2> */}
+      {/* </div> */}
     </div>
   )
 }
@@ -146,7 +158,7 @@ function MyTest() {
     // Подписываемся на изменения
     const sub = storage.subscribe('user.profile.age', (newAge) => {
       setAge(newAge)
-      console.log('Age changed:', newAge)
+      // console.log('Age changed:', newAge)
     })
 
     return () => sub()
@@ -155,7 +167,7 @@ function MyTest() {
   // Подписка на весь профиль
   useEffect(() => {
     const sub = storage.subscribe('user.profile', (newProfile) => {
-      console.log('Profile updated:', newProfile)
+      // console.log('Profile updated:', newProfile)
     })
 
     return () => sub()
@@ -164,10 +176,10 @@ function MyTest() {
   useEffect(() => {
     const sub = storage.subscribeToAll(async (newProfile) => {
       const state = await storage.getState().then(res => {
-        console.log(res)
+        // console.log(res)
         return res
       })
-      console.log('state', state)
+      // console.log('state', state)
     })
 
     return () => sub()
@@ -180,7 +192,7 @@ function MyTest() {
         onClick={async () => {
           // await storage.set('user.profile.name', 'Max')
           await storage.update((state) => {
-            console.log('updatestate', state)
+            // console.log('updatestate', state)
             state.user.profile.name = 'Max'
           })
         }}
@@ -205,7 +217,7 @@ export function AboutMe(props) {
   return (
     <div className={cn()}>
       {/* <MyTest /> */}
-      {/* <CounterExample /> */}
+      <CounterExample />
       <div>
         <div>
           <button

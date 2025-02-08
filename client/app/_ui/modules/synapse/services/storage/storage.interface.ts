@@ -3,7 +3,7 @@ import { IndexedDBConfig } from './adapters/indexed-DB.service'
 import { BatchingMiddlewareOptions, ShallowCompareMiddlewareOptions } from './middlewares'
 import { Middleware } from './utils/middleware-module'
 
-export interface IStorage {
+export interface IStorage<T extends Record<string, any> = any> {
   name: string
   get<T>(key: string): Promise<T | undefined>
   getState<T>(): Promise<Record<string, any>>
@@ -13,10 +13,11 @@ export interface IStorage {
   delete(key: string): Promise<void>
   clear(): Promise<void>
   keys(): Promise<string[]>
-  subscribe(key: string, callback: (value: any) => void): VoidFunction
   destroy(): Promise<void>
   subscribeToAll(callback: (event: { type: string; key?: string; value?: any }) => void): VoidFunction
   initialize(): Promise<this>
+  subscribe(key: string, callback: (value: any) => void): VoidFunction
+  subscribe<R>(pathSelector: (state: T) => R, callback: (value: R) => void): VoidFunction
 }
 
 export enum StorageEvents {

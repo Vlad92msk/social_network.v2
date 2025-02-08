@@ -5,9 +5,7 @@ import { ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscriber } fr
 
 class SelectorSubscription<T> {
   private readonly id: string
-
-  private readonly subscribers = new Set<Subscriber<T>>()
-
+  readonly subscribers = new Set<Subscriber<T>>()
   private lastValue?: T
 
   constructor(
@@ -16,39 +14,53 @@ class SelectorSubscription<T> {
     private readonly logger?: ILogger,
   ) {
     this.id = `selector_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    console.log('DEBUG: Created subscription:', this.id)
   }
 
   async notify(): Promise<void> {
-    console.log('notify')
+    console.log('DEBUG: notify() called for:', this.id)
+
     try {
       const newValue = await this.getState()
+      console.log('DEBUG: Got new value:', newValue, 'Last value was:', this.lastValue)
 
-      if (this.lastValue === undefined || !this.equals(newValue, await this.lastValue)) {
+      // Всегда уведомляем при undefined или изменении значения
+      if (this.lastValue === undefined || !this.equals(newValue, this.lastValue)) {
+        console.log('DEBUG: Value changed, notifying subscribers')
         this.lastValue = newValue
-        await Promise.all([...this.subscribers].map(async (sub) => sub.notify(newValue)))
+
+        const promises = Array.from(this.subscribers).map(async (subscriber) => {
+          try {
+            console.log('DEBUG: Notifying subscriber about value:', newValue)
+            await subscriber.notify(newValue)
+          } catch (error) {
+            console.error('DEBUG: Error in subscriber notification:', error)
+          }
+        })
+
+        await Promise.all(promises)
+      } else {
+        console.log('DEBUG: Value unchanged, skipping notification')
       }
     } catch (error) {
-      this.logger?.error(`Error in selector ${this.id} notification`, { error })
+      console.error('DEBUG: Error in notify():', error)
+      throw error
     }
   }
 
-  subscribe(subscriber: Subscriber<T>) {
+  subscribe(subscriber: Subscriber<T>): () => void {
+    console.log('DEBUG: Subscribe called for:', this.id)
     this.subscribers.add(subscriber)
 
-    // Отправляем текущее значение
-    if (this.lastValue !== undefined) {
-      subscriber.notify(this.lastValue)
-    } else {
-      this.notify().catch((error) => {
-        this.logger?.error(`Error in initial selector ${this.id} notification`, { error })
-      })
+    // Сразу уведомляем о текущем значении
+    this.notify().catch(error => {
+      console.error('DEBUG: Error in initial notification:', error)
+    })
+
+    return () => {
+      console.log('DEBUG: Unsubscribe called for:', this.id)
+      this.subscribers.delete(subscriber)
     }
-
-    return () => this.unsubscribe(subscriber)
-  }
-
-  private unsubscribe(subscriber: Subscriber<T>): void {
-    this.subscribers.delete(subscriber)
   }
 
   cleanup(): void {
@@ -108,10 +120,15 @@ export class SelectorModule {
     selector: Selector<S, T>,
     options: SelectorOptions<T> = {},
   ): SelectorAPI<T> {
+    console.log('DEBUG: Creating simple selector')
+
     const getState = async (): Promise<T> => {
+      console.log('DEBUG: getState called')
       const state = await this.source.getState()
-      console.log('createSimpleSelector getState', state)
-      return selector(state as S)
+      console.log('DEBUG: State from storage:', state)
+      const selectedValue = selector(state as S)
+      console.log('DEBUG: Selected value:', selectedValue)
+      return selectedValue
     }
 
     const subscription = new SelectorSubscription(
@@ -122,33 +139,50 @@ export class SelectorModule {
 
     const id = subscription.getId()
     this.subscriptions.set(id, subscription)
+    console.log('DEBUG: Added subscription:', id)
 
-    let unsubscribe: (() => void) | undefined
+    // Упрощённая обработка событий
+    const unsubscribe = this.source.subscribeToAll((event: any) => {
+      console.log('DEBUG: Selector received event:', JSON.stringify(event))
 
-    // Пробуем использовать глобальную подписку
-    if (typeof this.source.subscribeToAll === 'function') {
-      unsubscribe = this.source.subscribeToAll(async () => {
-        await subscription.notify()
-      })
-    } else {
-      // Фолбэк: подписываемся на изменение состояния через события
-      // Здесь можно использовать eventEmitter если он есть
-      this.logger?.warn('Storage does not support global subscription')
-    }
+      // Упрощаем проверку события
+      if (event && event.type === 'storage:update') {
+        console.log('DEBUG: Valid update event, notifying subscribers')
 
-    return {
-      select: () => subscription.getState(),
-      subscribe: (subscriber) => {
+        // Сразу запускаем обновление без дополнительных проверок
+        subscription.notify().then(() => {
+          console.log('DEBUG: Notification completed')
+        }).catch(error => {
+          console.error('DEBUG: Notification error:', error)
+        })
+      } else {
+        console.log('DEBUG: Invalid event format:', event)
+      }
+    })
+
+    console.log('DEBUG: Subscribed to storage updates')
+
+    // Изменяем API селектора
+    const api = {
+      select: () => getState(),
+      subscribe: (subscriber: Subscriber<T>) => {
+        console.log('DEBUG: Adding new subscriber')
         const unsub = subscription.subscribe(subscriber)
+
         return () => {
+          console.log('DEBUG: Removing subscriber')
           unsub()
-          this.subscriptions.delete(id)
-          if (unsubscribe) {
+          // Не удаляем подписку на хранилище при отписке одного подписчика
+          if (this.subscriptions.get(id)?.subscribers.size === 0) {
+            console.log('DEBUG: No more subscribers, cleaning up')
+            this.subscriptions.delete(id)
             unsubscribe()
           }
         }
-      },
+      }
     }
+
+    return api
   }
 
   createCombinedSelector<T>(
@@ -156,9 +190,18 @@ export class SelectorModule {
     resultFn: (...args: any[]) => T,
     options: SelectorOptions<T> = {},
   ): SelectorAPI<T> {
+    console.log('DEBUG: Creating combined selector')
+
     const getState = async () => {
-      const values = await Promise.all(selectors.map((s) => s.select()))
-      return resultFn(...values)
+      console.log('DEBUG: Combined selector getState called')
+      const values = await Promise.all(selectors.map(async (s, index) => {
+        const value = await s.select()
+        console.log(`DEBUG: Dependency ${index} value:`, value)
+        return value
+      }))
+      const result = resultFn(...values)
+      console.log('DEBUG: Combined selector result:', result)
+      return result
     }
 
     const subscription = new SelectorSubscription(
@@ -169,21 +212,46 @@ export class SelectorModule {
 
     const id = subscription.getId()
     this.subscriptions.set(id, subscription)
+    console.log('DEBUG: Added combined subscription:', id)
 
-    // Сохраняем функции отписки
-    const unsubscribers = selectors.map((selector) => selector.subscribe({
-      notify: async () => subscription.notify(),
-    }))
+    // Set для отслеживания ожидающих обновлений
+    let pendingUpdate = false
+    const debouncedNotify = () => {
+      if (!pendingUpdate) {
+        pendingUpdate = true
+        Promise.resolve().then(() => {
+          pendingUpdate = false
+          subscription.notify().catch(error => {
+            console.error('DEBUG: Error in combined notification:', error)
+          })
+        })
+      }
+    }
+
+    // Подписываемся на все зависимости
+    const unsubscribers = selectors.map((selector, index) =>
+      selector.subscribe({
+        notify: async (value) => {
+          console.log(`DEBUG: Dependency ${index} updated:`, value)
+          debouncedNotify()
+        },
+      })
+    )
 
     return {
-      select: () => subscription.getState(),
+      select: () => getState(),
       subscribe: (subscriber) => {
+        console.log('DEBUG: Adding subscriber to combined selector')
         const unsub = subscription.subscribe(subscriber)
+
         return () => {
+          console.log('DEBUG: Removing subscriber from combined selector')
           unsub()
-          this.subscriptions.delete(id)
-          // Отписываемся от всех входящих селекторов
-          unsubscribers.forEach((unsubscribe) => unsubscribe())
+          if (this.subscriptions.get(id)?.subscribers.size === 0) {
+            console.log('DEBUG: No more subscribers, cleaning up combined selector')
+            this.subscriptions.delete(id)
+            unsubscribers.forEach(unsubscribe => unsubscribe())
+          }
         }
       },
     }

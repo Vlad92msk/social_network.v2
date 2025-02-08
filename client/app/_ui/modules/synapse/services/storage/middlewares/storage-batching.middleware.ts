@@ -1,5 +1,5 @@
 import { BatchProcessor } from '../utils/batch.utils'
-import { Middleware, StorageAction } from '../utils/middleware-module'
+import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../utils/middleware-module'
 
 export interface BatchingMiddlewareOptions {
   batchSize?: number
@@ -38,5 +38,10 @@ export const createBatchingMiddleware = (
     }, [] as StorageAction[]),
   })
 
-  return (api) => (next) => (action) => batchProcessor.add(action, () => next(action))
+  return {
+    setup: () => {
+      // console.log('Batching middleware initialized')
+    },
+    reducer: (api: MiddlewareAPI) => (next: NextFunction) => (action: StorageAction) => batchProcessor.add(action, () => next(action)),
+  }
 }

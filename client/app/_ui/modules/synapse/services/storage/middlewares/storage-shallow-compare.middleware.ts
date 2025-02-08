@@ -1,8 +1,7 @@
-import { Middleware } from '../utils/middleware-module'
+import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../utils/middleware-module'
 
 export interface ShallowCompareMiddlewareOptions {
   segments?: string[]
-  // Функция для сравнения значений
   comparator?: <T>(prev: T, next: T) => boolean
 }
 
@@ -37,27 +36,32 @@ export const createShallowCompareMiddleware = (
   // Кэш последних значений
   const valueCache = new Map<string, any>()
 
-  return (api) => (next) => async (action) => {
-    // Проверяем только операции set
-    if (
-      action.type !== 'set'
-      || (segments.length && !segments.includes(action.metadata?.segment ?? 'default'))
-    ) {
-      return next(action)
-    }
+  return {
+    setup: (api: MiddlewareAPI) => {
+      // console.log('Shallow compare middleware initialized')
+    },
+    reducer: (api: MiddlewareAPI) => (next: NextFunction) => async (action: StorageAction) => {
+      // Проверяем только операции set
+      if (
+        action.type !== 'set'
+        || (segments.length && !segments.includes(action.metadata?.segment ?? 'default'))
+      ) {
+        return next(action)
+      }
 
-    const cacheKey = action.key!
-    const prevValue = valueCache.get(cacheKey)
-    const nextValue = action.value
+      const cacheKey = action.key!
+      const prevValue = valueCache.get(cacheKey)
+      const nextValue = action.value
 
-    // Если значения равны, пропускаем операцию
-    if (prevValue !== undefined && comparator(prevValue, nextValue)) {
-      return prevValue
-    }
+      // Если значения равны, пропускаем операцию
+      if (prevValue !== undefined && comparator(prevValue, nextValue)) {
+        return prevValue
+      }
 
-    // Иначе обновляем кэш и продолжаем
-    const result = await next(action)
-    valueCache.set(cacheKey, nextValue)
-    return result
+      // Иначе обновляем кэш и продолжаем
+      const result = await next(action)
+      valueCache.set(cacheKey, nextValue)
+      return result
+    },
   }
 }

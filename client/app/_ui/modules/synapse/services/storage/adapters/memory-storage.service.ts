@@ -3,7 +3,7 @@ import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.inter
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
 
-export class MemoryStorage extends BaseStorage {
+export class MemoryStorage<T extends Record<string, any>> extends BaseStorage<T>{
   private storage = new Map<string, any>()
 
   constructor(

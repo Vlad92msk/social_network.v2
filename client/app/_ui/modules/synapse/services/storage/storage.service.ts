@@ -8,7 +8,7 @@ import { CacheOptions } from './modules/cache/cache-module.service'
 import { GlobalPluginManager } from './modules/plugin-manager/global-plugin-manager.service'
 import { StoragePluginManager } from './modules/plugin-manager/plugin-manager.service'
 import { IStoragePlugin } from './modules/plugin-manager/plugin-managers.interface'
-import { SegmentManager, StorageFactory } from './modules/segment-manager/segment-manager.service'
+import { SegmentManager } from './modules/segment-manager/segment-manager.service'
 import { CreateSegmentConfig, IStorageSegment, ResultFunction, Selector, SelectorAPI, SelectorOptions } from './modules/segment-manager/segment.interface'
 import { IndexedDBStorageConfig, IStorage, LocalStorageConfig, MemoryStorageConfig, StorageEvents, StorageType } from './storage.interface'
 

@@ -9,7 +9,7 @@ export interface IndexedDBConfig {
   storeName?: string
 }
 
-export class IndexedDBStorage extends BaseStorage {
+export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage<T> {
   private initPromise: Promise<void> | null = null
 
   private db: IDBDatabase | null = null
@@ -87,6 +87,25 @@ export class IndexedDBStorage extends BaseStorage {
   }
 
   protected async doGet(key: string): Promise<any> {
+    // Если ключ пустой - возвращаем все содержимое хранилища
+    if (key === '') {
+      const store = await this.transaction()
+      return new Promise((resolve, reject) => {
+        const request = store.getAll()
+
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          // Собираем все значения в один объект
+          const result = {}
+          const keys = Array.from(request.result.keys())
+          request.result.forEach((value, index) => {
+            result[keys[index]] = value
+          })
+          resolve(result)
+        }
+      })
+    }
+
     const store = await this.transaction()
     const parts = parsePath(key)
     const rootKey = parts[0]
