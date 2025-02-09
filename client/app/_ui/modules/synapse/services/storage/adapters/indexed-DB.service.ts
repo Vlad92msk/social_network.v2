@@ -87,22 +87,37 @@ export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage
   }
 
   protected async doGet(key: string): Promise<any> {
+    console.log('doGet_key', key)
     // Если ключ пустой - возвращаем все содержимое хранилища
     if (key === '') {
       const store = await this.transaction()
       return new Promise((resolve, reject) => {
-        const request = store.getAll()
+        // Получаем отдельно ключи
+        const keysRequest = store.getAllKeys()
+        // Получаем отдельно значения
+        const valuesRequest = store.getAll()
 
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => {
-          // Собираем все значения в один объект
+        let keys: IDBValidKey[] = []
+        let values: any[] = []
+
+        keysRequest.onsuccess = () => {
+          keys = keysRequest.result
+        }
+
+        valuesRequest.onsuccess = () => {
+          values = valuesRequest.result
+          // Собираем объект
           const result = {}
-          const keys = Array.from(request.result.keys())
-          request.result.forEach((value, index) => {
-            result[keys[index]] = value
+          keys.forEach((key, index) => {
+            if (typeof key === 'string') {
+              result[key] = values[index]
+            }
           })
           resolve(result)
         }
+
+        keysRequest.onerror = () => reject(keysRequest.error)
+        valuesRequest.onerror = () => reject(valuesRequest.error)
       })
     }
 
@@ -134,35 +149,127 @@ export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage
 
   protected async doSet(key: string, value: any): Promise<void> {
     const store = await this.transaction('readwrite')
+
+    // Если ключ пустой и значение является объектом
+    if (key === '' && typeof value === 'object') {
+      const entries = Object.entries(value)
+
+      // Группируем по корневым ключам для минимизации операций
+      const rootUpdates = new Map<string, any>()
+
+      for (const [entryKey, entryValue] of entries) {
+        const parts = parsePath(entryKey)
+        const rootKey = parts[0]
+
+        if (parts.length === 1) {
+          rootUpdates.set(rootKey, entryValue)
+        } else {
+          if (!rootUpdates.has(rootKey)) {
+            const currentValue = await this.getValueFromStore(store, rootKey)
+            rootUpdates.set(rootKey, currentValue || {})
+          }
+
+          const updatedValue = setValueByPath(
+            { ...rootUpdates.get(rootKey) },
+            parts.slice(1).join('.'),
+            entryValue,
+          )
+          rootUpdates.set(rootKey, updatedValue)
+        }
+      }
+
+      // Применяем все обновления в одной транзакции
+      await Promise.all(
+        Array.from(rootUpdates.entries()).map(([rootKey, rootValue]) => this.putValueInStore(store, rootKey, rootValue)),
+      )
+      return
+    }
+
+    // Обычная установка значения
     const parts = parsePath(key)
     const rootKey = parts[0]
 
+    if (parts.length === 1) {
+      await this.putValueInStore(store, rootKey, value)
+      return
+    }
+
+    // Обновление вложенного пути
+    const rootValue = await this.getValueFromStore(store, rootKey) || {}
+    const newValue = setValueByPath(
+      { ...rootValue },
+      parts.slice(1).join('.'),
+      value,
+    )
+
+    await this.putValueInStore(store, rootKey, newValue)
+  }
+
+  protected async doUpdate(updates: Array<{ key: string; value: any }>): Promise<void> {
+    const store = await this.transaction('readwrite')
+    const tx = store.transaction
+
+    try {
+      // Группируем обновления по корневым ключам
+      const rootUpdates = new Map<string, any>()
+
+      // Собираем все обновления сначала
+      for (const { key, value } of updates) {
+        const parts = parsePath(key)
+        const rootKey = parts[0]
+
+        if (parts.length === 1) {
+          rootUpdates.set(rootKey, value)
+        } else {
+          // Загружаем текущее значение только если еще не загрузили
+          if (!rootUpdates.has(rootKey)) {
+            const currentValue = await this.getValueFromStore(store, rootKey)
+            rootUpdates.set(rootKey, currentValue || {})
+          }
+
+          const updatedValue = setValueByPath(
+            { ...rootUpdates.get(rootKey) },
+            parts.slice(1).join('.'),
+            value,
+          )
+          rootUpdates.set(rootKey, updatedValue)
+        }
+      }
+
+      // Выполняем операции записи в рамках одной транзакции
+      const updatePromises = Array.from(rootUpdates.entries()).map(
+        ([rootKey, value]) => this.putValueInStore(store, rootKey, value),
+      )
+
+      // Дожидаемся завершения всех операций и транзакции
+      await Promise.all([
+        Promise.all(updatePromises),
+        new Promise<void>((resolve, reject) => {
+          tx.oncomplete = () => resolve()
+          tx.onerror = () => reject(tx.error)
+        }),
+      ])
+
+      console.log('хранилище обновлено')
+    } catch (error) {
+      console.error('Ошибка при обновлении:', error)
+      throw error
+    }
+  }
+
+  private async getValueFromStore(store: IDBObjectStore, key: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (parts.length === 1) {
-        // Если путь состоит из одного сегмента - сохраняем значение напрямую
-        const request = store.put(value, rootKey)
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => resolve()
-        return
-      }
+      const request = store.get(key)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve(request.result)
+    })
+  }
 
-      // Если путь вложенный - получаем корневой объект
-      const getRequest = store.get(rootKey)
-
-      getRequest.onerror = () => reject(getRequest.error)
-      getRequest.onsuccess = () => {
-        const rootValue = getRequest.result || {}
-        // Обновляем значение по вложенному пути
-        const newValue = setValueByPath(
-          { ...rootValue },
-          parts.slice(1).join('.'),
-          value,
-        )
-
-        const putRequest = store.put(newValue, rootKey)
-        putRequest.onerror = () => reject(putRequest.error)
-        putRequest.onsuccess = () => resolve()
-      }
+  private async putValueInStore(store: IDBObjectStore, key: string, value: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = store.put(value, key)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
     })
   }
 

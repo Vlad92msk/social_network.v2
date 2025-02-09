@@ -1,4 +1,3 @@
-// middleware.types.ts
 export type StorageActionType =
   | 'get'
   | 'set'
@@ -6,7 +5,6 @@ export type StorageActionType =
   | 'clear'
   | 'init'
   | 'keys'
-  | 'external'
   | 'update';
 
 export type StorageAction = {
@@ -24,6 +22,7 @@ export type MiddlewareAPI = {
   storage: {
     doGet: (key: string) => Promise<any>
     doSet: (key: string, value: any) => Promise<void>
+    doUpdate: (updates: Array<{ key: string; value: any }>) => Promise<void>
     doDelete: (key: string) => Promise<boolean>
     doClear: () => Promise<void>
     doKeys: () => Promise<string[]>
@@ -33,10 +32,8 @@ export type MiddlewareAPI = {
 
 export type NextFunction = (action: StorageAction) => Promise<any>;
 
-// Новый тип для настройки событий
 export type SetupEventsFunction = (api: MiddlewareAPI) => void;
 
-// Обновленный тип Middleware
 export type Middleware = {
   setup?: SetupEventsFunction;
   reducer: (api: MiddlewareAPI) => (next: NextFunction) => (action: StorageAction) => Promise<any>;
@@ -44,16 +41,21 @@ export type Middleware = {
 
 export class MiddlewareModule {
   private middlewares: Middleware[] = []
+
   private api: MiddlewareAPI
+
   private initialized = false
+
+  private dispatchFn!: (action: StorageAction) => Promise<any>
 
   constructor(storage: any) {
     this.api = {
       dispatch: async (action: StorageAction) => this.dispatch(action),
-      getState: async () => storage.getState(),
+      getState: () => storage.getState(), // Убрали лишний await
       storage: {
         doGet: storage.doGet.bind(storage),
         doSet: storage.doSet.bind(storage),
+        doUpdate: storage.doUpdate.bind(storage),
         doDelete: storage.doDelete.bind(storage),
         doClear: storage.doClear.bind(storage),
         doKeys: storage.doKeys.bind(storage),
@@ -62,43 +64,89 @@ export class MiddlewareModule {
     }
   }
 
+  private async baseOperation(action: StorageAction): Promise<any> {
+    // Деструктурируем с подчеркиванием для неиспользуемых переменных
+    const { processed: _, ...metadata } = action.metadata || {}
+    const cleanAction = { ...action, metadata }
+
+    switch (cleanAction.type) {
+      case 'get': {
+        return this.api.storage.doGet(cleanAction.key!)
+      }
+
+      case 'set': {
+        await this.api.storage.doSet(cleanAction.key!, cleanAction.value)
+        return this.api.storage.doGet(cleanAction.key!)
+      }
+
+      case 'update': {
+        if (Array.isArray(cleanAction.value)) {
+          await this.api.storage.doUpdate(cleanAction.value)
+          return this.api.storage.doGet('')
+        }
+        return cleanAction.value
+      }
+
+      case 'delete': {
+        return this.api.storage.doDelete(cleanAction.key!)
+      }
+
+      case 'clear': {
+        return this.api.storage.doClear()
+      }
+
+      case 'init': {
+        const currentState = await this.api.storage.doGet('')
+        if (Object.keys(currentState || {}).length > 0) {
+          return currentState
+        }
+        if (cleanAction.value) {
+          await this.api.storage.doSet('', cleanAction.value)
+          return this.api.storage.doGet('')
+        }
+        return currentState
+      }
+
+      case 'keys': {
+        return this.api.storage.doKeys()
+      }
+
+      default: {
+        throw new Error(`Unknown action type: ${cleanAction.type}`)
+      }
+    }
+  }
+
   private initializeMiddlewares() {
     if (this.initialized) return
 
-    const baseOperation: NextFunction = async (action: StorageAction) => {
-      switch (action.type) {
-        case 'get': return this.api.storage.doGet(action.key!)
-        case 'set':
-          await this.api.storage.doSet(action.key!, action.value)
-          return action.value
-        case 'delete': return this.api.storage.doDelete(action.key!)
-        case 'clear': return this.api.storage.doClear()
-        case 'external':
-          return action.value
-        case 'init':
-        case 'update':
-          if (action.value) await this.api.storage.doSet('', action.value)
-          return action.value
-        case 'keys': return this.api.storage.doKeys()
-        default: throw new Error(`Unknown action type: ${action.type}`)
-      }
-    }
+    let chain = this.baseOperation.bind(this)
 
-    let chain = baseOperation
-    for (const middleware of this.middlewares.reverse()) {
+    for (const middleware of [...this.middlewares].reverse()) {
       const nextChain = chain
       chain = async (action) => {
-        const next = (a: StorageAction) => nextChain(a)
-        return middleware.reducer(this.api)(next)(action)
+        if (action.metadata?.processed) {
+          return nextChain(action)
+        }
+
+        const actionWithMeta = {
+          ...action,
+          metadata: {
+            ...action.metadata,
+            processed: true,
+            timestamp: action.metadata?.timestamp || Date.now(),
+          },
+        }
+
+        return middleware.reducer(this.api)(nextChain)(actionWithMeta)
       }
     }
 
-    this.dispatch = chain
+    this.dispatchFn = chain // Используем новое имя
     this.initialized = true
   }
 
   use(middleware: Middleware): void {
-    // Сразу вызываем setup при добавлении middleware
     if (middleware.setup) {
       middleware.setup(this.api)
     }
@@ -111,6 +159,12 @@ export class MiddlewareModule {
     if (!this.initialized) {
       this.initializeMiddlewares()
     }
-    return this.dispatch(action)
+
+    try {
+      return this.dispatchFn(action)
+    } catch (error) {
+      console.error('Error in middleware chain:', error)
+      throw error
+    }
   }
 }

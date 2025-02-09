@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
 import { cn } from './cn'
 import {counter1Segment, usePokemon, useSelector, useStore, val1 } from '../../../../../../../store/synapse'
@@ -64,10 +64,10 @@ export function CounterExample() {
   const increment1 = async () => {
     // await store?.segments.counter1.patch({ value: (counter1 || 0) + 1 })
     await counter1Segment.update((state) => {
+      console.log('useCallbackstate', state)
       const newVal = state.value + 1
       state.value = newVal
     })
-    // await counter1Segment.set('value', 10)
   }
 
   const counter1 = useSelector(val1)

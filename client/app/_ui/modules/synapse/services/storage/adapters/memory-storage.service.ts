@@ -3,7 +3,7 @@ import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.inter
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
 
-export class MemoryStorage<T extends Record<string, any>> extends BaseStorage<T>{
+export class MemoryStorage<T extends Record<string, any>> extends BaseStorage<T> {
   private storage = new Map<string, any>()
 
   constructor(
@@ -26,7 +26,6 @@ export class MemoryStorage<T extends Record<string, any>> extends BaseStorage<T>
     }
   }
 
-
   protected async doGet(key: string): Promise<any> {
     const state = this.storage.get(this.name)
     if (!state) return undefined
@@ -37,7 +36,18 @@ export class MemoryStorage<T extends Record<string, any>> extends BaseStorage<T>
   protected async doSet(key: string, value: any): Promise<void> {
     const state = this.storage.get(this.name) || {}
     const newState = setValueByPath({ ...state }, key, value)
+    console.log('doSet', key, this.name, newState)
     this.storage.set(this.name, newState)
+  }
+
+  protected async doUpdate(updates: Array<{ key: string; value: any }>): Promise<void> {
+    const state = this.storage.get(this.name) || {}
+
+    for (const { key, value } of updates) {
+      setValueByPath(state, key, value)
+    }
+
+    this.storage.set(this.name, state)
   }
 
   protected async doDelete(key: string): Promise<boolean> {

@@ -31,9 +31,11 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   ) {
     this.name = config.name
     this.middlewareModule = new MiddlewareModule({
+      getState: this.getState.bind(this),
       // Предоставляем базовые операции хранилища
       doGet: this.doGet.bind(this),
       doSet: this.doSet.bind(this),
+      doUpdate: this.doUpdate.bind(this),
       doDelete: this.doDelete.bind(this),
       doClear: this.doClear.bind(this),
       doKeys: this.doKeys.bind(this),
@@ -67,6 +69,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   protected async initializeWithMiddlewares(): Promise<void> {
     try {
       const state = await this.getState()
+      console.log('state', state)
       const hasExistingState = Object.keys(state).length > 0
 
       if (!hasExistingState && this.config.initialState) {
@@ -89,6 +92,8 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
 
   protected abstract doSet(key: string, value: any): Promise<void>;
 
+  protected abstract doUpdate(updates: Array<{ key: string; value: any }>): Promise<void>;
+
   protected abstract doDelete(key: string): Promise<boolean>;
 
   protected abstract doClear(): Promise<void>;
@@ -99,59 +104,58 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
 
   protected abstract doDestroy(): Promise<void>;
 
-  public async get<T>(key: string): Promise<T | undefined> {
+  public async get<R>(key: string): Promise<R | undefined> {
     try {
       const processedKey = this.pluginExecutor?.executeBeforeGet(key) ?? key
 
-      const value = await this.middlewareModule.dispatch({
+      const middlewareResult = await this.middlewareModule.dispatch({
         type: 'get',
         key: processedKey,
       })
 
-      const processedValue = this.pluginExecutor?.executeAfterGet(processedKey, value) ?? value
+      const finalResult = this.pluginExecutor?.executeAfterGet(processedKey, middlewareResult) ?? middlewareResult
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_SELECT,
-        payload: { key: processedKey, value: processedValue },
+        payload: { key: processedKey, value: finalResult },
       })
 
-      return processedValue
+      return finalResult
     } catch (error) {
       this.logger?.error('Error getting value', { key, error })
       throw error
     }
   }
 
-  public async set<T>(key: string, value: T): Promise<void> {
+  public async set<R>(key: string, value: R): Promise<void> {
     try {
-      // 1. Обработка через плагин перед изменением
+      // 1. Пре-обработка через плагин
       const processedValue = this.pluginExecutor?.executeBeforeSet(key, value) ?? value
 
-      // 2. Выполнение операции через middleware цепочку
-      const result = await this.middlewareModule.dispatch({
+      // 2. Обработка через middleware chain
+      const middlewareResult = await this.middlewareModule.dispatch({
         type: 'set',
         key,
         value: processedValue,
       })
 
-      // 3. Обработка результата через плагин
-      this.pluginExecutor?.executeAfterSet(key, result)
+      // 3. Пост-обработка через плагин
+      const finalResult = this.pluginExecutor?.executeAfterSet(key, middlewareResult) ?? middlewareResult
 
-      console.log('this', this.subscribers)
-      // 4. Уведомление обычных подписчиков
-      this.notifySubscribers(key, result)
+      // 4. Уведомление подписчиков с финальным результатом
+      this.notifySubscribers(key, finalResult)
 
       // 5. Уведомление глобальных подписчиков
       this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
         type: StorageEvents.STORAGE_UPDATE,
         key,
-        value: result,
+        value: finalResult,
       })
 
-      // 6. Отправка события через eventEmitter
+      // 6. Отправка события
       await this.emitEvent({
         type: StorageEvents.STORAGE_UPDATE,
-        payload: { key, value: result },
+        payload: { key, value: finalResult },
       })
     } catch (error) {
       this.logger?.error('Error setting value', { key, error })
@@ -159,42 +163,47 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     }
   }
 
-  public async update(updater: (state: any) => void): Promise<void> {
+  public async update(updater: (state: T) => void): Promise<void> {
+    console.log('update update')
     try {
-      const currentState = await this.getState()
-      const newState = { ...currentState }
+      // 1. Получаем текущее состояние
+      const currentState = await this.getState() as T
+      const newState = { ...currentState } as T
+
+      // 2. Применяем обновление
       updater(newState)
 
-      const allKeys = new Set([
-        ...Object.keys(currentState),
-        ...Object.keys(newState),
-      ])
+      const changedKeys = Object.keys(newState).filter(
+        (key) => !this.isEqual(currentState[key], newState[key]),
+      )
 
-      // Собираем результаты всех обновлений
-      const updatedState = { ...currentState }
+      if (changedKeys.length === 0) return
 
-      for (const key of allKeys) {
-        if (!this.isEqual(currentState[key], newState[key])) {
-          const result = await this.middlewareModule.dispatch({
-            type: 'set',
-            key,
-            value: newState[key],
-          })
-          updatedState[key] = result
+      const updates = changedKeys.map((key) => ({
+        key,
+        value: this.pluginExecutor?.executeBeforeSet(key, newState[key]) ?? newState[key],
+      }))
 
-          // Уведомляем о каждом изменённом ключе
-          this.notifySubscribers(key, result)
-        }
-      }
-
-      this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
-        type: StorageEvents.STORAGE_UPDATE,
-        value: updatedState.value,
+      // 3. Делаем только один dispatch, который сам выполнит doUpdate
+      const result = await this.middlewareModule.dispatch({
+        type: 'update',
+        value: updates,
+        metadata: {
+          batchUpdate: true,
+          timestamp: Date.now(),
+        },
       })
 
+      // 4. После получения результата, уведомляем подписчиков
+      this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
+        type: StorageEvents.STORAGE_UPDATE,
+        value: result,
+      })
+
+      // 5. Отправляем событие
       await this.emitEvent({
         type: StorageEvents.STORAGE_UPDATE,
-        payload: { state: updatedState },
+        payload: { state: result },
       })
     } catch (error) {
       this.logger?.error('Error updating state', { error })
@@ -205,13 +214,13 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   public async delete(key: string): Promise<void> {
     try {
       if (this.pluginExecutor?.executeBeforeDelete(key)) {
-        await this.middlewareModule.dispatch({
+        const middlewareResult = await this.middlewareModule.dispatch({
           type: 'delete',
           key,
         })
 
-        // Выполняем плагин
-        this.pluginExecutor?.executeAfterDelete(key)
+        // @ts-ignore
+        const finalResult = this.pluginExecutor?.executeAfterDelete(key) ?? middlewareResult
 
         // Уведомляем подписчиков конкретного ключа
         this.notifySubscribers(key, undefined)
@@ -221,12 +230,12 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
           type: StorageEvents.STORAGE_UPDATE,
           key,
           value: undefined,
+          result: finalResult, // добавляем результат операции
         })
 
-        // Отправляем событие
         await this.emitEvent({
           type: StorageEvents.STORAGE_UPDATE,
-          payload: { key, value: undefined },
+          payload: { key, value: undefined, result: finalResult },
         })
       }
     } catch (error) {
@@ -269,7 +278,9 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   }
 
   public async getState(): Promise<Record<string, any>> {
+    console.log('вызван getState')
     const value = await this.doGet('') // Используем пустой путь для получения корневого состояния
+    console.log('getState', value)
     return value || {}
   }
 

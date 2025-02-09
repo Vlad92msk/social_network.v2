@@ -39,6 +39,17 @@ export class LocalStorage<T extends Record<string, any>> extends BaseStorage<T> 
     localStorage.setItem(this.name, JSON.stringify(newState))
   }
 
+  protected async doUpdate(updates: Array<{ key: string; value: any }>): Promise<void> {
+    const storageData = localStorage.getItem(this.name)
+    const state = storageData ? JSON.parse(storageData) : {}
+
+    for (const { key, value } of updates) {
+      setValueByPath(state, key, value)
+    }
+
+    localStorage.setItem(this.name, JSON.stringify(state))
+  }
+
   protected async doDelete(key: string): Promise<boolean> {
     const storageData = localStorage.getItem(this.name)
     if (!storageData) return false
