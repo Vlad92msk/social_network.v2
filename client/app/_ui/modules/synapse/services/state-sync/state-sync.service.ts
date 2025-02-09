@@ -1,4 +1,5 @@
 import { StorageEvents, StorageType } from '../storage/storage.interface'
+import { SyncBroadcastChannel } from '../storage/utils/broadcast.util'
 import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../storage/utils/middleware-module'
 
 interface SharedStateMiddlewareProps {
@@ -6,82 +7,130 @@ interface SharedStateMiddlewareProps {
   storageName: string
 }
 
-interface BroadcastMessage {
-  type: string
-  key?: string
-  value: any
-  source: 'broadcast'
-}
-
+// state-sync.service.ts
 export const createSharedStateMiddleware = (props: SharedStateMiddlewareProps): Middleware => {
   const { storageName, storageType } = props
   const channelName = `${storageType}-${storageName}`
-  const channel = new BroadcastChannel(channelName)
-  channel.onmessageerror = (event) => {
-    console.error(`[${channelName}] Ошибка в канале:`, event)
-  }
-
-  console.log(`channel[${channelName}] инициализирован`)
+  const channel = new SyncBroadcastChannel<StorageAction>(channelName, { debug: true })
 
   return {
-    // Setup функция, которая будет вызвана при инициализации
     setup: (api: MiddlewareAPI) => {
-      channel.onmessage = async (event) => {
-        const message = event.data as BroadcastMessage
-        console.log(`[${channelName}] Получено сообщение:`, message)
-        // Обновляем хранилище только для memory типа
+      if (storageType === 'memory') {
+        channel.setSyncHandler(async () => {
+          const state = await api.getState()
+
+          const updates = Object.entries(state).map(([key, value]) => ({
+            key,
+            value,
+          }))
+
+          const action: StorageAction = {
+            type: 'update',
+            key: '*',
+            value: updates,
+            metadata: {
+              batchUpdate: true,
+              timestamp: Date.now(),
+            },
+          }
+          return action
+        })
+
+        // Запрашиваем начальную синхронизацию
+        channel.requestSync().then(async (action) => {
+          if (action?.type === 'update' && Array.isArray(action.value)) {
+            try {
+              // Проверяем структуру обновлений
+              const validUpdates = action.value.every((update) => update && typeof update === 'object' && 'key' in update && 'value' in update)
+
+              if (!validUpdates) {
+                console.error('[Sync Response] Invalid updates structure:', action.value)
+                return
+              }
+
+              await api.storage.doUpdate(action.value)
+
+              // Уведомляем подписчиков о каждом обновленном значении
+              action.value.forEach(({ key, value }) => {
+                api.storage.notifySubscribers(key, value)
+              })
+
+              // Уведомляем глобальных подписчиков
+              api.storage.notifySubscribers('*', {
+                type: StorageEvents.STORAGE_UPDATE,
+                value: action.value,
+                source: 'broadcast',
+              })
+            } catch (error) {
+              console.error('[Sync Response] Error applying updates:', error)
+            }
+          }
+        })
+      }
+
+      return channel.subscribe(async (message) => {
+        const { type, payload } = message
+
         if (storageType === 'memory') {
-          switch (message.type) {
+          switch (type) {
             case 'set':
               // @ts-ignore
-              await api.storage.doSet(message.key, message.value)
+              await api.storage.doSet(payload.key, payload.value)
+              // @ts-ignore
+              api.storage.notifySubscribers(payload.key, payload.value)
               break
+
             case 'update':
-              await api.storage.doUpdate(message.value)
+              // @ts-ignore
+              if (Array.isArray(payload.value)) {
+                // @ts-ignore
+                await api.storage.doUpdate(payload.value)
+                // @ts-ignore
+                payload.value.forEach(({ key, value }) => {
+                  api.storage.notifySubscribers(key, value)
+                })
+              }
               break
+
             case 'delete':
               // @ts-ignore
-              await api.storage.doDelete(message.key)
+              await api.storage.doDelete(payload.key)
+              // @ts-ignore
+              api.storage.notifySubscribers(payload.key, undefined)
               break
+
             case 'clear':
               await api.storage.doClear()
+              api.storage.notifySubscribers('*', {
+                type: StorageEvents.STORAGE_UPDATE,
+                value: {},
+                source: 'broadcast',
+              })
               break
-            default: break
           }
-        }
 
-        // Уведомляем подписчиков для всех типов хранилищ
-        if (['set', 'update'].includes(message.type)) {
-          console.log(`[${channelName}] Уведомляем подписчиков:`, message)
-          // @ts-ignore
-          api.storage.notifySubscribers(message.key, message.value)
           api.storage.notifySubscribers('*', {
             type: StorageEvents.STORAGE_UPDATE,
-            key: message.key,
-            value: message.value,
-            source: message.source,
+            key: payload?.key,
+            value: payload?.value,
+            source: 'broadcast',
           })
         }
-      }
+      })
     },
-    // Reducer функция для обработки действий
+
     reducer: (api: MiddlewareAPI) => (next: NextFunction) => async (action: StorageAction) => {
       const result = await next(action)
 
-      console.log('action', action)
       if (['set', 'delete', 'clear', 'update'].includes(action.type)) {
-        const message: BroadcastMessage = {
-          type: action.type,
-          key: action.key,
-          value: action.value,
-          source: 'broadcast',
-        }
-
-        console.log(`[${channelName}] Отправляем сообщение:`, message)
-        channel.postMessage(message)
+        channel.broadcast(action.type, action)
       }
 
       return result
+    },
+
+    cleanup: () => {
+      channel.close()
     },
   }
 }

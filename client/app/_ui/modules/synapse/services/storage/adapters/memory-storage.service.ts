@@ -41,13 +41,17 @@ export class MemoryStorage<T extends Record<string, any>> extends BaseStorage<T>
   }
 
   protected async doUpdate(updates: Array<{ key: string; value: any }>): Promise<void> {
-    const state = this.storage.get(this.name) || {}
+    const currentState = this.storage.get(this.name) || {}
+    // Создаем копию текущего состояния
+    let newState = { ...currentState }
 
     for (const { key, value } of updates) {
-      setValueByPath(state, key, value)
+      // setValueByPath возвращает обновленный объект
+      newState = setValueByPath(newState, key, value)
     }
 
-    this.storage.set(this.name, state)
+    // Сохраняем новое состояние
+    this.storage.set(this.name, newState)
   }
 
   protected async doDelete(key: string): Promise<boolean> {

@@ -1,3 +1,5 @@
+import { BaseStorage } from '@ui/modules/synapse/services/storage/adapters/base-storage.service'
+
 export type StorageActionType =
   | 'get'
   | 'set'
@@ -35,8 +37,9 @@ export type NextFunction = (action: StorageAction) => Promise<any>;
 export type SetupEventsFunction = (api: MiddlewareAPI) => void;
 
 export type Middleware = {
-  setup?: SetupEventsFunction;
-  reducer: (api: MiddlewareAPI) => (next: NextFunction) => (action: StorageAction) => Promise<any>;
+  setup?: SetupEventsFunction
+  cleanup?: () => Promise<void> | void
+  reducer: (api: MiddlewareAPI) => (next: NextFunction) => (action: StorageAction) => Promise<any>
 }
 
 export class MiddlewareModule {
@@ -51,7 +54,7 @@ export class MiddlewareModule {
   constructor(storage: any) {
     this.api = {
       dispatch: async (action: StorageAction) => this.dispatch(action),
-      getState: () => storage.getState(), // Убрали лишний await
+      getState: () => storage.getState(),
       storage: {
         doGet: storage.doGet.bind(storage),
         doSet: storage.doSet.bind(storage),

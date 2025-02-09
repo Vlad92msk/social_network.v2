@@ -9,7 +9,7 @@ import {
   StorageEvent,
   StorageEvents,
 } from '../storage.interface'
-import { MiddlewareModule } from '../utils/middleware-module'
+import { Middleware, MiddlewareModule } from '../utils/middleware-module'
 
 type PathSelector<T, R> = (state: T) => R
 
@@ -20,6 +20,8 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   name: string
 
   private middlewareModule: MiddlewareModule
+
+  private initializedMiddlewares: Middleware[] | null = null // Сохраняем созданные middleware
 
   protected subscribers = new Map<string, Set<(value: any) => void>>()
 
@@ -51,11 +53,14 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   }
 
   protected initializeMiddlewares(): void {
-    if (this.config.middlewares) {
-      const middlewares = this.config.middlewares(
+    if (this.config.middlewares && !this.initializedMiddlewares) {
+      // Создаем middleware только один раз
+      this.initializedMiddlewares = this.config.middlewares(
         () => this.getDefaultMiddleware(),
       )
-      middlewares.forEach((middleware) => this.middlewareModule.use(middleware))
+
+      // Применяем их
+      this.initializedMiddlewares.forEach((middleware) => this.middlewareModule.use(middleware))
     }
   }
 
@@ -69,7 +74,6 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   protected async initializeWithMiddlewares(): Promise<void> {
     try {
       const state = await this.getState()
-      console.log('state', state)
       const hasExistingState = Object.keys(state).length > 0
 
       if (!hasExistingState && this.config.initialState) {
@@ -398,6 +402,19 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     try {
       await this.clear()
       await this.doDestroy()
+
+      // Очищаем middleware и соединения
+      if (this.initializedMiddlewares) {
+        // Если у middleware есть метод cleanup/destroy - вызываем его
+        await Promise.all(
+          this.initializedMiddlewares.map(async (middleware) => {
+            if ('cleanup' in middleware) {
+              await middleware.cleanup?.()
+            }
+          })
+        )
+        this.initializedMiddlewares = null
+      }
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_DESTROY,
