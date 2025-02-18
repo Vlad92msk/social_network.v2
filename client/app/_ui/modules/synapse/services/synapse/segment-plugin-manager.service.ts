@@ -1,8 +1,8 @@
-import { StoragePluginManager } from './plugin-manager.service'
-import { IPluginExecutor, IStoragePlugin } from './plugin-managers.interface'
-import { ILogger } from '../../storage.interface'
+import { StoragePluginModule } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.service'
+import { IPluginExecutor, IStoragePlugin } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
+import { ILogger } from '../storage/storage.interface'
 
-export class SegmentPluginManager extends StoragePluginManager {
+export class SegmentPluginManager extends StoragePluginModule {
   constructor(
     private readonly segmentName: string,
     parentExecutor?: IPluginExecutor,

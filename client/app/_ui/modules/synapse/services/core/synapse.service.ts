@@ -3,7 +3,7 @@ import { BaseModule } from './base.service'
 import type { IDIContainer } from '../di-container/di-container.interface'
 import { DIContainer } from '../di-container/di-container.service'
 import { IStorageConfig } from '../storage/storage.interface'
-import { StorageModule } from '../storage/storage.service'
+import { StorageModule } from '../synapse/storage.service'
 
 export class Synapse extends BaseModule {
   readonly name = 'synapse'

@@ -1,12 +1,13 @@
-import { getValueByPath, parsePath, setValueByPath } from './path.utils'
-import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
+import { IPluginExecutor } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
+import { getValueByPath, parsePath, setValueByPath } from './path.utils'
+import { StorageKey, StorageKeyType } from '../utils/storage-key'
 
 export interface IndexedDBConfig {
-  dbName?: string
-  dbVersion?: number
-  storeName?: string
+  dbName?: string;
+  dbVersion?: number;
+  storeName?: string;
 }
 
 export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage<T> {
@@ -86,103 +87,193 @@ export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage
     return this.db.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME)
   }
 
-  protected async doGet(key: string): Promise<any> {
-    console.log('doGet_key', key)
+  protected async doGet(key: StorageKeyType): Promise<any> {
     const store = await this.transaction()
 
+    // Для пустого ключа возвращаем все состояние
     if (key === '') {
-      // Получаем значение по единственному ключу
       return new Promise((resolve, reject) => {
-        const request = store.get('value')
+        const request = store.getAll()
         request.onerror = () => reject(request.error)
         request.onsuccess = () => {
-          resolve(request.result || {})
+          const allValues = request.result
+          const allKeys = store.getAllKeys()
+
+          allKeys.onsuccess = () => {
+            const state = allKeys.result.reduce((acc: Record<string, any>, k: string, index: number) => {
+              if (k !== 'root') {
+                acc[k] = allValues[index]
+              }
+              return acc
+            }, {})
+            resolve(state)
+          }
+          allKeys.onerror = () => reject(allKeys.error)
         }
       })
     }
 
+    // Проверяем, является ли ключ "сырым"
+    if (key instanceof StorageKey && key.isUnparseable()) {
+      return new Promise((resolve, reject) => {
+        const request = store.get(key.valueOf())
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => resolve(request.result)
+      })
+    }
+
+    // Для вложенного пути
+    const parts = parsePath(key)
+    if (parts.length > 1) {
+      const rootKey = parts[0]
+      return new Promise((resolve, reject) => {
+        const request = store.get(rootKey)
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          const rootValue = request.result
+          if (!rootValue) {
+            resolve(undefined)
+            return
+          }
+          const value = getValueByPath(rootValue, parts.slice(1).join('.'))
+          resolve(value)
+        }
+      })
+    }
+
+    // Для простого ключа
     return new Promise((resolve, reject) => {
-      const request = store.get('value')
+      const request = store.get(parts[0])
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => {
-        const state = request.result || {}
-        resolve(state[key])
-      }
+      request.onsuccess = () => resolve(request.result)
     })
   }
 
-  protected async doSet(key: string, value: any): Promise<void> {
+  protected async doSet(key: StorageKeyType, value: any): Promise<void> {
     const store = await this.transaction('readwrite')
 
+    // Для пустого ключа устанавливаем все состояние
     if (key === '') {
-      // Устанавливаем полное состояние
-      await this.putValueInStore(store, 'value', value)
+      await this.doClear()
+      const entries = Object.entries(value)
+      for (const [entryKey, entryValue] of entries) {
+        await this.putValueInStore(store, entryKey as string, entryValue)
+      }
       return
     }
 
-    const currentState = await this.getValueFromStore(store, 'value') || {}
-    currentState[key] = value
-    await this.putValueInStore(store, 'value', currentState)
+    // Для "сырого" ключа
+    if (key instanceof StorageKey && key.isUnparseable()) {
+      await this.putValueInStore(store, key.valueOf(), value)
+      return
+    }
+
+    // Для вложенного пути
+    const parts = parsePath(key)
+    if (parts.length > 1) {
+      const rootKey = parts[0]
+      return new Promise((resolve, reject) => {
+        const request = store.get(rootKey)
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          const rootValue = request.result || {}
+          const updatedValue = setValueByPath(rootValue, parts.slice(1).join('.'), value)
+          const putRequest = store.put(updatedValue, rootKey)
+          putRequest.onerror = () => reject(putRequest.error)
+          putRequest.onsuccess = () => resolve()
+        }
+      })
+    }
+
+    // Для простого ключа
+    await this.putValueInStore(store, parts[0], value)
   }
 
-  protected async doUpdate(updates: Array<{ key: string; value: any }>): Promise<void> {
+  protected async doUpdate(updates: Array<{ key: string | StorageKey; value: any }>): Promise<void> {
     const store = await this.transaction('readwrite')
     const tx = store.transaction
 
+    // Группируем обновления
+    const updatesByRoot = new Map<string, Array<{ path: string[]; value: any }>>()
+    const rawUpdates: Array<{ key: string; value: any }> = []
+
+    // Разделяем обновления на "сырые" и обычные
+    for (const { key, value } of updates) {
+      if (key instanceof StorageKey && key.isUnparseable()) {
+        rawUpdates.push({ key: key.valueOf(), value })
+        continue
+      }
+
+      const parts = parsePath(key)
+      const rootKey = parts[0]
+      const path = parts.slice(1)
+
+      if (!updatesByRoot.has(rootKey)) {
+        updatesByRoot.set(rootKey, [])
+      }
+      updatesByRoot.get(rootKey)!.push({ path, value })
+    }
+
     try {
-      const currentState = await this.getValueFromStore(store, 'value') || {}
+      // Обрабатываем "сырые" обновления
+      for (const { key, value } of rawUpdates) {
+        await this.putValueInStore(store, key, value)
+      }
 
-      updates.forEach(({ key, value }) => {
-        currentState[key] = value
-      })
+      // Обрабатываем сгруппированные обновления
+      for (const [rootKey, pathUpdates] of updatesByRoot) {
+        const rootValue = (await this.doGet(rootKey)) || {}
+        let updatedValue = { ...rootValue }
 
-      await this.putValueInStore(store, 'value', currentState)
+        for (const { path, value } of pathUpdates) {
+          if (path.length === 0) {
+            updatedValue = value
+          } else {
+            updatedValue = setValueByPath(updatedValue, path.join('.'), value)
+          }
+        }
 
+        await this.putValueInStore(store, rootKey, updatedValue)
+      }
+
+      // Ждем завершения транзакции
       await new Promise<void>((resolve, reject) => {
         tx.oncomplete = () => resolve()
         tx.onerror = () => reject(tx.error)
       })
-
-      console.log('хранилище обновлено')
     } catch (error) {
       console.error('Ошибка при обновлении:', error)
       throw error
     }
   }
 
-  private async getValueFromStore(store: IDBObjectStore, key: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const request = store.get(key)
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve(request.result)
-    })
-  }
-
-  private async putValueInStore(store: IDBObjectStore, key: string, value: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = store.put(value, key)
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
-    })
-  }
-
-  protected async doDelete(key: string): Promise<boolean> {
+  protected async doDelete(key: StorageKeyType): Promise<boolean> {
     const store = await this.transaction('readwrite')
-    const parts = parsePath(key)
-    const rootKey = parts[0]
 
-    return new Promise((resolve, reject) => {
-      if (parts.length === 1) {
-        // Если путь состоит из одного сегмента - удаляем ключ
-        const request = store.delete(rootKey)
+    // Для "сырого" ключа
+    if (key instanceof StorageKey && key.isUnparseable()) {
+      return new Promise((resolve, reject) => {
+        const request = store.delete(key.valueOf())
         request.onerror = () => reject(request.error)
         request.onsuccess = () => resolve(true)
-        return
-      }
+      })
+    }
 
-      // Если путь вложенный - получаем и обновляем объект
+    const parts = parsePath(key)
+
+    // Для простого ключа
+    if (parts.length === 1) {
+      return new Promise((resolve, reject) => {
+        const request = store.delete(parts[0])
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => resolve(true)
+      })
+    }
+
+    // Для вложенного пути
+    const rootKey = parts[0]
+    return new Promise((resolve, reject) => {
       const getRequest = store.get(rootKey)
-
       getRequest.onerror = () => reject(getRequest.error)
       getRequest.onsuccess = () => {
         const rootValue = getRequest.result
@@ -191,21 +282,37 @@ export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage
           return
         }
 
-        const pathToDelete = parts.slice(1).join('.')
-        const parentPath = pathToDelete.split('.').slice(0, -1).join('.')
+        const parent = getValueByPath(rootValue, parts.slice(0, -1).join('.'))
         const lastKey = parts[parts.length - 1]
-        const parent = parentPath ? getValueByPath(rootValue, parentPath) : rootValue
 
         if (!parent || !(lastKey in parent)) {
           resolve(false)
           return
         }
 
-        delete parent[lastKey]
+        if (Array.isArray(parent)) {
+          const index = parseInt(lastKey, 10)
+          if (!isNaN(index)) {
+            parent.splice(index, 1)
+          } else {
+            delete parent[lastKey]
+          }
+        } else {
+          delete parent[lastKey]
+        }
+
         const putRequest = store.put(rootValue, rootKey)
         putRequest.onerror = () => reject(putRequest.error)
         putRequest.onsuccess = () => resolve(true)
       }
+    })
+  }
+
+  private async putValueInStore(store: IDBObjectStore, key: StorageKeyType, value: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = store.put(value, key.valueOf())
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
     })
   }
 
@@ -220,18 +327,10 @@ export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage
 
   protected async doKeys(): Promise<string[]> {
     const store = await this.transaction()
+    const request = store.getAllKeys()
     return new Promise((resolve, reject) => {
-      const request = store.getAllKeys()
       request.onsuccess = () => {
-        // Получаем все ключи и их вложенные пути
-        Promise.all(
-          Array.from(request.result as string[]).map(async (key) => {
-            const value = await this.doGet(key)
-            return this.getAllKeys(value, key)
-          }),
-        ).then((keyArrays) => {
-          resolve(keyArrays.flat())
-        }).catch(reject)
+        resolve(request.result as string[])
       }
       request.onerror = () => reject(request.error)
     })
@@ -250,30 +349,9 @@ export class IndexedDBStorage<T extends Record<string, any>> extends BaseStorage
     })
   }
 
-  protected async doHas(key: string): Promise<boolean> {
+  protected async doHas(key: StorageKeyType): Promise<boolean> {
     const value = await this.doGet(key)
     return value !== undefined
-  }
-
-  private getAllKeys(obj: any, prefix = ''): string[] {
-    let keys: string[] = []
-
-    if (typeof obj !== 'object' || obj === null) {
-      return [prefix]
-    }
-
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const fullKey = prefix ? `${prefix}.${key}` : key
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          keys = keys.concat(this.getAllKeys(obj[key], fullKey))
-        } else {
-          keys.push(fullKey)
-        }
-      }
-    }
-
-    return keys
   }
 
   private async close(): Promise<void> {

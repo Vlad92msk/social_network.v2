@@ -1,19 +1,20 @@
-import { StorageEvents, StorageType } from '../storage/storage.interface'
-import { SyncBroadcastChannel } from '../storage/utils/broadcast.util'
-import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../storage/utils/middleware-module'
+import { StorageEvents, StorageType } from '../storage.interface'
+import { SyncBroadcastChannel } from '../utils/broadcast.util'
+import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../utils/middleware-module'
 
 interface SharedStateMiddlewareProps {
   storageType: StorageType
   storageName: string
 }
 
-// state-sync.service.ts
-export const createSharedStateMiddleware = (props: SharedStateMiddlewareProps): Middleware => {
+// broadcast.middleware.ts
+export const broadcastMiddleware = (props: SharedStateMiddlewareProps): Middleware => {
   const { storageName, storageType } = props
   const channelName = `${storageType}-${storageName}`
   const channel = new SyncBroadcastChannel<StorageAction>(channelName, { debug: true })
 
   return {
+    name: 'sync',
     setup: (api: MiddlewareAPI) => {
       if (storageType === 'memory') {
         channel.setSyncHandler(async () => {

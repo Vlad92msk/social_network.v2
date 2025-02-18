@@ -1,8 +1,8 @@
-import { ILogger } from '../../storage.interface'
-import { StoragePluginManager } from './plugin-manager.service'
-import { IStoragePlugin } from './plugin-managers.interface'
+import { ILogger } from '../storage/storage.interface'
+import { StoragePluginModule } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.service'
+import { IStoragePlugin } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
 
-export class GlobalPluginManager extends StoragePluginManager {
+export class GlobalPluginManager extends StoragePluginModule {
   readonly name = 'pluginManager'
 
   constructor(

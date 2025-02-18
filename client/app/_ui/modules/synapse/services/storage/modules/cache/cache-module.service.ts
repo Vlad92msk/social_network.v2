@@ -1,38 +1,67 @@
-// Типы для кэширования
+// cache-module.service.ts
+
+import { StorageKey, StorageKeyType } from '../../utils/storage-key'
+
 export interface CacheMetadata {
-  createdAt: number
-  updatedAt: number
-  expiresAt: number
-  accessCount: number
+  createdAt: number;
+  updatedAt: number;
+  expiresAt: number;
+  accessCount: number;
+  tags?: string[];
+  createdAtDateTime: string;
+  updatedAtDateTime: string;
+  expiresAtDateTime: string;
+}
+
+// Правило кэширования для конкретного ключа
+export interface CacheRule {
+  method: string;
+  ttl?: number;
+  tags?: string[];
+  invalidateTags?: string[];
 }
 
 export interface CacheOptions {
-  // Время жизни кэша
-  ttl?: number
-  // Настройки очистки
+  ttl?: number;
   cleanup?: {
-    // Автоматическая очистка устаревших данных
-    enabled: boolean
-    // Интервал очистки
-    interval?: number
-  }
-  invalidateOnError?: boolean
+    enabled: boolean;
+    interval?: number;
+  };
+  invalidateOnError?: boolean;
+  rules?: CacheRule[];
+}
+
+export interface CacheParams {
+  url: string;
+  query?: string;
+  [key: string]: any;
 }
 
 export interface CacheEntry<T> {
   data: T;
-  metadata: CacheMetadata
+  metadata: CacheMetadata;
+  params: CacheParams;
 }
 
-// Простой утилитный класс для работы с метаданными кэша
 export class CacheUtils {
-  static createMetadata(ttl: number = 0): CacheMetadata {
+  static createMetadata(ttl: number = 0, tags: string[] = []): CacheMetadata {
+    const now = Date.now()
+    const expiresAt = ttl > 0 ? now + ttl : Infinity
+
     return {
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      expiresAt: Date.now() + ttl,
+      createdAt: now,
+      updatedAt: now,
+      expiresAt,
       accessCount: 0,
+      tags,
+      createdAtDateTime: this.formatDateTime(now),
+      updatedAtDateTime: this.formatDateTime(now),
+      expiresAtDateTime: expiresAt === Infinity ? 'never' : this.formatDateTime(expiresAt),
     }
+  }
+
+  private static formatDateTime(timestamp: number): string {
+    return new Date(timestamp).toISOString()
   }
 
   static isExpired(metadata: CacheMetadata): boolean {
@@ -47,17 +76,30 @@ export class CacheUtils {
     }
   }
 
-  // Утилиты для создания ключей
-  static createKey(...parts: (string | number)[]): string {
-    return parts.join('_')
+  static createKey(...parts: (string | number)[]): StorageKey {
+    return new StorageKey(parts.join('_'))
   }
 
-  static createApiKey(endpoint: string, params?: Record<string, any>): string {
-    if (!params) return `api_${endpoint}`
+  static createApiKey(endpoint: string, params?: Record<string, any>): [StorageKeyType, Record<string, any> | undefined] {
+    if (!params) return [new StorageKey(endpoint, true), params]
+
     const sortedParams = Object.entries(params)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}=${v}`)
       .join('&')
-    return `api_${endpoint}_${sortedParams}`
+
+    return [new StorageKey(`${endpoint}_${sortedParams}`, true), params]
+  }
+
+  static findRule(key: StorageKeyType, rules: CacheRule[] = []): CacheRule | undefined {
+    const keyStr = key.toString()
+    const methodName = keyStr.split('_')[0]
+    return rules.find((rule) => rule.method === methodName)
+  }
+
+  // Функция для проверки, есть ли у записи определенные теги
+  static hasAnyTag(metadata: CacheMetadata, tags: string[] = []): boolean {
+    if (!metadata.tags || !tags.length) return false
+    return tags.some((tag) => metadata.tags?.includes(tag))
   }
 }

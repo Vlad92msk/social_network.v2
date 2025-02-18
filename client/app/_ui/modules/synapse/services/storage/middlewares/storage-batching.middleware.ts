@@ -7,7 +7,7 @@ export interface BatchingMiddlewareOptions {
   segments?: string[]
 }
 
-export const createBatchingMiddleware = (
+export const batchingMiddleware = (
   options: BatchingMiddlewareOptions = {},
 ): Middleware => {
   const batchProcessor = new BatchProcessor<StorageAction>({
@@ -39,6 +39,7 @@ export const createBatchingMiddleware = (
   })
 
   return {
+    name: 'batching',
     setup: () => {
       // console.log('Batching middleware initialized')
     },

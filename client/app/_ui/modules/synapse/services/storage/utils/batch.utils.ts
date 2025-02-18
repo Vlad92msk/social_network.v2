@@ -1,12 +1,13 @@
 // Типы для BatchProcessor
 import { StorageAction } from './middleware-module'
+import { StorageKeyType } from './storage-key'
 
 export interface BatchOptions<T> {
   batchSize?: number
   batchDelay?: number
   onBatch?: (items: T[]) => Promise<void>
   // Ключ для группировки элементов в разные очереди
-  getSegmentKey?: (item: T) => string
+  getSegmentKey?: (item: T) => StorageKeyType
   // Функция для определения можно ли элемент батчить
   shouldBatch?: (item: T) => boolean
   // Функция для объединения элементов с одинаковым ключом
@@ -14,18 +15,18 @@ export interface BatchOptions<T> {
 }
 
 export interface BatchQueueItem<T extends StorageAction> {
-  action: T;
-  baseOperation: () => Promise<any>;
-  resolve: (value: any) => void;
-  reject: (error: any) => void;
+  action: T
+  baseOperation: () => Promise<any>
+  resolve: (value: any) => void
+  reject: (error: any) => void
 }
 
 export class BatchProcessor<T extends StorageAction> {
   private readonly options: Required<BatchOptions<T>>
 
-  private queues = new Map<string, BatchQueueItem<T>[]>()
+  private queues = new Map<StorageKeyType, BatchQueueItem<T>[]>()
 
-  private timeouts = new Map<string, NodeJS.Timeout>()
+  private timeouts = new Map<StorageKeyType, NodeJS.Timeout>()
 
   constructor(options: BatchOptions<T>) {
     this.options = {
@@ -49,7 +50,7 @@ export class BatchProcessor<T extends StorageAction> {
     })
   }
 
-  private addToQueue(segment: string, queueItem: BatchQueueItem<T>): void {
+  private addToQueue(segment: StorageKeyType, queueItem: BatchQueueItem<T>): void {
     let queue = this.queues.get(segment)
     if (!queue) {
       queue = []
@@ -66,7 +67,7 @@ export class BatchProcessor<T extends StorageAction> {
     }
   }
 
-  private async processBatch(segment: string): Promise<void> {
+  private async processBatch(segment: StorageKeyType): Promise<void> {
     const queue = this.queues.get(segment)
     if (!queue?.length) return
 
@@ -87,9 +88,7 @@ export class BatchProcessor<T extends StorageAction> {
     }
   }
 
-  // ... остальные методы остаются теми же ...
-
-  private clearSegmentTimeout(segment: string): void {
+  private clearSegmentTimeout(segment: StorageKeyType): void {
     const timeout = this.timeouts.get(segment)
     if (timeout) {
       clearTimeout(timeout)
@@ -97,7 +96,7 @@ export class BatchProcessor<T extends StorageAction> {
     }
   }
 
-  private setSegmentTimeout(segment: string): void {
+  private setSegmentTimeout(segment: StorageKeyType): void {
     const timeout = setTimeout(() => {
       this.processBatch(segment)
     }, this.options.batchDelay)
@@ -116,10 +115,10 @@ export class BatchProcessor<T extends StorageAction> {
     this.timeouts.clear()
   }
 
-  public getState(): { [segment: string]: number } {
-    const state: { [segment: string]: number } = {}
+  public getState(): { [segment: string ]: number } {
+    const state: { [segment: string ]: number } = {}
     this.queues.forEach((queue, segment) => {
-      state[segment] = queue.length
+      state[segment as string] = queue.length
     })
     return state
   }

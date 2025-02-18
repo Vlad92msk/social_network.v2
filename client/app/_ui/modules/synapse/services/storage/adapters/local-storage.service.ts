@@ -1,7 +1,8 @@
 import { getValueByPath, parsePath, setValueByPath } from './path.utils'
-import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
+import { IPluginExecutor } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
 import { IEventEmitter, ILogger, StorageConfig } from '../storage.interface'
 import { BaseStorage } from './base-storage.service'
+import { StorageKey, StorageKeyType } from '../utils/storage-key'
 
 export class LocalStorage<T extends Record<string, any>> extends BaseStorage<T> {
   constructor(
@@ -23,38 +24,50 @@ export class LocalStorage<T extends Record<string, any>> extends BaseStorage<T> 
     }
   }
 
-  protected async doGet(key: string): Promise<any> {
+  protected async doGet(key: StorageKeyType): Promise<any> {
     const storageData = localStorage.getItem(this.name)
     if (!storageData) return undefined
 
     const state = JSON.parse(storageData)
+
+    // Добавляем проверку на "сырой" ключ
+    if (key instanceof StorageKey && key.isUnparseable()) {
+      return state[key.valueOf()]
+    }
+
     return getValueByPath(state, key)
   }
 
-  protected async doSet(key: string, value: any): Promise<void> {
+  protected async doSet(key: StorageKeyType, value: any): Promise<void> {
     const storageData = localStorage.getItem(this.name)
     const state = storageData ? JSON.parse(storageData) : {}
+
+    // Добавляем проверку на "сырой" ключ
+    if (key instanceof StorageKey && key.isUnparseable()) {
+      state[key.valueOf()] = value
+      localStorage.setItem(this.name, JSON.stringify(state))
+      return
+    }
 
     const newState = setValueByPath({ ...state }, key, value)
     localStorage.setItem(this.name, JSON.stringify(newState))
   }
 
-  protected async doUpdate(updates: Array<{ key: string; value: any }>): Promise<void> {
-    const storageData = localStorage.getItem(this.name)
-    const state = storageData ? JSON.parse(storageData) : {}
-
-    for (const { key, value } of updates) {
-      setValueByPath(state, key, value)
-    }
-
-    localStorage.setItem(this.name, JSON.stringify(state))
-  }
-
-  protected async doDelete(key: string): Promise<boolean> {
+  protected async doDelete(key: StorageKeyType): Promise<boolean> {
     const storageData = localStorage.getItem(this.name)
     if (!storageData) return false
 
     const state = JSON.parse(storageData)
+
+    // Добавляем проверку на "сырой" ключ
+    if (key instanceof StorageKey && key.isUnparseable()) {
+      const rawKey = key.valueOf()
+      if (!(rawKey in state)) return false
+      delete state[rawKey]
+      localStorage.setItem(this.name, JSON.stringify(state))
+      return true
+    }
+
     const pathParts = parsePath(key)
     const parentPath = pathParts.slice(0, -1).join('.')
     const lastKey = pathParts[pathParts.length - 1]
@@ -66,6 +79,21 @@ export class LocalStorage<T extends Record<string, any>> extends BaseStorage<T> 
     delete parent[lastKey]
     localStorage.setItem(this.name, JSON.stringify(state))
     return true
+  }
+
+  protected async doUpdate(updates: Array<{ key: StorageKeyType; value: any }>): Promise<void> {
+    const storageData = localStorage.getItem(this.name)
+    const state = storageData ? JSON.parse(storageData) : {}
+
+    for (const { key, value } of updates) {
+      if (key instanceof StorageKey && key.isUnparseable()) {
+        state[key.valueOf()] = value
+      } else {
+        setValueByPath(state, key, value)
+      }
+    }
+
+    localStorage.setItem(this.name, JSON.stringify(state))
   }
 
   protected async doClear(): Promise<void> {
@@ -80,26 +108,13 @@ export class LocalStorage<T extends Record<string, any>> extends BaseStorage<T> 
     return this.getAllKeys(state)
   }
 
-  protected async doHas(key: string): Promise<boolean> {
+  protected async doHas(key: StorageKeyType): Promise<boolean> {
     const value = await this.doGet(key)
     return value !== undefined
   }
 
-  private getAllKeys(obj: any, prefix = ''): string[] {
-    let keys: string[] = []
-
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const fullKey = prefix ? `${prefix}.${key}` : key
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          keys = keys.concat(this.getAllKeys(obj[key], fullKey))
-        } else {
-          keys.push(fullKey)
-        }
-      }
-    }
-
-    return keys
+  private getAllKeys(obj: any): string[] {
+    return Object.keys(obj)
   }
 
   protected async doDestroy(): Promise<void> {

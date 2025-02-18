@@ -1,33 +1,8 @@
 // segment.interface.ts
-import { IndexedDBConfig } from '../../adapters/indexed-DB.service'
-import { StorageConfig, StorageType } from '../../storage.interface'
-import { IPluginExecutor, IStoragePlugin } from '../plugin-manager/plugin-managers.interface'
-
-export interface Selector<T, R> {
-  (state: T): R;
-}
-
-export interface ResultFunction<Deps extends any[], R> {
-  (...args: Deps): R;
-}
-
-export interface SelectorOptions<T> {
-  equals?: (a: T, b: T) => boolean;
-  name?: string;
-}
-
-export interface Subscriber<T> {
-  notify: (value: T) => void | Promise<void>;
-}
-
-export interface Subscribable<T> {
-  subscribe: (subscriber: Subscriber<T>) => () => void;
-}
-
-export interface SelectorAPI<T> {
-  select: () => Promise<T>;
-  subscribe: (subscriber: Subscriber<T>) => () => void;
-}
+import { IndexedDBConfig } from '../../storage/adapters/indexed-DB.service'
+import { IPluginExecutor, IStoragePlugin } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
+import { ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscribable } from '@ui/modules/synapse/services/storage/modules/selector/selector.interface'
+import { StorageConfig, StorageType } from '../../storage/storage.interface'
 
 export interface IStorageSegment<T extends Record<string, any>> extends Subscribable<T> {
   select: <R>(selector: Selector<T, R>) => Promise<R>;

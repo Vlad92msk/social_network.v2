@@ -1,7 +1,8 @@
-import { IStorageSegment, ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscriber } from './segment.interface'
-import { ILogger, IStorage } from '../../storage.interface'
-import { IPluginExecutor } from '../plugin-manager/plugin-managers.interface'
-import { SelectorModule } from '../selector-module/selector.module'
+import { IStorageSegment } from './segment.interface'
+import { IPluginExecutor } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
+import { ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscriber } from '@ui/modules/synapse/services/storage/modules/selector/selector.interface'
+import { SelectorModule } from '@ui/modules/synapse/services/storage/modules/selector/selector.module'
+import { ILogger, IStorage } from '../../storage/storage.interface'
 
 export class StorageSegment<T extends Record<string, any>> implements IStorageSegment<T> {
   private subscriptions = new Set<Subscriber<T>>()
@@ -23,6 +24,7 @@ export class StorageSegment<T extends Record<string, any>> implements IStorageSe
     const state = await this.storage.get<T>(this.name)
     const processedKey = this.pluginExecutor?.executeBeforeGet(this.name) ?? this.name
     const value = state as T
+    //@ts-ignore
     const processedValue = this.pluginExecutor?.executeAfterGet(processedKey, value) ?? value
     return selector(processedValue as T)
   }

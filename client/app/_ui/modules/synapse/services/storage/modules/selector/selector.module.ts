@@ -1,11 +1,13 @@
 // selector.module.ts
 
+import { ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscriber } from './selector.interface'
 import { ILogger, IStorage } from '../../storage.interface'
-import { ResultFunction, Selector, SelectorAPI, SelectorOptions, Subscriber } from '../segment-manager/segment.interface'
 
 class SelectorSubscription<T> {
   private readonly id: string
+
   readonly subscribers = new Set<Subscriber<T>>()
+
   private lastValue?: T
 
   constructor(
@@ -53,7 +55,7 @@ class SelectorSubscription<T> {
     this.subscribers.add(subscriber)
 
     // Сразу уведомляем о текущем значении
-    this.notify().catch(error => {
+    this.notify().catch((error) => {
       console.error('DEBUG: Error in initial notification:', error)
     })
 
@@ -152,7 +154,7 @@ export class SelectorModule {
         // Сразу запускаем обновление без дополнительных проверок
         subscription.notify().then(() => {
           console.log('DEBUG: Notification completed')
-        }).catch(error => {
+        }).catch((error) => {
           console.error('DEBUG: Notification error:', error)
         })
       } else {
@@ -179,7 +181,7 @@ export class SelectorModule {
             unsubscribe()
           }
         }
-      }
+      },
     }
 
     return api
@@ -221,7 +223,7 @@ export class SelectorModule {
         pendingUpdate = true
         Promise.resolve().then(() => {
           pendingUpdate = false
-          subscription.notify().catch(error => {
+          subscription.notify().catch((error) => {
             console.error('DEBUG: Error in combined notification:', error)
           })
         })
@@ -229,14 +231,12 @@ export class SelectorModule {
     }
 
     // Подписываемся на все зависимости
-    const unsubscribers = selectors.map((selector, index) =>
-      selector.subscribe({
-        notify: async (value) => {
-          console.log(`DEBUG: Dependency ${index} updated:`, value)
-          debouncedNotify()
-        },
-      })
-    )
+    const unsubscribers = selectors.map((selector, index) => selector.subscribe({
+      notify: async (value) => {
+        console.log(`DEBUG: Dependency ${index} updated:`, value)
+        debouncedNotify()
+      },
+    }))
 
     return {
       select: () => getState(),
@@ -250,7 +250,7 @@ export class SelectorModule {
           if (this.subscriptions.get(id)?.subscribers.size === 0) {
             console.log('DEBUG: No more subscribers, cleaning up combined selector')
             this.subscriptions.delete(id)
-            unsubscribers.forEach(unsubscribe => unsubscribe())
+            unsubscribers.forEach((unsubscribe) => unsubscribe())
           }
         }
       },

@@ -1,5 +1,5 @@
-import { createBatchingMiddleware, createShallowCompareMiddleware } from '../middlewares'
-import { IPluginExecutor } from '../modules/plugin-manager/plugin-managers.interface'
+import { batchingMiddleware, shallowCompareMiddleware } from '../middlewares'
+import { IPluginExecutor } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
 import {
   DefaultMiddlewares,
   IEventEmitter,
@@ -10,10 +10,11 @@ import {
   StorageEvents,
 } from '../storage.interface'
 import { Middleware, MiddlewareModule } from '../utils/middleware-module'
+import { StorageKeyType } from '../utils/storage-key'
 
-type PathSelector<T, R> = (state: T) => R
+type PathSelector<T, R> = (state: T) => R;
 
-export abstract class BaseStorage <T extends Record<string, any>> implements IStorage<T> {
+export abstract class BaseStorage<T extends Record<string, any>> implements IStorage<T> {
   // Константа для глобальной подписки
   protected static readonly GLOBAL_SUBSCRIPTION_KEY = '*'
 
@@ -23,7 +24,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
 
   private initializedMiddlewares: Middleware[] | null = null // Сохраняем созданные middleware
 
-  protected subscribers = new Map<string, Set<(value: any) => void>>()
+  protected subscribers = new Map<StorageKeyType, Set<(value: any) => void>>()
 
   constructor(
     protected readonly config: StorageConfig,
@@ -55,9 +56,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   protected initializeMiddlewares(): void {
     if (this.config.middlewares && !this.initializedMiddlewares) {
       // Создаем middleware только один раз
-      this.initializedMiddlewares = this.config.middlewares(
-        () => this.getDefaultMiddleware(),
-      )
+      this.initializedMiddlewares = this.config.middlewares(() => this.getDefaultMiddleware())
 
       // Применяем их
       this.initializedMiddlewares.forEach((middleware) => this.middlewareModule.use(middleware))
@@ -66,8 +65,8 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
 
   protected getDefaultMiddleware(): DefaultMiddlewares {
     return {
-      batching: (options = {}) => createBatchingMiddleware(options),
-      shallowCompare: (options = {}) => createShallowCompareMiddleware(options),
+      batching: (options = {}) => batchingMiddleware(options),
+      shallowCompare: (options = {}) => shallowCompareMiddleware(options),
     }
   }
 
@@ -92,36 +91,42 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
 
   public abstract initialize(): Promise<this>;
 
-  protected abstract doGet(key: string): Promise<any>;
+  protected abstract doGet(key: StorageKeyType): Promise<any>;
 
-  protected abstract doSet(key: string, value: any): Promise<void>;
+  protected abstract doSet(key: StorageKeyType, value: any): Promise<void>;
 
-  protected abstract doUpdate(updates: Array<{ key: string; value: any }>): Promise<void>;
+  protected abstract doUpdate(updates: Array<{ key: StorageKeyType; value: any }>): Promise<void>;
 
-  protected abstract doDelete(key: string): Promise<boolean>;
+  protected abstract doDelete(key: StorageKeyType): Promise<boolean>;
 
   protected abstract doClear(): Promise<void>;
 
   protected abstract doKeys(): Promise<string[]>;
 
-  protected abstract doHas(key: string): Promise<boolean>;
+  protected abstract doHas(key: StorageKeyType): Promise<boolean>;
 
   protected abstract doDestroy(): Promise<void>;
 
-  public async get<R>(key: string): Promise<R | undefined> {
+  public async get<R>(key: StorageKeyType): Promise<R | undefined> {
     try {
-      const processedKey = this.pluginExecutor?.executeBeforeGet(key) ?? key
+      const metadata = { operation: 'get', timestamp: Date.now() }
 
+      // Декодируем ключ для хранилища
+      const decodedKey = await this.pluginExecutor?.executeKeyDecode(key) ?? key
+
+      // Передаем в middleware chain
       const middlewareResult = await this.middlewareModule.dispatch({
         type: 'get',
-        key: processedKey,
+        key: decodedKey,
+        metadata,
       })
 
-      const finalResult = this.pluginExecutor?.executeAfterGet(processedKey, middlewareResult) ?? middlewareResult
+      // Обрабатываем значение через плагины, передавая оригинальный ключ
+      const finalResult = await this.pluginExecutor?.executeAfterGet(key, middlewareResult, metadata) ?? middlewareResult
 
       await this.emitEvent({
         type: StorageEvents.STORAGE_SELECT,
-        payload: { key: processedKey, value: finalResult },
+        payload: { key, value: finalResult },
       })
 
       return finalResult
@@ -131,32 +136,35 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     }
   }
 
-  public async set<R>(key: string, value: R): Promise<void> {
+  public async set<R>(key: StorageKeyType, value: R): Promise<void> {
     try {
-      // 1. Пре-обработка через плагин
-      const processedValue = this.pluginExecutor?.executeBeforeSet(key, value) ?? value
+      const metadata = { operation: 'set', timestamp: Date.now() }
 
-      // 2. Обработка через middleware chain
+      // Обрабатываем значение через плагины
+      const processedValue = await this.pluginExecutor?.executeBeforeSet(value, metadata) ?? value
+
+      // Кодируем ключ для хранилища
+      const encodedKey = await this.pluginExecutor?.executeKeyEncode(key) ?? key
+
+      // Передаем в middleware chain
       const middlewareResult = await this.middlewareModule.dispatch({
         type: 'set',
-        key,
+        key: encodedKey,
         value: processedValue,
+        metadata,
       })
 
-      // 3. Пост-обработка через плагин
-      const finalResult = this.pluginExecutor?.executeAfterSet(key, middlewareResult) ?? middlewareResult
+      // Финальная обработка значения, передаем оригинальный ключ
+      const finalResult = await this.pluginExecutor?.executeAfterSet(key, middlewareResult, metadata) ?? middlewareResult
 
-      // 4. Уведомление подписчиков с финальным результатом
+      // Уведомляем подписчиков используя оригинальный ключ
       this.notifySubscribers(key, finalResult)
-
-      // 5. Уведомление глобальных подписчиков
       this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
         type: StorageEvents.STORAGE_UPDATE,
         key,
         value: finalResult,
       })
 
-      // 6. Отправка события
       await this.emitEvent({
         type: StorageEvents.STORAGE_UPDATE,
         payload: { key, value: finalResult },
@@ -168,43 +176,44 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   }
 
   public async update(updater: (state: T) => void): Promise<void> {
-    console.log('update update')
     try {
-      // 1. Получаем текущее состояние
-      const currentState = await this.getState() as T
+      const metadata = { operation: 'update', timestamp: Date.now() }
+
+      // Получаем текущее состояние
+      const currentState = (await this.getState()) as T
       const newState = { ...currentState } as T
 
-      // 2. Применяем обновление
+      // Применяем обновление
       updater(newState)
 
-      const changedKeys = Object.keys(newState).filter(
-        (key) => !this.isEqual(currentState[key], newState[key]),
-      )
-
+      const changedKeys = Object.keys(newState).filter((key) => !this.isEqual(currentState[key], newState[key]))
       if (changedKeys.length === 0) return
 
-      const updates = changedKeys.map((key) => ({
-        key,
-        value: this.pluginExecutor?.executeBeforeSet(key, newState[key]) ?? newState[key],
+      // Обрабатываем каждый измененный ключ
+      const updates = await Promise.all(changedKeys.map(async (key: string) => {
+        // Кодируем ключ для хранилища
+        const encodedKey = await this.pluginExecutor?.executeKeyEncode(key) ?? key
+        // Обрабатываем значение через плагины
+        const processedValue = await this.pluginExecutor?.executeBeforeSet(newState[key], metadata) ?? newState[key]
+        return { key: encodedKey, value: processedValue }
       }))
 
-      // 3. Делаем только один dispatch, который сам выполнит doUpdate
+      // Делаем dispatch для batch-обновления
       const result = await this.middlewareModule.dispatch({
         type: 'update',
         value: updates,
         metadata: {
+          ...metadata,
           batchUpdate: true,
-          timestamp: Date.now(),
         },
       })
 
-      // 4. После получения результата, уведомляем подписчиков
+      // Уведомляем подписчиков
       this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
         type: StorageEvents.STORAGE_UPDATE,
         value: result,
       })
 
-      // 5. Отправляем событие
       await this.emitEvent({
         type: StorageEvents.STORAGE_UPDATE,
         payload: { state: result },
@@ -215,31 +224,36 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     }
   }
 
-  public async delete(key: string): Promise<void> {
+  public async delete(key: StorageKeyType): Promise<void> {
     try {
-      if (this.pluginExecutor?.executeBeforeDelete(key)) {
+      const metadata = { operation: 'delete', timestamp: Date.now() }
+
+      // Кодируем ключ для хранилища
+      const encodedKey = await this.pluginExecutor?.executeKeyEncode(key) ?? key
+
+      // Проверяем возможность удаления
+      if (await this.pluginExecutor?.executeBeforeDelete(encodedKey, metadata)) {
         const middlewareResult = await this.middlewareModule.dispatch({
           type: 'delete',
-          key,
+          key: encodedKey,
+          metadata,
         })
 
-        // @ts-ignore
-        const finalResult = this.pluginExecutor?.executeAfterDelete(key) ?? middlewareResult
+        // Выполняем afterDelete с оригинальным ключом
+        await this.pluginExecutor?.executeAfterDelete(key, metadata)
 
-        // Уведомляем подписчиков конкретного ключа
+        // Уведомляем подписчиков используя оригинальный ключ
         this.notifySubscribers(key, undefined)
-
-        // Уведомляем глобальных подписчиков
         this.notifySubscribers(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, {
           type: StorageEvents.STORAGE_UPDATE,
           key,
           value: undefined,
-          result: finalResult, // добавляем результат операции
+          result: middlewareResult,
         })
 
         await this.emitEvent({
           type: StorageEvents.STORAGE_UPDATE,
-          payload: { key, value: undefined, result: finalResult },
+          payload: { key, value: undefined, result: middlewareResult },
         })
       }
     } catch (error) {
@@ -263,7 +277,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
 
   public async keys(): Promise<string[]> {
     try {
-      return this.middlewareModule.dispatch({
+      return await this.middlewareModule.dispatch({
         type: 'keys',
       })
     } catch (error) {
@@ -272,9 +286,11 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     }
   }
 
-  public async has(key: string): Promise<boolean> {
+  public async has(key: StorageKeyType): Promise<boolean> {
     try {
-      return await this.doHas(key)
+      // Кодируем ключ для хранилища
+      const encodedKey = await this.pluginExecutor?.executeKeyEncode(key) ?? key
+      return await this.doHas(encodedKey)
     } catch (error) {
       this.logger?.error('Error checking value existence', { key, error })
       throw error
@@ -282,29 +298,30 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
   }
 
   public async getState(): Promise<Record<string, any>> {
-    console.log('вызван getState')
-    const value = await this.doGet('') // Используем пустой путь для получения корневого состояния
-    console.log('getState', value)
-    return value || {}
+    try {
+      // Кодируем пустой ключ для получения корневого состояния
+      const encodedKey = await this.pluginExecutor?.executeKeyEncode('') ?? ''
+      const value = await this.doGet(encodedKey)
+      return value || {}
+    } catch (error) {
+      this.logger?.error('Error getting state', { error })
+      throw error
+    }
   }
 
   // Вспомогательный метод для подписки на все изменения
   public subscribeToAll(
     callback: (event: { type: 'set' | 'delete' | 'clear'; key?: string; value?: any }) => void,
   ): VoidFunction {
-    console.log('dewdwedwedwed______', callback)
     return this.subscribe(BaseStorage.GLOBAL_SUBSCRIPTION_KEY, callback)
   }
 
   // Перегрузки метода subscribe
-  public subscribe(key: string, callback: (value: any) => void): () => void;
+  public subscribe(key: string, callback: (value: any) => void): VoidFunction;
 
-  public subscribe<R>(pathSelector: PathSelector<T, R>, callback: (value: R) => void): () => void;
+  public subscribe<R>(pathSelector: PathSelector<T, R>, callback: (value: R) => void): VoidFunction;
 
-  public subscribe<R>(
-    keyOrSelector: string | PathSelector<T, R>,
-    callback: (value: any) => void,
-  ): () => void {
+  public subscribe<R>(keyOrSelector: string | PathSelector<T, R>, callback: (value: any) => void): VoidFunction {
     console.log('DEBUG: BaseStorage.subscribe')
 
     if (typeof keyOrSelector === 'string') {
@@ -335,10 +352,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     }
   }
 
-  private subscribeBySelector<R>(
-    pathSelector: PathSelector<T, R>,
-    callback: (value: R) => void,
-  ): () => void {
+  private subscribeBySelector<R>(pathSelector: PathSelector<T, R>, callback: (value: R) => void): () => void {
     console.log('DEBUG: subscribeBySelector')
 
     // Получаем путь из селектора
@@ -376,7 +390,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
     return paths.join('.')
   }
 
-  protected notifySubscribers(key: string, value: any): void {
+  protected notifySubscribers(key: StorageKeyType, value: any): void {
     console.log('DEBUG: BaseStorage.notifySubscribers:', { key, value })
 
     const subscribers = this.subscribers.get(key)
@@ -411,7 +425,7 @@ export abstract class BaseStorage <T extends Record<string, any>> implements ISt
             if ('cleanup' in middleware) {
               await middleware.cleanup?.()
             }
-          })
+          }),
         )
         this.initializedMiddlewares = null
       }

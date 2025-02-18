@@ -1,28 +1,17 @@
-import { IndexedDBStorage } from '@ui/modules/synapse/services/storage/adapters/indexed-DB.service'
-import { LocalStorage } from '@ui/modules/synapse/services/storage/adapters/local-storage.service'
-import { MemoryStorage } from '@ui/modules/synapse/services/storage/adapters/memory-storage.service'
-import {
-  CreateSegmentConfig,
-  ISegmentManager,
-  IStorageSegment,
-} from './segment.interface'
+import { StoragePluginModule } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.service'
+import { IPluginExecutor } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
+import { SelectorModule } from '@ui/modules/synapse/services/storage/modules/selector/selector.module'
+import { ILogger, IStorage, StorageConfig, } from '../../storage/storage.interface'
+import { SegmentPluginManager } from '../segment-plugin-manager.service'
+import { CreateSegmentConfig, ISegmentManager, IStorageSegment, } from './segment.interface'
 import { StorageSegment } from './segment.service'
-import {
-  ILogger,
-  IStorage,
-  StorageConfig,
-} from '../../storage.interface'
-import { StoragePluginManager } from '../plugin-manager/plugin-manager.service'
-import { IPluginExecutor } from '../plugin-manager/plugin-managers.interface'
-import { SegmentPluginManager } from '../plugin-manager/segment-plugin-manager.service'
-import { SelectorModule } from '../selector-module/selector.module'
 
 export type StorageFactory = (config: StorageConfig) => IStorage;
 
 export class SegmentManager implements ISegmentManager {
   private segments = new Map<string, StorageSegment<any>>()
 
-  private pluginManagers = new Map<string, StoragePluginManager>()
+  private pluginManagers = new Map<string, StoragePluginModule>()
 
   constructor(
     private readonly storageFactory: StorageFactory,

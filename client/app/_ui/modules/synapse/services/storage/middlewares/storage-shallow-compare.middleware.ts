@@ -1,11 +1,12 @@
 import { Middleware, MiddlewareAPI, NextFunction, StorageAction } from '../utils/middleware-module'
+import { StorageKey } from '../utils/storage-key'
 
 export interface ShallowCompareMiddlewareOptions {
   segments?: string[]
   comparator?: <T>(prev: T, next: T) => boolean
 }
 
-export const createShallowCompareMiddleware = (
+export const shallowCompareMiddleware = (
   options: ShallowCompareMiddlewareOptions = {},
 ): Middleware => {
   const {
@@ -34,9 +35,10 @@ export const createShallowCompareMiddleware = (
   } = options
 
   // Кэш последних значений
-  const valueCache = new Map<string, any>()
+  const valueCache = new Map<string | StorageKey, any>()
 
   return {
+    name: 'shallow-compare',
     setup: (api: MiddlewareAPI) => {
       // console.log('Shallow compare middleware initialized')
     },

@@ -1,18 +1,18 @@
 export interface StorageUtils {
   // Утилиты для работы с путями
   pathUtils: {
-    join(...parts: string[]): string;
-    getParent(path: string): string;
-    isSubPath(parent: string, child: string): boolean;
-    getSegments(path: string): string[];
+    join(...parts: string[]): string
+    getParent(path: string): string
+    isSubPath(parent: string, child: string): boolean
+    getSegments(path: string): string[]
   };
 
   // Утилиты для работы с данными
   dataUtils: {
-    flatten(obj: any, prefix?: string): Record<string, any>;
-    unflatten(flat: Record<string, any>): any;
-    clone<T>(data: T): T;
-    merge(target: any, source: any): any;
+    flatten(obj: any, prefix?: string): Record<string, any>
+    unflatten(flat: Record<string, any>): any
+    clone<T>(data: T): T
+    merge(target: any, source: any): any
   };
 }
 

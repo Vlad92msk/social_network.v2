@@ -2,21 +2,22 @@
 import { IndexedDBConfig } from './adapters/indexed-DB.service'
 import { BatchingMiddlewareOptions, ShallowCompareMiddlewareOptions } from './middlewares'
 import { Middleware } from './utils/middleware-module'
+import { StorageKeyType } from './utils/storage-key'
 
 export interface IStorage<T extends Record<string, any> = any> {
   name: string
-  get<T>(key: string): Promise<T | undefined>
+  get<T>(key: StorageKeyType): Promise<T | undefined>
   getState<T>(): Promise<Record<string, any>>
-  set<T>(key: string, value: T): Promise<void>
+  set<T>(key: StorageKeyType, value: T): Promise<void>
   update(updater: (state: any) => void): Promise<void>
-  has(key: string): Promise<boolean>
-  delete(key: string): Promise<void>
+  has(key: StorageKeyType): Promise<boolean>
+  delete(key: StorageKeyType): Promise<void>
   clear(): Promise<void>
   keys(): Promise<string[]>
   destroy(): Promise<void>
-  subscribeToAll(callback: (event: { type: string; key?: string; value?: any }) => void): VoidFunction
+  subscribeToAll(callback: (event: { type: string; key?: StorageKeyType; value?: any }) => void): VoidFunction
   initialize(): Promise<this>
-  subscribe(key: string, callback: (value: any) => void): VoidFunction
+  subscribe(key: StorageKeyType, callback: (value: any) => void): VoidFunction
   subscribe<R>(pathSelector: (state: T) => R, callback: (value: R) => void): VoidFunction
 }
 

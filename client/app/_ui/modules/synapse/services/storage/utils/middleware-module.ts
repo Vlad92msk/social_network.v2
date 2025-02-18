@@ -1,4 +1,4 @@
-import { BaseStorage } from '@ui/modules/synapse/services/storage/adapters/base-storage.service'
+import { StorageKeyType } from './storage-key'
 
 export type StorageActionType =
   | 'get'
@@ -11,7 +11,7 @@ export type StorageActionType =
 
 export type StorageAction = {
   type: StorageActionType
-  key?: string
+  key: StorageKeyType
   value?: any
   metadata?: Record<string, any>
   source?: string
@@ -22,13 +22,13 @@ export type MiddlewareAPI = {
   dispatch: (action: StorageAction) => Promise<any>
   getState: () => Promise<Record<string, any>>
   storage: {
-    doGet: (key: string) => Promise<any>
-    doSet: (key: string, value: any) => Promise<void>
-    doUpdate: (updates: Array<{ key: string; value: any }>) => Promise<void>
-    doDelete: (key: string) => Promise<boolean>
+    doGet: (key: StorageKeyType) => Promise<any>
+    doSet: (key: StorageKeyType, value: any) => Promise<void>
+    doUpdate: (updates: Array<{ key: StorageKeyType; value: any }>) => Promise<void>
+    doDelete: (key: StorageKeyType) => Promise<boolean>
     doClear: () => Promise<void>
     doKeys: () => Promise<string[]>
-    notifySubscribers: (key: string, value: any) => void
+    notifySubscribers: (key: StorageKeyType, value: any) => void
   }
 }
 
@@ -37,6 +37,7 @@ export type NextFunction = (action: StorageAction) => Promise<any>;
 export type SetupEventsFunction = (api: MiddlewareAPI) => void;
 
 export type Middleware = {
+  name: string
   setup?: SetupEventsFunction
   cleanup?: () => Promise<void> | void
   reducer: (api: MiddlewareAPI) => (next: NextFunction) => (action: StorageAction) => Promise<any>

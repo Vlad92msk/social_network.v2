@@ -1,16 +1,17 @@
 import { Injectable } from '@ui/modules/synapse/decorators'
+import { SegmentManager } from '@ui/modules/synapse/services/synapse/segment-manager/segment-manager.service'
+import { CreateSegmentConfig, IStorageSegment } from '@ui/modules/synapse/services/synapse/segment-manager/segment.interface'
+import { GlobalPluginManager } from './global-plugin-manager.service'
 import { BaseModule } from '../core/base.service'
 import { IDIContainer } from '../di-container/di-container.interface'
-import { IndexedDBStorage } from './adapters/indexed-DB.service'
-import { LocalStorage } from './adapters/local-storage.service'
-import { MemoryStorage } from './adapters/memory-storage.service'
-import { CacheOptions } from './modules/cache/cache-module.service'
-import { GlobalPluginManager } from './modules/plugin-manager/global-plugin-manager.service'
-import { StoragePluginManager } from './modules/plugin-manager/plugin-manager.service'
-import { IStoragePlugin } from './modules/plugin-manager/plugin-managers.interface'
-import { SegmentManager } from './modules/segment-manager/segment-manager.service'
-import { CreateSegmentConfig, IStorageSegment, ResultFunction, Selector, SelectorAPI, SelectorOptions } from './modules/segment-manager/segment.interface'
-import { IndexedDBStorageConfig, IStorage, LocalStorageConfig, MemoryStorageConfig, StorageEvents, StorageType } from './storage.interface'
+import { IndexedDBStorage } from '../storage/adapters/indexed-DB.service'
+import { LocalStorage } from '../storage/adapters/local-storage.service'
+import { MemoryStorage } from '../storage/adapters/memory-storage.service'
+import { CacheOptions } from '../storage/modules/cache/cache-module.service'
+import { StoragePluginModule } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.service'
+import { IStoragePlugin } from '@ui/modules/synapse/services/storage/modules/plugin/plugin.interface'
+import { ResultFunction, Selector, SelectorAPI, SelectorOptions } from '@ui/modules/synapse/services/storage/modules/selector/selector.interface'
+import { IndexedDBStorageConfig, IStorage, LocalStorageConfig, MemoryStorageConfig, StorageEvents, StorageType } from '../storage/storage.interface'
 
 export type StorageModuleConfig = {
   plugins?: IStoragePlugin[]
@@ -174,7 +175,7 @@ export class StorageModule extends BaseModule {
     return this.container.get('STORAGE_CONFIG')
   }
 
-  protected get pluginManager(): StoragePluginManager {
+  protected get pluginManager(): StoragePluginModule {
     return this.container.get('pluginManager')
   }
 
