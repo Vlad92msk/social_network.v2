@@ -1,19 +1,83 @@
-import { CacheConfig, CacheMetadata, QueryResult, RequestDefinition } from '../types/api.interface'
 import { IStorage } from '../../../storage.interface'
 import { StorageKeyType } from '../../../utils/storage-key'
 import { CacheUtils } from '../../cache/cache-module.service'
+import { CacheConfig, CacheMetadata, QueryResult, RequestDefinition } from '../types/api.interface'
 
 /**
  * Управляет кэшированием запросов
  */
 export class ApiCache {
+  private cleanupInterval: number | undefined
+
   constructor(
     protected storage: IStorage,
     public cacheOptions: CacheConfig & {
       cacheableHeaderKeys?: string[],
-      tags?: Record<string, string[]>
+      tags?: Record<string, string[]>,
+      cleanup?: {
+        enabled: boolean,
+        interval?: number
+      }
     } = {},
-  ) {}
+  ) {
+    // Инициализируем периодическую очистку кэша если нужно
+    if (cacheOptions.cleanup?.enabled && cacheOptions.cleanup.interval) {
+      this.setupCleanupInterval()
+    }
+  }
+
+  /**
+   * Настраивает периодическую очистку кэша
+   */
+  private setupCleanupInterval(): void {
+    if (this.cleanupInterval) {
+      window.clearInterval(this.cleanupInterval)
+    }
+
+    if (this.cacheOptions.cleanup?.enabled && this.cacheOptions.cleanup.interval) {
+      this.cleanupInterval = window.setInterval(
+        () => this.clearExpired(),
+        this.cacheOptions.cleanup.interval,
+      )
+    }
+  }
+
+  /**
+   * Очищает просроченные записи в кэше
+   */
+  public async clearExpired(): Promise<void> {
+    try {
+      const keys = await this.storage.keys()
+
+      for (const key of keys) {
+        const value = await this.storage.get(key)
+
+        // Проверяем наличие метаданных с временем истечения
+        // @ts-ignore
+        const metadata: CacheMetadata = value && typeof value === 'object' && 'metadata' in value
+          ? value.metadata
+          : (value && typeof value === 'object' && 'data' in value
+              && typeof value.data === 'object' && value.data && 'metadata' in value.data
+            ? value.data.metadata : null)
+
+        if (metadata && CacheUtils.isExpired(metadata)) {
+          await this.storage.delete(key)
+        }
+      }
+    } catch (error) {
+      console.error('Cache cleanup error:', error)
+    }
+  }
+
+  /**
+   * Останавливает периодическую очистку и освобождает ресурсы
+   */
+  public dispose(): void {
+    if (this.cleanupInterval) {
+      window.clearInterval(this.cleanupInterval)
+      this.cleanupInterval = undefined
+    }
+  }
 
   /**
    * Проверяет, должен ли запрос быть кэширован
@@ -82,7 +146,7 @@ export class ApiCache {
       if (!cached) return null
 
       // Проверяем, не истек ли срок действия кэша
-      const metadata = 'data' in cached ? cached.metadata : cached.metadata
+      const metadata = cached && typeof cached === 'object' ? cached.metadata : null
       if (metadata) {
         const isExpired = CacheUtils.isExpired(metadata as any)
         if (isExpired) {
@@ -209,10 +273,10 @@ export class ApiCache {
             ? value.data.metadata : null)
 
         // Проверяем наличие пересечения тегов
-        // @ts-ignore
+        //@ts-ignore
         if (metadata && metadata.tags && Array.isArray(metadata.tags)) {
-          // @ts-ignore
-          const hasMatchingTag = metadata.tags.some((tag) => tags.includes(tag))
+          //@ts-ignore
+          const hasMatchingTag = metadata.tags.some((tag: string) => tags.includes(tag))
           if (hasMatchingTag) {
             await this.storage.delete(key)
           }

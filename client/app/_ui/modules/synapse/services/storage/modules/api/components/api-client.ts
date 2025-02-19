@@ -35,13 +35,13 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
         const builder: EndpointBuilder = {
           create: <TParams, TResult>(
             config: Omit<EndpointConfig<TParams, TResult>, 'response'>,
-          ): TypedEndpointConfig<TParams, TResult> => {
+          ): TypedEndpointConfig<TParams, TResult> =>
             // Создаем новый объект с полем response для правильного вывода типов
-            return {
+            ({
               ...config,
               response: null as unknown as TResult, // Используется только для типизации
-            } as TypedEndpointConfig<TParams, TResult>;
-          },
+            } as TypedEndpointConfig<TParams, TResult>)
+          ,
         }
 
         // Вызываем оригинальную функцию endpoints с builder
@@ -90,19 +90,30 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     const endpointCacheableHeaderKeys = endpointConfig.cacheableHeaderKeys
 
     // Переопределяем fetch для поддержки контекста
+    const originalFetchBound = originalFetch.bind(endpoint)
     endpoint.fetch = async (params: TParams, requestOptions: RequestOptions = {}): Promise<TResult> => {
       // Создаём контекст
       const context: ApiContext = {
         requestParams: params,
         getFromStorage: (key: string) => {
-          const item = localStorage.getItem(key)
-          return item ? JSON.parse(item) : undefined
+          try {
+            const item = localStorage.getItem(key)
+            return item ? JSON.parse(item) : undefined
+          } catch (error) {
+            console.warn(`Error reading from storage: ${error}`)
+            return undefined
+          }
         },
         getCookie: (name: string) => {
-          const matches = document.cookie.match(
-            new RegExp(`(?:^|; )${name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`),
-          )
-          return matches ? decodeURIComponent(matches[1]) : undefined
+          try {
+            const matches = document.cookie.match(
+              new RegExp(`(?:^|; )${name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`),
+            )
+            return matches ? decodeURIComponent(matches[1]) : undefined
+          } catch (error) {
+            console.warn(`Error reading cookie: ${error}`)
+            return undefined
+          }
         },
       }
 
@@ -126,7 +137,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
         }
 
         // Явно приводим результат к типу TResult
-        return originalFetch(params, enhancedOptions) as Promise<TResult>
+        return originalFetchBound(params, enhancedOptions) as Promise<TResult>
       }
       // Создаем новый объект опций с контекстом
       const enhancedOptions: RequestOptions = {
@@ -136,7 +147,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
       }
 
       // Явно приводим результат к типу TResult
-      return originalFetch(params, enhancedOptions) as Promise<TResult>
+      return originalFetchBound(params, enhancedOptions) as Promise<TResult>
     }
 
     return endpoint

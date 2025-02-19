@@ -1,4 +1,4 @@
-import { ApiClient, ApiContext } from './index'
+import { ApiClient } from './index'
 
 /**
  * Пример использования ApiClient с билдером эндпоинтов
@@ -71,7 +71,6 @@ async function example() {
     },
     // Типизированные endpoints с использованием builder
     endpoints: (builder) => ({
-      // 👇 Полная типизация благодаря builder.create
       getUsers: builder.create<GetUsersParams, UsersResponse>({
         request: (params = {}) => ({
           path: '/mes-api/users',

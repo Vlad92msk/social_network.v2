@@ -3,8 +3,6 @@ import { IndexedDBStorage } from '../../../adapters/indexed-DB.service'
 import { LocalStorage } from '../../../adapters/local-storage.service'
 import { MemoryStorage } from '../../../adapters/memory-storage.service'
 import { IStorage } from '../../../storage.interface'
-import { Middleware } from '../../../utils/middleware-module'
-import { createCacheMiddleware } from '../../cache/create-cache.middleware'
 import {
   BaseQueryFn,
   Endpoint,
@@ -63,7 +61,9 @@ export class BaseApiClient {
       invalidateOnError: this.options.cache?.invalidateOnError,
       tags: {},
       cacheableHeaderKeys: this.options.cacheableHeaderKeys,
-    } as any)
+      rules: this.options.cache?.rules,
+      cleanup: this.options.cache?.cleanup,
+    })
 
     // Инициализируем эндпоинты если указаны
     if (this.options.endpoints) {
@@ -75,28 +75,12 @@ export class BaseApiClient {
    * Создает хранилище в зависимости от типа
    */
   private initializeStorage(): Promise<IStorage> {
-    const { storageType, options, cache } = this.options
+    const { storageType, options } = this.options
 
     // Создаем имя хранилища
     const name = options?.name || 'api-module'
 
-    // Настройки middleware - только кэширование без batching и shallowCompare
-    const middlewares = () => {
-      const middleware: Middleware[] = []
-
-      if (cache) {
-        middleware.push(createCacheMiddleware({
-          ttl: cache.ttl,
-          cleanup: cache.cleanup,
-          invalidateOnError: cache.invalidateOnError,
-          rules: cache.rules,
-        }))
-      }
-
-      return middleware
-    }
-
-    // Выбираем тип хранилища
+    // Выбираем тип хранилища без middleware кэширования
     switch (storageType) {
       case 'indexedDB':
         return new IndexedDBStorage({
@@ -106,21 +90,14 @@ export class BaseApiClient {
             storeName: options?.storeName || 'requests',
             dbVersion: options?.dbVersion || 1,
           },
-          middlewares,
         }).initialize()
 
       case 'localStorage':
-        return new LocalStorage({
-          name,
-          middlewares,
-        }).initialize()
+        return new LocalStorage({ name }).initialize()
 
       case 'memory':
       default:
-        return new MemoryStorage({
-          name,
-          middlewares,
-        }).initialize()
+        return new MemoryStorage({ name }).initialize()
     }
   }
 
@@ -158,12 +135,20 @@ export class BaseApiClient {
 
     // Проверяем, принимает ли функция endpoints аргумент builder
     const endpointsFn = this.options.endpoints
-    const endpoints = endpointsFn && endpointsFn.length > 0
-      ? endpointsFn(builder)
-      //передал builder в endpointsFn
-      : (endpointsFn ? endpointsFn(builder) : {})
+    let endpoints = {}
+
+    if (endpointsFn) {
+      try {
+        // Проверяем количество параметров функции
+        endpoints = typeof endpointsFn === 'function' ? endpointsFn(builder) : endpointsFn
+      } catch (error) {
+        console.error('Error initializing endpoints:', error)
+        endpoints = {}
+      }
+    }
 
     for (const [name, config] of Object.entries(endpoints)) {
+      // @ts-ignore
       this.endpoints[name] = await this.createEndpoint(name, config)
     }
   }
@@ -184,7 +169,9 @@ export class BaseApiClient {
 
     // Нормализуем параметры
     const name = typeof nameOrConfig === 'string' ? nameOrConfig : ''
-    const endpointConfig = typeof nameOrConfig === 'string' ? config! : nameOrConfig
+    const endpointConfig = typeof nameOrConfig === 'string'
+      ? (config as EndpointConfig<TParams, TResult>)
+      : (nameOrConfig as EndpointConfig<TParams, TResult>)
     const endpointName = name || `endpoint_${Date.now()}_${Math.random().toString(36).slice(2)}`
 
     // Инициализируем начальное состояние
@@ -208,6 +195,9 @@ export class BaseApiClient {
     const endpoint: Endpoint<TParams, TResult> = {
       // Метод выполнения запроса
       fetch: async (params: TParams, options?: RequestOptions): Promise<TResult> => {
+        // Объявляем переменную в начале функции
+        let localAbortController: AbortController | undefined
+
         try {
           // Проверяем кэш, если кэширование не отключено
           if (!options?.disableCache && cacheManager.shouldCache(endpointName)) {
@@ -238,13 +228,12 @@ export class BaseApiClient {
           const requestDef = endpointConfig.request(params)
 
           // Создаем AbortController если не передан signal
-          let controller: AbortController | undefined
           let signal = options?.signal
 
           if (!signal) {
-            controller = new AbortController()
-            signal = controller.signal
-            this.abortControllers.set(endpointName, controller)
+            localAbortController = new AbortController()
+            signal = localAbortController.signal
+            this.abortControllers.set(endpointName, localAbortController)
           }
 
           // Выполняем запрос
@@ -254,7 +243,7 @@ export class BaseApiClient {
           })
 
           // Очищаем контроллер
-          if (controller) {
+          if (localAbortController) {
             this.abortControllers.delete(endpointName)
           }
 
@@ -287,6 +276,11 @@ export class BaseApiClient {
 
           return result.data as TResult
         } catch (error) {
+          // Очищаем контроллер в случае ошибки
+          if (localAbortController) {
+            this.abortControllers.delete(endpointName)
+          }
+
           // Обновляем состояние с ошибкой
           await this.updateEndpointState(endpointName, {
             status: 'error',
@@ -368,9 +362,22 @@ export class BaseApiClient {
 
     const current = await this.storage.get<EndpointState<T>>(`endpoint:${endpointName}`)
 
-    if (!current) return
+    if (!current) {
+      // Создаем начальное состояние если оно отсутствует
+      const initialState = {
+        status: 'idle',
+        meta: {
+          tags: [],
+          invalidatesTags: [],
+          cache: {},
+        },
+        ...update,
+      } as EndpointState<T>
+      return this.storage.set(`endpoint:${endpointName}`, initialState)
+    }
 
-    await this.storage.set(`endpoint:${endpointName}`, {
+    // Обновляем состояние
+    return this.storage.set(`endpoint:${endpointName}`, {
       ...current,
       ...update,
     })
@@ -389,5 +396,25 @@ export class BaseApiClient {
     }
 
     return this.endpoints as any
+  }
+
+  /**
+   * Очищает ресурсы при удалении клиента
+   */
+  public dispose(): void {
+    // Останавливаем очистку кэша
+    if (this.cacheManager) {
+      this.cacheManager.dispose()
+    }
+
+    // Отменяем все текущие запросы
+    this.abortControllers.forEach((controller) => {
+      try {
+        controller.abort()
+      } catch (error) {
+        console.error('Error aborting request:', error)
+      }
+    })
+    this.abortControllers.clear()
   }
 }

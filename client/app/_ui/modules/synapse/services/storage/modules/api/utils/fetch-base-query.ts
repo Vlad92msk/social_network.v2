@@ -147,10 +147,10 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     const cacheableHeaders = filterCacheableHeaders(headerObj, effectiveCacheableKeys)
 
     // Создаем таймаут если указан
-    let timeoutId: NodeJS.Timeout | undefined
+    let timeoutId: number | undefined
     const timeoutPromise = new Promise<never>((_, reject) => {
       if (requestTimeout) {
-        timeoutId = setTimeout(() => {
+        timeoutId = window.setTimeout(() => {
           reject(new Error(`Request timeout after ${requestTimeout}ms`))
         }, requestTimeout)
       }
@@ -196,7 +196,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
       }
     } finally {
       if (timeoutId) {
-        clearTimeout(timeoutId)
+        window.clearTimeout(timeoutId)
       }
     }
   }
