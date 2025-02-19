@@ -278,7 +278,7 @@ function generateInitMethod(operationId: string, paramsType: string, path: strin
   content += `    let path = \`${processedPath}\`;\n`
   content += `    const url = new URL(path, this.baseUrl);\n`
 
-  // Обработка query-параметров
+  // Обработка api-параметров
   const queryParams = [...new Set(parameters.filter(p => p.in === 'query').map(p => p.name))]; // Убираем дубликаты
   if (queryParams.length > 0) {
     content += `    const queryParams = ['${queryParams.join('\', \'')}'];\n`; // Добавляем объявление массива

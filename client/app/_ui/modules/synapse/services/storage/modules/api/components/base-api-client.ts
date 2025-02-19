@@ -1,9 +1,14 @@
-import { fetchBaseQuery } from './fetch-base-query'
-import { QueryCacheManager } from './query-cache.manager'
+import { ApiCache } from './api-cache'
+import { IndexedDBStorage } from '../../../adapters/indexed-DB.service'
+import { LocalStorage } from '../../../adapters/local-storage.service'
+import { MemoryStorage } from '../../../adapters/memory-storage.service'
+import { IStorage } from '../../../storage.interface'
+import { Middleware } from '../../../utils/middleware-module'
+import { createCacheMiddleware } from '../../cache/create-cache.middleware'
 import {
   BaseQueryFn,
-  CacheConfig,
   Endpoint,
+  EndpointBuilder,
   EndpointConfig,
   EndpointState,
   ExtractParamsType,
@@ -11,25 +16,22 @@ import {
   FetchBaseQueryArgs,
   QueryModuleOptions,
   RequestOptions,
+  TypedEndpointConfig,
   Unsubscribe,
-} from './query.interface'
-import { IndexedDBStorage } from '../../adapters/indexed-DB.service'
-import { LocalStorage } from '../../adapters/local-storage.service'
-import { MemoryStorage } from '../../adapters/memory-storage.service'
-import { IStorage } from '../../storage.interface'
-import { createCacheMiddleware } from '../cache/create-cache.middleware'
+} from '../types/api.interface'
+import { fetchBaseQuery } from '../utils'
 
 /**
  * Модуль управления API-запросами с кэшированием и типизацией
  */
-export class QueryModule {
+export class BaseApiClient {
   private storagePromise: Promise<IStorage>
 
   private storage: IStorage | null = null
 
   private baseQuery: BaseQueryFn
 
-  private cacheManager: QueryCacheManager | null = null
+  private cacheManager: ApiCache | null = null
 
   private endpoints: Record<string, Endpoint> = {}
 
@@ -56,11 +58,12 @@ export class QueryModule {
     this.storage = await this.storagePromise
 
     // Инициализируем менеджер кэша
-    this.cacheManager = new QueryCacheManager(this.storage, {
+    this.cacheManager = new ApiCache(this.storage, {
       ttl: this.options.cache?.ttl,
       invalidateOnError: this.options.cache?.invalidateOnError,
       tags: {},
-    })
+      cacheableHeaderKeys: this.options.cacheableHeaderKeys,
+    } as any)
 
     // Инициализируем эндпоинты если указаны
     if (this.options.endpoints) {
@@ -75,11 +78,11 @@ export class QueryModule {
     const { storageType, options, cache } = this.options
 
     // Создаем имя хранилища
-    const name = options?.name || 'query-module'
+    const name = options?.name || 'api-module'
 
     // Настройки middleware - только кэширование без batching и shallowCompare
-    const middlewares = (getDefaultMiddleware: any) => {
-      const middleware: any[] = []
+    const middlewares = () => {
+      const middleware: Middleware[] = []
 
       if (cache) {
         middleware.push(createCacheMiddleware({
@@ -99,7 +102,7 @@ export class QueryModule {
         return new IndexedDBStorage({
           name,
           options: {
-            dbName: options?.dbName || 'query-cache',
+            dbName: options?.dbName || 'api-cache',
             storeName: options?.storeName || 'requests',
             dbVersion: options?.dbVersion || 1,
           },
@@ -140,7 +143,25 @@ export class QueryModule {
    * Инициализирует эндпоинты из конфигурации
    */
   private async initializeEndpoints(): Promise<void> {
-    const endpoints = this.options.endpoints?.() || {}
+    // Создаем базовый билдер для endpoint'ов
+    const builder: EndpointBuilder = {
+      create: <TParams, TResult>(
+        config: Omit<EndpointConfig<TParams, TResult>, 'response'>,
+      ): TypedEndpointConfig<TParams, TResult> =>
+        // Создаем новый объект с полем response для правильного вывода типов
+        ({
+          ...config,
+          response: null as unknown as TResult, // Используется только для типизации
+        } as TypedEndpointConfig<TParams, TResult>)
+      ,
+    }
+
+    // Проверяем, принимает ли функция endpoints аргумент builder
+    const endpointsFn = this.options.endpoints
+    const endpoints = endpointsFn && endpointsFn.length > 0
+      ? endpointsFn(builder)
+      //передал builder в endpointsFn
+      : (endpointsFn ? endpointsFn(builder) : {})
 
     for (const [name, config] of Object.entries(endpoints)) {
       this.endpoints[name] = await this.createEndpoint(name, config)
@@ -280,10 +301,11 @@ export class QueryModule {
       subscribe: (callback): Unsubscribe => storage.subscribe(`endpoint:${endpointName}`, callback),
 
       // Получение текущего состояния
-      getState: (): EndpointState<TResult> =>
-        // Синхронный доступ к состоянию не доступен, возвращаем начальное
-        // FIXME: Этот метод должен быть асинхронным для корректной работы
-        initialState,
+      getState: async (): Promise<EndpointState<TResult>> => {
+        // Получаем текущее состояние из хранилища
+        const state = await storage.get<EndpointState<TResult>>(`endpoint:${endpointName}`)
+        return state || initialState
+      },
 
       // Инвалидация кэша по тегам
       invalidate: async (): Promise<void> => {

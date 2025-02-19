@@ -46,10 +46,10 @@ export class TagsService {
          * и скорей всего нужно отдельный метод делать для этого
          */
         // Если нужно использовать LIKE для поиска по name или value
-        // if (query?.search) {
+        // if (api?.search) {
         //     queryOptions.where = [
-        //         { name: Like(`%${query.search}%`) },
-        //         { value: Like(`%${query.search}%`) }
+        //         { name: Like(`%${api.search}%`) },
+        //         { value: Like(`%${api.search}%`) }
         //     ];
         // }
         const [tags, total] = await this.tagRepository.findAndCount(queryOptions)

@@ -218,7 +218,7 @@ export class DialogController {
           })
 
         const lastMessage = await this.dialogService.getLastMessage(id)
-      // if (files?.image?.[0] || query.image || query.title || query.type) {
+      // if (files?.image?.[0] || api.image || api.title || api.type) {
           // Создаем из него краткую форму
           const updatedDialogShort = this.dialogService.mapToDialogShortDto({ dialog: updatedDialog, lastMessage }, params)
 
