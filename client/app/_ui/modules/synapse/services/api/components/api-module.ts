@@ -1,12 +1,8 @@
-/**
- * components/api-module.ts
- * Основной класс для управления API-запросами
- */
 import { ApiCache } from './api-cache'
-import { IndexedDBStorage } from '../../../adapters/indexed-DB.service'
-import { LocalStorage } from '../../../adapters/local-storage.service'
-import { MemoryStorage } from '../../../adapters/memory-storage.service'
-import { IStorage } from '../../../storage.interface'
+import { IndexedDBStorage } from '../../storage/adapters/indexed-DB.service'
+import { LocalStorage } from '../../storage/adapters/local-storage.service'
+import { MemoryStorage } from '../../storage/adapters/memory-storage.service'
+import { IStorage } from '../../storage/storage.interface'
 import {
   ApiModuleOptions,
   BaseQueryFn,

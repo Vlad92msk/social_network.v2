@@ -2,8 +2,8 @@
  * types/api.interface.ts
  * Основные типы для API-модуля
  */
-import { StorageType } from '../../../storage.interface'
-import { CacheRule } from '../../cache/cache-module.service'
+import { StorageType } from '../../storage/storage.interface'
+import { CacheRule } from '../../storage/modules/cache/cache-module.service'
 
 /**
  * Стратегия хранения данных

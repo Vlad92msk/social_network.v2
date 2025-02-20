@@ -1,10 +1,9 @@
 /**
- * components/api-cache.ts
  * Управляет кэшированием запросов API
  */
-import { IStorage } from '../../../storage.interface'
-import { StorageKeyType } from '../../../utils/storage-key'
-import { CacheUtils } from '../../cache/cache-module.service'
+import { CacheUtils } from '../../storage/modules/cache/cache-module.service'
+import { IStorage } from '../../storage/storage.interface'
+import { StorageKeyType } from '../../storage/utils/storage-key'
 import { CacheConfig, CacheMetadata, QueryResult, RequestDefinition } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'
 
