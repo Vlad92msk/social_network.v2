@@ -1,9 +1,5 @@
-/**
- * types/api.interface.ts
- * Основные типы для API-модуля
- */
-import { StorageType } from '../../storage/storage.interface'
 import { CacheRule } from '../../storage/modules/cache/cache-module.service'
+import { StorageType } from '../../storage/storage.interface'
 
 /**
  * Стратегия хранения данных
@@ -276,8 +272,9 @@ export type Unsubscribe = () => void
 
 /**
  * Настройки кэша
+ * Может быть объектом с параметрами или boolean (true для кэширования с настройками по умолчанию, false для отключения)
  */
-export interface CacheConfig {
+export type CacheConfig = boolean | {
   /** Время жизни кэша в миллисекундах */
   ttl?: number
   /** Настройки периодической очистки */

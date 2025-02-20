@@ -1,6 +1,3 @@
-/**
- * Управляет кэшированием запросов API
- */
 import { CacheUtils } from '../../storage/modules/cache/cache-module.service'
 import { IStorage } from '../../storage/storage.interface'
 import { StorageKeyType } from '../../storage/utils/storage-key'
@@ -21,7 +18,7 @@ export class ApiCache {
    */
   constructor(
     protected storage: IStorage,
-    public cacheOptions: CacheConfig & {
+    public cacheOptions: (CacheConfig & {
       /** Ключи заголовков, которые влияют на кэш */
       cacheableHeaderKeys?: string[],
       /** Теги для группировки кэша */
@@ -33,10 +30,17 @@ export class ApiCache {
         /** Интервал очистки в миллисекундах */
         interval?: number
       }
-    } = {},
+    }) | boolean = false,
   ) {
+    // Обрабатываем случай, когда опции переданы как boolean
+    if (typeof cacheOptions === 'boolean') {
+      this.cacheOptions = cacheOptions ? { ttl: 30 * 60 * 1000, tags: {} } : {}
+    } else if (!cacheOptions) {
+      this.cacheOptions = {}
+    }
+
     // Инициализируем периодическую очистку кэша если нужно
-    if (cacheOptions.cleanup?.enabled && cacheOptions.cleanup.interval) {
+    if (typeof this.cacheOptions === 'object' && this.cacheOptions?.cleanup?.enabled && this.cacheOptions.cleanup.interval) {
       this.setupCleanupInterval()
     }
   }
@@ -49,7 +53,7 @@ export class ApiCache {
       window.clearInterval(this.cleanupInterval)
     }
 
-    if (this.cacheOptions.cleanup?.enabled && this.cacheOptions.cleanup.interval) {
+    if (typeof this.cacheOptions === 'object' && this.cacheOptions?.cleanup?.enabled && this.cacheOptions.cleanup.interval) {
       this.cleanupInterval = window.setInterval(
         () => this.clearExpired(),
         this.cacheOptions.cleanup.interval,
@@ -65,7 +69,13 @@ export class ApiCache {
   public registerTags(endpointName: string, tags: string[]): void {
     if (!tags.length) return
 
-    this.cacheOptions = this.cacheOptions || {}
+    // Если текущие опции - boolean или не заданы
+    if (typeof this.cacheOptions !== 'object') {
+      // Преобразуем в объект
+      this.cacheOptions = this.cacheOptions === true ? { ttl: 30 * 60 * 1000 } : {}
+    }
+
+    // Теперь this.cacheOptions точно объект
     this.cacheOptions.tags = this.cacheOptions.tags || {}
     this.cacheOptions.tags[endpointName] = tags
   }
@@ -127,28 +137,35 @@ export class ApiCache {
   }
 
   /**
-   * Проверяет, должен ли запрос быть кэширован
-   * @param endpointName Имя эндпоинта
-   * @returns true если запрос должен кэшироваться
-   */
+  * Проверяет, должен ли запрос быть кэширован
+  * @param endpointName Имя эндпоинта
+  * @returns true если запрос должен кэшироваться
+  */
   public shouldCache(endpointName: string): boolean {
-    // Если нет опций кэширования, возвращаем false
-    if (!this.cacheOptions) return false
+  // Если нет опций кэширования или явно отключено, возвращаем false
+    if (this.cacheOptions === undefined || this.cacheOptions === false) return false
+
+    // Если кэширование явно включено через boolean
+    if (this.cacheOptions === true) return true
 
     // Если для эндпоинта указаны теги, то кэшируем
-    const cacheTags = this.cacheOptions.tags as Record<string, string[]> | undefined
-    if (cacheTags && cacheTags[endpointName] && cacheTags[endpointName].length > 0) return true
+    if (typeof this.cacheOptions === 'object') {
+      const cacheTags = this.cacheOptions.tags as Record<string, string[]> | undefined
+      if (cacheTags && cacheTags[endpointName] && cacheTags[endpointName].length > 0) return true
 
-    // Проверяем наличие специфичного TTL в правилах
-    if (this.cacheOptions.rules) {
-      const rule = this.cacheOptions.rules.find((r) => r.method === endpointName)
-      if (rule && rule.ttl) {
-        return true
+      // Проверяем наличие специфичного TTL в правилах
+      if (this.cacheOptions.rules) {
+        const rule = this.cacheOptions.rules.find((r) => r.method === endpointName)
+        if (rule && rule.ttl) {
+          return true
+        }
       }
+
+      // Если указан глобальный TTL, то кэшируем
+      return !!this.cacheOptions.ttl
     }
 
-    // Если указан глобальный TTL, то кэшируем
-    return !!this.cacheOptions.ttl
+    return false
   }
 
   /**
@@ -332,13 +349,23 @@ export class ApiCache {
   }
 
   /**
-   * Получает TTL для эндпоинта
-   * @param endpointName Имя эндпоинта
-   * @returns TTL в миллисекундах
-   */
+  * Получает TTL для эндпоинта
+  * @param endpointName Имя эндпоинта
+  * @returns TTL в миллисекундах
+  */
   public getCacheTTL(endpointName: string): number {
+  // Если кэширование отключено или опции не заданы
+    if (this.cacheOptions === undefined || this.cacheOptions === false) {
+      return 0
+    }
+
+    // Если кэширование явно включено, но без дополнительных настроек
+    if (this.cacheOptions === true) {
+      return 30 * 60 * 1000 // 30 минут по умолчанию
+    }
+
     // Проверяем наличие специфичного TTL в правилах
-    if (this.cacheOptions.rules) {
+    if (typeof this.cacheOptions === 'object' && this.cacheOptions.rules) {
       const rule = this.cacheOptions.rules.find((r) => r.method === endpointName)
       if (rule && typeof rule.ttl === 'number') {
         return rule.ttl
@@ -346,7 +373,7 @@ export class ApiCache {
     }
 
     // Возвращаем глобальный TTL или значение по умолчанию (30 минут)
-    return this.cacheOptions.ttl || 30 * 60 * 1000
+    return typeof this.cacheOptions === 'object' && this.cacheOptions.ttl ? this.cacheOptions.ttl : 30 * 60 * 1000
   }
 
   /**
@@ -355,8 +382,18 @@ export class ApiCache {
    * @returns Массив тегов
    */
   public getTagsForEndpoint(endpointName: string): string[] {
+    // Если кэширование отключено или опции не заданы
+    if (this.cacheOptions === undefined || this.cacheOptions === false) {
+      return []
+    }
+
+    // Если кэширование включено без дополнительных настроек
+    if (this.cacheOptions === true) {
+      return ['default']
+    }
+
     // Получаем теги из правил
-    if (this.cacheOptions.rules) {
+    if (typeof this.cacheOptions === 'object' && this.cacheOptions.rules) {
       const rule = this.cacheOptions.rules.find((r) => r.method === endpointName)
       if (rule && rule.tags) {
         return [...rule.tags]
@@ -364,9 +401,11 @@ export class ApiCache {
     }
 
     // Получаем теги из опций
-    const cacheTags = this.cacheOptions.tags
-    if (cacheTags && cacheTags[endpointName]) {
-      return [...cacheTags[endpointName]]
+    if (typeof this.cacheOptions === 'object' && this.cacheOptions.tags) {
+      const cacheTags = this.cacheOptions.tags
+      if (cacheTags && cacheTags[endpointName]) {
+        return [...cacheTags[endpointName]]
+      }
     }
 
     return []

@@ -5,7 +5,7 @@ import { MemoryStorage } from '../../storage/adapters/memory-storage.service'
 import { IStorage } from '../../storage/storage.interface'
 import {
   ApiModuleOptions,
-  BaseQueryFn,
+  BaseQueryFn, CacheConfig,
   Endpoint,
   EndpointBuilder,
   EndpointConfig,
@@ -73,13 +73,27 @@ export class ApiModule {
       this.storage = await this.storagePromise
 
       // Инициализируем менеджер кэша
+      let cacheConfigObj: {
+        ttl?: number,
+        invalidateOnError?: boolean,
+        // @ts-ignore
+        rules?: CacheConfig['rules'],
+        cleanup?: { enabled: boolean, interval?: number }
+      } | undefined
+
+      if (this.options.cache === true) {
+        cacheConfigObj = { ttl: 30 * 60 * 1000 }
+      } else if (typeof this.options.cache === 'object') {
+        cacheConfigObj = this.options.cache
+      }
+
       this.cacheManager = new ApiCache(this.storage, {
-        ttl: this.options.cache?.ttl,
-        invalidateOnError: this.options.cache?.invalidateOnError,
+        ttl: cacheConfigObj?.ttl,
+        invalidateOnError: cacheConfigObj?.invalidateOnError,
         tags: {},
         cacheableHeaderKeys: this.options.cacheableHeaderKeys,
-        rules: this.options.cache?.rules,
-        cleanup: this.options.cache?.cleanup,
+        rules: cacheConfigObj?.rules,
+        cleanup: cacheConfigObj?.cleanup,
       })
 
       // Инициализируем эндпоинты если указаны
@@ -178,7 +192,7 @@ export class ApiModule {
         endpoints = typeof endpointsFn === 'function'
           ? endpointsFn.length > 0
             ? endpointsFn(builder)
-            //@ts-ignore
+            // @ts-ignore
             : endpointsFn()
           : endpointsFn
       } catch (error) {
@@ -276,7 +290,7 @@ export class ApiModule {
         let localAbortController: AbortController | undefined
 
         try {
-          const shouldUseCache = this.shouldUseCache(endpointName, options)
+          const shouldUseCache = this.shouldUseCache(endpointName, options, endpointConfig)
 
           // Проверяем кэш, если кэширование не отключено
           if (shouldUseCache && this.cacheManager) {
@@ -373,7 +387,8 @@ export class ApiModule {
 
           // Инвалидируем кэш при ошибке, если настроено
           if (this.cacheManager
-              && this.options.cache?.invalidateOnError
+          // @ts-ignore
+              && this.options?.cache?.invalidateOnError
               && endpointConfig.tags?.length) {
             await this.cacheManager.invalidateByTags(endpointConfig.tags)
           }
@@ -449,9 +464,10 @@ export class ApiModule {
    * Проверяет, должен ли запрос использовать кэш
    * @param endpointName Имя эндпоинта
    * @param options Опции запроса
+   * @param endpointConfig Конфигурация эндпоинта
    * @returns true если нужно использовать кэш
    */
-  private shouldUseCache(endpointName: string, options?: RequestOptions): boolean {
+  private shouldUseCache(endpointName: string, options?: RequestOptions, endpointConfig?: EndpointConfig): boolean {
     // Если кэширование выключено глобально, возвращаем false
     if (!this.cachingEnabled) return false
 
@@ -460,6 +476,12 @@ export class ApiModule {
 
     // Если кэш-менеджер недоступен, возвращаем false
     if (!this.cacheManager) return false
+
+    // Если в конфигурации эндпоинта явно отключено кэширование
+    if (endpointConfig?.cache === false) return false
+
+    // Если в конфигурации эндпоинта явно включено кэширование
+    if (endpointConfig?.cache === true) return true
 
     // Проверяем правила кэширования в кэш-менеджере
     return this.cacheManager.shouldCache(endpointName)
