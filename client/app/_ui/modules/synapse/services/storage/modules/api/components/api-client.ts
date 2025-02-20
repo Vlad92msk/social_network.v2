@@ -1,26 +1,32 @@
-import { BaseApiClient } from './base-api-client'
+import { ApiModule } from './api-module'
 import {
-  ApiContext,
   Endpoint,
   EndpointBuilder,
   EndpointConfig,
   ExtractParamsType,
   ExtractResultType,
-  headersToObject,
   RequestOptions,
+  TypedApiModuleOptions,
   TypedEndpointConfig,
-  TypedQueryModuleOptions,
 } from '../types/api.interface'
+import { apiLogger, createApiContext, headersToObject } from '../utils/api-helpers'
 
 /**
  * Типизированный клиент API с поддержкой билдера для эндпоинтов
  */
-export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> extends BaseApiClient {
-  private _typedOptions: TypedQueryModuleOptions<T>
+export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> extends ApiModule {
+  /** Типизированные опции модуля */
+  private _typedOptions: TypedApiModuleOptions<T>
 
+  /** Глобальные настройки заголовков для кэша */
   private _globalCacheableHeaderKeys: string[]
 
-  constructor(options: TypedQueryModuleOptions<T>) {
+  /**
+   * Создает новый экземпляр типизированного API-клиента
+   * @param options Типизированные настройки модуля
+   */
+  constructor(options: TypedApiModuleOptions<T>) {
+    // Создаем копию опций для модификации
     const modifiedOptions = { ...options }
 
     // Сохраняем глобальные настройки заголовков для кэша
@@ -65,7 +71,8 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   }
 
   /**
-   * Переопределяем getEndpoints с типизацией для совместимости с базовым классом
+   * Переопределяем getEndpoints с улучшенной типизацией
+   * @returns Типизированный объект эндпоинтов
    */
   public getEndpoints<U extends Record<string, EndpointConfig> = T>(): {
     [K in keyof U]: Endpoint<ExtractParamsType<U[K]>, ExtractResultType<U[K]>>;
@@ -74,13 +81,19 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   }
 
   /**
-   * Переопределяем создание эндпоинта для поддержки контекста и заголовков
+   * Переопределяем создание эндпоинта для поддержки контекста и кэшируемых заголовков
+   * @param nameOrConfig Имя эндпоинта или его конфигурация
+   * @param config Конфигурация эндпоинта (если первый параметр - имя)
+   * @returns Promise с созданным эндпоинтом
    */
   public override async createEndpoint<TParams, TResult>(
     nameOrConfig: string | EndpointConfig<TParams, TResult>,
     config?: EndpointConfig<TParams, TResult>,
   ): Promise<Endpoint<TParams, TResult>> {
+    // Получаем базовую реализацию эндпоинта
     const endpoint = await super.createEndpoint<TParams, TResult>(nameOrConfig, config)
+
+    // Сохраняем оригинальную функцию fetch
     const originalFetch = endpoint.fetch
 
     // Получаем конфигурацию эндпоинта
@@ -90,32 +103,12 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     const endpointCacheableHeaderKeys = endpointConfig.cacheableHeaderKeys
 
     // Переопределяем fetch для поддержки контекста
-    const originalFetchBound = originalFetch.bind(endpoint)
     endpoint.fetch = async (params: TParams, requestOptions: RequestOptions = {}): Promise<TResult> => {
-      // Создаём контекст
-      const context: ApiContext = {
-        requestParams: params,
-        getFromStorage: (key: string) => {
-          try {
-            const item = localStorage.getItem(key)
-            return item ? JSON.parse(item) : undefined
-          } catch (error) {
-            console.warn(`Error reading from storage: ${error}`)
-            return undefined
-          }
-        },
-        getCookie: (name: string) => {
-          try {
-            const matches = document.cookie.match(
-              new RegExp(`(?:^|; )${name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`),
-            )
-            return matches ? decodeURIComponent(matches[1]) : undefined
-          } catch (error) {
-            console.warn(`Error reading cookie: ${error}`)
-            return undefined
-          }
-        },
-      }
+      // Создаём контекст API
+      const context = createApiContext(
+        requestOptions.context || {},
+        params
+      )
 
       // Определяем, какие заголовки влияют на кэш
       // Приоритет: опции запроса > эндпоинт > глобальные
@@ -123,31 +116,31 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
         || endpointCacheableHeaderKeys
         || this._globalCacheableHeaderKeys
 
-      // Подготавливаем заголовки если есть prepareHeaders в эндпоинте
-      if (endpointConfig.prepareHeaders) {
-        const headers = new Headers(requestOptions.headers || {})
-        const preparedHeaders = endpointConfig.prepareHeaders(headers, context)
-
-        // Создаем новый объект опций, чтобы не модифицировать параметр функции
-        const enhancedOptions: RequestOptions = {
-          ...requestOptions,
-          headers: headersToObject(preparedHeaders),
-          context,
-          cacheableHeaderKeys: effectiveCacheableKeys,
-        }
-
-        // Явно приводим результат к типу TResult
-        return originalFetchBound(params, enhancedOptions) as Promise<TResult>
-      }
-      // Создаем новый объект опций с контекстом
-      const enhancedOptions: RequestOptions = {
+      // Формируем новые опции запроса
+      let enhancedOptions: RequestOptions = {
         ...requestOptions,
         context,
         cacheableHeaderKeys: effectiveCacheableKeys,
       }
 
-      // Явно приводим результат к типу TResult
-      return originalFetchBound(params, enhancedOptions) as Promise<TResult>
+      // Подготавливаем заголовки если есть prepareHeaders в эндпоинте
+      if (endpointConfig.prepareHeaders && requestOptions.headers) {
+        try {
+          const headers = new Headers(requestOptions.headers || {})
+          const preparedHeaders = endpointConfig.prepareHeaders(headers, context)
+
+          // Добавляем подготовленные заголовки в опции
+          enhancedOptions = {
+            ...enhancedOptions,
+            headers: headersToObject(preparedHeaders),
+          }
+        } catch (error) {
+          apiLogger.warn(`Ошибка подготовки заголовков для ${endpoint.meta.name}`, error)
+        }
+      }
+
+      // Вызываем оригинальный метод fetch с расширенными опциями
+      return originalFetch.call(endpoint, params, enhancedOptions) as Promise<TResult>
     }
 
     return endpoint
@@ -155,8 +148,45 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
 
   /**
    * Получает глобальные настройки кэшируемых заголовков
+   * @returns Массив ключей заголовков
    */
   public getCacheableHeaderKeys(): string[] {
-    return this._globalCacheableHeaderKeys
+    return [...this._globalCacheableHeaderKeys]
+  }
+
+  /**
+   * Устанавливает глобальные настройки кэшируемых заголовков
+   * @param keys Массив ключей заголовков
+   */
+  public setCacheableHeaderKeys(keys: string[]): void {
+    this._globalCacheableHeaderKeys = [...keys]
+  }
+
+  /**
+   * Выполняет запрос к API с обработкой ошибок
+   * @param endpointName Имя эндпоинта
+   * @param params Параметры запроса
+   * @param options Опции запроса
+   * @returns Promise с результатом запроса
+   */
+  public async request<K extends keyof T, P extends ExtractParamsType<T[K]>, R extends ExtractResultType<T[K]>>(
+    endpointName: K,
+    params: P,
+    options?: RequestOptions
+  ): Promise<R> {
+    const endpoints = this.getEndpoints<T>()
+    const endpoint = endpoints[endpointName as string]
+
+    if (!endpoint) {
+      throw new Error(`Эндпоинт "${String(endpointName)}" не найден`)
+    }
+
+    try {
+      //@ts-ignore
+      return await endpoint.fetch(params, options) as R
+    } catch (error) {
+      apiLogger.error(`Ошибка запроса к ${String(endpointName)}`, { error, params })
+      throw error
+    }
   }
 }

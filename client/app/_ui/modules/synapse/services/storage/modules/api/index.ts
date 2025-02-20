@@ -1,40 +1,36 @@
 // Основные классы
-export { QueryModule as BaseApiClient } from './api.module'
+export { ApiModule } from './components/api-module'
 export { ApiCache } from './components/api-cache'
 export { fetchBaseQuery } from './utils/fetch-base-query'
 export { ApiClient } from './components/api-client'
 
 // Функции-помощники
-export { headersToObject, filterCacheableHeaders } from './types/api.interface'
+export { 
+  headersToObject, 
+  filterCacheableHeaders,
+  createApiContext
+} from './utils/api-helpers'
 
 // Интерфейсы
 export type {
   BaseQueryFn,
   CacheConfig,
   Endpoint,
+  EndpointBuilder,
   EndpointConfig,
   EndpointState,
   ExtractParamsType,
   ExtractResultType,
   FetchBaseQueryArgs,
-  QueryModuleOptions,
+  ApiModuleOptions,
   QueryResult,
   RequestDefinition,
   RequestOptions,
   Unsubscribe,
   TypedEndpointConfig,
-  TypedQueryModuleOptions,
+  TypedApiModuleOptions,
   EndpointsDefinition,
   TypedEndpoints,
   ApiContext,
-  EndpointBuilder
+  StorageStrategy
 } from './types/api.interface'
-
-// Утилиты для React
-// export function useQuery<TParams, TResult>(
-//   endpoint: Endpoint<TParams, TResult>,
-//   params: TParams,
-//   options?: RequestOptions,
-// ): EndpointState<TResult> {
-//   throw new Error('Not implemented - this is just a type export')
-// }

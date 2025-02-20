@@ -1,9 +1,14 @@
+/**
+ * components/api-module.ts
+ * Основной класс для управления API-запросами
+ */
 import { ApiCache } from './api-cache'
 import { IndexedDBStorage } from '../../../adapters/indexed-DB.service'
 import { LocalStorage } from '../../../adapters/local-storage.service'
 import { MemoryStorage } from '../../../adapters/memory-storage.service'
 import { IStorage } from '../../../storage.interface'
 import {
+  ApiModuleOptions,
   BaseQueryFn,
   Endpoint,
   EndpointBuilder,
@@ -12,32 +17,46 @@ import {
   ExtractParamsType,
   ExtractResultType,
   FetchBaseQueryArgs,
-  QueryModuleOptions,
   RequestOptions,
   TypedEndpointConfig,
   Unsubscribe,
 } from '../types/api.interface'
-import { fetchBaseQuery } from '../utils'
+import { apiLogger, createUniqueId } from '../utils/api-helpers'
+import { fetchBaseQuery } from '../utils/fetch-base-query'
 
 /**
  * Модуль управления API-запросами с кэшированием и типизацией
  */
-export class BaseApiClient {
+export class ApiModule {
+  /** Промис инициализации хранилища */
   private storagePromise: Promise<IStorage>
 
+  /** Инициализированное хранилище */
   private storage: IStorage | null = null
 
+  /** Базовая функция запроса */
   private baseQuery: BaseQueryFn
 
+  /** Менеджер кэша */
   private cacheManager: ApiCache | null = null
 
+  /** Реестр эндпоинтов */
   private endpoints: Record<string, Endpoint> = {}
 
+  /** Активные AbortController'ы для отмены запросов */
   private abortControllers: Map<string, AbortController> = new Map()
 
+  /** Промис инициализации модуля */
   private initialized: Promise<void>
 
-  constructor(private options: QueryModuleOptions) {
+  /** Флаг доступности кэширования */
+  private cachingEnabled: boolean = true
+
+  /**
+   * Создает новый экземпляр модуля API
+   * @param options Настройки модуля
+   */
+  constructor(protected options: ApiModuleOptions) {
     // Инициализируем хранилище
     this.storagePromise = this.initializeStorage()
 
@@ -50,29 +69,42 @@ export class BaseApiClient {
 
   /**
    * Асинхронно инициализирует модуль
+   * @returns Promise, который завершается после инициализации
    */
   private async initialize(): Promise<void> {
-    // Дожидаемся инициализации хранилища
-    this.storage = await this.storagePromise
+    try {
+      // Дожидаемся инициализации хранилища
+      this.storage = await this.storagePromise
 
-    // Инициализируем менеджер кэша
-    this.cacheManager = new ApiCache(this.storage, {
-      ttl: this.options.cache?.ttl,
-      invalidateOnError: this.options.cache?.invalidateOnError,
-      tags: {},
-      cacheableHeaderKeys: this.options.cacheableHeaderKeys,
-      rules: this.options.cache?.rules,
-      cleanup: this.options.cache?.cleanup,
-    })
+      // Инициализируем менеджер кэша
+      this.cacheManager = new ApiCache(this.storage, {
+        ttl: this.options.cache?.ttl,
+        invalidateOnError: this.options.cache?.invalidateOnError,
+        tags: {},
+        cacheableHeaderKeys: this.options.cacheableHeaderKeys,
+        rules: this.options.cache?.rules,
+        cleanup: this.options.cache?.cleanup,
+      })
 
-    // Инициализируем эндпоинты если указаны
-    if (this.options.endpoints) {
-      await this.initializeEndpoints()
+      // Инициализируем эндпоинты если указаны
+      if (this.options.endpoints) {
+        await this.initializeEndpoints()
+      }
+    } catch (error) {
+      this.cachingEnabled = false
+      apiLogger.error('Ошибка инициализации API-модуля', error)
+      // Инициализируем в режиме без кэширования
+      this.cacheManager = null
+      // По возможности инициализируем эндпоинты
+      if (this.options.endpoints) {
+        await this.initializeEndpoints()
+      }
     }
   }
 
   /**
    * Создает хранилище в зависимости от типа
+   * @returns Promise с инициализированным хранилищем
    */
   private initializeStorage(): Promise<IStorage> {
     const { storageType, options } = this.options
@@ -80,35 +112,42 @@ export class BaseApiClient {
     // Создаем имя хранилища
     const name = options?.name || 'api-module'
 
-    // Выбираем тип хранилища без middleware кэширования
-    switch (storageType) {
-      case 'indexedDB':
-        return new IndexedDBStorage({
-          name,
-          options: {
-            dbName: options?.dbName || 'api-cache',
-            storeName: options?.storeName || 'requests',
-            dbVersion: options?.dbVersion || 1,
-          },
-        }).initialize()
+    try {
+      // Выбираем тип хранилища
+      switch (storageType) {
+        case 'indexedDB':
+          return new IndexedDBStorage({
+            name,
+            options: {
+              dbName: options?.dbName || 'api-cache',
+              storeName: options?.storeName || 'requests',
+              dbVersion: options?.dbVersion || 1,
+            },
+          }).initialize()
 
-      case 'localStorage':
-        return new LocalStorage({ name }).initialize()
+        case 'localStorage':
+          return new LocalStorage({ name }).initialize()
 
-      case 'memory':
-      default:
-        return new MemoryStorage({ name }).initialize()
+        case 'memory':
+        default:
+          return new MemoryStorage({ name }).initialize()
+      }
+    } catch (error) {
+      apiLogger.error('Ошибка инициализации хранилища', error)
+      // Возвращаем хранилище в памяти как запасной вариант
+      return new MemoryStorage({ name: `${name}-fallback` }).initialize()
     }
   }
 
   /**
    * Инициализирует базовый запрос
+   * @returns Функция базового запроса
    */
   private initializeBaseQuery(): BaseQueryFn {
     const { baseQuery } = this.options
 
     // Если передан объект конфигурации, создаем fetchBaseQuery
-    if (!('then' in baseQuery)) {
+    if (baseQuery && typeof baseQuery === 'object' && !('then' in baseQuery)) {
       return fetchBaseQuery(baseQuery as FetchBaseQueryArgs)
     }
 
@@ -140,21 +179,34 @@ export class BaseApiClient {
     if (endpointsFn) {
       try {
         // Проверяем количество параметров функции
-        endpoints = typeof endpointsFn === 'function' ? endpointsFn(builder) : endpointsFn
+        endpoints = typeof endpointsFn === 'function'
+          ? endpointsFn.length > 0
+            ? endpointsFn(builder)
+            //@ts-ignore
+            : endpointsFn()
+          : endpointsFn
       } catch (error) {
-        console.error('Error initializing endpoints:', error)
+        apiLogger.error('Ошибка инициализации эндпоинтов', error)
         endpoints = {}
       }
     }
 
+    // Создаем эндпоинты
     for (const [name, config] of Object.entries(endpoints)) {
-      // @ts-ignore
-      this.endpoints[name] = await this.createEndpoint(name, config)
+      try {
+        // @ts-ignore - config может быть разных типов
+        this.endpoints[name] = await this.createEndpoint(name, config)
+      } catch (error) {
+        apiLogger.error(`Ошибка создания эндпоинта ${name}`, error)
+      }
     }
   }
 
   /**
    * Создает новый эндпоинт
+   * @param nameOrConfig Имя эндпоинта или его конфигурация
+   * @param config Конфигурация эндпоинта (если первый параметр - имя)
+   * @returns Promise с созданным эндпоинтом
    */
   public async createEndpoint<TParams, TResult>(
     nameOrConfig: string | EndpointConfig<TParams, TResult>,
@@ -163,8 +215,8 @@ export class BaseApiClient {
     // Дожидаемся инициализации модуля
     await this.initialized
 
-    if (!this.storage || !this.cacheManager) {
-      throw new Error('QueryModule not properly initialized')
+    if (!this.storage) {
+      throw new Error('API-модуль не инициализирован')
     }
 
     // Нормализуем параметры
@@ -172,7 +224,7 @@ export class BaseApiClient {
     const endpointConfig = typeof nameOrConfig === 'string'
       ? (config as EndpointConfig<TParams, TResult>)
       : (nameOrConfig as EndpointConfig<TParams, TResult>)
-    const endpointName = name || `endpoint_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const endpointName = name || `endpoint_${createUniqueId()}`
 
     // Инициализируем начальное состояние
     const initialState: EndpointState<TResult> = {
@@ -187,28 +239,64 @@ export class BaseApiClient {
     // Сохраняем начальное состояние в хранилище
     await this.storage.set(`endpoint:${endpointName}`, initialState)
 
-    // Получаем локальную ссылку на cacheManager (для использования внутри замыканий)
-    const { cacheManager } = this
-    const { storage } = this
+    // Создаем эндпоинт
+    const endpoint = await this.createEndpointImplementation<TParams, TResult>(
+      endpointName,
+      endpointConfig,
+      initialState,
+    )
+
+    // Регистрируем эндпоинт
+    this.endpoints[endpointName] = endpoint
+
+    return endpoint
+  }
+
+  /**
+   * Внутренний метод создания реализации эндпоинта
+   * @param endpointName Имя эндпоинта
+   * @param endpointConfig Конфигурация эндпоинта
+   * @param initialState Начальное состояние эндпоинта
+   * @returns Реализация эндпоинта
+   */
+  private async createEndpointImplementation<TParams, TResult>(
+    endpointName: string,
+    endpointConfig: EndpointConfig<TParams, TResult>,
+    initialState: EndpointState<TResult>,
+  ): Promise<Endpoint<TParams, TResult>> {
+    if (!this.storage) {
+      throw new Error('Хранилище не инициализировано')
+    }
+
+    // Регистрируем теги эндпоинта в cacheManager, если кэширование включено
+    if (this.cacheManager && endpointConfig.tags?.length) {
+      this.cacheManager.registerTags(endpointName, endpointConfig.tags)
+    }
 
     // Создаем эндпоинт
     const endpoint: Endpoint<TParams, TResult> = {
       // Метод выполнения запроса
       fetch: async (params: TParams, options?: RequestOptions): Promise<TResult> => {
-        // Объявляем переменную в начале функции
         let localAbortController: AbortController | undefined
 
         try {
+          const shouldUseCache = this.shouldUseCache(endpointName, options)
+
           // Проверяем кэш, если кэширование не отключено
-          if (!options?.disableCache && cacheManager.shouldCache(endpointName)) {
+          if (shouldUseCache && this.cacheManager) {
             const requestDef = endpointConfig.request(params)
-            const cachedResult = await cacheManager.get<TResult, Error>(
+            const cachedResult = await this.cacheManager.get<TResult>(
               endpointName,
               requestDef,
               params,
             )
 
             if (cachedResult) {
+              apiLogger.debug(
+                `Обнаружены кэшированные данные для ${endpointName}`,
+                { tags: endpointConfig.tags },
+              )
+
               // Обновляем состояние с данными из кэша
               await this.updateEndpointState(endpointName, {
                 status: 'success',
@@ -265,8 +353,8 @@ export class BaseApiClient {
           })
 
           // Кэшируем результат, если кэширование не отключено
-          if (!options?.disableCache && cacheManager.shouldCache(endpointName)) {
-            await cacheManager.set(
+          if (shouldUseCache && this.cacheManager) {
+            await this.cacheManager.set(
               endpointName,
               requestDef,
               params,
@@ -287,36 +375,58 @@ export class BaseApiClient {
             error: error as Error,
           })
 
+          // Инвалидируем кэш при ошибке, если настроено
+          if (this.cacheManager
+              && this.options.cache?.invalidateOnError
+              && endpointConfig.tags?.length) {
+            await this.cacheManager.invalidateByTags(endpointConfig.tags)
+          }
+
           throw error
         }
       },
 
       // Подписка на изменения состояния
-      subscribe: (callback): Unsubscribe => storage.subscribe(`endpoint:${endpointName}`, callback),
+      subscribe: (callback): Unsubscribe => {
+        if (!this.storage) {
+          apiLogger.warn('Попытка подписки до инициализации хранилища')
+          return () => {}
+        }
+        return this.storage.subscribe(`endpoint:${endpointName}`, callback)
+      },
 
       // Получение текущего состояния
       getState: async (): Promise<EndpointState<TResult>> => {
+        if (!this.storage) {
+          return initialState
+        }
         // Получаем текущее состояние из хранилища
-        const state = await storage.get<EndpointState<TResult>>(`endpoint:${endpointName}`)
+        const state = await this.storage.get<EndpointState<TResult>>(`endpoint:${endpointName}`)
         return state || initialState
       },
 
       // Инвалидация кэша по тегам
       invalidate: async (): Promise<void> => {
         // Инвалидируем кэш по тегам эндпоинта
-        if (endpointConfig.invalidatesTags?.length) {
-          await cacheManager.invalidateByTags(endpointConfig.invalidatesTags)
+        if (this.cacheManager && endpointConfig.invalidatesTags?.length) {
+          await this.cacheManager.invalidateByTags(endpointConfig.invalidatesTags)
         }
 
         // Сбрасываем состояние
-        await storage.set(`endpoint:${endpointName}`, {
-          ...initialState,
-          status: 'idle',
-        })
+        if (this.storage) {
+          await this.storage.set(`endpoint:${endpointName}`, {
+            ...initialState,
+            status: 'idle',
+          })
+        }
       },
 
       // Сброс состояния эндпоинта
-      reset: async (): Promise<void> => storage.set(`endpoint:${endpointName}`, initialState),
+      reset: async (): Promise<void> => {
+        if (this.storage) {
+          await this.storage.set(`endpoint:${endpointName}`, initialState)
+        }
+      },
 
       // Отмена текущего запроса
       abort: (): void => {
@@ -336,28 +446,40 @@ export class BaseApiClient {
       },
     }
 
-    // Регистрируем теги эндпоинта в cacheManager
-    if (endpointConfig.tags?.length) {
-      cacheManager.cacheOptions = cacheManager.cacheOptions || {}
-      cacheManager.cacheOptions.tags = cacheManager.cacheOptions.tags || {}
-      cacheManager.cacheOptions.tags[endpointName] = endpointConfig.tags
-    }
-
-    // Сохраняем эндпоинт
-    this.endpoints[endpointName] = endpoint as Endpoint
-
     return endpoint
   }
 
   /**
+   * Проверяет, должен ли запрос использовать кэш
+   * @param endpointName Имя эндпоинта
+   * @param options Опции запроса
+   * @returns true если нужно использовать кэш
+   */
+  private shouldUseCache(endpointName: string, options?: RequestOptions): boolean {
+    // Если кэширование выключено глобально, возвращаем false
+    if (!this.cachingEnabled) return false
+
+    // Если в опциях запроса отключено кэширование, возвращаем false
+    if (options?.disableCache) return false
+
+    // Если кэш-менеджер недоступен, возвращаем false
+    if (!this.cacheManager) return false
+
+    // Проверяем правила кэширования в кэш-менеджере
+    return this.cacheManager.shouldCache(endpointName)
+  }
+
+  /**
    * Обновляет состояние эндпоинта
+   * @param endpointName Имя эндпоинта
+   * @param update Частичное обновление состояния
    */
   private async updateEndpointState<T>(
     endpointName: string,
     update: Partial<EndpointState<T>>,
   ): Promise<void> {
     if (!this.storage) {
-      throw new Error('Storage not initialized')
+      throw new Error('Хранилище не инициализировано')
     }
 
     const current = await this.storage.get<EndpointState<T>>(`endpoint:${endpointName}`)
@@ -391,11 +513,26 @@ export class BaseApiClient {
     [K in keyof T]: Endpoint<ExtractParamsType<T[K]>, ExtractResultType<T[K]>>
     } {
     if (Object.keys(this.endpoints).length === 0) {
-      // Может выполниться до инициализации модуля, но так быть не должно
-      console.warn('Accessing endpoints before initialization')
+      apiLogger.warn('Получение эндпоинтов до завершения инициализации')
     }
 
     return this.endpoints as any
+  }
+
+  /**
+   * Проверяет, завершена ли инициализация модуля
+   * @returns true если модуль инициализирован
+   */
+  public isInitialized(): boolean {
+    return this.storage !== null && this.cacheManager !== null
+  }
+
+  /**
+   * Ожидает завершения инициализации модуля
+   * @returns Promise, который завершается после инициализации
+   */
+  public waitForInitialization(): Promise<void> {
+    return this.initialized
   }
 
   /**
@@ -412,7 +549,7 @@ export class BaseApiClient {
       try {
         controller.abort()
       } catch (error) {
-        console.error('Error aborting request:', error)
+        apiLogger.error('Ошибка отмены запроса', error)
       }
     })
     this.abortControllers.clear()
