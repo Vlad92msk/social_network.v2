@@ -1,23 +1,19 @@
-import { ApiEventData, ApiEventType, apiLogger, Unsubscribe } from '@ui/modules/synapse/services/api'
 import { EventEmitter } from 'events'
+import { apiLogger, Unsubscribe } from '..'
+import { ApiEventData, ApiEventType } from '../types/api-events.interface'
 
 /**
  * Менеджер событий для API клиента
  * Отвечает за регистрацию и вызов событий
  */
-export class ApiEventManager {
-  /** Эмиттер событий */
-  private eventEmitter: EventEmitter
-
+export class ApiEventManager extends EventEmitter {
   /**
    * Создает новый экземпляр менеджера событий
-   * @param maxListeners Максимальное количество слушателей (по умолчанию 50)
    */
-  constructor(maxListeners: number = 50) {
-    // Инициализируем эмиттер событий
-    this.eventEmitter = new EventEmitter()
-    // Устанавливаем максимальное количество слушателей
-    this.eventEmitter.setMaxListeners(maxListeners)
+  constructor() {
+    super()
+    // Установка разумного значения максимального количества слушателей
+    this.setMaxListeners(50)
   }
 
   /**
@@ -35,9 +31,9 @@ export class ApiEventManager {
     // Приведение типов для EventEmitter
     const typedListener = listener as unknown as (data: any) => void
 
-    this.eventEmitter.on(eventName, typedListener)
+    this.on(eventName, typedListener)
     return () => {
-      this.eventEmitter.off(eventName, typedListener)
+      this.off(eventName, typedListener)
     }
   }
 
@@ -54,9 +50,9 @@ export class ApiEventManager {
     // Приведение типов для EventEmitter
     const typedListener = listener as unknown as (data: any) => void
 
-    this.eventEmitter.on(eventType, typedListener)
+    this.on(eventType, typedListener)
     return () => {
-      this.eventEmitter.off(eventType, typedListener)
+      this.off(eventType, typedListener)
     }
   }
 
@@ -71,9 +67,9 @@ export class ApiEventManager {
     listener: (data: ApiEventData) => void,
   ): Unsubscribe {
     const eventName = `tag:${tag}`
-    this.eventEmitter.on(eventName, listener)
+    this.on(eventName, listener)
     return () => {
-      this.eventEmitter.off(eventName, listener)
+      this.off(eventName, listener)
     }
   }
 
@@ -82,11 +78,12 @@ export class ApiEventManager {
    * @param eventType Тип события
    * @param data Данные события
    */
-  public emit(eventType: string, data: ApiEventData): void {
+  public emit(eventType: string, data: ApiEventData): boolean {
     try {
-      this.eventEmitter.emit(eventType, data)
+      return super.emit(eventType, data)
     } catch (error) {
       apiLogger.error(`Ошибка при генерации события ${eventType}`, error)
+      return false
     }
   }
 
@@ -101,7 +98,7 @@ export class ApiEventManager {
     mainEventType: ApiEventType,
     data: ApiEventData,
     contextType: ApiEventType,
-    tags?: string[]
+    tags?: string[],
   ): void {
     // Основное событие по типу
     this.emit(mainEventType, data)
@@ -127,6 +124,6 @@ export class ApiEventManager {
    * Очищает все обработчики событий
    */
   public dispose(): void {
-    this.eventEmitter.removeAllListeners()
+    this.removeAllListeners()
   }
 }

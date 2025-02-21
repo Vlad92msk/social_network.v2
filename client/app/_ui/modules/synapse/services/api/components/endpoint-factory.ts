@@ -1,4 +1,5 @@
-import { ApiCache, Endpoint, EndpointConfig, EndpointState, RequestOptions } from '..'
+import { ApiCache } from './api-cache'
+import { Endpoint, EndpointConfig, EndpointState, RequestOptions } from '..'
 import { EndpointStateManager } from './endpoint-state-manager'
 import { RequestExecutor } from './request-executor'
 import { StorageManager } from './storage-manager'

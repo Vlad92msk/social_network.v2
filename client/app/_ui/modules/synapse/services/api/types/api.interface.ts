@@ -219,12 +219,9 @@ export interface EndpointConfig<TParams = any, TResult = any> {
 
 /**
  * Типизированная конфигурация эндпоинта
- * Расширяет базовую конфигурацию полем response для улучшения типизации
+ * (Только для сохранения совместимости, не добавляет новых полей)
  */
-export interface TypedEndpointConfig<TParams = any, TResult = any> extends EndpointConfig<TParams, TResult> {
-  /** Поле для типизации (не используется в runtime) */
-  response?: TResult;
-}
+export type TypedEndpointConfig<TParams = any, TResult = any> = EndpointConfig<TParams, TResult>
 
 /**
  * Интерфейс эндпоинта
@@ -263,7 +260,7 @@ export interface Endpoint<TParams = any, TResult = any> {
 export interface EndpointBuilder {
   /** Создать типизированный эндпоинт */
   create<TParams, TResult>(
-    config: Omit<EndpointConfig<TParams, TResult>, 'response'>
+    config: EndpointConfig<TParams, TResult>
   ): TypedEndpointConfig<TParams, TResult>;
 }
 
@@ -329,7 +326,7 @@ export interface TypedApiModuleOptions<T extends Record<string, TypedEndpointCon
 export type ExtractParamsType<T> = T extends EndpointConfig<infer P, any> ? P : never
 
 /** Извлечение типа результата из конфигурации эндпоинта */
-export type ExtractResultType<T> = T extends TypedEndpointConfig<any, infer R> ? R : T extends EndpointConfig<any, infer R> ? R : never
+export type ExtractResultType<T> = T extends EndpointConfig<any, infer R> ? R : never
 
 /** Определение типизированных эндпоинтов */
 export interface EndpointsDefinition {
@@ -340,7 +337,7 @@ export interface EndpointsDefinition {
 export type TypedEndpoints<T extends Record<string, TypedEndpointConfig<any, any>>> = {
   [K in keyof T]: Endpoint<
     Parameters<T[K]['request']>[0],
-    T[K]['response'] extends undefined ? any : T[K]['response']
+    ExtractResultType<T[K]>
   >;
 }
 

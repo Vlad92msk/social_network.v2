@@ -1,6 +1,6 @@
-import {
-  ApiEventData, ApiEventType, apiLogger, ApiMiddlewareAPI, ApiMiddlewareContext, EnhancedApiMiddleware, RequestOptions,
-} from '@ui/modules/synapse/services/api'
+import { apiLogger, RequestOptions } from '..'
+import { ApiEventData, ApiEventType } from '../types/api-events.interface'
+import { ApiMiddlewareAPI, ApiMiddlewareContext, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 
 /**
  * Менеджер middleware для API клиента с поддержкой цепочки вызовов
