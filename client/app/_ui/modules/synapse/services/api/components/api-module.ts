@@ -37,7 +37,7 @@ export class ApiModule {
   private cacheManager: ApiCache | null = null
 
   /** Реестр эндпоинтов */
-  private endpoints: Record<string, Endpoint> = {}
+  protected endpoints: Record<string, Endpoint> = {}
 
   /** Активные AbortController'ы для отмены запросов */
   private abortControllers: Map<string, AbortController> = new Map()

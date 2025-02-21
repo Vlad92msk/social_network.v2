@@ -107,7 +107,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
       // Создаём контекст API
       const context = createApiContext(
         requestOptions.context || {},
-        params
+        params,
       )
 
       // Определяем, какие заголовки влияют на кэш
@@ -172,7 +172,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   public async request<K extends keyof T, P extends ExtractParamsType<T[K]>, R extends ExtractResultType<T[K]>>(
     endpointName: K,
     params: P,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<R> {
     const endpoints = this.getEndpoints<T>()
     const endpoint = endpoints[endpointName as string]
@@ -182,7 +182,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     }
 
     try {
-      //@ts-ignore
+      // @ts-ignore
       return await endpoint.fetch(params, options) as R
     } catch (error) {
       apiLogger.error(`Ошибка запроса к ${String(endpointName)}`, { error, params })
