@@ -1,15 +1,48 @@
+import { EventEmitter } from 'events'
 import { CacheUtils } from '../../storage/modules/cache/cache-module.service'
 import { IStorage } from '../../storage/storage.interface'
 import { StorageKeyType } from '../../storage/utils/storage-key'
-import { CacheConfig, CacheMetadata, QueryResult, RequestDefinition } from '../types/api.interface'
+import { CacheConfig, CacheMetadata, QueryResult, RequestDefinition, Unsubscribe } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'
 
 /**
- * Класс для управления кэшированием API-запросов
+ * Типы событий для ApiCache
+ */
+export interface ApiCacheEventMap {
+  'cache:hit': {
+    endpointName: string
+    key: string
+    timestamp: number
+  }
+  'cache:miss': {
+    endpointName: string
+    key: string
+    timestamp: number
+  }
+  'cache:set': {
+    endpointName: string
+    key: string
+    timestamp: number
+  }
+  'cache:invalidate': {
+    tags: string[]
+    timestamp: number
+  }
+  'cache:cleanup': {
+    removedCount: number
+    timestamp: number
+  }
+}
+
+/**
+ * Улучшенный класс для управления кэшированием API-запросов с системой событий
  */
 export class ApiCache {
   /** Идентификатор таймера очистки кэша */
   private cleanupInterval: number | undefined
+
+  /** Эмиттер событий */
+  private eventEmitter: EventEmitter
 
   /**
    * Создает новый экземпляр кэш-менеджера
@@ -42,6 +75,26 @@ export class ApiCache {
     // Инициализируем периодическую очистку кэша если нужно
     if (typeof this.cacheOptions === 'object' && this.cacheOptions?.cleanup?.enabled && this.cacheOptions.cleanup.interval) {
       this.setupCleanupInterval()
+    }
+
+    // Инициализируем эмиттер событий
+    this.eventEmitter = new EventEmitter()
+    this.eventEmitter.setMaxListeners(50)
+  }
+
+  /**
+   * Подписка на события кэша
+   * @param event Имя события
+   * @param listener Обработчик события
+   * @returns Функция для отписки
+   */
+  public subscribe<K extends keyof ApiCacheEventMap>(
+    event: K,
+    listener: (data: ApiCacheEventMap[K]) => void,
+  ): Unsubscribe {
+    this.eventEmitter.on(event as string, listener)
+    return () => {
+      this.eventEmitter.off(event as string, listener)
     }
   }
 
@@ -100,6 +153,12 @@ export class ApiCache {
 
       if (clearedCount > 0) {
         apiLogger.debug(`Очищено ${clearedCount} просроченных записей из кэша`)
+
+        // Генерируем событие очистки
+        this.eventEmitter.emit('cache:cleanup', {
+          removedCount: clearedCount,
+          timestamp: Date.now(),
+        })
       }
     } catch (error) {
       apiLogger.error('Ошибка очистки кэша', error)
@@ -134,15 +193,18 @@ export class ApiCache {
       window.clearInterval(this.cleanupInterval)
       this.cleanupInterval = undefined
     }
+
+    // Очищаем все обработчики событий
+    this.eventEmitter.removeAllListeners()
   }
 
   /**
-  * Проверяет, должен ли запрос быть кэширован
-  * @param endpointName Имя эндпоинта
-  * @returns true если запрос должен кэшироваться
-  */
+   * Проверяет, должен ли запрос быть кэширован
+   * @param endpointName Имя эндпоинта
+   * @returns true если запрос должен кэшироваться
+   */
   public shouldCache(endpointName: string): boolean {
-  // Если нет опций кэширования или явно отключено, возвращаем false
+    // Если нет опций кэширования или явно отключено, возвращаем false
     if (this.cacheOptions === undefined || this.cacheOptions === false) return false
 
     // Если кэширование явно включено через boolean
@@ -228,7 +290,16 @@ export class ApiCache {
       const [cacheKey] = this.createCacheKey(endpointName, requestDef, params, result)
       const cached = await this.storage.get<any>(cacheKey)
 
-      if (!cached) return null
+      if (!cached) {
+        // Генерируем событие промаха кэша
+        this.eventEmitter.emit('cache:miss', {
+          endpointName,
+          key: String(cacheKey),
+          timestamp: Date.now(),
+        })
+
+        return null
+      }
 
       // Проверяем, не истек ли срок действия кэша
       const metadata = this.extractMetadata(cached)
@@ -236,11 +307,23 @@ export class ApiCache {
         const isExpired = CacheUtils.isExpired(metadata)
         if (isExpired) {
           await this.storage.delete(cacheKey)
+
+          // Генерируем событие промаха кэша
+          this.eventEmitter.emit('cache:miss', {
+            endpointName,
+            key: String(cacheKey),
+            timestamp: Date.now(),
+          })
+
           return null
         }
 
-        // Увеличиваем счетчик обращений
-        await this.updateAccessCount(cacheKey, metadata)
+        // Генерируем событие попадания в кэш
+        this.eventEmitter.emit('cache:hit', {
+          endpointName,
+          key: String(cacheKey),
+          timestamp: Date.now(),
+        })
       }
 
       // Возвращаем данные из кэша с учетом разных форматов хранения
@@ -259,44 +342,6 @@ export class ApiCache {
     } catch (error) {
       apiLogger.error('Ошибка чтения из кэша', error)
       return null
-    }
-  }
-
-  /**
-   * Обновляет счетчик доступа к кэшу
-   * @param cacheKey Ключ кэша
-   * @param metadata Метаданные кэша
-   */
-  private async updateAccessCount(cacheKey: StorageKeyType, metadata: CacheMetadata): Promise<void> {
-    try {
-      const updatedMetadata = {
-        ...metadata,
-        accessCount: (metadata.accessCount || 0) + 1,
-        updatedAt: Date.now(),
-        updatedAtDateTime: new Date().toISOString(),
-      }
-
-      const cached = await this.storage.get(cacheKey)
-      if (cached && typeof cached === 'object') {
-        if ('metadata' in cached) {
-          await this.storage.set(cacheKey, {
-            ...cached,
-            metadata: updatedMetadata,
-          })
-        } else if ('data' in cached && cached.data && typeof cached.data === 'object' && 'metadata' in cached.data) {
-          const updatedData = {
-            ...cached.data,
-            metadata: updatedMetadata,
-          }
-          await this.storage.set(cacheKey, {
-            ...cached,
-            data: updatedData,
-          })
-        }
-      }
-    } catch (error) {
-      // Ошибка обновления счетчика не должна прерывать основной поток
-      apiLogger.debug('Ошибка обновления счетчика доступа к кэшу', error)
     }
   }
 
@@ -343,18 +388,25 @@ export class ApiCache {
       }
 
       await this.storage.set(key, cacheableData)
+
+      // Генерируем событие установки в кэш
+      this.eventEmitter.emit('cache:set', {
+        endpointName,
+        key: String(key),
+        timestamp: now,
+      })
     } catch (error) {
       apiLogger.error('Ошибка записи в кэш', error)
     }
   }
 
   /**
-  * Получает TTL для эндпоинта
-  * @param endpointName Имя эндпоинта
-  * @returns TTL в миллисекундах
-  */
+   * Получает TTL для эндпоинта
+   * @param endpointName Имя эндпоинта
+   * @returns TTL в миллисекундах
+   */
   public getCacheTTL(endpointName: string): number {
-  // Если кэширование отключено или опции не заданы
+    // Если кэширование отключено или опции не заданы
     if (this.cacheOptions === undefined || this.cacheOptions === false) {
       return 0
     }
@@ -438,6 +490,12 @@ export class ApiCache {
 
       if (invalidatedCount > 0) {
         apiLogger.debug(`Инвалидировано ${invalidatedCount} записей по тегам: ${tags.join(', ')}`)
+
+        // Генерируем событие инвалидации кэша
+        this.eventEmitter.emit('cache:invalidate', {
+          tags,
+          timestamp: Date.now(),
+        })
       }
     } catch (error) {
       apiLogger.error('Ошибка инвалидации кэша', error)
@@ -452,7 +510,7 @@ export class ApiCache {
       const keys = await this.storage.keys()
       const apiCacheKeys = keys.filter((key) => typeof key === 'string' && (
         key.startsWith('api:')
-          || key.startsWith('endpoint:')
+        || key.startsWith('endpoint:')
       ))
 
       for (const key of apiCacheKeys) {
@@ -460,6 +518,12 @@ export class ApiCache {
       }
 
       apiLogger.debug(`Очищен весь кэш API (${apiCacheKeys.length} записей)`)
+
+      // Генерируем событие очистки
+      this.eventEmitter.emit('cache:cleanup', {
+        removedCount: apiCacheKeys.length,
+        timestamp: Date.now(),
+      })
     } catch (error) {
       apiLogger.error('Ошибка полной очистки кэша', error)
     }

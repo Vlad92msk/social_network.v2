@@ -128,7 +128,15 @@ async function example() {
 
   // Получаем типизированные endpoints
   const endpoints = pokeApi.getEndpoints()
-
+  const byId = pokeApi.getEndpoints().getPokemonById
+  // pokeApi.getEndpoints()
+  // pokeApi.createEndpoint()
+  // pokeApi.getCacheableHeaderKeys()
+  // pokeApi.request()
+  // pokeApi.isInitialized()
+  // pokeApi.waitForInitialization()
+  // pokeApi.dispose()
+  // pokeApi.setCacheableHeaderKeys()
   // try {
   //   // Получаем список покемонов (без кэширования)
   //   const pokemonList = await endpoints.getPokemonList.fetch({ limit: 10 })
