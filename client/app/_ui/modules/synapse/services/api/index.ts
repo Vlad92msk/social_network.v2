@@ -1,36 +1,17 @@
-// Основные классы
+// Экспортируем API клиент
+export { ApiClient, createApiClient } from './components/api-client-refactored'
+
+// Экспортируем базовые компоненты
 export { ApiModule } from './components/api-module'
-export { ApiCache } from './components/api-cache'
-export { fetchBaseQuery } from './utils/fetch-base-query'
-export { ApiClient } from './components/api-client'
 
-// Функции-помощники
-export { 
-  headersToObject, 
-  filterCacheableHeaders,
-  createApiContext
-} from './utils/api-helpers'
+// Экспортируем типы
+export * from './types/api.interface'
+export * from './types/api-events.interface'
+export * from './types/api-middleware.interface'
 
-// Интерфейсы
-export type {
-  BaseQueryFn,
-  CacheConfig,
-  Endpoint,
-  EndpointBuilder,
-  EndpointConfig,
-  EndpointState,
-  ExtractParamsType,
-  ExtractResultType,
-  FetchBaseQueryArgs,
-  ApiModuleOptions,
-  QueryResult,
-  RequestDefinition,
-  RequestOptions,
-  Unsubscribe,
-  TypedEndpointConfig,
-  TypedApiModuleOptions,
-  EndpointsDefinition,
-  TypedEndpoints,
-  ApiContext,
-  StorageStrategy
-} from './types/api.interface'
+// Экспортируем менеджеры
+export * from './components/events'
+export * from './components/middleware'
+
+// Экспортируем утилиты
+export * from './utils/api-helpers'
