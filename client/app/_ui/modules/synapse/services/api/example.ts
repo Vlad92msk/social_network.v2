@@ -127,7 +127,7 @@ async function example() {
   // Получаем типизированные endpoints
   const endpoints = pokeApi.getEndpoints()
   const list = pokeApi.getEndpoints().getPokemonList
-  list.fetch({})
+  const в = list.fetch({})
 }
 
 export { example }
