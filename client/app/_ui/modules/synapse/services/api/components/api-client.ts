@@ -4,8 +4,8 @@ import { ApiModule } from './api-module'
 import { ApiEventData, ApiEventType } from '../types/api-events.interface'
 import { ApiMiddlewareContext, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 import {
+  CreateEndpoint,
   Endpoint,
-  EndpointBuilder,
   EndpointConfig,
   ExtractParamsType,
   ExtractResultType,
@@ -16,7 +16,6 @@ import {
 } from '../types/api.interface'
 
 import { apiLogger, createApiContext, createUniqueId, headersToObject } from '../utils/api-helpers'
-
 
 /**
  * Помощник для создания типизированных событий для конкретного эндпоинта
@@ -63,25 +62,19 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     // Сохраняем глобальные настройки заголовков для кэша
     const globalCacheableHeaderKeys = modifiedOptions.cacheableHeaderKeys || []
 
-    // Создаем builder для инъекции в endpoints, если функция endpoints принимает builder
+    // Если endpoints - это функция, которая принимает create
     if (typeof options.endpoints === 'function') {
-      const originalEndpoints = options.endpoints
-      // Проверяем количество параметров функции endpoints
-      if (originalEndpoints.length > 0) {
-        // Создаем билдер для endpoint'ов
-        const builder: EndpointBuilder = {
-          create: <TParams, TResult>(
-            config: EndpointConfig<TParams, TResult>,
-          ): TypedEndpointConfig<TParams, TResult> =>
-            // Возвращаем конфиг без модификаций, сохраняя оригинальную типизацию
-            config as TypedEndpointConfig<TParams, TResult>
-          ,
-        }
+      // Создаем функцию create, которая просто сохраняет типы
+      // без фактического изменения объекта
+      const create: CreateEndpoint = <TParams, TResult>(
+        config: EndpointConfig<TParams, TResult>,
+      ) => config
 
-        // Вызываем оригинальную функцию endpoints с builder
-        const endpoints = originalEndpoints(builder)
-        modifiedOptions.endpoints = () => endpoints
-      }
+      // Вызываем функцию endpoints с нашей функцией create
+      const endpoints = options.endpoints(create)
+
+      // Заменяем endpoints в modifiedOptions функцией, возвращающей endpoints
+      modifiedOptions.endpoints = () => endpoints
     }
 
     // Если baseQuery - это объект настроек fetchBaseQuery,

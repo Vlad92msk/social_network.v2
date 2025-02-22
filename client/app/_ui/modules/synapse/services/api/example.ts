@@ -79,9 +79,9 @@ async function example() {
       timeout: 10000,
     },
     // Типизированные endpoints с использованием builder
-    endpoints: (builder) => ({
+    endpoints: (create) => ({
       // Запрос списка покемонов (без кэширования)
-      getPokemonList: builder.create<PokemonSearchParams, PokemonListResponse>({
+      getPokemonList: create<PokemonSearchParams, PokemonListResponse>({
         request: (params = { limit: 20, offset: 0 }) => ({
           path: '/pokemon',
           method: 'GET',
@@ -92,7 +92,7 @@ async function example() {
       }),
 
       // Запрос деталей покемона по имени (с кэшированием)
-      getPokemonByName: builder.create<string, PokemonDetails>({
+      getPokemonByName: create<string, PokemonDetails>({
         request: (name) => ({
           path: `/pokemon/${name}`,
           method: 'GET',
@@ -105,7 +105,7 @@ async function example() {
       }),
 
       // Запрос деталей покемона по ID (с кэшированием - boolean вариант)
-      getPokemonById: builder.create<number, PokemonDetails>({
+      getPokemonById: create<number, PokemonDetails>({
         request: (id) => ({
           path: `/pokemon/${id}`,
           method: 'GET',
@@ -116,7 +116,7 @@ async function example() {
       }),
 
       // Запрос типов покемонов (без кэша)
-      getPokemonTypes: builder.create<void, { results: { name: string; url: string }[] }>({
+      getPokemonTypes: create<void, { results: { name: string; url: string }[] }>({
         request: () => ({
           path: '/type',
           method: 'GET',

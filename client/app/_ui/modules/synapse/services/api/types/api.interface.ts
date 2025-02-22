@@ -287,6 +287,10 @@ export type CacheConfig = boolean | {
   rules?: CacheRule[]
 }
 
+export type CreateEndpoint = <TParams, TResult>(
+  config: EndpointConfig<TParams, TResult>
+) => EndpointConfig<TParams, TResult>;
+
 /**
  * Опции для создания API-модуля
  */
@@ -309,17 +313,18 @@ export interface ApiModuleOptions {
   /** Базовый запрос или его настройки */
   baseQuery: BaseQueryFn | FetchBaseQueryArgs
   /** Функция для создания эндпоинтов */
-  endpoints?: ((builder: EndpointBuilder) => Record<string, EndpointConfig>) | (() => Record<string, EndpointConfig>)
+  endpoints?: (create: CreateEndpoint) => any | any
   /** Глобальные заголовки, влияющие на кэш */
   cacheableHeaderKeys?: string[]
 }
+
 
 /**
  * Типизированные опции для создания API-модуля
  */
 export interface TypedApiModuleOptions<T extends Record<string, TypedEndpointConfig<any, any>>> extends Omit<ApiModuleOptions, 'endpoints'> {
   /** Функция для создания типизированных эндпоинтов */
-  endpoints?: ((builder: EndpointBuilder) => T) | (() => T)
+  endpoints?: (create: CreateEndpoint) => T;
 }
 
 /** Извлечение типа параметров из конфигурации эндпоинта */

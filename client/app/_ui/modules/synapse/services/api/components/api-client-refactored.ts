@@ -4,8 +4,8 @@ import { ApiModule } from './api-module'
 import { ApiEventData, ApiEventType } from '../types/api-events.interface'
 import { ApiMiddlewareContext, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 import {
+  CreateEndpoint,
   Endpoint,
-  EndpointBuilder,
   EndpointConfig,
   ExtractParamsType,
   ExtractResultType,
@@ -15,16 +15,6 @@ import {
   Unsubscribe,
 } from '../types/api.interface'
 import { apiLogger, createApiContext, createUniqueId, headersToObject } from '../utils/api-helpers'
-
-/**
- * Помощник для извлечения типов параметров и результатов эндпоинтов
- */
-type EndpointTypes<T> = {
-  [K in keyof T]: {
-    params: ExtractParamsType<T[K]>
-    result: ExtractResultType<T[K]>
-  }
-}
 
 /**
  * Помощник для создания типизированных событий для конкретного эндпоинта
@@ -60,9 +50,6 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   /** Менеджер middleware */
   private middlewareManager: ApiMiddlewareManager
 
-  /** Типы эндпоинтов для типизации */
-  private endpointTypes!: EndpointTypes<T>
-
   /**
    * Создает новый экземпляр типизированного API-клиента
    * @param options Типизированные настройки модуля
@@ -74,28 +61,19 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     // Сохраняем глобальные настройки заголовков для кэша
     const globalCacheableHeaderKeys = modifiedOptions.cacheableHeaderKeys || []
 
-    // Создаем builder для инъекции в endpoints, если функция endpoints принимает builder
+    // Если endpoints - это функция, которая принимает create
     if (typeof options.endpoints === 'function') {
-      const originalEndpoints = options.endpoints
-      // Проверяем количество параметров функции endpoints
-      if (originalEndpoints.length > 0) {
-        // Создаем билдер для endpoint'ов
-        const builder: EndpointBuilder = {
-          create: <TParams, TResult>(
-            config: Omit<EndpointConfig<TParams, TResult>, 'response'>,
-          ): TypedEndpointConfig<TParams, TResult> =>
-            // Создаем новый объект с полем response для правильного вывода типов
-            ({
-              ...config,
-              response: null as unknown as TResult, // Используется только для типизации
-            } as TypedEndpointConfig<TParams, TResult>)
-          ,
-        }
+      // Создаем функцию create, которая просто сохраняет типы
+      // без фактического изменения объекта
+      const create: CreateEndpoint = <TParams, TResult>(
+        config: EndpointConfig<TParams, TResult>,
+      ) => config
 
-        // Вызываем оригинальную функцию endpoints с builder
-        const endpoints = originalEndpoints(builder)
-        modifiedOptions.endpoints = () => endpoints
-      }
+      // Вызываем функцию endpoints с нашей функцией create
+      const endpoints = options.endpoints(create)
+
+      // Заменяем endpoints в modifiedOptions функцией, возвращающей endpoints
+      modifiedOptions.endpoints = () => endpoints
     }
 
     // Если baseQuery - это объект настроек fetchBaseQuery,
@@ -123,9 +101,6 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     this.middlewareManager.setGlobalOptionsProvider(() => ({
       cacheableHeaderKeys: this._globalCacheableHeaderKeys,
     }))
-
-    // Инициализируем типы эндпоинтов для типизации
-    this.endpointTypes = {} as EndpointTypes<T>
   }
 
   /**
@@ -323,8 +298,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
         options: enhancedOptions,
         requestId,
         originalFetch: (p, o) => originalFetch.call(endpoint, p, o),
-        // @ts-ignore
-        client: this,
+        client: this as any,
       }
 
       try {

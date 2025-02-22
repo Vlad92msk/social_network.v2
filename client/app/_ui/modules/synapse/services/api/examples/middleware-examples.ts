@@ -18,8 +18,8 @@ export const createExampleClient = () => {
       baseUrl: 'https://api.example.com',
       timeout: 10000,
     },
-    endpoints: (builder) => ({
-      getUsers: builder.create({
+    endpoints: (create) => ({
+      getUsers: create({
         request: () => ({
           path: '/users',
           method: 'GET',
@@ -27,7 +27,7 @@ export const createExampleClient = () => {
         cache: true,
         tags: ['users'],
       }),
-      getUserById: builder.create({
+      getUserById: create({
         request: (id: number) => ({
           path: `/users/${id}`,
           method: 'GET',
@@ -35,7 +35,7 @@ export const createExampleClient = () => {
         cache: true,
         tags: ['users'],
       }),
-      createUser: builder.create({
+      createUser: create({
         request: (userData: any) => ({
           path: '/users',
           method: 'POST',

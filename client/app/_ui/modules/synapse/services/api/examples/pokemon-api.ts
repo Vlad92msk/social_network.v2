@@ -71,9 +71,9 @@ export const pokemonApi = new ApiClient({
     timeout: 10000,
   },
   // Типизированные endpoints
-  endpoints: (builder) => ({
+  endpoints: (create) => ({
     // Запрос списка покемонов (без кэширования)
-    getPokemonList: builder.create<PokemonSearchParams, PokemonListResponse>({
+    getPokemonList: create<PokemonSearchParams, PokemonListResponse>({
       request: (params = {
         limit: 20,
         offset: 0,
@@ -87,7 +87,7 @@ export const pokemonApi = new ApiClient({
     }),
 
     // Запрос деталей покемона по имени (с кэшированием)
-    getPokemonByName: builder.create<string, PokemonDetails>({
+    getPokemonByName: create<string, PokemonDetails>({
       request: (name) => ({
         path: `/pokemon/${name}`,
         method: 'GET',
@@ -100,7 +100,7 @@ export const pokemonApi = new ApiClient({
     }),
 
     // Запрос деталей покемона по ID (с явно включенным кэшированием)
-    getPokemonById: builder.create<number, PokemonDetails>({
+    getPokemonById: create<number, PokemonDetails>({
       request: (id) => ({
         path: `/pokemon/${id}`,
         method: 'GET',
@@ -111,7 +111,7 @@ export const pokemonApi = new ApiClient({
     }),
 
     // Запрос типов покемонов (без кэша)
-    getPokemonTypes: builder.create<void, { results: { name: string; url: string }[] }>({
+    getPokemonTypes: create<void, { results: { name: string; url: string }[] }>({
       request: () => ({
         path: '/type',
         method: 'GET',
