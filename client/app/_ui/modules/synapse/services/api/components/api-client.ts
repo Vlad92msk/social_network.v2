@@ -14,7 +14,6 @@ import {
   TypedEndpointConfig,
   Unsubscribe,
 } from '../types/api.interface'
-
 import { apiLogger, createApiContext, createUniqueId, headersToObject } from '../utils/api-helpers'
 
 /**
@@ -62,19 +61,10 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     // Сохраняем глобальные настройки заголовков для кэша
     const globalCacheableHeaderKeys = modifiedOptions.cacheableHeaderKeys || []
 
-    // Если endpoints - это функция, которая принимает create
-    if (typeof options.endpoints === 'function') {
-      // Создаем функцию create, которая просто сохраняет типы
-      // без фактического изменения объекта
-      const create: CreateEndpoint = <TParams, TResult>(
-        config: EndpointConfig<TParams, TResult>,
-      ) => config
-
-      // Вызываем функцию endpoints с нашей функцией create
-      const endpoints = options.endpoints(create)
-
-      // Заменяем endpoints в modifiedOptions функцией, возвращающей endpoints
-      modifiedOptions.endpoints = () => endpoints
+    // Если endpoints задан как объект, а не функция, обернем его в функцию
+    if (options.endpoints && typeof options.endpoints !== 'function') {
+      const endpointsObj = options.endpoints
+      modifiedOptions.endpoints = (create) => endpointsObj
     }
 
     // Если baseQuery - это объект настроек fetchBaseQuery,
@@ -299,7 +289,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
         options: enhancedOptions,
         requestId,
         originalFetch: (p, o) => originalFetch.call(endpoint, p, o),
-        client: this,
+        client: this as any,
       }
 
       try {

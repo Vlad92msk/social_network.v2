@@ -1,4 +1,4 @@
-import { createApiClient } from '../components/api-client-refactored'
+import { createApiClient } from '../components/api-client'
 import {
   createAuthMiddleware,
   createCacheMiddleware,

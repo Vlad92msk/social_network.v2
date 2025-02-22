@@ -1,8 +1,7 @@
-import { ApiClient } from './index'
-
 /**
  * Пример использования ApiClient с билдером эндпоинтов и настройками кэширования
  */
+import { ApiClient } from './components/api-client'
 
 // Типы данных для PokeAPI
 interface PokemonListResponse {
@@ -128,7 +127,8 @@ async function example() {
 
   // Получаем типизированные endpoints
   const endpoints = pokeApi.getEndpoints()
-  const byId = pokeApi.getEndpoints().getPokemonById
+  const byId = pokeApi.getEndpoints().getPokemonList
+  byId.fetch({})
   // pokeApi.getEndpoints()
   // pokeApi.createEndpoint()
   // pokeApi.getCacheableHeaderKeys()

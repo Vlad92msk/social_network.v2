@@ -1,3 +1,4 @@
+import { CacheRule } from '@ui/modules/synapse/services/storage/modules/cache/cache-module.service'
 import { ApiCache } from './api-cache'
 import { EndpointFactory } from './endpoint-factory'
 import { EndpointStateManager } from './endpoint-state-manager'
@@ -6,7 +7,7 @@ import { StorageManager } from './storage-manager'
 import {
   ApiModuleOptions,
   BaseQueryFn,
-  CacheConfig,
+  CacheConfig, CreateEndpoint,
   Endpoint,
   EndpointBuilder,
   EndpointConfig,
@@ -58,6 +59,12 @@ export class ApiModule {
     // Инициализируем менеджер хранилища
     this.storageManager = new StorageManager(options.storageType, options.options)
 
+    // Если endpoints - это объект, обернем его в функцию
+    if (options.endpoints && typeof options.endpoints !== 'function') {
+      const originalEndpoints = options.endpoints
+      options.endpoints = () => originalEndpoints
+    }
+
     // Инициализируем baseQuery
     this.baseQuery = this.initializeBaseQuery()
 
@@ -81,8 +88,7 @@ export class ApiModule {
       let cacheConfigObj: {
         ttl?: number,
         invalidateOnError?: boolean,
-        // @ts-ignore
-        rules?: CacheConfig['rules'],
+        rules?: CacheRule[],
         cleanup?: { enabled: boolean, interval?: number }
       } | undefined
 
@@ -169,32 +175,18 @@ export class ApiModule {
    * Инициализирует эндпоинты из конфигурации
    */
   private async initializeEndpoints(): Promise<void> {
-    // Создаем базовый билдер для endpoint'ов
-    const builder: EndpointBuilder = {
-      create: <TParams, TResult>(
-        config: Omit<EndpointConfig<TParams, TResult>, 'response'>,
-      ): TypedEndpointConfig<TParams, TResult> =>
-        // Создаем новый объект с полем response для правильного вывода типов
-        ({
-          ...config,
-          response: null as unknown as TResult, // Используется только для типизации
-        } as TypedEndpointConfig<TParams, TResult>)
-      ,
-    }
+    // Создаем функцию create для типизированных эндпоинтов
+    const create: CreateEndpoint = <TParams, TResult>(
+      config: EndpointConfig<TParams, TResult>,
+    ) => config
 
-    // Проверяем, принимает ли функция endpoints аргумент builder
+    // Получаем эндпоинты через функцию, которая всегда принимает create
     const endpointsFn = this.options.endpoints
-    let endpoints = {}
+    let endpoints: Record<string, EndpointConfig> = {}
 
     if (endpointsFn) {
       try {
-        // Проверяем количество параметров функции
-        endpoints = typeof endpointsFn === 'function'
-          ? endpointsFn.length > 0
-            ? endpointsFn(builder)
-            // @ts-ignore
-            : endpointsFn()
-          : endpointsFn
+        endpoints = endpointsFn(create) || {}
       } catch (error) {
         apiLogger.error('Ошибка инициализации эндпоинтов', error)
         endpoints = {}
@@ -204,7 +196,6 @@ export class ApiModule {
     // Создаем эндпоинты
     for (const [name, config] of Object.entries(endpoints)) {
       try {
-        // @ts-ignore - config может быть разных типов
         this.endpoints[name] = await this.createEndpoint(name, config)
       } catch (error) {
         apiLogger.error(`Ошибка создания эндпоинта ${name}`, error)

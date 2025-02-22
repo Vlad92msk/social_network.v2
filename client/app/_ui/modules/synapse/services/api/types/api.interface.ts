@@ -313,7 +313,7 @@ export interface ApiModuleOptions {
   /** Базовый запрос или его настройки */
   baseQuery: BaseQueryFn | FetchBaseQueryArgs
   /** Функция для создания эндпоинтов */
-  endpoints?: (create: CreateEndpoint) => any | any
+  endpoints?: (create: CreateEndpoint) => Record<string, EndpointConfig>
   /** Глобальные заголовки, влияющие на кэш */
   cacheableHeaderKeys?: string[]
 }
@@ -324,7 +324,7 @@ export interface ApiModuleOptions {
  */
 export interface TypedApiModuleOptions<T extends Record<string, TypedEndpointConfig<any, any>>> extends Omit<ApiModuleOptions, 'endpoints'> {
   /** Функция для создания типизированных эндпоинтов */
-  endpoints?: (create: CreateEndpoint) => T;
+  endpoints?: (create: CreateEndpoint) => T
 }
 
 /** Извлечение типа параметров из конфигурации эндпоинта */
