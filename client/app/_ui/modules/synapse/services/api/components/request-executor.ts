@@ -1,4 +1,5 @@
-import { ApiCache, EndpointConfig, RequestOptions } from '..'
+import { EndpointConfig, RequestOptions } from '..'
+import { ApiCache } from './api-cache'
 import { EndpointStateManager } from './endpoint-state-manager'
 import { BaseQueryFn } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'

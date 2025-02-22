@@ -1,4 +1,3 @@
-import { CacheRule } from '@ui/modules/synapse/services/storage/modules/cache/cache-module.service'
 import { ApiCache } from './api-cache'
 import { EndpointFactory } from './endpoint-factory'
 import { EndpointStateManager } from './endpoint-state-manager'
@@ -7,14 +6,13 @@ import { StorageManager } from './storage-manager'
 import {
   ApiModuleOptions,
   BaseQueryFn,
-  CacheConfig, CreateEndpoint,
+  CacheConfig,
+  CreateEndpoint,
   Endpoint,
-  EndpointBuilder,
   EndpointConfig,
   ExtractParamsType,
   ExtractResultType,
   FetchBaseQueryArgs,
-  TypedEndpointConfig,
 } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'
 import { fetchBaseQuery } from '../utils/fetch-base-query'
@@ -22,7 +20,6 @@ import { fetchBaseQuery } from '../utils/fetch-base-query'
 /**
  * Модуль управления API-запросами с кэшированием и типизацией
  */
-// 5. ApiModule.ts - переработанный главный модуль
 export class ApiModule {
   /** Менеджер хранилища */
   protected storageManager: StorageManager
@@ -59,12 +56,6 @@ export class ApiModule {
     // Инициализируем менеджер хранилища
     this.storageManager = new StorageManager(options.storageType, options.options)
 
-    // Если endpoints - это объект, обернем его в функцию
-    if (options.endpoints && typeof options.endpoints !== 'function') {
-      const originalEndpoints = options.endpoints
-      options.endpoints = () => originalEndpoints
-    }
-
     // Инициализируем baseQuery
     this.baseQuery = this.initializeBaseQuery()
 
@@ -85,12 +76,7 @@ export class ApiModule {
       this.stateManager = new EndpointStateManager(this.storageManager)
 
       // Инициализируем менеджер кэша
-      let cacheConfigObj: {
-        ttl?: number,
-        invalidateOnError?: boolean,
-        rules?: CacheRule[],
-        cleanup?: { enabled: boolean, interval?: number }
-      } | undefined
+      let cacheConfigObj: CacheConfig = {}
 
       if (this.options.cache === true) {
         cacheConfigObj = { ttl: 30 * 60 * 1000 }
@@ -99,12 +85,9 @@ export class ApiModule {
       }
 
       this.cacheManager = new ApiCache(storage, {
-        ttl: cacheConfigObj?.ttl,
-        invalidateOnError: cacheConfigObj?.invalidateOnError,
+        ...cacheConfigObj,
         tags: {},
         cacheableHeaderKeys: this.options.cacheableHeaderKeys,
-        rules: cacheConfigObj?.rules,
-        cleanup: cacheConfigObj?.cleanup,
       })
 
       // Инициализируем исполнитель запросов
@@ -176,17 +159,17 @@ export class ApiModule {
    */
   private async initializeEndpoints(): Promise<void> {
     // Создаем функцию create для типизированных эндпоинтов
-    const create: CreateEndpoint = <TParams, TResult>(
-      config: EndpointConfig<TParams, TResult>,
-    ) => config
+    const create: CreateEndpoint = <TParams, TResult>(config: EndpointConfig<TParams, TResult>) => config
 
-    // Получаем эндпоинты через функцию, которая всегда принимает create
+    // Получаем эндпоинты через функцию, которая может быть асинхронной
     const endpointsFn = this.options.endpoints
     let endpoints: Record<string, EndpointConfig> = {}
 
     if (endpointsFn) {
       try {
-        endpoints = endpointsFn(create) || {}
+        // Вызываем функцию endpoints и ждем результат (может быть Promise)
+        const result = await endpointsFn(create)
+        endpoints = result || {}
       } catch (error) {
         apiLogger.error('Ошибка инициализации эндпоинтов', error)
         endpoints = {}

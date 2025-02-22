@@ -2,21 +2,6 @@ import { CacheRule } from '../../storage/modules/cache/cache-module.service'
 import { StorageType } from '../../storage/storage.interface'
 
 /**
- * Стратегия хранения данных
- * Позволяет настроить поведение хранилища для разных типов данных
- */
-export interface StorageStrategy {
-  type: StorageType
-  options?: {
-    name?: string
-    dbName?: string
-    storeName?: string
-    dbVersion?: number
-    namespace?: string
-  }
-}
-
-/**
  * Контекст API для использования в prepareHeaders и других функциях
  * Содержит вспомогательные методы и информацию о запросе
  */
@@ -49,8 +34,8 @@ export interface BaseQueryFn {
 export interface FetchBaseQueryArgs {
   /** Базовый URL для всех запросов */
   baseUrl: string
-  /** Функция для подготовки заголовков */
-  prepareHeaders?: (headers: Headers, context: ApiContext) => Headers
+  /** Функция для подготовки заголовков, может быть асинхронной */
+  prepareHeaders?: (headers: Headers, context: ApiContext) => Headers | Promise<Headers>
   /** Таймаут запроса в миллисекундах */
   timeout?: number
   /** Пользовательская fetch-функция */
@@ -211,8 +196,8 @@ export interface EndpointConfig<TParams = any, TResult = any> {
   tags?: string[]
   /** Теги, которые инвалидируются при успешном запросе */
   invalidatesTags?: string[]
-  /** Функция для подготовки заголовков (переопределяет глобальную) */
-  prepareHeaders?: (headers: Headers, context: ApiContext) => Headers
+  /** Функция для подготовки заголовков (переопределяет глобальную), может быть асинхронной */
+  prepareHeaders?: (headers: Headers, context: ApiContext) => Headers | Promise<Headers>
   /** Ключи заголовков, влияющие на кэш */
   cacheableHeaderKeys?: string[]
 }
@@ -254,15 +239,11 @@ export interface Endpoint<TParams = any, TResult = any> {
 }
 
 /**
- * Билдер эндпоинтов
- * Используется для создания типизированных эндпоинтов
+ * Функция для создания типизированных эндпоинтов
  */
-export interface EndpointBuilder {
-  /** Создать типизированный эндпоинт */
-  create<TParams, TResult>(
-    config: EndpointConfig<TParams, TResult>
-  ): TypedEndpointConfig<TParams, TResult>;
-}
+export type CreateEndpoint = <TParams, TResult>(
+  config: EndpointConfig<TParams, TResult>
+) => EndpointConfig<TParams, TResult>;
 
 /** Функция для отписки от изменений состояния */
 export type Unsubscribe = () => void
@@ -287,10 +268,6 @@ export type CacheConfig = boolean | {
   rules?: CacheRule[]
 }
 
-export type CreateEndpoint = <TParams, TResult>(
-  config: EndpointConfig<TParams, TResult>
-) => EndpointConfig<TParams, TResult>;
-
 /**
  * Опции для создания API-модуля
  */
@@ -312,19 +289,18 @@ export interface ApiModuleOptions {
   cache?: CacheConfig
   /** Базовый запрос или его настройки */
   baseQuery: BaseQueryFn | FetchBaseQueryArgs
-  /** Функция для создания эндпоинтов */
-  endpoints?: (create: CreateEndpoint) => Record<string, EndpointConfig>
+  /** Функция для создания эндпоинтов, может быть асинхронной */
+  endpoints?: (create: CreateEndpoint) => Record<string, EndpointConfig> | Promise<Record<string, EndpointConfig>>
   /** Глобальные заголовки, влияющие на кэш */
   cacheableHeaderKeys?: string[]
 }
-
 
 /**
  * Типизированные опции для создания API-модуля
  */
 export interface TypedApiModuleOptions<T extends Record<string, TypedEndpointConfig<any, any>>> extends Omit<ApiModuleOptions, 'endpoints'> {
-  /** Функция для создания типизированных эндпоинтов */
-  endpoints?: (create: CreateEndpoint) => T
+  /** Функция для создания типизированных эндпоинтов, может быть асинхронной */
+  endpoints?: (create: CreateEndpoint) => T | Promise<T>
 }
 
 /** Извлечение типа параметров из конфигурации эндпоинта */

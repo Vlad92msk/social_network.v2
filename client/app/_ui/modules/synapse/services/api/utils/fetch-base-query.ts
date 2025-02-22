@@ -215,7 +215,8 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     // Применяем глобальную подготовку заголовков
     if (prepareHeaders) {
       try {
-        headers = prepareHeaders(headers, headerContext)
+        // Ожидаем результат prepareHeaders, который может быть асинхронным
+        headers = await Promise.resolve(prepareHeaders(headers, headerContext));
       } catch (error) {
         console.warn('[API] Ошибка при подготовке заголовков', error)
       }
@@ -282,7 +283,6 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
-        //@ts-ignore
         metadata: {
           requestHeaders: headerObj,
           cacheableHeaders,
@@ -303,7 +303,6 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: 0,
         statusText: error.message,
         headers: new Headers(),
-        //@ts-ignore
         metadata: {
           requestHeaders: headerObj,
           cacheableHeaders,

@@ -4,7 +4,6 @@ import { ApiModule } from './api-module'
 import { ApiEventData, ApiEventType } from '../types/api-events.interface'
 import { ApiMiddlewareContext, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 import {
-  CreateEndpoint,
   Endpoint,
   EndpointConfig,
   ExtractParamsType,
@@ -110,10 +109,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
    * @param listener Обработчик события с типизацией для конкретного эндпоинта
    * @returns Функция для отписки
    */
-  public onEndpoint<K extends keyof T>(
-    endpointName: K,
-    listener: (data: EndpointEventData<T, K, ApiEventData>) => void,
-  ): Unsubscribe {
+  public onEndpoint<K extends keyof T>(endpointName: K, listener: (data: EndpointEventData<T, K, ApiEventData>) => void): Unsubscribe {
     return this.eventManager.onEndpoint(
       String(endpointName),
       listener as unknown as (data: ApiEventData) => void,
@@ -126,10 +122,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
    * @param listener Обработчик события с типизацией
    * @returns Функция для отписки
    */
-  public onEvent<E extends ApiEventData['type']>(
-    eventType: E,
-    listener: (data: Extract<ApiEventData, { type: E }>) => void,
-  ): Unsubscribe {
+  public onEvent<E extends ApiEventData['type']>(eventType: E, listener: (data: Extract<ApiEventData, { type: E }>) => void): Unsubscribe {
     return this.eventManager.onEvent(eventType, listener)
   }
 
@@ -139,10 +132,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
    * @param listener Обработчик события
    * @returns Функция для отписки
    */
-  public onTag(
-    tag: string,
-    listener: (data: ApiEventData) => void,
-  ): Unsubscribe {
+  public onTag(tag: string, listener: (data: ApiEventData) => void): Unsubscribe {
     return this.eventManager.onTag(tag, listener)
   }
 
@@ -270,7 +260,11 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
       if (endpointConfig.prepareHeaders && requestOptions.headers) {
         try {
           const headers = new Headers(requestOptions.headers || {})
-          const preparedHeaders = endpointConfig.prepareHeaders(headers, context)
+
+          // Добавляем await для поддержки асинхронного prepareHeaders
+          const preparedHeaders = await Promise.resolve(
+            endpointConfig.prepareHeaders(headers, context),
+          )
 
           // Добавляем подготовленные заголовки в опции
           enhancedOptions = {
@@ -373,6 +367,9 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     params: P,
     options?: RequestOptions,
   ): Promise<R> {
+    // Дожидаемся полной инициализации перед выполнением запроса
+    await this.waitForInitialization()
+
     const endpoints = this.getEndpoints<T>()
     const endpoint = endpoints[endpointName as string]
 
@@ -420,7 +417,27 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   }
 }
 
-// Пример создания типизированного API-клиента
-export const createApiClient = <T extends Record<string, TypedEndpointConfig<any, any>>>(
+/**
+ * Создает и инициализирует экземпляр API-клиента
+ * Ожидает завершения инициализации перед возвратом
+ * @param options Типизированные настройки модуля
+ * @returns Promise с инициализированным API-клиентом
+ */
+export async function createInitializedApiClient<T extends Record<string, TypedEndpointConfig<any, any>>>(
   options: TypedApiModuleOptions<T>,
-): ApiClient<T> => new ApiClient<T>(options)
+): Promise<ApiClient<T>> {
+  const apiClient = new ApiClient<T>(options)
+  await apiClient.waitForInitialization()
+  return apiClient
+}
+
+/**
+ * Создает новый экземпляр API-клиента без ожидания инициализации
+ * @param options Типизированные настройки модуля
+ * @returns Экземпляр API-клиента
+ */
+export function createApiClient<T extends Record<string, TypedEndpointConfig<any, any>>>(
+  options: TypedApiModuleOptions<T>,
+): ApiClient<T> {
+  return new ApiClient<T>(options)
+}
