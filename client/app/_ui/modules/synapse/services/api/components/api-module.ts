@@ -57,14 +57,11 @@ export class ApiModule {
    */
   private async initialize(): Promise<void> {
     try {
-      console.log('Initialize: Starting...')
       // Дожидаемся инициализации хранилища
       const storage = await this.storageManager.initialize()
-      console.log('Initialize: Storage initialized')
 
       // Инициализируем менеджер состояния
       this.stateManager = new EndpointStateManager(this.storageManager)
-      console.log('Initialize: State manager initialized')
       // Инициализируем менеджер кэша
       let cacheConfigObj: CacheConfig = {}
 
@@ -86,15 +83,9 @@ export class ApiModule {
         this.cacheManager,
         this.stateManager,
       )
-      console.log('Initialize: Request executor created')
-
-      console.log('Initialize: API Module created')
-
       // Инициализируем эндпоинты если указаны
       if (this.options.endpoints) {
-        console.log('Initialize: Starting endpoints initialization')
         await this.initializeEndpoints()
-        console.log('Initialize: Endpoints initialized')
       }
     } catch (error) {
       this.cachingEnabled = false

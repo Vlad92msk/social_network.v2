@@ -17,7 +17,7 @@ export interface ApiMiddlewareContext {
   /** Оригинальная функция fetch */
   originalFetch: (...args: any[]) => Promise<any>
   /** Ссылка на клиент API */
-  client: ApiClient<any>
+  client: ApiClient<any> | null
 }
 
 /**

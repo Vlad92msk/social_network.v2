@@ -104,11 +104,11 @@ export class RequestExecutor {
           {
             data: result.data,
             // Преобразуем headers в обычный объект
-            //@ts-ignore
+            // @ts-ignore
             headers: Object.fromEntries(result.headers.entries()),
             status: result.status,
             ok: result.ok,
-          }
+          },
         )
       }
 
