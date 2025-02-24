@@ -1,3 +1,4 @@
+import { RequestWithState } from '@ui/modules/synapse/services/api/components/RequestWithState'
 import { CacheRule } from '../../storage/modules/cache/cache-module.service'
 import { StorageType } from '../../storage/storage.interface'
 
@@ -28,6 +29,19 @@ export interface BaseQueryFn {
   ): Promise<QueryResult<T, E>>
 }
 
+export interface RequestState<T = any> {
+  status: 'loading' | 'success' | 'error';
+  data?: T;
+  error?: Error;
+}
+
+export type RequestStateListener<T> = (state: RequestState<T>) => void;
+
+export interface FetchRequest<T> extends Promise<T> {
+  id: string;
+  subscribe: (listener: RequestStateListener<T>) => () => void;
+}
+
 /**
  * Аргументы для создания fetch-запроса
  */
@@ -42,6 +56,7 @@ export interface FetchBaseQueryArgs {
   fetchFn?: typeof fetch
   /** Ключи заголовков, которые влияют на кэш */
   cacheableHeaderKeys?: string[]
+  credentials?: RequestCredentials
 }
 
 /**
@@ -208,13 +223,19 @@ export interface EndpointConfig<TParams = any, TResult = any> {
  */
 export type TypedEndpointConfig<TParams = any, TResult = any> = EndpointConfig<TParams, TResult>
 
+
+export interface StateRequest<T> {
+  id: string;
+  subscribe: (listener: (state: RequestState<T>) => void) => () => void;
+  wait: () => Promise<T>;
+}
 /**
  * Интерфейс эндпоинта
  * Предоставляет методы для работы с конкретным API-эндпоинтом
  */
 export interface Endpoint<TParams = any, TResult = any> {
   /** Выполнить запрос с параметрами */
-  fetch: (params: TParams, options?: RequestOptions) => Promise<TResult>
+  fetch: (params: TParams, options?: RequestOptions) => StateRequest<TResult>;
   /** Подписаться на изменения состояния */
   subscribe: (callback: (state: EndpointState<TResult>) => void) => Unsubscribe
   /** Получить текущее состояние */

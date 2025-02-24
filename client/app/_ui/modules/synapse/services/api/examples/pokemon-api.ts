@@ -1,3 +1,4 @@
+import { ResponseFormat } from '@ui/modules/synapse/services/api'
 import { ApiClient } from '../components/api-client'
 
 // Типы данных для PokeAPI
@@ -55,7 +56,7 @@ export interface PokemonSearchParams {
   offset?: number;
 }
 
-export const pokemonApi = new ApiClient({
+export const api = new ApiClient({
   storageType: 'indexedDB',
   options: {
     name: 'pokemon-api-storage',
@@ -71,7 +72,7 @@ export const pokemonApi = new ApiClient({
     timeout: 10000,
   },
   // Типизированные endpoints
-  endpoints: (create) => ({
+  endpoints: async (create) => ({
     // Запрос списка покемонов (без кэширования)
     getPokemonList: create<PokemonSearchParams, PokemonListResponse>({
       request: (params = {
@@ -81,9 +82,10 @@ export const pokemonApi = new ApiClient({
         path: '/pokemon',
         method: 'GET',
         query: params,
+        responseFormat: ResponseFormat.Json
       }),
       // Явное отключение кэша для этого эндпоинта
-      cache: false,
+      // cache: false,
     }),
 
     // Запрос деталей покемона по имени (с кэшированием)
@@ -104,6 +106,7 @@ export const pokemonApi = new ApiClient({
       request: (id) => ({
         path: `/pokemon/${id}`,
         method: 'GET',
+        responseFormat: ResponseFormat.Json
       }),
       // Включаем кэширование с настройками по умолчанию
       cache: true,
@@ -120,6 +123,10 @@ export const pokemonApi = new ApiClient({
     }),
   }),
 })
+console.log('Starting API initialization...')
+export const pokemonApi = await api.init()
+console.log('API initialization completed')
 
+console.log('Getting endpoints...')
 export const pokemonEndpoints = pokemonApi.getEndpoints()
-export type UsersApiType = typeof pokemonApi
+console.log('Endpoints received')

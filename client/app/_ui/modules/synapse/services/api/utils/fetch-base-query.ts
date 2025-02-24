@@ -22,6 +22,7 @@ async function getResponseData<T, E>(
   format?: ResponseFormat,
 ): Promise<{ data?: T, error?: E, fileMetadata?: any }> {
   let responseFormat = format
+  console.log('responseFormat', responseFormat)
   const contentType = response.headers.get('content-type') || ''
 
   // Если формат не указан, пытаемся определить его из MIME-типа
@@ -52,6 +53,7 @@ async function getResponseData<T, E>(
         // Пробуем получить JSON-данные
         try {
           const data = await response.json()
+          console.log('data', data)
           return response.ok
             ? { data: data as T, fileMetadata }
             : { error: data as E, fileMetadata }
@@ -125,6 +127,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     timeout = 30000,
     fetchFn = fetch,
     cacheableHeaderKeys = [],
+    credentials = 'same-origin',
   } = options
 
   return async <T, E>(
@@ -152,6 +155,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     // Определяем формат ответа с приоритетом от options
     const responseFormat = optResponseFormat || reqResponseFormat
 
+    console.log('responseFormat', responseFormat)
     // Создаем расширенный контекст для подготовки заголовков
     const headerContext: ApiContext = {
       ...context,
@@ -266,7 +270,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         headers,
         body: serializedBody,
         signal,
-        credentials: 'include',
+        credentials,
       })
 
       // Используем Promise.race для обработки таймаута
@@ -283,6 +287,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
+        //@ts-ignore
         metadata: {
           requestHeaders: headerObj,
           cacheableHeaders,
@@ -303,6 +308,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: 0,
         statusText: error.message,
         headers: new Headers(),
+        //@ts-ignore
         metadata: {
           requestHeaders: headerObj,
           cacheableHeaders,

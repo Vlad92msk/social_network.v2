@@ -69,12 +69,14 @@ export class ApiModule {
    */
   private async initialize(): Promise<void> {
     try {
+      console.log('Initialize: Starting...')
       // Дожидаемся инициализации хранилища
       const storage = await this.storageManager.initialize()
+      console.log('Initialize: Storage initialized')
 
       // Инициализируем менеджер состояния
       this.stateManager = new EndpointStateManager(this.storageManager)
-
+      console.log('Initialize: State manager initialized')
       // Инициализируем менеджер кэша
       let cacheConfigObj: CacheConfig = {}
 
@@ -96,7 +98,7 @@ export class ApiModule {
         this.cacheManager,
         this.stateManager,
       )
-
+      console.log('Initialize: Request executor created')
       // Инициализируем фабрику эндпоинтов
       this.endpointFactory = new EndpointFactory(
         this.storageManager,
@@ -105,9 +107,13 @@ export class ApiModule {
         this.cacheManager,
       )
 
+      console.log('Initialize: Endpoint factory created')
+
       // Инициализируем эндпоинты если указаны
       if (this.options.endpoints) {
+        console.log('Initialize: Starting endpoints initialization')
         await this.initializeEndpoints()
+        console.log('Initialize: Endpoints initialized')
       }
     } catch (error) {
       this.cachingEnabled = false
@@ -158,31 +164,38 @@ export class ApiModule {
    * Инициализирует эндпоинты из конфигурации
    */
   private async initializeEndpoints(): Promise<void> {
-    // Создаем функцию create для типизированных эндпоинтов
-    const create: CreateEndpoint = <TParams, TResult>(config: EndpointConfig<TParams, TResult>) => config
+    try {
+      console.log('Starting endpoints initialization...')
 
-    // Получаем эндпоинты через функцию, которая может быть асинхронной
-    const endpointsFn = this.options.endpoints
-    let endpoints: Record<string, EndpointConfig> = {}
+      const create: CreateEndpoint = <TParams, TResult>(config: EndpointConfig<TParams, TResult>) => config
 
-    if (endpointsFn) {
-      try {
-        // Вызываем функцию endpoints и ждем результат (может быть Promise)
-        const result = await endpointsFn(create)
-        endpoints = result || {}
-      } catch (error) {
-        apiLogger.error('Ошибка инициализации эндпоинтов', error)
-        endpoints = {}
+      console.log('Created endpoint factory')
+
+      const endpointsFn = this.options.endpoints
+      if (endpointsFn) {
+        console.log('Getting endpoints configuration...')
+        const endpoints = await endpointsFn(create)
+        console.log('Got endpoints configuration:', Object.keys(endpoints))
+
+        // Создаем эндпоинты последовательно
+        for (const [name, config] of Object.entries(endpoints)) {
+          console.log(`Creating endpoint: ${name}`)
+          try {
+            this.endpoints[name] = await this.createEndpoint(name, config)
+            console.log(`Endpoint ${name} created successfully`)
+          } catch (error) {
+            console.error(`Error creating endpoint ${name}:`, error)
+            throw error // Или обработать по-другому если нужно
+          }
+        }
+
+        console.log('All endpoints created:', Object.keys(this.endpoints))
       }
-    }
 
-    // Создаем эндпоинты
-    for (const [name, config] of Object.entries(endpoints)) {
-      try {
-        this.endpoints[name] = await this.createEndpoint(name, config)
-      } catch (error) {
-        apiLogger.error(`Ошибка создания эндпоинта ${name}`, error)
-      }
+      console.log('Endpoints initialization completed')
+    } catch (error) {
+      console.error('Error in initializeEndpoints:', error)
+      throw error
     }
   }
 
@@ -196,19 +209,16 @@ export class ApiModule {
     nameOrConfig: string | EndpointConfig<TParams, TResult>,
     config?: EndpointConfig<TParams, TResult>,
   ): Promise<Endpoint<TParams, TResult>> {
-    // Дожидаемся инициализации модуля
-    await this.initialized
+    console.log('createEndpoint: Starting...', { nameOrConfig, config })
 
-    const endpoint = await this.endpointFactory.createEndpoint(nameOrConfig, config)
-
-    // Добавляем эндпоинт в реестр
-    const name = typeof nameOrConfig === 'string'
-      ? nameOrConfig
-      : endpoint.meta.name
-
-    this.endpoints[name] = endpoint
-
-    return endpoint
+    try {
+      const endpoint = await this.endpointFactory.createEndpoint(nameOrConfig, config)
+      console.log('createEndpoint: Endpoint created')
+      return endpoint
+    } catch (error) {
+      console.error('createEndpoint: Error creating endpoint:', error)
+      throw error
+    }
   }
 
   /**
@@ -250,7 +260,9 @@ export class ApiModule {
       this.cacheManager.dispose()
     }
 
-    // Отменяем все текущие запросы
-    this.requestExecutor.abortAllRequests()
+    // Отменяем все текущие запросы только если requestExecutor уже создан
+    if (this.requestExecutor) {
+      this.requestExecutor.abortAllRequests()
+    }
   }
 }

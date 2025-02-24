@@ -1,14 +1,14 @@
 import { ApiEventManager } from './api-event-manager'
 import { ApiMiddlewareManager } from './api-middleware-manager'
 import { ApiModule } from './api-module'
-import { ApiEventData, ApiEventType } from '../types/api-events.interface'
+import { ApiEventData, ApiEventType, RequestErrorEventData, RequestStartEventData, RequestSuccessEventData } from '../types/api-events.interface'
 import { ApiMiddlewareContext, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 import {
   Endpoint,
   EndpointConfig,
   ExtractParamsType,
   ExtractResultType,
-  RequestOptions,
+  RequestOptions, StateRequest,
   TypedApiModuleOptions,
   TypedEndpointConfig,
   Unsubscribe,
@@ -216,123 +216,111 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     }
 
     // Переопределяем fetch для поддержки контекста, событий и middleware
-    endpoint.fetch = async (params: TParams, requestOptions: RequestOptions = {}): Promise<TResult> => {
-      // Создаём уникальный ID запроса для отслеживания
-      const requestId = createUniqueId()
+    endpoint.fetch = (params: TParams, requestOptions: RequestOptions = {}): StateRequest<TResult> => {
+      const id = createUniqueId()
       const startTime = performance.now()
 
-      // Формируем базовые данные события начала запроса
-      const startEventData = {
-        type: 'request:start' as const,
-        endpointName: endpoint.meta.name,
-        params,
-        requestId,
-      }
-
-      // Генерируем события начала запроса через менеджер событий
-      this.eventManager.emitGroupEvents(
-        'request:start',
-        startEventData,
-        'request:start',
-        endpoint.meta.tags,
-      )
-
-      // Создаём контекст API
-      const context = createApiContext(
-        requestOptions.context || {},
-        params,
-      )
-
-      // Определяем, какие заголовки влияют на кэш
-      // Приоритет: опции запроса > эндпоинт > глобальные
-      const effectiveCacheableKeys = requestOptions.cacheableHeaderKeys
-        || endpointCacheableHeaderKeys
-        || this._globalCacheableHeaderKeys
-
-      // Формируем новые опции запроса
-      let enhancedOptions: RequestOptions = {
-        ...requestOptions,
-        context,
-        cacheableHeaderKeys: effectiveCacheableKeys,
-      }
-
-      // Подготавливаем заголовки если есть prepareHeaders в эндпоинте
-      if (endpointConfig.prepareHeaders && requestOptions.headers) {
+      const promise = (async () => {
         try {
-          const headers = new Headers(requestOptions.headers || {})
+          // Отправляем событие начала запроса
+          const startEventData: RequestStartEventData = {
+            type: 'request:start',
+            endpointName: endpoint.meta.name,
+            params,
+            requestId: id,
+            tags: endpoint.meta.tags,
+            context: {
+              type: 'request:start',
+            },
+          }
 
-          // Добавляем await для поддержки асинхронного prepareHeaders
-          const preparedHeaders = await Promise.resolve(
-            endpointConfig.prepareHeaders(headers, context),
+          this.eventManager.emitGroupEvents(
+            'request:start',
+            startEventData,
+            'request:start',
+            endpoint.meta.tags,
           )
 
-          // Добавляем подготовленные заголовки в опции
-          enhancedOptions = {
-            ...enhancedOptions,
-            headers: headersToObject(preparedHeaders),
+          // Выполняем запрос через middleware
+          const middlewareContext: ApiMiddlewareContext = {
+            endpointName: endpoint.meta.name,
+            params,
+            options: requestOptions,
+            requestId: id,
+            originalFetch: (p, o) => {
+              const stateRequest = originalFetch.call(endpoint, p, o)
+              return stateRequest.wait()
+            },
+            client: this,
           }
+
+          const result = await this.middlewareManager.execute(middlewareContext)
+
+          // Отправляем событие успешного запроса
+          const successEventData: RequestSuccessEventData = {
+            type: 'request:success',
+            endpointName: endpoint.meta.name,
+            params,
+            result,
+            duration: performance.now() - startTime,
+            requestId: id,
+            fromCache: false, // TODO: получать из результата middleware
+            tags: endpoint.meta.tags,
+            context: {
+              type: 'request:success',
+            },
+          }
+
+          this.eventManager.emitGroupEvents(
+            'request:success',
+            successEventData,
+            'request:success',
+            endpoint.meta.tags,
+          )
+
+          return result
         } catch (error) {
-          apiLogger.warn(`Ошибка подготовки заголовков для ${endpoint.meta.name}`, error)
+          // Отправляем событие ошибки
+          const errorEventData: RequestErrorEventData = {
+            type: 'request:error',
+            endpointName: endpoint.meta.name,
+            params,
+            error: error as Error,
+            duration: performance.now() - startTime,
+            requestId: id,
+            tags: endpoint.meta.tags,
+            context: {
+              type: 'request:error',
+            },
+          }
+
+          this.eventManager.emitGroupEvents(
+            'request:error',
+            errorEventData,
+            'request:error',
+            endpoint.meta.tags,
+          )
+
+          throw error
         }
-      }
+      })()
 
-      // Создаем middleware контекст
-      const middlewareContext: ApiMiddlewareContext = {
-        endpointName: endpoint.meta.name,
-        params,
-        options: enhancedOptions,
-        requestId,
-        originalFetch: (p, o) => originalFetch.call(endpoint, p, o),
-        client: this as any,
-      }
+      return {
+        id,
+        subscribe: (listener) => {
+          listener({ status: 'loading' })
 
-      try {
-        // Выполняем запрос через цепочку middleware
-        const result = await this.middlewareManager.execute(middlewareContext) as TResult
-        const duration = performance.now() - startTime
+          const unsubscribeFromEvents = this.eventManager.onEndpoint(endpoint.meta.name, (data: ApiEventData) => {
+            if (data.type === 'request:success' && data.requestId === id) {
+              listener({ status: 'success', data: data.result })
+            } else if (data.type === 'request:error' && data.requestId === id) {
+              listener({ status: 'error', error: data.error })
+            }
+          })
 
-        // Формируем данные о успешном запросе
-        const successEventData = {
-          type: 'request:success' as const,
-          endpointName: endpoint.meta.name,
-          params,
-          result,
-          duration,
-          requestId,
-          fromCache: false, // Можно добавить определение, если результат из кэша
-        }
-
-        // Генерируем события успешного запроса через менеджер событий
-        this.eventManager.emitGroupEvents(
-          'request:success',
-          successEventData,
-          'request:success',
-          endpoint.meta.tags,
-        )
-
-        return result
-      } catch (error) {
-        const duration = performance.now() - startTime
-
-        // Формируем данные об ошибке запроса
-        const errorEventData = {
-          type: 'request:error' as const,
-          endpointName: endpoint.meta.name,
-          params,
-          error: error as Error,
-          duration,
-          requestId,
-        }
-
-        // Генерируем события ошибки запроса через менеджер событий
-        this.eventManager.emitGroupEvents(
-          'request:error',
-          errorEventData,
-          'request:error',
-          endpoint.meta.tags,
-        )
-
-        throw error
+          return unsubscribeFromEvents
+        },
+        wait: () => promise,
       }
     }
 
@@ -414,6 +402,11 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
    */
   public getEventManager(): ApiEventManager {
     return this.eventManager
+  }
+
+  public async init(): Promise<this> {
+    await this.waitForInitialization()
+    return this
   }
 }
 
