@@ -3,22 +3,9 @@ import { EndpointStateManager } from './endpoint-state-manager'
 import { RequestExecutor } from './request-executor'
 import { StorageManager } from './storage-manager'
 import {
-  ApiModuleOptions,
-  BaseQueryFn,
-  CacheConfig,
-  CreateEndpoint,
-  Endpoint,
-  EndpointConfig,
-  EndpointState,
-  ExtractParamsType,
-  ExtractResultType,
-  FetchBaseQueryArgs,
-  RequestOptions,
-  RequestState,
-  StateRequest,
-  Unsubscribe
+  ApiModuleOptions, BaseQueryFn, CacheConfig, Endpoint, EndpointConfig, ExtractParamsType, ExtractResultType, FetchBaseQueryArgs,
 } from '../types/api.interface'
-import { apiLogger, createUniqueId } from '../utils/api-helpers'
+import { apiLogger } from '../utils/api-helpers'
 import { fetchBaseQuery } from '../utils/fetch-base-query'
 
 /**
@@ -148,167 +135,12 @@ export class ApiModule {
 
   /**
    * Инициализирует эндпоинты из конфигурации
+   * @remarks Метод базового класса делегирует создание эндпоинтов наследникам
    */
-  private async initializeEndpoints(): Promise<void> {
-    try {
-      console.log('Starting endpoints initialization...')
-
-      const create: CreateEndpoint = <TParams, TResult>(config: EndpointConfig<TParams, TResult>) => config
-
-      console.log('Created endpoint factory')
-
-      const endpointsFn = this.options.endpoints
-      if (endpointsFn) {
-        console.log('Getting endpoints configuration...')
-        const endpoints = await endpointsFn(create)
-        console.log('Got endpoints configuration:', Object.keys(endpoints))
-
-        // Создаем эндпоинты последовательно
-        for (const [name, config] of Object.entries(endpoints)) {
-          console.log(`Creating endpoint: ${name}`)
-          try {
-            this.endpoints[name] = await this.createEndpoint(name, config)
-            console.log(`Endpoint ${name} created successfully`)
-          } catch (error) {
-            console.error(`Error creating endpoint ${name}:`, error)
-            throw error // Или обработать по-другому если нужно
-          }
-        }
-
-        console.log('All endpoints created:', Object.keys(this.endpoints))
-      }
-
-      console.log('Endpoints initialization completed')
-    } catch (error) {
-      console.error('Error in initializeEndpoints:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Создает новый эндпоинт
-   * @param nameOrConfig Имя эндпоинта или его конфигурация
-   * @param config Конфигурация эндпоинта (если первый параметр - имя)
-   * @returns Promise с созданным эндпоинтом
-   */
-  public async createEndpoint<TParams, TResult>(
-    nameOrConfig: string | EndpointConfig<TParams, TResult>,
-    config?: EndpointConfig<TParams, TResult>,
-  ): Promise<Endpoint<TParams, TResult>> {
-    try {
-      console.log('createEndpoint: Starting create endpoint')
-
-      // Нормализуем параметры
-      const name = typeof nameOrConfig === 'string' ? nameOrConfig : ''
-      const endpointConfig = typeof nameOrConfig === 'string'
-        ? (config as EndpointConfig<TParams, TResult>)
-        : (nameOrConfig as EndpointConfig<TParams, TResult>)
-      const endpointName = name || `endpoint_${createUniqueId()}`
-
-      console.log('createEndpoint: Parameters normalized:', { endpointName })
-
-      // Инициализируем начальное состояние
-      const initialState: EndpointState<TResult> = {
-        status: 'idle',
-        meta: {
-          tags: endpointConfig.tags || [],
-          invalidatesTags: endpointConfig.invalidatesTags || [],
-          cache: endpointConfig.cache || {},
-        },
-      }
-
-      // Сохраняем начальное состояние в хранилище
-      try {
-        await this.storageManager.set(`endpoint:${endpointName}`, initialState)
-        console.log(`Initial state saved for endpoint ${endpointName}`)
-      } catch (error) {
-        console.error(`Failed to save initial state for endpoint ${endpointName}:`, error)
-        throw error
-      }
-
-      // Регистрируем теги эндпоинта в cacheManager, если кэширование включено
-      if (this.cacheManager && endpointConfig.tags?.length) {
-        this.cacheManager.registerTags(endpointName, endpointConfig.tags)
-      }
-
-      // Создаем эндпоинт
-      const endpoint: Endpoint<TParams, TResult> = {
-        // Метод выполнения запроса
-        fetch: (params: TParams, options?: RequestOptions) => {
-          const id = createUniqueId();
-          const listeners = new Set<(state: RequestState<TResult>) => void>();
-
-          const promise = this.requestExecutor.executeRequest(
-            endpointName,
-            endpointConfig,
-            params,
-            options
-          );
-
-          // Создаем объект с необходимыми методами
-          const request: StateRequest<TResult> = {
-            id,
-            subscribe: (listener) => {
-              listeners.add(listener);
-              listener({ status: 'loading' });
-
-              promise
-                .then(result => listener({ status: 'success', data: result }))
-                .catch(error => listener({ status: 'error', error }));
-
-              return () => listeners.delete(listener);
-            },
-            wait: () => promise
-          };
-
-          console.log('Created request object:', request); // Для отладки
-          return request;
-        },
-
-        // Подписка на изменения состояния
-        subscribe: (callback): Unsubscribe => this.stateManager.subscribeToEndpointState(endpointName, callback),
-
-        // Получение текущего состояния
-        getState: async (): Promise<EndpointState<TResult>> => this.stateManager.getEndpointState(endpointName, initialState),
-
-        // Инвалидация кэша по тегам
-        invalidate: async (): Promise<void> => {
-          // Инвалидируем кэш по тегам эндпоинта
-          if (this.cacheManager && endpointConfig.invalidatesTags?.length) {
-            await this.cacheManager.invalidateByTags(endpointConfig.invalidatesTags)
-          }
-
-          // Сбрасываем состояние
-          await this.stateManager.updateEndpointState(endpointName, {
-            ...initialState,
-            status: 'idle',
-          })
-        },
-
-        // Сброс состояния эндпоинта
-        reset: async (): Promise<void> => {
-          await this.stateManager.updateEndpointState(endpointName, initialState)
-        },
-
-        // Отмена текущего запроса
-        abort: (): void => {
-          this.requestExecutor.abortRequest(endpointName)
-        },
-
-        // Метаданные эндпоинта
-        meta: {
-          name: endpointName,
-          tags: endpointConfig.tags || [],
-          invalidatesTags: endpointConfig.invalidatesTags || [],
-          cache: endpointConfig.cache || {},
-        },
-      }
-
-      return endpoint
-    } catch (error) {
-      console.error('Error in createEndpoint:', error)
-      throw error
-    }
+  protected async initializeEndpoints(): Promise<void> {
+    console.log('ApiModule.initializeEndpoints: This method should be overridden by child classes')
+    // Базовая реализация ничего не делает, так как метод createEndpoint теперь только в ApiClient
+    // Наследники должны переопределить этот метод, чтобы создавать эндпоинты
   }
 
   /**

@@ -4,16 +4,17 @@ import { ApiModule } from './api-module'
 import { ApiEventData, ApiEventType, RequestErrorEventData, RequestStartEventData, RequestSuccessEventData } from '../types/api-events.interface'
 import { ApiMiddlewareContext, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 import {
+  CreateEndpoint,
   Endpoint,
-  EndpointConfig,
+  EndpointConfig, EndpointState,
   ExtractParamsType,
   ExtractResultType,
-  RequestOptions, StateRequest,
+  RequestOptions, RequestState, StateRequest,
   TypedApiModuleOptions,
   TypedEndpointConfig,
   Unsubscribe,
 } from '../types/api.interface'
-import { apiLogger, createApiContext, createUniqueId, headersToObject } from '../utils/api-helpers'
+import { apiLogger, createUniqueId } from '../utils/api-helpers'
 
 /**
  * Помощник для создания типизированных событий для конкретного эндпоинта
@@ -37,9 +38,6 @@ type EndpointEventData<
  * Улучшенный типизированный клиент API с типизированными подписками
  */
 export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> extends ApiModule {
-  /** Типизированные опции модуля */
-  private _typedOptions: TypedApiModuleOptions<T>
-
   /** Глобальные настройки заголовков для кэша */
   private _globalCacheableHeaderKeys: string[]
 
@@ -76,7 +74,6 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     }
 
     super(modifiedOptions as any)
-    this._typedOptions = modifiedOptions
     this._globalCacheableHeaderKeys = globalCacheableHeaderKeys
 
     // Инициализируем менеджер событий
@@ -172,159 +169,308 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   }
 
   /**
-   * Переопределяем создание эндпоинта для поддержки контекста, событий и middleware
+   * Создает новый эндпоинт с поддержкой контекста, событий и middleware
    * @param nameOrConfig Имя эндпоинта или его конфигурация
    * @param config Конфигурация эндпоинта (если первый параметр - имя)
    * @returns Promise с созданным эндпоинтом
    */
-  public override async createEndpoint<TParams, TResult>(
+  public async createEndpoint<TParams, TResult>(
     nameOrConfig: string | EndpointConfig<TParams, TResult>,
     config?: EndpointConfig<TParams, TResult>,
   ): Promise<Endpoint<TParams, TResult>> {
-    // Получаем базовую реализацию эндпоинта
-    const endpoint = await super.createEndpoint<TParams, TResult>(nameOrConfig, config)
+    try {
+      console.log('createEndpoint: Starting create endpoint')
 
-    // Сохраняем оригинальную функцию fetch и subscribe
-    const originalFetch = endpoint.fetch
-    const originalSubscribe = endpoint.subscribe
+      // Нормализуем параметры
+      const name = typeof nameOrConfig === 'string' ? nameOrConfig : ''
+      const endpointConfig = typeof nameOrConfig === 'string'
+        ? (config as EndpointConfig<TParams, TResult>)
+        : (nameOrConfig as EndpointConfig<TParams, TResult>)
+      const endpointName = name || `endpoint_${createUniqueId()}`
 
-    // Получаем конфигурацию эндпоинта
-    const endpointConfig = typeof nameOrConfig === 'string' ? config! : nameOrConfig
+      console.log('createEndpoint: Parameters normalized:', { endpointName })
 
-    // Получаем кэшируемые заголовки для эндпоинта
-    const endpointCacheableHeaderKeys = endpointConfig.cacheableHeaderKeys
-
-    // Переопределяем subscribe для эндпоинта, чтобы использовать нашу систему событий
-    endpoint.subscribe = (callback): Unsubscribe => {
-      // Используем как оригинальную подписку для состояния, так и нашу систему событий
-      const unsubscribeOriginal = originalSubscribe.call(endpoint, callback)
-      const unsubscribeEvents = this.onEndpoint(endpoint.meta.name as any, (data) => {
-        // Передаем в callback только данные, которые связаны с изменением состояния
-        if (data.context?.type === 'request:start'
-          || data.context?.type === 'request:success'
-          || data.context?.type === 'request:error') {
-          // @ts-ignore
-          callback(data)
-        }
-      })
-
-      // Возвращаем функцию для отписки от обоих источников
-      return () => {
-        unsubscribeOriginal()
-        unsubscribeEvents()
-      }
-    }
-
-    // Переопределяем fetch для поддержки контекста, событий и middleware
-    endpoint.fetch = (params: TParams, requestOptions: RequestOptions = {}): StateRequest<TResult> => {
-      const id = createUniqueId()
-      const startTime = performance.now()
-
-      const promise = (async () => {
-        try {
-          // Отправляем событие начала запроса
-          const startEventData: RequestStartEventData = {
-            type: 'request:start',
-            endpointName: endpoint.meta.name,
-            params,
-            requestId: id,
-            tags: endpoint.meta.tags,
-            context: {
-              type: 'request:start',
-            },
-          }
-
-          this.eventManager.emitGroupEvents(
-            'request:start',
-            startEventData,
-            'request:start',
-            endpoint.meta.tags,
-          )
-
-          // Выполняем запрос через middleware
-          const middlewareContext: ApiMiddlewareContext = {
-            endpointName: endpoint.meta.name,
-            params,
-            options: requestOptions,
-            requestId: id,
-            originalFetch: (p, o) => {
-              const stateRequest = originalFetch.call(endpoint, p, o)
-              return stateRequest.wait()
-            },
-            client: this,
-          }
-
-          const result = await this.middlewareManager.execute(middlewareContext)
-
-          // Отправляем событие успешного запроса
-          const successEventData: RequestSuccessEventData = {
-            type: 'request:success',
-            endpointName: endpoint.meta.name,
-            params,
-            result,
-            duration: performance.now() - startTime,
-            requestId: id,
-            fromCache: false, // TODO: получать из результата middleware
-            tags: endpoint.meta.tags,
-            context: {
-              type: 'request:success',
-            },
-          }
-
-          this.eventManager.emitGroupEvents(
-            'request:success',
-            successEventData,
-            'request:success',
-            endpoint.meta.tags,
-          )
-
-          return result
-        } catch (error) {
-          // Отправляем событие ошибки
-          const errorEventData: RequestErrorEventData = {
-            type: 'request:error',
-            endpointName: endpoint.meta.name,
-            params,
-            error: error as Error,
-            duration: performance.now() - startTime,
-            requestId: id,
-            tags: endpoint.meta.tags,
-            context: {
-              type: 'request:error',
-            },
-          }
-
-          this.eventManager.emitGroupEvents(
-            'request:error',
-            errorEventData,
-            'request:error',
-            endpoint.meta.tags,
-          )
-
-          throw error
-        }
-      })()
-
-      return {
-        id,
-        subscribe: (listener) => {
-          listener({ status: 'loading' })
-
-          const unsubscribeFromEvents = this.eventManager.onEndpoint(endpoint.meta.name, (data: ApiEventData) => {
-            if (data.type === 'request:success' && data.requestId === id) {
-              listener({ status: 'success', data: data.result })
-            } else if (data.type === 'request:error' && data.requestId === id) {
-              listener({ status: 'error', error: data.error })
-            }
-          })
-
-          return unsubscribeFromEvents
+      // Инициализируем начальное состояние
+      const initialState: EndpointState<TResult> = {
+        status: 'idle',
+        meta: {
+          tags: endpointConfig.tags || [],
+          invalidatesTags: endpointConfig.invalidatesTags || [],
+          cache: endpointConfig.cache || {},
         },
-        wait: () => promise,
       }
-    }
 
-    return endpoint
+      // Сохраняем начальное состояние в хранилище
+      try {
+        await this.storageManager.set(`endpoint:${endpointName}`, initialState)
+        console.log(`Initial state saved for endpoint ${endpointName}`)
+      } catch (error) {
+        console.error(`Failed to save initial state for endpoint ${endpointName}:`, error)
+        throw error
+      }
+
+      // Регистрируем теги эндпоинта в cacheManager, если кэширование включено
+      if (this.cacheManager && endpointConfig.tags?.length) {
+        this.cacheManager.registerTags(endpointName, endpointConfig.tags)
+      }
+
+      // Получаем кэшируемые заголовки для эндпоинта
+      const endpointCacheableHeaderKeys = endpointConfig.cacheableHeaderKeys
+
+      // Создаем базовую версию эндпоинта
+      const endpoint: Endpoint<TParams, TResult> = {
+        // Метод выполнения запроса
+        fetch: (params: TParams, options?: RequestOptions) => {
+          const id = createUniqueId()
+          const listeners = new Set<(state: RequestState<TResult>) => void>()
+
+          const promise = this.requestExecutor.executeRequest(
+            endpointName,
+            endpointConfig,
+            params,
+            options,
+          )
+
+          // Создаем объект с необходимыми методами
+          const request: StateRequest<TResult> = {
+            id,
+            subscribe: (listener) => {
+              listeners.add(listener)
+              listener({ status: 'loading' })
+
+              promise
+                .then((result) => listener({ status: 'success', data: result }))
+                .catch((error) => listener({ status: 'error', error }))
+
+              return () => listeners.delete(listener)
+            },
+            wait: () => promise,
+          }
+
+          console.log('Created request object:', request) // Для отладки
+          return request
+        },
+
+        // Подписка на изменения состояния
+        subscribe: (callback): Unsubscribe => this.stateManager.subscribeToEndpointState(endpointName, callback),
+
+        // Получение текущего состояния
+        getState: async (): Promise<EndpointState<TResult>> => this.stateManager.getEndpointState(endpointName, initialState),
+
+        // Инвалидация кэша по тегам
+        invalidate: async (): Promise<void> => {
+          // Инвалидируем кэш по тегам эндпоинта
+          if (this.cacheManager && endpointConfig.invalidatesTags?.length) {
+            await this.cacheManager.invalidateByTags(endpointConfig.invalidatesTags)
+          }
+
+          // Сбрасываем состояние
+          await this.stateManager.updateEndpointState(endpointName, {
+            ...initialState,
+            status: 'idle',
+          })
+        },
+
+        // Сброс состояния эндпоинта
+        reset: async (): Promise<void> => {
+          await this.stateManager.updateEndpointState(endpointName, initialState)
+        },
+
+        // Отмена текущего запроса
+        abort: (): void => {
+          this.requestExecutor.abortRequest(endpointName)
+        },
+
+        // Метаданные эндпоинта
+        meta: {
+          name: endpointName,
+          tags: endpointConfig.tags || [],
+          invalidatesTags: endpointConfig.invalidatesTags || [],
+          cache: endpointConfig.cache || {},
+        },
+      }
+
+      // Сохраняем оригинальную функцию fetch и subscribe для middleware
+      const originalFetch = endpoint.fetch
+      const originalSubscribe = endpoint.subscribe
+
+      // Переопределяем subscribe для эндпоинта, чтобы использовать нашу систему событий
+      endpoint.subscribe = (callback): Unsubscribe => {
+        // Используем как оригинальную подписку для состояния, так и нашу систему событий
+        const unsubscribeOriginal = originalSubscribe.call(endpoint, callback)
+        const unsubscribeEvents = this.onEndpoint(endpoint.meta.name as any, (data) => {
+          // Передаем в callback только данные, которые связаны с изменением состояния
+          if (data.context?.type === 'request:start'
+            || data.context?.type === 'request:success'
+            || data.context?.type === 'request:error') {
+            // @ts-ignore
+            callback(data)
+          }
+        })
+
+        // Возвращаем функцию для отписки от обоих источников
+        return () => {
+          unsubscribeOriginal()
+          unsubscribeEvents()
+        }
+      }
+
+      // Переопределяем fetch для поддержки контекста, событий и middleware
+      endpoint.fetch = (params: TParams, requestOptions: RequestOptions = {}): StateRequest<TResult> => {
+        const id = createUniqueId()
+        const startTime = performance.now()
+
+        const promise = (async () => {
+          try {
+            // Отправляем событие начала запроса
+            const startEventData: RequestStartEventData = {
+              type: 'request:start',
+              endpointName: endpoint.meta.name,
+              params,
+              requestId: id,
+              tags: endpoint.meta.tags,
+              context: {
+                type: 'request:start',
+              },
+            }
+
+            this.eventManager.emitGroupEvents(
+              'request:start',
+              startEventData,
+              'request:start',
+              endpoint.meta.tags,
+            )
+
+            // Выполняем запрос через middleware
+            const middlewareContext: ApiMiddlewareContext = {
+              endpointName: endpoint.meta.name,
+              params,
+              options: requestOptions,
+              requestId: id,
+              originalFetch: (p, o) => {
+                const stateRequest = originalFetch.call(endpoint, p, o)
+                return stateRequest.wait()
+              },
+              client: this,
+            }
+
+            const result = await this.middlewareManager.execute(middlewareContext)
+
+            // Отправляем событие успешного запроса
+            const successEventData: RequestSuccessEventData = {
+              type: 'request:success',
+              endpointName: endpoint.meta.name,
+              params,
+              result,
+              duration: performance.now() - startTime,
+              requestId: id,
+              fromCache: false, // TODO: получать из результата middleware
+              tags: endpoint.meta.tags,
+              context: {
+                type: 'request:success',
+              },
+            }
+
+            this.eventManager.emitGroupEvents(
+              'request:success',
+              successEventData,
+              'request:success',
+              endpoint.meta.tags,
+            )
+
+            return result
+          } catch (error) {
+            // Отправляем событие ошибки
+            const errorEventData: RequestErrorEventData = {
+              type: 'request:error',
+              endpointName: endpoint.meta.name,
+              params,
+              error: error as Error,
+              duration: performance.now() - startTime,
+              requestId: id,
+              tags: endpoint.meta.tags,
+              context: {
+                type: 'request:error',
+              },
+            }
+
+            this.eventManager.emitGroupEvents(
+              'request:error',
+              errorEventData,
+              'request:error',
+              endpoint.meta.tags,
+            )
+
+            throw error
+          }
+        })()
+
+        return {
+          id,
+          subscribe: (listener) => {
+            listener({ status: 'loading' })
+
+            const unsubscribeFromEvents = this.eventManager.onEndpoint(endpoint.meta.name, (data: ApiEventData) => {
+              if (data.type === 'request:success' && data.requestId === id) {
+                listener({ status: 'success', data: data.result })
+              } else if (data.type === 'request:error' && data.requestId === id) {
+                listener({ status: 'error', error: data.error })
+              }
+            })
+
+            return unsubscribeFromEvents
+          },
+          wait: () => promise,
+        }
+      }
+
+      // Сохраняем эндпоинт в реестре
+      this.endpoints[endpointName] = endpoint
+
+      return endpoint
+    } catch (error) {
+      console.error('Error in createEndpoint:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Переопределяет метод инициализации эндпоинтов
+   */
+  protected override async initializeEndpoints(): Promise<void> {
+    try {
+      console.log('Starting endpoints initialization...')
+
+      const create: CreateEndpoint = <TParams, TResult>(config: EndpointConfig<TParams, TResult>) => config
+
+      console.log('Created endpoint factory')
+
+      const endpointsFn = this.options.endpoints
+      if (endpointsFn) {
+        console.log('Getting endpoints configuration...')
+        const endpoints = await endpointsFn(create)
+        console.log('Got endpoints configuration:', Object.keys(endpoints))
+
+        // Создаем эндпоинты последовательно
+        for (const [name, config] of Object.entries(endpoints)) {
+          console.log(`Creating endpoint: ${name}`)
+          try {
+            this.endpoints[name] = await this.createEndpoint(name, config)
+            console.log(`Endpoint ${name} created successfully`)
+          } catch (error) {
+            console.error(`Error creating endpoint ${name}:`, error)
+            throw error // Или обработать по-другому если нужно
+          }
+        }
+
+        console.log('All endpoints created:', Object.keys(this.endpoints))
+      }
+
+      console.log('Endpoints initialization completed')
+    } catch (error) {
+      console.error('Error in initializeEndpoints:', error)
+      throw error
+    }
   }
 
   /**
@@ -362,7 +508,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     const endpoint = endpoints[endpointName as string]
 
     if (!endpoint) {
-      throw new Error(`Эндпоинт "${String(endpointName)}" не найден`)
+      throw new Error(`Эндпоинт ${String(endpointName)} не найден`)
     }
 
     try {
