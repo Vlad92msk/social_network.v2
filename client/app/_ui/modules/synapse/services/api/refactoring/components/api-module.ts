@@ -106,10 +106,10 @@ export class ApiModule {
 
       // Инициализируем исполнитель запросов
       this.requestExecutor = new RequestExecutor(
-        this.baseQuery,
         this.cacheManager,
         this.stateManager,
         this.middlewareManager,
+        this.baseQuery,
         (eventType, data) => this.eventBus.emit(eventType, data),
       )
 
@@ -126,10 +126,10 @@ export class ApiModule {
 
       // Инициализируем исполнитель запросов без кэша
       this.requestExecutor = new RequestExecutor(
-        this.baseQuery,
         null,
         this.stateManager,
         this.middlewareManager,
+        this.baseQuery,
         (eventType, data) => this.eventBus.emit(eventType, data),
       )
 

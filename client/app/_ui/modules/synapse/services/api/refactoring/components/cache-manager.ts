@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events'
+import { CacheMetadata, CacheUtils } from '../../../storage/modules/cache/cache-module.service'
 import { IStorage } from '../../../storage/storage.interface'
 import { StorageKeyType } from '../../../storage/utils/storage-key'
 import {
   CacheConfig,
-  CacheMetadata,
   EndpointConfig,
   QueryResult,
   RequestDefinition,
@@ -117,27 +117,23 @@ export class CacheManager {
   public async clearExpired(): Promise<void> {
     try {
       const keys = await this.storage.keys()
-      const apiCacheKeys = keys.filter((key) => typeof key === 'string' && (key.startsWith('api:') || key.startsWith('endpoint:')))
-
       let clearedCount = 0
 
-      for (const key of apiCacheKeys) {
+      await Promise.all(keys.map(async (key) => {
         const value = await this.storage.get(key)
-        if (!value) continue
-
         const metadata = this.extractMetadata(value)
 
-        if (metadata && this.isExpired(metadata)) {
+        if (metadata && CacheUtils.isExpired(metadata)) {
           await this.storage.delete(key)
           clearedCount++
         }
-      }
+      }))
 
       if (clearedCount > 0) {
         apiLogger.debug(`Очищено ${clearedCount} просроченных записей из кэша`)
 
         // Генерируем событие очистки
-        this.eventEmitter.emit('cleanup', {
+        this.eventEmitter.emit('cache:cleanup', {
           removedCount: clearedCount,
           timestamp: Date.now(),
         })
@@ -145,15 +141,6 @@ export class CacheManager {
     } catch (error) {
       apiLogger.error('Ошибка очистки кэша', error)
     }
-  }
-
-  /**
-   * Проверяет, истек ли срок действия кэша
-   * @param metadata Метаданные кэша
-   * @returns true если срок действия истек
-   */
-  private isExpired(metadata: CacheMetadata): boolean {
-    return metadata.expiresAt <= Date.now()
   }
 
   /**
@@ -259,7 +246,7 @@ export class CacheManager {
       cacheableHeaderKeys?: string[];
     },
     result?: QueryResult,
-  ): [StorageKeyType, Record<string, any>] {
+  ): [StorageKeyType, Record<string, any> | undefined] {
     // Базовые компоненты ключа
     const keyParams: Record<string, any> = {
       method: requestDef.method,
@@ -298,8 +285,8 @@ export class CacheManager {
       }
     })
 
-    // Формируем ключ для хранилища
-    return [`api:${endpointName}`, keyParams]
+    // Используем CacheUtils для создания ключа
+    return CacheUtils.createApiKey(endpointName, keyParams)
   }
 
   /**
@@ -310,14 +297,14 @@ export class CacheManager {
    * @param options Опции запроса
    * @returns Кэшированный результат или null
    */
-  public async get<T, E = Error>(
+  public async get<T>(
     endpointName: string,
     requestDef: RequestDefinition,
     params: any,
     options?: {
       cacheableHeaderKeys?: string[];
     },
-  ): Promise<QueryResult<T, E> | null> {
+  ): Promise<QueryResult<T> | null> {
     try {
       // Создаем ключ кэша
       const [cacheKey, keyParams] = this.createCacheKey(
@@ -344,7 +331,7 @@ export class CacheManager {
       // Проверяем, не истек ли срок действия кэша
       const metadata = this.extractMetadata(cached)
       if (metadata) {
-        if (this.isExpired(metadata)) {
+        if (CacheUtils.isExpired(metadata)) {
           await this.storage.delete(cacheKey)
 
           // Генерируем событие промаха кэша
@@ -369,13 +356,13 @@ export class CacheManager {
       if ('data' in cached && cached.data) {
         // Если данные хранятся в формате {data: QueryResult}
         if (typeof cached.data === 'object' && 'ok' in cached.data) {
-          return cached.data as QueryResult<T, E>
+          return cached.data as QueryResult<T>
         }
       }
 
       // Если данные хранятся в формате QueryResult
       if ('ok' in cached) {
-        return cached as QueryResult<T, E>
+        return cached as QueryResult<T>
       }
 
       // Если формат не подходит, возвращаем null
@@ -394,11 +381,11 @@ export class CacheManager {
    * @param result Результат запроса
    * @param options Опции запроса и настройки кэша
    */
-  public async set<T, E = Error>(
+  public async set<T>(
     endpointName: string,
     requestDef: RequestDefinition,
     params: any,
-    result: QueryResult<T, E>,
+    result: QueryResult<T>,
     options?: {
       cacheableHeaderKeys?: string[];
       endpointConfig?: EndpointConfig;
@@ -499,33 +486,28 @@ export class CacheManager {
 
     try {
       const keys = await this.storage.keys()
-      const apiCacheKeys = keys.filter((key) => typeof key === 'string' && key.startsWith('api:'))
-
       let invalidatedCount = 0
 
-      for (const key of apiCacheKeys) {
+      await Promise.all(keys.map(async (key) => {
         const value = await this.storage.get(key)
-        if (!value) continue
-
         const metadata = this.extractMetadata(value)
 
         // Проверяем наличие пересечения тегов
         if (metadata && metadata.tags && Array.isArray(metadata.tags)) {
-          const hasMatchingTag = metadata.tags.some((tag) => tags.includes(tag))
+          const hasMatchingTag = metadata.tags.some((tag: string) => tags.includes(tag))
           if (hasMatchingTag) {
             await this.storage.delete(key)
             invalidatedCount++
           }
         }
-      }
+      }))
 
       if (invalidatedCount > 0) {
         apiLogger.debug(`Инвалидировано ${invalidatedCount} записей по тегам: ${tags.join(', ')}`)
 
         // Генерируем событие инвалидации кэша
-        this.eventEmitter.emit('invalidate', {
+        this.eventEmitter.emit('cache:invalidate', {
           tags,
-          removedCount: invalidatedCount,
           timestamp: Date.now(),
         })
       }
@@ -545,9 +527,9 @@ export class CacheManager {
           || key.startsWith('endpoint:')
       ))
 
-      for (const key of apiCacheKeys) {
-        await this.storage.delete(key)
-      }
+      await Promise.all(apiCacheKeys.map(async (key) => (
+        this.storage.delete(key)
+      )))
 
       apiLogger.debug(`Очищен весь кэш API (${apiCacheKeys.length} записей)`)
 

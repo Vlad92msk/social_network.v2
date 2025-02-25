@@ -2,7 +2,7 @@ import { CacheManager } from './cache-manager'
 import { EndpointStateManager } from './endpoint-state-manager'
 import { MiddlewareManager } from './middleware-manager'
 import { ApiEventType } from '../types/api-events.interface'
-import { BaseQueryFn, EndpointConfig, QueryResult, RequestDefinition, RequestOptions } from '../types/api.interface'
+import { BaseQueryFn, EndpointConfig, QueryResult, RequestOptions } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'
 
 /**
@@ -12,40 +12,26 @@ export class RequestExecutor {
   /** Контроллеры отмены для активных запросов */
   private abortControllers: Map<string, AbortController> = new Map()
 
-  /** Базовая функция запроса */
   private baseQuery: BaseQueryFn
 
-  /** Менеджер кэша */
-  private cacheManager: CacheManager | null
-
-  /** Менеджер состояния эндпоинтов */
-  private stateManager: EndpointStateManager
-
-  /** Менеджер middleware */
-  private middlewareManager: MiddlewareManager
-
-  /** Функция для генерации событий */
   private emitEvent: (eventType: ApiEventType, eventData: any) => void
 
   /**
    * Создает новый экземпляр исполнителя запросов
-   * @param baseQuery Базовая функция запроса
-   * @param cacheManager Менеджер кэша
-   * @param stateManager Менеджер состояния эндпоинтов
-   * @param middlewareManager Менеджер middleware
-   * @param emitEvent Функция для генерации событий
+    @param cacheManager Менеджер кэша
+    @param stateManager Менеджер состояния эндпоинтов
+    @param middlewareManager Менеджер middleware
+    @param baseQuery Базовая функция запроса
+    @param emitEvent Функция для генерации событий
    */
   constructor(
+    private readonly cacheManager: CacheManager | null,
+    private readonly stateManager: EndpointStateManager,
+    private readonly middlewareManager: MiddlewareManager,
     baseQuery: BaseQueryFn,
-    cacheManager: CacheManager | null,
-    stateManager: EndpointStateManager,
-    middlewareManager: MiddlewareManager,
     emitEvent: (eventType: ApiEventType, eventData: any) => void,
   ) {
     this.baseQuery = baseQuery
-    this.cacheManager = cacheManager
-    this.stateManager = stateManager
-    this.middlewareManager = middlewareManager
     this.emitEvent = emitEvent
   }
 

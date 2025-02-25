@@ -36,7 +36,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     // Если endpoints задан как объект, а не функция, обернем его в функцию
     if (options.endpoints && typeof options.endpoints !== 'function') {
       const endpointsObj = options.endpoints
-      modifiedOptions.endpoints = (create) => endpointsObj
+      modifiedOptions.endpoints = (_create) => endpointsObj
     }
 
     // Если baseQuery - это объект настроек fetchBaseQuery,
@@ -98,11 +98,20 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
 
       const endpointsFn = this.options.endpoints
       if (endpointsFn) {
-        const endpoints = await Promise.resolve(endpointsFn(create))
+        // Преобразуем endpoints в Promise, независимо от типа
+        let endpointsResult: Record<string, EndpointConfig>
+
+        if (typeof endpointsFn === 'function') {
+          endpointsResult = await Promise.resolve(endpointsFn(create))
+        } else {
+          // Если endpoints это объект, используем его напрямую
+          endpointsResult = endpointsFn
+        }
 
         // Создаем эндпоинты последовательно
-        for (const [name, config] of Object.entries(endpoints)) {
+        for (const [name, config] of Object.entries(endpointsResult)) {
           try {
+            // eslint-disable-next-line no-await-in-loop
             this.endpoints[name] = await this.createEndpoint(name, config)
           } catch (error) {
             apiLogger.error(`Ошибка создания эндпоинта ${name}:`, error)
@@ -144,23 +153,23 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
    * @param options Опции запроса
    * @returns Promise с типизированным результатом запроса
    */
-  public async request<K extends keyof T, P extends ExtractParamsType<T[K]>, R extends ExtractResultType<T[K]>>(
+  public async request<K extends keyof T & string>(
     endpointName: K,
-    params: P,
+    params: ExtractParamsType<T[K]>,
     options?: RequestOptions,
-  ): Promise<R> {
+  ): Promise<ExtractResultType<T[K]>> {
     // Дожидаемся полной инициализации перед выполнением запроса
     await this.waitForInitialization()
 
     const endpoints = this.getEndpoints<T>()
-    const endpoint = endpoints[endpointName as string]
+    const endpoint = endpoints[endpointName]
 
     if (!endpoint) {
       throw new Error(`Эндпоинт ${String(endpointName)} не найден`)
     }
 
     try {
-      return await endpoint.fetch(params, options) as R
+      return await endpoint.fetch(params, options) as ExtractResultType<T[K]>
     } catch (error) {
       apiLogger.error(`Ошибка запроса к ${String(endpointName)}`, { error, params })
       throw error
@@ -216,7 +225,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
    * @param listener Обработчик события с типизацией для конкретного эндпоинта
    * @returns Функция для отписки
    */
-  public subscribeEndpoint<K extends keyof T>(
+  public subscribeEndpoint<K extends keyof T & string>(
     endpointName: K,
     listener: (data: ApiEventData & { endpointName: string }) => void,
   ): Unsubscribe {

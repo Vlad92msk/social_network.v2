@@ -1,3 +1,6 @@
+import { IndexedDBStorage } from '../../../storage/adapters/indexed-DB.service'
+import { LocalStorage } from '../../../storage/adapters/local-storage.service'
+import { MemoryStorage } from '../../../storage/adapters/memory-storage.service'
 import { IStorage, StorageType } from '../../../storage/storage.interface'
 
 /**
@@ -16,7 +19,7 @@ export class StorageManager {
    * @param options Опции для хранилища
    */
   constructor(
-    private storageType: StorageType,
+    private storageType: StorageType = 'localStorage',
     private options: Record<string, any> = {},
   ) {}
 
@@ -24,7 +27,7 @@ export class StorageManager {
    * Инициализирует хранилище
    * @returns Промис с инициализированным хранилищем
    */
-  public initialize(): Promise<IStorage> {
+  public initialize() {
     // Если инициализация уже запущена, возвращаем существующий промис
     if (this.initPromise) {
       return this.initPromise
@@ -39,26 +42,29 @@ export class StorageManager {
    * Создает хранилище в зависимости от типа
    * @returns Промис с созданным хранилищем
    */
-  private async createStorage(): Promise<IStorage> {
+  private async createStorage() {
     try {
+      const name = this.options.name || 'api-storage'
+
       switch (this.storageType) {
-        case 'localStorage':
-          this.storage = new LocalStorage(this.options)
-          break
-        // case 'sessionStorage':
-        //   this.storage = new SessionStorageAdapter(this.options)
-        //   break
         case 'indexedDB':
           this.storage = new IndexedDBStorage({
-            dbName: this.options.dbName || 'api-storage',
-            storeName: this.options.storeName || 'requests',
-            dbVersion: this.options.dbVersion || 1,
-            ...this.options,
+            name,
+            options: {
+              dbName: this.options?.dbName || 'api-cache',
+              storeName: this.options?.storeName || 'requests',
+              dbVersion: this.options?.dbVersion || 1,
+            },
           })
           break
-        default:
-          this.storage = new LocalStorage(this.options)
+
+        case 'localStorage':
+          this.storage = new LocalStorage({ name })
           break
+
+        case 'memory':
+        default:
+          this.storage = new MemoryStorage({ name })
       }
 
       // Инициализируем хранилище
@@ -71,7 +77,9 @@ export class StorageManager {
       // В случае ошибки с IndexedDB, пробуем использовать localStorage как запасной вариант
       if (this.storageType === 'indexedDB') {
         console.warn('Переключение на localStorage в качестве резервного хранилища')
-        this.storage = new LocalStorage(this.options)
+        this.storage = new LocalStorage({
+          name: this.options.name || 'api-storage',
+        })
         await this.storage.initialize()
         return this.storage
       }
@@ -84,7 +92,7 @@ export class StorageManager {
    * Получает экземпляр хранилища
    * @returns Экземпляр хранилища или null
    */
-  public getStorage(): IStorage | null {
+  public getStorage() {
     return this.storage
   }
 
@@ -92,7 +100,7 @@ export class StorageManager {
    * Проверяет, инициализировано ли хранилище
    * @returns true если хранилище инициализировано
    */
-  public isInitialized(): boolean {
+  public isInitialized() {
     return this.storage !== null
   }
 }

@@ -3,8 +3,8 @@ import { EndpointStateManager } from './endpoint-state-manager'
 import { EventBus } from './event-bus'
 import { MiddlewareManager } from './middleware-manager'
 import { RequestExecutor } from './request-executor'
-import { ApiEventData, ApiEventType } from '../types/api-events.interface'
-import { EndpointConfig, EndpointState, QueryResult, RequestOptions, Unsubscribe } from '../types/api.interface'
+import { ApiEventData } from '../types/api-events.interface'
+import { EndpointConfig, EndpointState, RequestOptions } from '../types/api.interface'
 import { apiLogger, createUniqueId } from '../utils/api-helpers'
 
 /**
@@ -37,13 +37,13 @@ export class Endpoint<TParams = any, TResult = any> {
    * @param params Параметры инициализации эндпоинта
    */
   private constructor(params: {
-    endpointName: string;
-    config: EndpointConfig<TParams, TResult>;
-    stateManager: EndpointStateManager;
-    requestExecutor: RequestExecutor;
-    eventBus: EventBus;
-    middlewareManager: MiddlewareManager;
-    cacheManager: CacheManager | null;
+    endpointName: string
+    config: EndpointConfig<TParams, TResult>
+    stateManager: EndpointStateManager
+    requestExecutor: RequestExecutor
+    eventBus: EventBus
+    middlewareManager: MiddlewareManager
+    cacheManager: CacheManager | null
   }) {
     this.endpointName = params.endpointName
     this.config = params.config
@@ -73,9 +73,10 @@ export class Endpoint<TParams = any, TResult = any> {
 
     // Регистрируем теги эндпоинта в менеджере кэша
     if (params.cacheManager && params.endpointConfig.tags?.length) {
-      // Если поддержка тегов доступна в кэш-менеджере
-      if (typeof params.cacheManager.registerTags === 'function') {
-        params.cacheManager.registerTags(endpointName, params.endpointConfig.tags)
+      // Сохраняем связь между эндпоинтом и тегами для возможной инвалидации
+      if (typeof params.cacheManager.cacheOptions === 'object') {
+        params.cacheManager.cacheOptions.tags = params.cacheManager.cacheOptions.tags || {}
+        params.cacheManager.cacheOptions.tags[endpointName] = [...params.endpointConfig.tags]
       }
     }
 
@@ -107,7 +108,7 @@ export class Endpoint<TParams = any, TResult = any> {
    * @param options Опции запроса
    * @returns Результат запроса
    */
-  public async fetch(params: TParams, options?: RequestOptions): Promise<TResult> {
+  public async fetch(params: TParams, options?: RequestOptions) {
     try {
       return await this.requestExecutor.executeRequest<TParams, TResult>(
         this.endpointName,
@@ -125,14 +126,14 @@ export class Endpoint<TParams = any, TResult = any> {
    * Получает текущее состояние эндпоинта
    * @returns Состояние эндпоинта
    */
-  public async getState(): Promise<EndpointState<TResult>> {
+  public async getState() {
     return this.stateManager.getEndpointState<TResult>(this.endpointName)
   }
 
   /**
    * Сбрасывает состояние эндпоинта
    */
-  public async resetState(): Promise<void> {
+  public async resetState() {
     return this.stateManager.resetEndpointState(this.endpointName)
   }
 
@@ -146,7 +147,7 @@ export class Endpoint<TParams = any, TResult = any> {
   /**
    * Инвалидирует кэш для этого эндпоинта
    */
-  public async invalidateCache(): Promise<void> {
+  public async invalidateCache() {
     if (this.cacheManager && this.config.tags?.length) {
       await this.cacheManager.invalidateByTags(this.config.tags)
     }
@@ -157,7 +158,7 @@ export class Endpoint<TParams = any, TResult = any> {
    * @param handler Обработчик изменения состояния
    * @returns Функция отписки
    */
-  public subscribe(handler: (state: EndpointState<TResult>) => void): Unsubscribe {
+  public subscribe(handler: (state: EndpointState<TResult>) => void) {
     return this.stateManager.subscribeToState<TResult>(this.endpointName, handler)
   }
 
@@ -166,7 +167,7 @@ export class Endpoint<TParams = any, TResult = any> {
    * @param handler Обработчик события
    * @returns Функция отписки
    */
-  public subscribeToEvents(handler: (data: ApiEventData) => void): Unsubscribe {
+  public subscribeToEvents(handler: (data: ApiEventData) => void) {
     return this.eventBus.subscribeEndpoint(this.endpointName, handler)
   }
 
@@ -174,7 +175,7 @@ export class Endpoint<TParams = any, TResult = any> {
    * Получает имя эндпоинта
    * @returns Имя эндпоинта
    */
-  public getName(): string {
+  public getName() {
     return this.endpointName
   }
 
@@ -182,7 +183,7 @@ export class Endpoint<TParams = any, TResult = any> {
    * Получает конфигурацию эндпоинта
    * @returns Конфигурация эндпоинта
    */
-  public getConfig(): EndpointConfig<TParams, TResult> {
+  public getConfig() {
     return this.config
   }
 }

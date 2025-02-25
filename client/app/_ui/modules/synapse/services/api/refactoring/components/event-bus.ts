@@ -94,9 +94,14 @@ export class EventBus {
    * @param eventType Тип события
    * @param data Данные события
    */
-  public emit(eventType: ApiEventType, data: ApiEventData): void {
-    // Гарантируем, что данные содержат тип события
-    const eventData = { ...data, type: eventType }
+  public emit(eventType: ApiEventType, data: Partial<ApiEventData>) {
+    // Гарантируем, что данные содержат тип события и временную метку
+    const eventData: ApiEventData = {
+      type: eventType,
+      endpointName: data.endpointName || '',
+      timestamp: data.timestamp || Date.now(),
+      ...data,
+    } as ApiEventData
 
     // Оповещаем обработчики по типу события
     const typeHandlers = this.eventHandlers.get(eventType)
@@ -111,7 +116,7 @@ export class EventBus {
     }
 
     // Оповещаем обработчики по эндпоинту
-    if ('endpointName' in eventData) {
+    if (eventData.endpointName) {
       const endpointHandlers = this.endpointHandlers.get(eventData.endpointName)
       if (endpointHandlers) {
         endpointHandlers.forEach((handler) => {
@@ -125,8 +130,8 @@ export class EventBus {
     }
 
     // Оповещаем обработчики по тегам
-    if ('context' in eventData && eventData.context && 'tag' in eventData.context) {
-      const tag = eventData.context.tag as string
+    if (data.context && 'tag' in data.context) {
+      const tag = data.context.tag as string
       const tagHandlers = this.tagHandlers.get(tag)
 
       if (tagHandlers) {
@@ -144,7 +149,7 @@ export class EventBus {
   /**
    * Удаляет все обработчики
    */
-  public destroy(): void {
+  public destroy() {
     this.eventHandlers.clear()
     this.endpointHandlers.clear()
     this.tagHandlers.clear()
