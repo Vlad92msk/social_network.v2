@@ -1,10 +1,10 @@
 import { createApiClient } from '../components/api-client'
-import { 
+import {
   createLoggerMiddleware,
   createAuthMiddleware,
   createCacheMiddleware,
   createRetryMiddleware
-} from '../components/middleware/built-in-middlewares'
+} from '@ui/modules/synapse/services/api/middleware/built-in-middlewares'
 
 // Определяем типы для нашего API
 interface User {
@@ -51,7 +51,7 @@ const apiClient = createApiClient({
       cache: true,
       tags: ['users']
     }),
-    
+
     getUserById: builder.create<number, User>({
       request: (id) => ({
         path: `/users/${id}`,
@@ -60,7 +60,7 @@ const apiClient = createApiClient({
       cache: true,
       tags: ['users']
     }),
-    
+
     getPosts: builder.create<GetPostsParams, Post[]>({
       request: (params = {}) => ({
         path: '/posts',
@@ -70,7 +70,7 @@ const apiClient = createApiClient({
       cache: true,
       tags: ['posts']
     }),
-    
+
     getComments: builder.create<number, Comment[]>({
       request: (postId) => ({
         path: '/comments',
@@ -80,7 +80,7 @@ const apiClient = createApiClient({
       cache: true,
       tags: ['comments']
     }),
-    
+
     createPost: builder.create<Omit<Post, 'id'>, Post>({
       request: (post) => ({
         path: '/posts',
@@ -90,7 +90,7 @@ const apiClient = createApiClient({
       cache: false,
       invalidatesTags: ['posts']
     }),
-    
+
     updatePost: builder.create<Post, Post>({
       request: (post) => ({
         path: `/posts/${post.id}`,
@@ -100,7 +100,7 @@ const apiClient = createApiClient({
       cache: false,
       invalidatesTags: ['posts']
     }),
-    
+
     deletePost: builder.create<number, {}>({
       request: (id) => ({
         path: `/posts/${id}`,
@@ -142,11 +142,11 @@ async function fetchData() {
     // Получаем пользователей
     const users = await apiClient.request('getUsers', undefined)
     console.log('Пользователи:', users)
-    
+
     // Получаем посты пользователя с ID 1
     const userPosts = await apiClient.request('getPosts', { userId: 1 })
     console.log('Посты пользователя:', userPosts)
-    
+
     // Создаем новый пост
     const newPost = await apiClient.request('createPost', {
       userId: 1,
@@ -154,7 +154,7 @@ async function fetchData() {
       body: 'Содержание нового поста'
     })
     console.log('Создан новый пост:', newPost)
-    
+
     // Получаем комментарии к посту
     const comments = await apiClient.request('getComments', newPost.id)
     console.log('Комментарии к посту:', comments)

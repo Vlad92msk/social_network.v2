@@ -8,7 +8,7 @@ export { ApiModule } from './components/api-module'
 export * from './types/api.interface'
 
 // Экспортируем менеджеры
-export * from './components/middleware'
+export * from './middleware'
 
 // Экспортируем утилиты
 export * from './utils/api-helpers'

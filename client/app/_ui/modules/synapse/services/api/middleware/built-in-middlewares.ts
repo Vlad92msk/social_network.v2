@@ -1,5 +1,5 @@
-import { ApiMiddlewareAPI, ApiMiddlewareContext, ApiNextFunction, EnhancedApiMiddleware } from '../../types/api-middleware.interface'
-import { apiLogger } from '../../utils/api-helpers'
+import { ApiMiddlewareAPI, ApiMiddlewareContext, ApiNextFunction, EnhancedApiMiddleware } from '../types/api-middleware.interface'
+import { apiLogger } from '../utils/api-helpers'
 
 /**
  * Создает middleware для логирования запросов

@@ -1,50 +1,40 @@
-import { filterCacheableHeaders, headersToObject } from './api-helpers'
-import {
-  getFileMetadataFromHeaders,
-  getResponseFormatForMimeType,
-  isFileResponse,
-} from './file-utils'
-import {
-  ApiContext,
-  BaseQueryFn,
-  FetchBaseQueryArgs,
-  QueryResult,
-  RequestDefinition,
-  RequestOptions,
-  ResponseFormat,
-} from '../types/api.interface'
+import { ApiContext, FetchBaseQueryArgs, BaseQueryFn, RequestDefinition, RequestOptions, QueryResult, ResponseFormat } from '../types/api.interface';
+import { filterCacheableHeaders, headersToObject } from './api-helpers';
+import { getFileMetadataFromHeaders, getResponseFormatForMimeType, isFileResponse } from './file-utils';
 
 /**
  * Извлекает данные из response в зависимости от формата
+ * @param response Объект Response
+ * @param format Формат ответа
+ * @returns Объект с данными или ошибкой
  */
 async function getResponseData<T, E>(
   response: Response,
   format?: ResponseFormat,
 ): Promise<{ data?: T, error?: E, fileMetadata?: any }> {
-  let responseFormat = format
-  console.log('responseFormat', responseFormat)
-  const contentType = response.headers.get('content-type') || ''
+  let responseFormat = format;
+  const contentType = response.headers.get('content-type') || '';
 
   // Если формат не указан, пытаемся определить его из MIME-типа
   if (!responseFormat && contentType) {
     // Проверка, является ли ответ файлом на основе заголовков
     if (isFileResponse(response.headers)) {
-      responseFormat = ResponseFormat.Blob
+      responseFormat = ResponseFormat.Blob;
     } else {
-      responseFormat = getResponseFormatForMimeType(contentType)
+      responseFormat = getResponseFormatForMimeType(contentType);
     }
   }
 
   // Если формат всё ещё не определен, используем JSON по умолчанию
   if (!responseFormat) {
-    responseFormat = ResponseFormat.Json
+    responseFormat = ResponseFormat.Json;
   }
 
   try {
     // Получение метаданных файла, если формат указывает на файл
-    let fileMetadata
+    let fileMetadata;
     if (responseFormat === ResponseFormat.Blob || responseFormat === ResponseFormat.ArrayBuffer) {
-      fileMetadata = getFileMetadataFromHeaders(response.headers)
+      fileMetadata = getFileMetadataFromHeaders(response.headers);
     }
 
     // Обработка данных в зависимости от формата
@@ -52,66 +42,65 @@ async function getResponseData<T, E>(
       case ResponseFormat.Json: {
         // Пробуем получить JSON-данные
         try {
-          const data = await response.json()
-          console.log('data', data)
+          const data = await response.json();
           return response.ok
             ? { data: data as T, fileMetadata }
-            : { error: data as E, fileMetadata }
+            : { error: data as E, fileMetadata };
         } catch (error) {
           // Если не удалось разобрать JSON, возвращаем текст
-          const text = await response.text()
+          const text = await response.text();
           return response.ok
             ? { data: text as unknown as T, fileMetadata }
-            : { error: text as unknown as E, fileMetadata }
+            : { error: text as unknown as E, fileMetadata };
         }
       }
 
       case ResponseFormat.Text: {
-        const text = await response.text()
+        const text = await response.text();
         return response.ok
           ? { data: text as unknown as T, fileMetadata }
-          : { error: text as unknown as E, fileMetadata }
+          : { error: text as unknown as E, fileMetadata };
       }
 
       case ResponseFormat.Blob: {
-        const blob = await response.blob()
+        const blob = await response.blob();
         return response.ok
           ? { data: blob as unknown as T, fileMetadata }
-          : { error: blob as unknown as E, fileMetadata }
+          : { error: blob as unknown as E, fileMetadata };
       }
 
       case ResponseFormat.ArrayBuffer: {
-        const buffer = await response.arrayBuffer()
+        const buffer = await response.arrayBuffer();
         return response.ok
           ? { data: buffer as unknown as T, fileMetadata }
-          : { error: buffer as unknown as E, fileMetadata }
+          : { error: buffer as unknown as E, fileMetadata };
       }
 
       case ResponseFormat.FormData: {
-        const formData = await response.formData()
+        const formData = await response.formData();
         return response.ok
           ? { data: formData as unknown as T, fileMetadata }
-          : { error: formData as unknown as E, fileMetadata }
+          : { error: formData as unknown as E, fileMetadata };
       }
 
       case ResponseFormat.Raw: {
         return response.ok
           ? { data: response as unknown as T, fileMetadata }
-          : { error: response as unknown as E, fileMetadata }
+          : { error: response as unknown as E, fileMetadata };
       }
 
       default:
         // Если формат неизвестен, возвращаем blob как наиболее универсальный
-        const blob = await response.blob()
+        const blob = await response.blob();
         return response.ok
           ? { data: blob as unknown as T, fileMetadata }
-          : { error: blob as unknown as E, fileMetadata }
+          : { error: blob as unknown as E, fileMetadata };
     }
   } catch (err) {
-    console.error(`[API] Ошибка извлечения данных из ответа (формат: ${responseFormat})`, err)
+    console.error(`[API] Ошибка извлечения данных из ответа (формат: ${responseFormat})`, err);
     return response.ok
       ? { data: undefined }
-      : { error: err as E }
+      : { error: err as E };
   }
 }
 
@@ -128,7 +117,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     fetchFn = fetch,
     cacheableHeaderKeys = [],
     credentials = 'same-origin',
-  } = options
+  } = options;
 
   return async <T, E>(
     args: RequestDefinition,
@@ -141,7 +130,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
       body,
       query,
       responseFormat: reqResponseFormat,
-    } = args
+    } = args;
 
     const {
       signal,
@@ -150,120 +139,117 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
       context: optionContext = {},
       cacheableHeaderKeys: requestCacheableHeaderKeys,
       responseFormat: optResponseFormat,
-    } = queryOptions
+    } = queryOptions;
 
     // Определяем формат ответа с приоритетом от options
-    const responseFormat = optResponseFormat || reqResponseFormat
+    const responseFormat = optResponseFormat || reqResponseFormat;
 
-    console.log('responseFormat', responseFormat)
     // Создаем расширенный контекст для подготовки заголовков
     const headerContext: ApiContext = {
       ...context,
       ...optionContext,
       getFromStorage: context.getFromStorage || ((key: string) => {
         try {
-          const item = localStorage.getItem(key)
-          return item ? JSON.parse(item) : undefined
+          const item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : undefined;
         } catch (error) {
-          console.warn(`[API] Ошибка чтения из localStorage: ${error}`)
-          return undefined
+          console.warn(`[API] Ошибка чтения из localStorage: ${error}`);
+          return undefined;
         }
       }),
       getCookie: context.getCookie || ((name: string) => {
         try {
           const matches = document.cookie.match(
             new RegExp(`(?:^|; )${name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`),
-          )
-          return matches ? decodeURIComponent(matches[1]) : undefined
+          );
+          return matches ? decodeURIComponent(matches[1]) : undefined;
         } catch (error) {
-          console.warn(`[API] Ошибка чтения cookie: ${error}`)
-          return undefined
+          console.warn(`[API] Ошибка чтения cookie: ${error}`);
+          return undefined;
         }
       }),
       requestParams: { ...args, ...queryOptions },
-    }
+    };
 
     // Строим URL с учетом api параметров
-    const url = new URL(path.startsWith('http') ? path : `${baseUrl}${path}`)
+    const url = new URL(path.startsWith('http') ? path : `${baseUrl}${path}`);
 
     // Добавляем query-параметры в URL
     if (query) {
       Object.entries(query).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach((item) => url.searchParams.append(key, String(item)))
+            value.forEach((item) => url.searchParams.append(key, String(item)));
           } else {
-            url.searchParams.append(key, String(value))
+            url.searchParams.append(key, String(value));
           }
         }
-      })
+      });
     }
 
     // Формируем заголовки
-    let headers = new Headers()
+    let headers = new Headers();
 
     // Добавляем заголовки из определения запроса
     if (args.headers) {
       Object.entries(args.headers).forEach(([key, value]) => {
-        headers.set(key, value)
-      })
+        headers.set(key, value);
+      });
     }
 
     // Добавляем заголовки из опций запроса
     if (optionHeaders) {
       Object.entries(optionHeaders).forEach(([key, value]) => {
-        headers.set(key, value)
-      })
+        headers.set(key, value);
+      });
     }
 
     // Применяем глобальную подготовку заголовков
     if (prepareHeaders) {
       try {
         // Ожидаем результат prepareHeaders, который может быть асинхронным
-        headers = await Promise.resolve(prepareHeaders(headers, headerContext))
+        headers = await Promise.resolve(prepareHeaders(headers, headerContext));
       } catch (error) {
-        console.warn('[API] Ошибка при подготовке заголовков', error)
+        console.warn('[API] Ошибка при подготовке заголовков', error);
       }
     }
 
     // Если body это объект, конвертируем в JSON и устанавливаем Content-Type
-    let serializedBody: string | FormData | Blob | undefined
+    let serializedBody: string | FormData | Blob | undefined;
     if (body !== undefined) {
       if (body instanceof FormData || body instanceof Blob) {
-        serializedBody = body
+        serializedBody = body;
       } else if (typeof body === 'object' && body !== null) {
         try {
-          serializedBody = JSON.stringify(body)
+          serializedBody = JSON.stringify(body);
           if (!headers.has('Content-Type')) {
-            headers.set('Content-Type', 'application/json')
+            headers.set('Content-Type', 'application/json');
           }
         } catch (error) {
-          console.error('[API] Ошибка сериализации тела запроса', error)
-          serializedBody = String(body)
+          console.error('[API] Ошибка сериализации тела запроса', error);
+          serializedBody = String(body);
         }
       } else {
-        serializedBody = String(body)
+        serializedBody = String(body);
       }
     }
 
     // Преобразуем заголовки для метаданных
-    const headerObj = headersToObject(headers)
+    const headerObj = headersToObject(headers);
 
     // Определяем, какие заголовки влияют на кэш
-    const effectiveCacheableKeys = requestCacheableHeaderKeys || cacheableHeaderKeys
-    console.log('Using cacheable header keys:', effectiveCacheableKeys)
-    const cacheableHeaders = filterCacheableHeaders(headerObj, effectiveCacheableKeys)
-    console.log('Filtered cacheable headers:', cacheableHeaders)
+    const effectiveCacheableKeys = requestCacheableHeaderKeys || cacheableHeaderKeys;
+    const cacheableHeaders = filterCacheableHeaders(headerObj, effectiveCacheableKeys);
 
     // Создаем таймаут если указан
-    let timeoutId: number | undefined
+    let timeoutId: number | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
       if (requestTimeout) {
         timeoutId = window.setTimeout(() => {
-          reject(new Error(`Превышено время ожидания запроса (${requestTimeout}мс)`))
-        }, requestTimeout)
+          reject(new Error(`Превышено время ожидания запроса (${requestTimeout}мс)`));
+        }, requestTimeout);
       }
-    })
+    });
 
     try {
       // Выполняем запрос с таймаутом
@@ -273,14 +259,14 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         body: serializedBody,
         signal,
         credentials,
-      })
+      });
 
       // Используем Promise.race для обработки таймаута
-      const response = await Promise.race([fetchPromise, timeoutPromise])
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
 
       // Обрабатываем ответ
-      const { data, error, fileMetadata } = await getResponseData<T, E>(response, responseFormat as ResponseFormat)
-      console.log('Cacheable headers:', cacheableHeaderKeys)
+      const { data, error, fileMetadata } = await getResponseData<T, E>(response, responseFormat as ResponseFormat);
+
       // Формируем результат запроса
       const result: QueryResult<T, E> = {
         data,
@@ -289,20 +275,19 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
-        // @ts-ignore
         metadata: {
           requestHeaders: headerObj,
           cacheableHeaders,
           fileMetadata,
+          cacheableHeaderKeys: effectiveCacheableKeys,
         },
-      }
+      };
 
-      console.log('___result', result)
-      return result
+      return result;
     } catch (err) {
       // Обрабатываем ошибки сети или таймаута
-      const error = err as Error
-      console.error('[API] Ошибка выполнения запроса', error)
+      const error = err as Error;
+      console.error('[API] Ошибка выполнения запроса', error);
 
       // Формируем результат с ошибкой
       return {
@@ -311,17 +296,16 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: 0,
         statusText: error.message,
         headers: new Headers(),
-        // @ts-ignore
         metadata: {
           requestHeaders: headerObj,
           cacheableHeaders,
         },
-      }
+      };
     } finally {
       // Очищаем таймер в любом случае
       if (timeoutId) {
-        window.clearTimeout(timeoutId)
+        window.clearTimeout(timeoutId);
       }
     }
-  }
+  };
 }

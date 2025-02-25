@@ -6,7 +6,7 @@ import {
   createHeadersMiddleware,
   createLoggerMiddleware,
   createRetryMiddleware,
-} from '../components/middleware/built-in-middlewares'
+} from '@ui/modules/synapse/services/api/middleware/built-in-middlewares'
 import { ApiMiddlewareAPI, ApiMiddlewareContext, ApiNextFunction, EnhancedApiMiddleware } from '../types/api-middleware.interface'
 
 // Пример создания API-клиента с middleware
