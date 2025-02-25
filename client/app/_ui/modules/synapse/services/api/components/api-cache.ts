@@ -188,7 +188,7 @@ export class ApiCache {
   /**
    * Останавливает периодическую очистку и освобождает ресурсы
    */
-  public dispose(): void {
+  public destroy(): void {
     if (this.cleanupInterval) {
       window.clearInterval(this.cleanupInterval)
       this.cleanupInterval = undefined
@@ -243,20 +243,62 @@ export class ApiCache {
     requestDef: RequestDefinition,
     params: any,
     result?: QueryResult,
+    options?: { cacheableHeaderKeys?: string[] }
   ): [StorageKeyType, Record<string, any> | undefined] {
-    // Создаем параметры ключа (без тела запроса - для кэша оно не нужно)
+    console.log('createCacheKey called with:', {
+      endpointName,
+      requestDef,
+      result: result?.metadata,
+      options
+    });
+    // Создаем параметры ключа
     const keyParams: Record<string, any> = {
       method: requestDef.method,
       url: `${requestDef.path}`,
       query: requestDef.query ? JSON.stringify(requestDef.query) : '',
-      params: params ? JSON.stringify(params) : '',
+      params: params,
     }
 
-    // Добавляем кэшируемые заголовки в ключ, если они есть
+    // Если есть заголовки в метаданных результата
     if (result?.metadata?.cacheableHeaders) {
-      const { cacheableHeaders } = result.metadata
+      const { cacheableHeaders } = result.metadata;
+      console.log('cacheableHeaders from metadata:', cacheableHeaders);
       if (Object.keys(cacheableHeaders).length > 0) {
-        keyParams.headers = JSON.stringify(cacheableHeaders)
+        keyParams.headers = JSON.stringify(cacheableHeaders);
+        console.log('Added headers to keyParams:', keyParams.headers);
+      } else {
+        console.log('No cacheableHeaders found in metadata or empty object');
+      }
+    }
+
+    // Добавляем определенные заголовки в ключ кеша, если нет заголовков из метаданных
+    if (!keyParams.headers && options?.cacheableHeaderKeys?.length) {
+      // Получаем заголовки из исходного запроса (headers в request.metadata), если они есть
+      if (result?.metadata?.requestHeaders) {
+        const { requestHeaders } = result.metadata;
+        // Преобразуем ключи cachableHeaderKeys в нижний регистр для регистронезависимого сравнения
+        const lowerCaseKeys = options.cacheableHeaderKeys.map(key => key.toLowerCase());
+
+        // Фильтруем только нужные заголовки
+        const filteredHeaders = Object.entries(requestHeaders)
+          .filter(([key]) => lowerCaseKeys.includes(key.toLowerCase()))
+          .reduce((obj, [key, value]) => {
+            obj[key] = value;
+            return obj;
+          }, {} as Record<string, string>);
+
+        if (Object.keys(filteredHeaders).length > 0) {
+          keyParams.headers = JSON.stringify(filteredHeaders);
+          console.log('Added filtered headers to keyParams:', keyParams.headers);
+        } else {
+          // Если не удалось найти заголовки, сохраняем просто ключи для согласованности
+          keyParams.headerKeys = JSON.stringify(options.cacheableHeaderKeys);
+          console.log('No matching headers found, using headerKeys');
+        }
+      } else {
+        // Если нет заголовков, используем только ключи
+        keyParams.headerKeys = JSON.stringify(options.cacheableHeaderKeys);
+        console.log('No request headers available, using headerKeys');
       }
     }
 
@@ -287,7 +329,32 @@ export class ApiCache {
     result?: QueryResult<T, E>,
   ): Promise<QueryResult<T, E> | null> {
     try {
-      const [cacheKey] = this.createCacheKey(endpointName, requestDef, params, result)
+      console.log('Creating cache key with result:', result?.metadata?.cacheableHeaders);
+
+      // Если есть результат запроса, используем его для создания ключа
+      // В противном случае, создаем "заглушку" с cacheableHeaders из options
+      let keyResult = result
+
+      // Если options содержит cacheableHeaderKeys, но нет result или нет cacheableHeaders в метаданных
+      if (options?.cacheableHeaderKeys?.length) {
+        console.log('GET: Using cacheableHeaderKeys from options:', options.cacheableHeaderKeys);
+
+        // Создаем новый объект для результата с метаданными
+        keyResult = {
+          ...result,
+          metadata: {
+            ...(result?.metadata || {}),
+            cacheableHeaderKeys: options.cacheableHeaderKeys,
+            // Добавляем пустой объект cacheableHeaders, если его нет
+            cacheableHeaders: result?.metadata?.cacheableHeaders || {},
+            // Если есть requestHeaders, сохраняем их для фильтрации в createCacheKey
+            requestHeaders: result?.metadata?.requestHeaders || {}
+          },
+        } as QueryResult<T, E>
+      }
+
+      const [cacheKey] = this.createCacheKey(endpointName, requestDef, params, keyResult)
+
       const cached = await this.storage.get<any>(cacheKey)
 
       if (!cached) {
@@ -357,9 +424,11 @@ export class ApiCache {
     requestDef: RequestDefinition,
     params: any,
     result: QueryResult<T, E>,
+    options?: { cacheableHeaderKeys?: string[] },
   ): Promise<void> {
     try {
-      const [key, keyParams] = this.createCacheKey(endpointName, requestDef, params, result)
+      console.log('SET: result.metadata:', result.metadata);
+      const [key, keyParams] = this.createCacheKey(endpointName, requestDef, params, result, options)
 
       // Получаем теги для эндпоинта
       const tags = this.getTagsForEndpoint(endpointName)

@@ -1,6 +1,5 @@
 import { ApiCache } from './api-cache'
-import { ApiClient } from './api-client'
-import { ApiEventManager } from './api-event-manager'
+import { ApiSubscriber } from './api-subscriber'
 import { ApiMiddlewareManager } from './api-middleware-manager'
 import { EndpointStateManager } from './endpoint-state-manager'
 import { RequestExecutor } from './request-executor'
@@ -49,7 +48,6 @@ export class Endpoint<TParams, TResult> {
    * @param stateManager Менеджер состояния
    * @param eventManager Менеджер событий
    * @param middlewareManager Менеджер middleware
-   * @param initialState Начальное состояние эндпоинта
    */
   constructor(
     endpointName: string,
@@ -60,9 +58,8 @@ export class Endpoint<TParams, TResult> {
     invalidateMethod: () => Promise<void>,
     resetMethod: () => Promise<void>,
     abortMethod: VoidFunction,
-    eventManager: ApiEventManager,
+    eventManager: ApiSubscriber,
     middlewareManager: ApiMiddlewareManager,
-    initialState: EndpointState<TResult>,
   ) {
     this.originalFetch = originalFetch
     this.originalSubscribe = originalSubscribe
@@ -83,7 +80,7 @@ export class Endpoint<TParams, TResult> {
     this.subscribe = (callback): Unsubscribe => {
       // Используем как оригинальную подписку для состояния, так и систему событий
       const unsubscribeOriginal = this.originalSubscribe.call(this, callback)
-      const unsubscribeEvents = eventManager.onEndpoint(this.meta.name, (data: ApiEventData) => {
+      const unsubscribeEvents = eventManager.subscribeEndpoint(this.meta.name, (data: ApiEventData) => {
         // Передаем в callback только данные, которые связаны с изменением состояния
         if (data.context?.type === 'request:start'
           || data.context?.type === 'request:success'
@@ -195,7 +192,7 @@ export class Endpoint<TParams, TResult> {
         subscribe: (listener) => {
           listener({ status: 'loading' })
 
-          const unsubscribeFromEvents = eventManager.onEndpoint(this.meta.name, (data: ApiEventData) => {
+          const unsubscribeFromEvents = eventManager.subscribeEndpoint(this.meta.name, (data: ApiEventData) => {
             if (data.type === 'request:success' && data.requestId === id) {
               listener({ status: 'success', data: data.result })
             } else if (data.type === 'request:error' && data.requestId === id) {
@@ -224,7 +221,6 @@ export class Endpoint<TParams, TResult> {
     requestExecutor,
     eventManager,
     middlewareManager,
-    client,
   }: {
     endpointName: string,
     endpointConfig: EndpointConfig<TParams, TResult>,
@@ -232,9 +228,8 @@ export class Endpoint<TParams, TResult> {
     storageManager: StorageManager,
     cacheManager: ApiCache | null,
     requestExecutor: RequestExecutor,
-    eventManager: ApiEventManager,
+    eventManager: ApiSubscriber,
     middlewareManager: ApiMiddlewareManager,
-    client: ApiClient<any>,
   }): Promise<Endpoint<TParams, TResult>> {
     // Инициализируем начальное состояние
     const initialState: EndpointState<TResult> = {
@@ -327,7 +322,6 @@ export class Endpoint<TParams, TResult> {
       abortMethod,
       eventManager,
       middlewareManager,
-      initialState,
     )
 
     return endpoint

@@ -4,7 +4,6 @@ import { EndpointStateManager } from './endpoint-state-manager'
 import { BaseQueryFn } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'
 
-// 3. RequestExecutor.ts - выполнение запросов
 export class RequestExecutor {
   private abortControllers: Map<string, AbortController> = new Map()
 
@@ -25,13 +24,23 @@ export class RequestExecutor {
     try {
       const shouldUseCache = this.shouldUseCache(endpointName, options, endpointConfig)
 
+      // Объединяем cacheableHeaderKeys из всех уровней
+      const mergedCacheableHeaderKeys = [
+        ...(options?.cacheableHeaderKeys || []),
+        ...(endpointConfig.cacheableHeaderKeys || []),
+      ].filter((value, index, self) => self.indexOf(value) === index)
+
+      // Получаем определение запроса
+      const requestDef = endpointConfig.request(params)
+
       // Проверяем кэш, если кэширование не отключено
       if (shouldUseCache && this.cacheManager) {
-        const requestDef = endpointConfig.request(params)
+        // Передаем mergedCacheableHeaderKeys при проверке кеша
         const cachedResult = await this.cacheManager.get<TResult>(
           endpointName,
           requestDef,
           params,
+          { cacheableHeaderKeys: mergedCacheableHeaderKeys },
         )
 
         if (cachedResult) {
@@ -55,9 +64,6 @@ export class RequestExecutor {
         status: 'loading',
       })
 
-      // Получаем определение запроса
-      const requestDef = endpointConfig.request(params)
-
       // Создаем AbortController если не передан signal
       let signal = options?.signal
 
@@ -67,11 +73,16 @@ export class RequestExecutor {
         this.abortControllers.set(endpointName, localAbortController)
       }
 
-      // Выполняем запрос
-      const result = await this.baseQuery(requestDef, {
+      // Объединяем cacheableHeaderKeys из опций запроса и из конфигурации эндпоинта
+      const mergedOptions = {
         ...options,
         signal,
-      })
+        cacheableHeaderKeys: mergedCacheableHeaderKeys,
+      }
+
+      console.log('mergedOptions', mergedOptions)
+      // Выполняем запрос с объединенными опциями
+      const result = await this.baseQuery(requestDef, mergedOptions)
 
       // Очищаем контроллер
       if (localAbortController) {
@@ -97,18 +108,30 @@ export class RequestExecutor {
 
       // Кэшируем результат, если кэширование не отключено
       if (shouldUseCache && this.cacheManager) {
+        console.log('Caching result with headers:', result.metadata?.cacheableHeaders)
+        console.log('Merged cacheable header keys:', mergedCacheableHeaderKeys)
+
+        // Создаем новый результат с полными метаданными
+        const enhancedResult = {
+          data: result.data,
+          // Преобразуем headers в обычный объект
+          // @ts-ignore
+          headers: Object.fromEntries(result.headers.entries()),
+          status: result.status,
+          ok: result.ok,
+          metadata: {
+            ...result.metadata,
+            cacheableHeaderKeys: mergedCacheableHeaderKeys,
+          },
+        }
+
+        // Передаем объект с полными метаданными и ключи заголовков
         await this.cacheManager.set(
           endpointName,
           requestDef,
           params,
-          {
-            data: result.data,
-            // Преобразуем headers в обычный объект
-            // @ts-ignore
-            headers: Object.fromEntries(result.headers.entries()),
-            status: result.status,
-            ok: result.ok,
-          },
+          enhancedResult,
+          { cacheableHeaderKeys: mergedCacheableHeaderKeys },
         )
       }
 

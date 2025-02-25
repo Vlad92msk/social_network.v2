@@ -1,4 +1,4 @@
-import { ApiEventManager } from './api-event-manager'
+import { ApiSubscriber } from './api-subscriber'
 import { ApiMiddlewareManager } from './api-middleware-manager'
 import { ApiModule } from './api-module'
 import { Endpoint } from './endpoint'
@@ -42,7 +42,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   private _globalCacheableHeaderKeys: string[]
 
   /** Менеджер событий */
-  private eventManager: ApiEventManager
+  private eventSubscriber: ApiSubscriber
 
   /** Менеджер middleware */
   private middlewareManager: ApiMiddlewareManager
@@ -77,7 +77,7 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     this._globalCacheableHeaderKeys = globalCacheableHeaderKeys
 
     // Инициализируем менеджер событий
-    this.eventManager = new ApiEventManager()
+    this.eventSubscriber = new ApiSubscriber()
 
     // Инициализируем менеджер middleware и связываем его с менеджером событий
     this.middlewareManager = new ApiMiddlewareManager(
@@ -98,74 +98,6 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
     [K in keyof U]: Endpoint<ExtractParamsType<U[K]>, ExtractResultType<U[K]>>
     } {
     return super.getEndpoints<U>() as any
-  }
-
-  /**
-   * Подписка на события конкретного эндпоинта с типизацией
-   * @param endpointName Имя эндпоинта (с подсказками TypeScript)
-   * @param listener Обработчик события с типизацией для конкретного эндпоинта
-   * @returns Функция для отписки
-   */
-  public onEndpoint<K extends keyof T>(endpointName: K, listener: (data: EndpointEventData<T, K, ApiEventData>) => void): Unsubscribe {
-    return this.eventManager.onEndpoint(
-      String(endpointName),
-      listener as unknown as (data: ApiEventData) => void,
-    )
-  }
-
-  /**
-   * Подписка на определённый тип события с типизацией для всех эндпоинтов
-   * @param eventType Тип события
-   * @param listener Обработчик события с типизацией
-   * @returns Функция для отписки
-   */
-  public onEvent<E extends ApiEventData['type']>(eventType: E, listener: (data: Extract<ApiEventData, { type: E }>) => void): Unsubscribe {
-    return this.eventManager.onEvent(eventType, listener)
-  }
-
-  /**
-   * Подписка на события группы эндпоинтов по тегу
-   * @param tag Тег группы эндпоинтов
-   * @param listener Обработчик события
-   * @returns Функция для отписки
-   */
-  public onTag(tag: string, listener: (data: ApiEventData) => void): Unsubscribe {
-    return this.eventManager.onTag(tag, listener)
-  }
-
-  /**
-   * Генерирует событие
-   * @param eventType Тип события
-   * @param data Данные события
-   */
-  private emitEvent(eventType: ApiEventType, data: ApiEventData): void {
-    this.eventManager.emit(eventType, data)
-  }
-
-  /**
-   * Добавляет middleware для перехвата запросов
-   * @param middleware Объект middleware
-   * @returns this для цепочки вызовов
-   */
-  public use(middleware: EnhancedApiMiddleware): this {
-    this.middlewareManager.use(middleware)
-    return this
-  }
-
-  /**
-   * Удаляет middleware по имени
-   * @param name Имя middleware
-   * @returns true если middleware был удален, иначе false
-   */
-  public removeMiddleware(name: string): boolean {
-    return this.middlewareManager.remove(name)
-  }
-
-  /**
-   * Удаляет все middleware
-   */
-  public clearMiddleware(): void {
-    this.middlewareManager.clear()
   }
 
   /**
@@ -194,9 +126,8 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
         storageManager: this.storageManager,
         cacheManager: this.cacheManager,
         requestExecutor: this.requestExecutor,
-        eventManager: this.eventManager,
+        eventManager: this.eventSubscriber,
         middlewareManager: this.middlewareManager,
-        client: this,
       })
 
       // Сохраняем эндпоинт в реестре
@@ -286,15 +217,40 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   /**
    * Переопределяем dispose для очистки ресурсов, включая обработчики событий и middleware
    */
-  public override dispose(): void {
+  public override destroy(): void {
     // Вызываем родительский метод
-    super.dispose()
+    super.destroy()
 
     // Очищаем все обработчики событий
-    this.eventManager.dispose()
+    this.eventSubscriber.destroy()
 
     // Очищаем middleware
     this.clearMiddleware()
+  }
+
+  public async init(): Promise<this> {
+    await this.waitForInitialization()
+    return this
+  }
+
+  // ==== middleware ====
+  /**
+   * Добавляет middleware для перехвата запросов
+   * @param middleware Объект middleware
+   * @returns this для цепочки вызовов
+   */
+  public use(middleware: EnhancedApiMiddleware): this {
+    this.middlewareManager.use(middleware)
+    return this
+  }
+
+  /**
+   * Удаляет middleware по имени
+   * @param name Имя middleware
+   * @returns true если middleware был удален, иначе false
+   */
+  public removeMiddleware(name: string): boolean {
+    return this.middlewareManager.remove(name)
   }
 
   /**
@@ -306,16 +262,61 @@ export class ApiClient<T extends Record<string, TypedEndpointConfig<any, any>>> 
   }
 
   /**
+   * Удаляет все middleware
+   */
+  public clearMiddleware(): void {
+    this.middlewareManager.clear()
+  }
+
+  // ==== Подписки ====
+  /**
+   * Подписка на события конкретного эндпоинта с типизацией
+   * @param endpointName Имя эндпоинта (с подсказками TypeScript)
+   * @param listener Обработчик события с типизацией для конкретного эндпоинта
+   * @returns Функция для отписки
+   */
+  public subscribeEndpoint<K extends keyof T>(endpointName: K, listener: (data: EndpointEventData<T, K, ApiEventData>) => void): Unsubscribe {
+    return this.eventSubscriber.subscribeEndpoint(
+      String(endpointName),
+      listener as unknown as (data: ApiEventData) => void,
+    )
+  }
+
+  /**
+   * Подписка на определённый тип события с типизацией для всех эндпоинтов
+   * @param eventType Тип события
+   * @param listener Обработчик события с типизацией
+   * @returns Функция для отписки
+   */
+  public subscribeEvent<E extends ApiEventData['type']>(eventType: E, listener: (data: Extract<ApiEventData, { type: E }>) => void): Unsubscribe {
+    return this.eventSubscriber.subscribeEvent(eventType, listener)
+  }
+
+  /**
+   * Подписка на события группы эндпоинтов по тегу
+   * @param tag Тег группы эндпоинтов
+   * @param listener Обработчик события
+   * @returns Функция для отписки
+   */
+  public subscribeTag(tag: string, listener: (data: ApiEventData) => void): Unsubscribe {
+    return this.eventSubscriber.subscribeTag(tag, listener)
+  }
+
+  /**
+   * Генерирует событие
+   * @param eventType Тип события
+   * @param data Данные события
+   */
+  private emitEvent(eventType: ApiEventType, data: ApiEventData): void {
+    this.eventSubscriber.emit(eventType, data)
+  }
+
+  /**
    * Получает экземпляр менеджера событий
    * @returns Экземпляр менеджера событий
    */
-  public getEventManager(): ApiEventManager {
-    return this.eventManager
-  }
-
-  public async init(): Promise<this> {
-    await this.waitForInitialization()
-    return this
+  public getSubscriber(): ApiSubscriber {
+    return this.eventSubscriber
   }
 }
 

@@ -37,11 +37,6 @@ export interface RequestState<T = any> {
 
 export type RequestStateListener<T> = (state: RequestState<T>) => void;
 
-export interface FetchRequest<T> extends Promise<T> {
-  id: string;
-  subscribe: (listener: RequestStateListener<T>) => () => void;
-}
-
 /**
  * Аргументы для создания fetch-запроса
  */

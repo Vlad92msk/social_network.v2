@@ -6,7 +6,7 @@ import { ApiEventData, ApiEventType } from '../types/api-events.interface'
  * Менеджер событий для API клиента
  * Отвечает за регистрацию и вызов событий
  */
-export class ApiEventManager extends EventEmitter {
+export class ApiSubscriber extends EventEmitter {
   /**
    * Создает новый экземпляр менеджера событий
    */
@@ -22,7 +22,7 @@ export class ApiEventManager extends EventEmitter {
    * @param listener Обработчик события
    * @returns Функция для отписки
    */
-  public onEndpoint<T extends ApiEventData>(
+  public subscribeEndpoint<T extends ApiEventData>(
     endpointName: string,
     listener: (data: T) => void,
   ): Unsubscribe {
@@ -43,7 +43,7 @@ export class ApiEventManager extends EventEmitter {
    * @param listener Обработчик события
    * @returns Функция для отписки
    */
-  public onEvent<E extends ApiEventType>(
+  public subscribeEvent<E extends ApiEventType>(
     eventType: E,
     listener: (data: Extract<ApiEventData, { type: E }>) => void,
   ): Unsubscribe {
@@ -62,7 +62,7 @@ export class ApiEventManager extends EventEmitter {
    * @param listener Обработчик события
    * @returns Функция для отписки
    */
-  public onTag(
+  public subscribeTag(
     tag: string,
     listener: (data: ApiEventData) => void,
   ): Unsubscribe {
@@ -123,7 +123,7 @@ export class ApiEventManager extends EventEmitter {
   /**
    * Очищает все обработчики событий
    */
-  public dispose(): void {
+  public destroy(): void {
     this.removeAllListeners()
   }
 }

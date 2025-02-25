@@ -57,6 +57,7 @@ export interface PokemonSearchParams {
 }
 
 export const api = new ApiClient({
+  cacheableHeaderKeys: ['X-Global-Header'],
   storageType: 'indexedDB',
   options: {
     name: 'pokemon-api-storage',
@@ -70,9 +71,29 @@ export const api = new ApiClient({
   baseQuery: {
     baseUrl: 'https://pokeapi.co/api/v2',
     timeout: 10000,
+    cacheableHeaderKeys: ['X-Global-Header'], // Заголовок для базового запроса
+    prepareHeaders: async (headers, context) => {
+      // Устанавливаем заголовки для тестирования
+      headers.set('X-Global-Header', 'global-value')
+      headers.set('X-BaseQuery-Header', 'basequery-value')
+      return headers
+    },
+    credentials: 'same-origin',
   },
   // Типизированные endpoints
   endpoints: async (create) => ({
+    // Запрос деталей покемона по ID (с явно включенным кэшированием)
+    getPokemonById: create<number, PokemonDetails>({
+      cacheableHeaderKeys: ['X-Global-Header'],
+      request: (id) => ({
+        path: `/pokemon/${id}`,
+        method: 'GET',
+        responseFormat: ResponseFormat.Json,
+      }),
+      // Включаем кэширование с настройками по умолчанию
+      cache: true,
+      tags: ['pokemon-details'],
+    }),
     // Запрос списка покемонов (без кэширования)
     getPokemonList: create<PokemonSearchParams, PokemonListResponse>({
       request: (params = {
@@ -82,7 +103,7 @@ export const api = new ApiClient({
         path: '/pokemon',
         method: 'GET',
         query: params,
-        responseFormat: ResponseFormat.Json
+        responseFormat: ResponseFormat.Json,
       }),
       // Явное отключение кэша для этого эндпоинта
       // cache: false,
@@ -98,18 +119,6 @@ export const api = new ApiClient({
       cache: {
         ttl: 60 * 60 * 1000,
       },
-      tags: ['pokemon-details'],
-    }),
-
-    // Запрос деталей покемона по ID (с явно включенным кэшированием)
-    getPokemonById: create<number, PokemonDetails>({
-      request: (id) => ({
-        path: `/pokemon/${id}`,
-        method: 'GET',
-        responseFormat: ResponseFormat.Json
-      }),
-      // Включаем кэширование с настройками по умолчанию
-      cache: true,
       tags: ['pokemon-details'],
     }),
 

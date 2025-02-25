@@ -251,7 +251,9 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
 
     // Определяем, какие заголовки влияют на кэш
     const effectiveCacheableKeys = requestCacheableHeaderKeys || cacheableHeaderKeys
-    const cacheableHeaders = filterCacheableHeaders(headerObj, effectiveCacheableKeys)
+    console.log('Using cacheable header keys:', effectiveCacheableKeys);
+      const cacheableHeaders = filterCacheableHeaders(headerObj, effectiveCacheableKeys)
+      console.log('Filtered cacheable headers:', cacheableHeaders);
 
     // Создаем таймаут если указан
     let timeoutId: number | undefined
@@ -278,7 +280,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
 
       // Обрабатываем ответ
       const { data, error, fileMetadata } = await getResponseData<T, E>(response, responseFormat as ResponseFormat)
-
+      console.log('Cacheable headers:', cacheableHeaderKeys);
       // Формируем результат запроса
       const result: QueryResult<T, E> = {
         data,

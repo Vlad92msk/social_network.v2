@@ -29,15 +29,26 @@ export function filterCacheableHeaders(
 ): Record<string, string> {
   if (!cacheableKeys?.length) return {}
 
-  return Object.entries(headers)
+  console.log('filterCacheableHeaders input:', { headers, cacheableKeys });
+  
+  // Преобразуем все ключи заголовков в нижний регистр для надежного сравнения
+  const lowerCaseKeys = cacheableKeys.map(key => key.toLowerCase());
+  
+  const result = Object.entries(headers)
     .filter(([key]) => {
-      const lowerKey = key.toLowerCase()
-      return cacheableKeys.includes(lowerKey) || cacheableKeys.includes(key)
+      const lowerKey = key.toLowerCase();
+      // Сравниваем только в нижнем регистре для регистронезависимого сравнения
+      const includes = lowerCaseKeys.includes(lowerKey);
+      console.log(`Checking header ${key} (lower: ${lowerKey}): ${includes ? 'INCLUDED' : 'excluded'}`);
+      return includes;
     })
     .reduce((obj, [key, value]) => {
-      obj[key] = value
-      return obj
-    }, {} as Record<string, string>)
+      obj[key] = value;
+      return obj;
+    }, {} as Record<string, string>);
+    
+  console.log('filterCacheableHeaders result:', result);
+  return result;
 }
 
 /**

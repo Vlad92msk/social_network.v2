@@ -167,10 +167,10 @@ export class ApiModule {
   /**
    * Очищает ресурсы при удалении клиента
    */
-  public dispose(): void {
+  public destroy(): void {
     // Останавливаем очистку кэша
     if (this.cacheManager) {
-      this.cacheManager.dispose()
+      this.cacheManager.destroy()
     }
 
     // Отменяем все текущие запросы только если requestExecutor уже создан

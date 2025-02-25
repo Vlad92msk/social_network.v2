@@ -18,7 +18,7 @@ export const ApiProvider: React.FC<ApiProviderProps> = ({
   // Добавляем только cleanup при размонтировании
   useEffect(() => {
     return () => {
-      pokemonApi.dispose()
+      pokemonApi.destroy()
     }
   }, [])
 
