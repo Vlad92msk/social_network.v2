@@ -396,7 +396,7 @@ export interface TypedApiModuleOptions<T extends Record<string, TypedEndpointCon
   /**
    * Тип хранилища
    */
-  storageType?: 'localStorage' | 'sessionStorage' | 'indexedDB' | 'memory';
+  storageType?: StorageType;
 
   /**
    * Дополнительные настройки хранилища

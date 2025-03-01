@@ -1,8 +1,6 @@
-import { filterCacheableHeaders, headersToObject } from './api-helpers'
 import { getFileMetadataFromHeaders, getResponseFormatForMimeType, isFileResponse } from './file-utils'
-import {
-  ApiContext, BaseQueryFn, FetchBaseQueryArgs, QueryResult, RequestDefinition, RequestOptions, ResponseFormat,
-} from '../types/api.interface'
+import { ApiContext, FetchBaseQueryArgs, RequestDefinition, ResponseFormat } from '../types/api1.interface'
+import { FileDownloadResult, QueryOptions, QueryResult } from '../types/query.interface'
 
 /**
  * Извлекает данные из response в зависимости от формата
@@ -10,10 +8,10 @@ import {
  * @param format Формат ответа
  * @returns Объект с данными или ошибкой
  */
-async function getResponseData<T, E>(
+async function getResponseData<T, E extends Error>(
   response: Response,
   format?: ResponseFormat,
-): Promise<{ data?: T, error?: E, fileMetadata?: any }> {
+): Promise<{ data?: T, error?: E, fileMetadata?: FileDownloadResult }> {
   let responseFormat = format
   const contentType = response.headers.get('content-type') || ''
 
@@ -93,7 +91,7 @@ async function getResponseData<T, E>(
 
       default:
         // Если формат неизвестен, возвращаем blob как наиболее универсальный
-        //@ts-ignore
+        // eslint-disable-next-line no-case-declarations
         const blob = await response.blob()
         return response.ok
           ? { data: blob as unknown as T, fileMetadata }
@@ -112,21 +110,20 @@ async function getResponseData<T, E>(
  * @param options Настройки базового клиента
  * @returns Функция для выполнения запросов
  */
-export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
+export function fetchBaseQuery(options: FetchBaseQueryArgs) {
   const {
     baseUrl,
     prepareHeaders,
     timeout = 30000,
     fetchFn = fetch,
-    cacheableHeaderKeys = [],
     credentials = 'same-origin',
   } = options
 
-  return async <T, E extends Error>(
-    args: RequestDefinition,
-    queryOptions: RequestOptions = {},
-    context: ApiContext = {} as ApiContext,
-  ): Promise<QueryResult<T, E>> => {
+  return async <RequestResult, RequestParams extends Record<string, any>, E extends Error>(
+    args: RequestDefinition<RequestParams>,
+    queryOptions: QueryOptions = {},
+    context: ApiContext = {} as ApiContext<RequestParams>,
+  ): Promise<QueryResult<RequestResult, E>> => {
     const {
       path,
       method,
@@ -140,7 +137,6 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
       timeout: requestTimeout = timeout,
       headers: optionHeaders,
       context: optionContext = {},
-      cacheableHeaderKeys: requestCacheableHeaderKeys,
       responseFormat: optResponseFormat,
     } = queryOptions
 
@@ -148,7 +144,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     const responseFormat = optResponseFormat || reqResponseFormat
 
     // Создаем расширенный контекст для подготовки заголовков
-    const headerContext: ApiContext = {
+    const headerContext: ApiContext<RequestParams> = {
       ...context,
       ...optionContext,
       getFromStorage: context.getFromStorage || ((key: string) => {
@@ -171,6 +167,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
           return undefined
         }
       }),
+      //@ts-ignore
       requestParams: { ...args, ...queryOptions },
     }
 
@@ -210,7 +207,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
     // Применяем глобальную подготовку заголовков
     if (prepareHeaders) {
       try {
-        // Ожидаем результат prepareHeaders, который может быть асинхронным
+        // Ожидаем результат prepareHeaders
         headers = await Promise.resolve(prepareHeaders(headers, headerContext))
       } catch (error) {
         console.warn('[API] Ошибка при подготовке заголовков', error)
@@ -237,13 +234,6 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
       }
     }
 
-    // Преобразуем заголовки для метаданных
-    const headerObj = headersToObject(headers)
-
-    // Определяем, какие заголовки влияют на кэш
-    const effectiveCacheableKeys = requestCacheableHeaderKeys || cacheableHeaderKeys
-    const cacheableHeaders = filterCacheableHeaders(headerObj, effectiveCacheableKeys)
-
     // Создаем таймаут если указан
     let timeoutId: number | undefined
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -268,22 +258,17 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
       const response = await Promise.race([fetchPromise, timeoutPromise])
 
       // Обрабатываем ответ
-      const { data, error, fileMetadata } = await getResponseData<T, E>(response, responseFormat as ResponseFormat)
+      const { data, error, fileMetadata } = await getResponseData<RequestResult, E>(response, responseFormat as ResponseFormat)
 
       // Формируем результат запроса
-      const result: QueryResult<T, E> = {
+      const result: QueryResult<RequestResult, E> = {
         data,
         error,
         ok: response.ok,
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
-        metadata: {
-          requestHeaders: headerObj,
-          cacheableHeaders,
-          fileMetadata,
-          cacheableHeaderKeys: effectiveCacheableKeys,
-        },
+        fileDownloadResult: fileMetadata,
       }
 
       return result
@@ -299,10 +284,6 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs): BaseQueryFn {
         status: 0,
         statusText: error.message,
         headers: new Headers(),
-        metadata: {
-          requestHeaders: headerObj,
-          cacheableHeaders,
-        },
       }
     } finally {
       // Очищаем таймер в любом случае

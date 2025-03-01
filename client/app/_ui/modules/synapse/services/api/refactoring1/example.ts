@@ -1,5 +1,5 @@
-import { ResponseFormat } from '@ui/modules/synapse/services/api'
-import { ApiClient } from '../components/api-client'
+import { ResponseFormat } from './types/api1.interface'
+import { ApiClient } from './ApiClient'
 
 // Типы данных для PokeAPI
 export interface PokemonListResponse {
@@ -59,7 +59,7 @@ export interface PokemonSearchParams {
 export const api = new ApiClient({
   cacheableHeaderKeys: ['X-Global-Header'],
   storageType: 'indexedDB',
-  options: {
+  storageOptions: {
     name: 'pokemon-api-storage',
     dbName: 'pokemon-api-cache',
     storeName: 'requests',
@@ -71,7 +71,6 @@ export const api = new ApiClient({
   baseQuery: {
     baseUrl: 'https://pokeapi.co/api/v2',
     timeout: 10000,
-    cacheableHeaderKeys: ['X-Global-Header'], // Заголовок для базового запроса
     prepareHeaders: async (headers, context) => {
       // Устанавливаем заголовки для тестирования
       headers.set('X-Global-Header', 'global-value')
@@ -83,8 +82,15 @@ export const api = new ApiClient({
   // Типизированные endpoints
   endpoints: async (create) => ({
     // Запрос деталей покемона по ID (с явно включенным кэшированием)
-    getPokemonById: create<number, PokemonDetails>({
-      cacheableHeaderKeys: ['X-Global-Header'],
+    getPokemonById: create<{ id: number }, PokemonDetails>({
+      includeCacheableHeaderKeys: ['X-Global-Header'],
+      excludeCacheableHeaderKeys: ['X-Global-Header'],
+      prepareHeaders: async (headers, context) => {
+        // Устанавливаем заголовки для тестирования
+        headers.set('X-Global-Header', 'global-value')
+        headers.set('X-BaseQuery-Header', 'basequery-value')
+        return headers
+      },
       request: (id) => ({
         path: `/pokemon/${id}`,
         method: 'GET',
@@ -108,28 +114,6 @@ export const api = new ApiClient({
       // Явное отключение кэша для этого эндпоинта
       // cache: false,
     }),
-
-    // Запрос деталей покемона по имени (с кэшированием)
-    getPokemonByName: create<string, PokemonDetails>({
-      request: (name) => ({
-        path: `/pokemon/${name}`,
-        method: 'GET',
-      }),
-      // Явное включение кэша с TTL 1 час
-      cache: {
-        ttl: 60 * 60 * 1000,
-      },
-      tags: ['pokemon-details'],
-    }),
-
-    // Запрос типов покемонов (без кэша)
-    getPokemonTypes: create<void, { results: { name: string; url: string }[] }>({
-      request: () => ({
-        path: '/type',
-        method: 'GET',
-      }),
-      // Кэш не определен, используется глобальная настройка
-    }),
   }),
 })
 console.log('Starting API initialization...')
@@ -140,6 +124,5 @@ console.log('API initialization completed')
 
 console.log('Getting endpoints...')
 export const pokemonEndpoints = pokemonApi.getEndpoints()
-
-const dwed = pokemonEndpoints.getPokemonById.
+const t = pokemonEndpoints.getPokemonList.request({}, {cacheableHeaderKeys: ['']}).subscribe((state)=>state)
 console.log('Endpoints received')

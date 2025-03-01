@@ -7,7 +7,7 @@ export { CacheManager } from './components/cache-manager';
 export { EventBus } from './components/event-bus';
 export { MiddlewareManager } from './components/middleware-manager';
 export { EndpointStateManager } from './components/endpoint-state-manager';
-export { StorageManager } from './components/storage-manager';
+export { QueryStorage } from './components/query-storage';
 
 // Типы и интерфейсы
 export {

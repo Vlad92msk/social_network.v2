@@ -33,7 +33,7 @@ export interface CacheOptions {
 
 export interface CacheParams {
   url: string;
-  query?: string;
+  query?: Record<string, any>;
   [key: string]: any;
 }
 

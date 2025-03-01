@@ -4,7 +4,7 @@ import { EndpointStateManager } from './endpoint-state-manager'
 import { EventBus } from './event-bus'
 import { MiddlewareManager } from './middleware-manager'
 import { RequestExecutor } from './request-executor'
-import { StorageManager } from './storage-manager'
+import { QueryStorage } from './query-storage'
 import { ApiModuleOptions, BaseQueryFn, EndpointConfig, FetchBaseQueryArgs } from '../types/api.interface'
 import { apiLogger } from '../utils/api-helpers'
 import { fetchBaseQuery } from '../utils/fetch-base-query'
@@ -14,7 +14,7 @@ import { fetchBaseQuery } from '../utils/fetch-base-query'
  */
 export class ApiModule {
   /** Менеджер хранилища */
-  protected storageManager: StorageManager
+  protected storageManager: QueryStorage
 
   /** Менеджер состояния эндпоинтов */
   protected stateManager: EndpointStateManager
@@ -49,7 +49,7 @@ export class ApiModule {
    */
   constructor(protected options: ApiModuleOptions) {
     // Инициализируем менеджер хранилища
-    this.storageManager = new StorageManager(
+    this.storageManager = new QueryStorage(
       options.storageType || 'localStorage',
       options.options || {},
     )
@@ -96,22 +96,22 @@ export class ApiModule {
       // Инициализируем менеджер состояния
       this.stateManager = new EndpointStateManager(this.storageManager)
 
-      // Инициализируем кэш-менеджер
+      // Инициализируем менеджер кэша
       this.initializeCache()
+
+      // Инициализируем исполнитель запросов
+      this.requestExecutor = new RequestExecutor(
+        this.baseQuery,
+        this.cacheManager,
+        this.stateManager,
+        this.middlewareManager,
+        (eventType, data) => this.eventBus.emit(eventType, data),
+      )
 
       // Устанавливаем функцию получения глобальных опций для middleware
       this.middlewareManager.setGlobalOptionsProvider(() => ({
         cacheableHeaderKeys: this.options.cacheableHeaderKeys || [],
       }))
-
-      // Инициализируем исполнитель запросов
-      this.requestExecutor = new RequestExecutor(
-        this.cacheManager,
-        this.stateManager,
-        this.middlewareManager,
-        this.baseQuery,
-        (eventType, data) => this.eventBus.emit(eventType, data),
-      )
 
       // Инициализируем эндпоинты, если указаны
       if (this.options.endpoints) {
@@ -126,10 +126,10 @@ export class ApiModule {
 
       // Инициализируем исполнитель запросов без кэша
       this.requestExecutor = new RequestExecutor(
+        this.baseQuery,
         null,
         this.stateManager,
         this.middlewareManager,
-        this.baseQuery,
         (eventType, data) => this.eventBus.emit(eventType, data),
       )
 
@@ -214,8 +214,9 @@ export class ApiModule {
         endpointName: name,
         endpointConfig: config,
         stateManager: this.stateManager,
+        storageManager: this.storageManager,
         requestExecutor: this.requestExecutor,
-        eventBus: this.eventBus,
+        eventManager: this.eventBus,
         middlewareManager: this.middlewareManager,
         cacheManager: this.cacheManager,
       })

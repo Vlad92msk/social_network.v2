@@ -2,25 +2,23 @@ import { IndexedDBStorage } from '../../../storage/adapters/indexed-DB.service'
 import { LocalStorage } from '../../../storage/adapters/local-storage.service'
 import { MemoryStorage } from '../../../storage/adapters/memory-storage.service'
 import { IStorage, StorageType } from '../../../storage/storage.interface'
+import { CreateApiClientOptions } from '../types/api1.interface'
 
 /**
  * Менеджер хранилища для API
+ * Объединяет в себе функционал хранилища и управления кэшем
  */
-export class StorageManager {
+export class QueryStorage {
   /** Экземпляр хранилища */
   private storage: IStorage | null = null
 
   /** Промис инициализации */
   private initPromise: Promise<IStorage> | null = null
 
-  /**
-   * Создает новый экземпляр менеджера хранилища
-   * @param storageType Тип хранилища
-   * @param options Опции для хранилища
-   */
   constructor(
-    private storageType: StorageType = 'localStorage',
-    private options: Record<string, any> = {},
+    private storageType: StorageType,
+    private options: CreateApiClientOptions['storageOptions'],
+    private cacheConfig: CreateApiClientOptions['cache'],
   ) {}
 
   /**
@@ -44,7 +42,7 @@ export class StorageManager {
    */
   private async createStorage() {
     try {
-      const name = this.options.name || 'api-storage'
+      const name = this.options?.name || 'api-storage'
 
       switch (this.storageType) {
         case 'indexedDB':
@@ -78,7 +76,7 @@ export class StorageManager {
       if (this.storageType === 'indexedDB') {
         console.warn('Переключение на localStorage в качестве резервного хранилища')
         this.storage = new LocalStorage({
-          name: this.options.name || 'api-storage',
+          name: this.options?.name || 'api-storage',
         })
         await this.storage.initialize()
         return this.storage
@@ -88,19 +86,13 @@ export class StorageManager {
     }
   }
 
-  /**
-   * Получает экземпляр хранилища
-   * @returns Экземпляр хранилища или null
-   */
   public getStorage() {
     return this.storage
   }
 
-  /**
-   * Проверяет, инициализировано ли хранилище
-   * @returns true если хранилище инициализировано
-   */
-  public isInitialized() {
-    return this.storage !== null
+  public async destroy() {
+    await this.storage?.destroy()
+    this.storage = null
+    this.initPromise = null
   }
 }

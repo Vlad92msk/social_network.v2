@@ -1,22 +1,22 @@
-import { StorageManager } from './storage-manager';
-import { EndpointState } from '../types/api.interface';
+import { QueryStorage } from './query-storage'
+import { EndpointState } from '../types/api.interface'
 
 /**
  * Менеджер состояния эндпоинтов
  */
 export class EndpointStateManager {
   /** Кэш состояний эндпоинтов в памяти */
-  private stateCache: Map<string, EndpointState<any>> = new Map();
-  
+  private stateCache: Map<string, EndpointState<any>> = new Map()
+
   /** Обработчики изменения состояний */
-  private changeHandlers: Map<string, Set<(state: EndpointState<any>) => void>> = new Map();
-  
+  private changeHandlers: Map<string, Set<(state: EndpointState<any>) => void>> = new Map()
+
   /**
    * Создает новый экземпляр менеджера состояния
    * @param storageManager Менеджер хранилища
    */
-  constructor(private storageManager: StorageManager) {}
-  
+  constructor(private storageManager: QueryStorage) {}
+
   /**
    * Получает состояние эндпоинта
    * @param endpointName Имя эндпоинта
@@ -25,34 +25,34 @@ export class EndpointStateManager {
   public async getEndpointState<T>(endpointName: string): Promise<EndpointState<T>> {
     // Проверяем кэш в памяти
     if (this.stateCache.has(endpointName)) {
-      return this.stateCache.get(endpointName) as EndpointState<T>;
+      return this.stateCache.get(endpointName) as EndpointState<T>
     }
-    
+
     // Пробуем получить из хранилища
     try {
-      const storage = this.storageManager.getStorage();
-      
+      const storage = this.storageManager.getStorage()
+
       if (storage) {
-        const storedState = await storage.get<EndpointState<T>>(`endpoint:${endpointName}`);
-        
+        const storedState = await storage.get<EndpointState<T>>(`endpoint:${endpointName}`)
+
         if (storedState) {
           // Кэшируем в памяти
-          this.stateCache.set(endpointName, storedState);
-          return storedState;
+          this.stateCache.set(endpointName, storedState)
+          return storedState
         }
       }
     } catch (error) {
-      console.error(`Ошибка чтения состояния эндпоинта ${endpointName}:`, error);
+      console.error(`Ошибка чтения состояния эндпоинта ${endpointName}:`, error)
     }
-    
+
     // Если не удалось получить, создаем состояние по умолчанию
-    const defaultState: EndpointState<T> = { status: 'idle' };
-    
+    const defaultState: EndpointState<T> = { status: 'idle' }
+
     // Кэшируем в памяти
-    this.stateCache.set(endpointName, defaultState);
-    return defaultState;
+    this.stateCache.set(endpointName, defaultState)
+    return defaultState
   }
-  
+
   /**
    * Обновляет состояние эндпоинта
    * @param endpointName Имя эндпоинта
@@ -61,11 +61,11 @@ export class EndpointStateManager {
    */
   public async updateEndpointState<T>(
     endpointName: string,
-    state: Partial<EndpointState<T>>
+    state: Partial<EndpointState<T>>,
   ): Promise<EndpointState<T>> {
     // Получаем текущее состояние
-    const currentState = await this.getEndpointState<T>(endpointName);
-    
+    const currentState = await this.getEndpointState<T>(endpointName)
+
     // Объединяем с новым
     const newState: EndpointState<T> = {
       ...currentState,
@@ -75,51 +75,51 @@ export class EndpointStateManager {
         ...(currentState.meta || {}),
         ...(state.meta || {}),
       },
-    };
-    
+    }
+
     // Сохраняем в кэше
-    this.stateCache.set(endpointName, newState);
-    
+    this.stateCache.set(endpointName, newState)
+
     // Сохраняем в хранилище
     try {
-      const storage = this.storageManager.getStorage();
-      
+      const storage = this.storageManager.getStorage()
+
       if (storage) {
-        await storage.set(`endpoint:${endpointName}`, newState);
+        await storage.set(`endpoint:${endpointName}`, newState)
       }
     } catch (error) {
-      console.error(`Ошибка сохранения состояния эндпоинта ${endpointName}:`, error);
+      console.error(`Ошибка сохранения состояния эндпоинта ${endpointName}:`, error)
     }
-    
+
     // Оповещаем подписчиков
-    this.notifyStateChange(endpointName, newState);
-    
-    return newState;
+    this.notifyStateChange(endpointName, newState)
+
+    return newState
   }
-  
+
   /**
    * Сбрасывает состояние эндпоинта
    * @param endpointName Имя эндпоинта
    */
   public async resetEndpointState(endpointName: string): Promise<void> {
     // Удаляем из кэша
-    this.stateCache.delete(endpointName);
-    
+    this.stateCache.delete(endpointName)
+
     // Удаляем из хранилища
     try {
-      const storage = this.storageManager.getStorage();
-      
+      const storage = this.storageManager.getStorage()
+
       if (storage) {
-        await storage.delete(`endpoint:${endpointName}`);
+        await storage.delete(`endpoint:${endpointName}`)
       }
     } catch (error) {
-      console.error(`Ошибка удаления состояния эндпоинта ${endpointName}:`, error);
+      console.error(`Ошибка удаления состояния эндпоинта ${endpointName}:`, error)
     }
-    
+
     // Оповещаем подписчиков о сбросе
-    this.notifyStateChange(endpointName, { status: 'idle' });
+    this.notifyStateChange(endpointName, { status: 'idle' })
   }
-  
+
   /**
    * Подписка на изменение состояния эндпоинта
    * @param endpointName Имя эндпоинта
@@ -128,66 +128,66 @@ export class EndpointStateManager {
    */
   public subscribeToState<T>(
     endpointName: string,
-    handler: (state: EndpointState<T>) => void
+    handler: (state: EndpointState<T>) => void,
   ): () => void {
     // Создаем набор обработчиков для эндпоинта, если его нет
     if (!this.changeHandlers.has(endpointName)) {
-      this.changeHandlers.set(endpointName, new Set());
+      this.changeHandlers.set(endpointName, new Set())
     }
-    
+
     // Получаем набор обработчиков
-    const handlers = this.changeHandlers.get(endpointName)!;
-    
+    const handlers = this.changeHandlers.get(endpointName)!
+
     // Добавляем обработчик
-    handlers.add(handler as (state: EndpointState<any>) => void);
-    
+    handlers.add(handler as (state: EndpointState<any>) => void)
+
     // Сразу оповещаем о текущем состоянии
-    this.getEndpointState<T>(endpointName).then(state => {
+    this.getEndpointState<T>(endpointName).then((state) => {
       try {
-        handler(state);
+        handler(state)
       } catch (error) {
-        console.error(`Ошибка в обработчике состояния для ${endpointName}:`, error);
+        console.error(`Ошибка в обработчике состояния для ${endpointName}:`, error)
       }
-    });
-    
+    })
+
     // Возвращаем функцию отписки
     return () => {
-      const handlersSet = this.changeHandlers.get(endpointName);
-      
+      const handlersSet = this.changeHandlers.get(endpointName)
+
       if (handlersSet) {
-        handlersSet.delete(handler as (state: EndpointState<any>) => void);
-        
+        handlersSet.delete(handler as (state: EndpointState<any>) => void)
+
         // Если обработчиков больше нет, удаляем набор
         if (handlersSet.size === 0) {
-          this.changeHandlers.delete(endpointName);
+          this.changeHandlers.delete(endpointName)
         }
       }
-    };
+    }
   }
-  
+
   /**
    * Оповещает подписчиков об изменении состояния
    * @param endpointName Имя эндпоинта
    * @param state Новое состояние
    */
   private notifyStateChange(endpointName: string, state: EndpointState<any>): void {
-    const handlers = this.changeHandlers.get(endpointName);
-    
+    const handlers = this.changeHandlers.get(endpointName)
+
     if (handlers) {
-      handlers.forEach(handler => {
+      handlers.forEach((handler) => {
         try {
-          handler(state);
+          handler(state)
         } catch (error) {
-          console.error(`Ошибка в обработчике состояния для ${endpointName}:`, error);
+          console.error(`Ошибка в обработчике состояния для ${endpointName}:`, error)
         }
-      });
+      })
     }
   }
-  
+
   /**
    * Очищает кэш состояний в памяти
    */
   public clearCache(): void {
-    this.stateCache.clear();
+    this.stateCache.clear()
   }
 }

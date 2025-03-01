@@ -1,4 +1,3 @@
-import { RequestWithState } from '@ui/modules/synapse/services/api/components/RequestWithState'
 import { CacheRule } from '../../storage/modules/cache/cache-module.service'
 import { StorageType } from '../../storage/storage.interface'
 
@@ -106,7 +105,7 @@ export interface RequestOptions {
   /** Таймаут в миллисекундах (переопределяет глобальный) */
   timeout?: number
   /** Дополнительные заголовки */
-  headers?: Record<string, string>
+  headers?: Headers
   /** Пользовательский контекст */
   context?: Record<string, any>
   /** Ключи заголовков, влияющие на кэш (для конкретного запроса) */
@@ -119,6 +118,10 @@ export interface RequestOptions {
   fileType?: string
   /** Автоматически скачать файл после получения */
   downloadFile?: boolean
+  /**
+   * Функция для повторного выполнения запроса
+   */
+  retry?: <T = any, R = any>(params: T, options?: RequestOptions) => Promise<R>
 }
 
 /**
@@ -176,11 +179,11 @@ export interface CacheMetadata {
  * Состояние эндпоинта
  * Содержит информацию о текущем состоянии запроса и данные
  */
-export interface EndpointState<TData = any> {
+export interface EndpointState<ResponseData = any> {
   /** Статус запроса */
   status: 'idle' | 'loading' | 'success' | 'error'
   /** Данные (при успешном запросе) */
-  data?: TData
+  data?: ResponseData
   /** Ошибка (при неуспешном запросе) */
   error?: Error
   /** Метаданные эндпоинта */
@@ -218,23 +221,40 @@ export interface EndpointConfig<TParams = any, TResult = any> {
  */
 export type TypedEndpointConfig<TParams = any, TResult = any> = EndpointConfig<TParams, TResult>
 
-
 export interface StateRequest<T> {
   id: string;
-  subscribe: (listener: (state: RequestState<T>) => void) => () => void;
+  subscribe: (listener: (state: RequestState<T>) => void) => VoidFunction
   wait: () => Promise<T>;
 }
+
 /**
- * Интерфейс эндпоинта
- * Предоставляет методы для работы с конкретным API-эндпоинтом
+ * Состояние самого запроса
  */
-export interface Endpoint<TParams = any, TResult = any> {
+export interface RequestState<ResponseData = any> {
+  status: 'loading' | 'success' | 'error'
+  data?: ResponseData
+  error?: Error
+  headers: Headers
+}
+
+
+
+/**
+ * Структура эндпоинта
+ *
+ * Эндпоинт - это всего лишь определение того6 как будет вызван метод
+ * Эндпоинт может быть вызван в разных частях приложения с разными параметрами
+ * По этому нет смысла хранить ответы так как они будут перезаписываться
+ * метод subscribe больше нужен для мониторинга
+ * meta - метаинформация по эндпоинту (то как он сконфигурирован)
+ */
+export interface Endpoint<RequestParams = any, ResponseData = any> {
   /** Выполнить запрос с параметрами */
-  fetch: (params: TParams, options?: RequestOptions) => StateRequest<TResult>;
+  fetch: (params: RequestParams, options?: RequestOptions) => StateRequest<ResponseData>;
   /** Подписаться на изменения состояния */
-  subscribe: (callback: (state: EndpointState<TResult>) => void) => Unsubscribe
+  subscribe: (callback: (state: EndpointState<ResponseData>) => void) => Unsubscribe
   /** Получить текущее состояние */
-  getState: () => Promise<EndpointState<TResult>>
+  getState: () => Promise<EndpointState<ResponseData>>
   /** Инвалидировать кэш по тегам */
   invalidate: () => Promise<void>
   /** Сбросить состояние */
@@ -257,9 +277,7 @@ export interface Endpoint<TParams = any, TResult = any> {
 /**
  * Функция для создания типизированных эндпоинтов
  */
-export type CreateEndpoint = <TParams, TResult>(
-  config: EndpointConfig<TParams, TResult>
-) => EndpointConfig<TParams, TResult>;
+export type CreateEndpoint = <TParams, TResult>(config: EndpointConfig<TParams, TResult>) => EndpointConfig<TParams, TResult>;
 
 /** Функция для отписки от изменений состояния */
 export type Unsubscribe = () => void
