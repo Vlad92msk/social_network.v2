@@ -6,7 +6,6 @@ export interface CacheMetadata {
   createdAt: number;
   updatedAt: number;
   expiresAt: number;
-  accessCount: number;
   tags?: string[];
   createdAtDateTime: string;
   updatedAtDateTime: string;
@@ -40,7 +39,7 @@ export interface CacheParams {
 export interface CacheEntry<T> {
   data: T;
   metadata: CacheMetadata;
-  params: CacheParams;
+  params: Record<string, any>;
 }
 
 export class CacheUtils {
@@ -52,7 +51,6 @@ export class CacheUtils {
       createdAt: now,
       updatedAt: now,
       expiresAt,
-      accessCount: 0,
       tags,
       createdAtDateTime: this.formatDateTime(now),
       updatedAtDateTime: this.formatDateTime(now),
@@ -72,7 +70,6 @@ export class CacheUtils {
     return {
       ...metadata,
       updatedAt: Date.now(),
-      accessCount: metadata.accessCount + 1,
     }
   }
 

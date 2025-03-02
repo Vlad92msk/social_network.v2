@@ -97,7 +97,7 @@ export const api = new ApiClient({
         responseFormat: ResponseFormat.Json,
       }),
       // Включаем кэширование с настройками по умолчанию
-      cache: true,
+      cache: {},
       tags: ['pokemon-details'],
     }),
     // Запрос списка покемонов (без кэширования)
@@ -124,5 +124,5 @@ console.log('API initialization completed')
 
 console.log('Getting endpoints...')
 export const pokemonEndpoints = pokemonApi.getEndpoints()
-const t = pokemonEndpoints.getPokemonList.request({}, {cacheableHeaderKeys: ['']}).subscribe((state)=>state)
+const t = pokemonEndpoints.getPokemonList.request({}, {cacheableHeaderKeys: ['']}).catch().then().finally()
 console.log('Endpoints received')

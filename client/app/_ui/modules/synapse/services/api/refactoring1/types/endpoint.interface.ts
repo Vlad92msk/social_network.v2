@@ -44,20 +44,36 @@ export interface EndpointState {
 /**
  * Состояние самого запроса
  */
-export interface RequestState<ResponseData = any, E = Error> {
+export interface RequestState<ResponseData = any, RequestParams extends Record<string, any> = any, E = Error> {
   status: 'loading' | 'success' | 'error'
   data?: ResponseData
   error?: E
   headers: Headers
+  requestParams?: RequestParams
 }
 
 /**
- * Дополнительные методы для fetch
+ * Дополнительные методы для request
  */
-export interface RequestResponseModify<T> extends Promise<T>{
+export interface RequestResponseModify<T> {
   id: string
   subscribe: (listener: (state: RequestState<T>) => void) => VoidFunction
   wait: () => Promise<T>
+
+  /** Отменить запрос */
+  abort: VoidFunction
+
+  // Делаем объект "thenable" для поддержки await и .then()
+  then<TResult1 = T, TResult2 = never>(
+    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2>
+
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
+  ): Promise<T | TResult>
+
+  finally(onfinally?: (() => void) | null): Promise<T>
 }
 
 /**
@@ -78,8 +94,6 @@ export interface Endpoint<RequestParams extends Record<string, any>= any, Respon
   subscribe: (callback: (state: EndpointState) => void) => Unsubscribe
   /** Сбросить состояние */
   reset: () => Promise<void>
-  /** Отменить текущий запрос */
-  abort: VoidFunction
   /** Метаданные эндпоинта */
   meta: {
     /** Имя эндпоинта */

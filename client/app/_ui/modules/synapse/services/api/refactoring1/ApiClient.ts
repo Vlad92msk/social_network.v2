@@ -4,7 +4,7 @@ import { QueryStorage } from './components/query-storage'
 import { CreateApiClientOptions, ExtractParamsType, ExtractResultType } from './types/api1.interface'
 import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType, RequestResponseModify } from './types/endpoint.interface'
 import { QueryOptions } from './types/query.interface'
-import { apiLogger } from './utils/api-helpers'
+import { apiLogger, createUniqueId } from './utils/api-helpers'
 import { fetchBaseQuery } from './utils/fetch-base-query'
 
 class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> implements EndpointType<RequestParams, RequestResponse> {
@@ -22,7 +22,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
   private readonly cacheableHeaders: string[]
 
   constructor(
-    private readonly queryStorage: any,
+    private readonly queryStorage: QueryStorage,
     private readonly configCurrentEndpoint: EndpointConfig<RequestParams, RequestResponse>,
     private readonly cacheableHeaderKeys: CreateApiClientOptions['cacheableHeaderKeys'],
     private readonly globalCacheConfig: CreateApiClientOptions['cache'],
@@ -49,18 +49,108 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
   }
 
   public request(params: RequestParams, options?: QueryOptions): RequestResponseModify<RequestResponse> {
-    return ({
-      id: '1',
-      subscribe: (cb) => () => {},
-      wait: () => new Promise(() => {}),
+    // 1. Подготовка и инициализация запроса
+    this.fetchCounts++ // Увеличиваем счетчик запросов
+    const requestId = createUniqueId() // Создаем уникальный ID для запроса
+    const controller = new AbortController() // Контроллер для отмены запроса
+    const subscribers = new Set<(state: RequestState<RequestResponse, RequestParams>) => void>() // Подписчики на изменения состояния
+    let currentState: RequestState<RequestResponse, RequestParams> = {
+      status: 'loading',
+      requestParams: params,
+      headers: new Headers()
+    }
+
+    // 2. Создаем основные функции для управления состоянием и уведомления подписчиков
+    const notifySubscribers = (newState: Partial<RequestState<RequestResponse, RequestParams>>) => {
+      // Обновляем состояние и вызываем всех подписчиков
+    }
+
+    // 3. Запускаем выполнение запроса асинхронно (не блокируем основной поток)
+    const executeRequest = async () => {
+      try {
+        // 3.1 Проверяем кэш, если кэширование включено
+        if (this.queryStorage.shouldCache(this.configCurrentEndpoint, options)) {
+          // Создаем ключ кэша и пытаемся получить данные из кэша
+          // Если данные найдены, уведомляем подписчиков и возвращаем результат
+        }
+
+        // 3.2 Если кэш не используется или данных нет в кэше, выполняем запрос
+        const requestDefinition = this.configCurrentEndpoint.request(params)
+        const mergedOptions = { ...options, signal: controller.signal }
+
+        // 3.3 Выполняем запрос через queryFunction
+        const response = await this.queryFunction(requestDefinition, mergedOptions)
+
+        // 3.4 Обрабатываем результат
+        if (response.ok && response.data) {
+          // Если запрос успешен, сохраняем в кэш (если нужно)
+          if (this.queryStorage.shouldCache(this.configCurrentEndpoint, options)) {
+            // Создаем конфигурацию кэша и сохраняем результат
+          }
+
+          // Уведомляем об успешном результате
+          notifySubscribers({
+            status: 'success',
+            data: response.data,
+            headers: response.headers
+          })
+        } else {
+          // Уведомляем об ошибке
+          notifySubscribers({
+            status: 'error',
+            error: response.error,
+            headers: response.headers
+          })
+        }
+      } catch (error) {
+        // Обрабатываем ошибки и уведомляем подписчиков
+        notifySubscribers({
+          status: 'error',
+          error: error as Error
+        })
+      }
+    }
+
+    // Запускаем запрос асинхронно
+    executeRequest()
+
+    // 4. Создаем промис для метода wait()
+    const waitPromise = new Promise<RequestResponse>((resolve, reject) => {
+      const unsubscribe = this.subscribe(requestId, (state) => {
+        if (state.status === 'success' && state.data) {
+          unsubscribe()
+          resolve(state.data)
+        } else if (state.status === 'error' && state.error) {
+          unsubscribe()
+          reject(state.error)
+        }
+      })
     })
+
+    // 5. Возвращаем объект с методами управления запросом
+    return {
+      id: requestId,
+
+      // Подписка на изменения состояния
+      subscribe: (listener) => {
+        subscribers.add(listener)
+        listener(currentState) // Вызываем сразу с текущим состоянием
+        return () => subscribers.delete(listener)
+      },
+
+      // Ожидание результата запроса
+      wait: () => waitPromise,
+
+      // Делегирование методов промиса
+      then: (onfulfilled, onrejected) => waitPromise.then(onfulfilled, onrejected),
+      catch: (onrejected) => waitPromise.catch(onrejected),
+      finally: (onfinally) => waitPromise.finally(onfinally)
+    }
   }
 
   public subscribe(cb) {
     return () => {}
   }
-
-  public abort() {}
 
   public reset() {
     return Promise.resolve()
@@ -69,7 +159,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
 
 export class ApiClient <T extends Record<string, EndpointConfig>> {
   /** Хранилище запросов */
-  private queryStorage: any
+  private queryStorage: QueryStorage
 
   private readonly cacheableHeaderKeys: CreateApiClientOptions['cacheableHeaderKeys']
 

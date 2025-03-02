@@ -1,5 +1,4 @@
 import { CreateEndpoint, EndpointConfig } from './endpoint.interface'
-import { CacheRule } from '../../../storage/modules/cache/cache-module.service'
 import { StorageType } from '../../../storage/storage.interface'
 
 /**
@@ -37,7 +36,7 @@ export type CacheConfig = boolean | {
   /** Инвалидировать кэш при ошибке */
   invalidateOnError?: boolean
   /** Правила кэширования */
-  rules?: CacheRule[]
+  // rules?: CacheRule[]
 }
 
 /**
@@ -107,7 +106,9 @@ export interface CreateApiClientOptions {
     /** Версия базы данных (для IndexedDB) */
     dbVersion?: number
   }
-  /** Настройки кэша */
+  /** Настройки кэша
+   * если явно указан false - значит ни один запрос НЕ будет кэшироваться, даже если в эндпоинтах указаны параметры
+   * */
   cache?: CacheConfig
   /** Базовый запрос или его настройки */
   baseQuery: FetchBaseQueryArgs
