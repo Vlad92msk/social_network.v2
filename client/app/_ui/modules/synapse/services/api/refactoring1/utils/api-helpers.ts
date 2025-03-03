@@ -11,21 +11,21 @@ export const apiLogger = {
       console.debug(`[API] ${message}`, ...args);
     }
   },
-  
+
   log: (message: string, ...args: any[]) => {
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[API] ${message}`, ...args);
     }
   },
-  
+
   info: (message: string, ...args: any[]) => {
     console.info(`[API] ${message}`, ...args);
   },
-  
+
   warn: (message: string, ...args: any[]) => {
     console.warn(`[API] ${message}`, ...args);
   },
-  
+
   error: (message: string, ...args: any[]) => {
     console.error(`[API] ${message}`, ...args);
   }
@@ -35,8 +35,8 @@ export const apiLogger = {
  * Создает уникальный идентификатор
  * @returns Строка с уникальным идентификатором
  */
-export function createUniqueId(): string {
-  return Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+export function createUniqueId(name?: string): string {
+  return `${name ? `${name}|` : ''}${Math.random().toString(36).substring(2, 9) + Date.now().toString(36)}`;
 }
 
 /**
@@ -65,16 +65,16 @@ export function filterCacheableHeaders(
   if (!cacheableHeaderKeys.length) {
     return {};
   }
-  
+
   const result: Record<string, string> = {};
   const lowerCaseKeys = cacheableHeaderKeys.map(key => key.toLowerCase());
-  
+
   Object.entries(headers).forEach(([key, value]) => {
     if (lowerCaseKeys.includes(key.toLowerCase())) {
       result[key.toLowerCase()] = value;
     }
   });
-  
+
   return result;
 }
 
@@ -102,13 +102,13 @@ export function deepClone<T>(obj: T): T {
   }
 
   const cloned = {} as Record<string, any>;
-  
+
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       cloned[key] = deepClone((obj as Record<string, any>)[key]);
     }
   }
-  
+
   return cloned as T;
 }
 
@@ -142,10 +142,10 @@ export function serializeError(error: any): Error {
       stack: error.stack,
     } as Error;
   }
-  
+
   if (typeof error === 'string') {
     return new Error(error);
   }
-  
+
   return new Error(String(error));
 }

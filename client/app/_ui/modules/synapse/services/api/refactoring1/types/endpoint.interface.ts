@@ -30,15 +30,12 @@ export interface EndpointState {
   status: 'idle' | 'loading' | 'success' | 'error'
   /** Ошибка (при неуспешном запросе) */
   error?: Error
+  /** Количество вызовов */
+  fetchCounts: number
   /** Метаданные эндпоинта */
-  meta: {
-    /** Теги эндпоинта для кэширования */
-    tags: string[]
-    /** Теги, которые инвалидируются при успешном запросе */
-    invalidatesTags: string[]
-    /** Настройки кэша эндпоинта */
-    cache: CacheConfig
-  }
+  meta: Endpoint['meta']
+  /** Какие заголовки участвовали в формировании ключа кэша (итоговые) */
+  cacheableHeaders: string[]
 }
 
 /**

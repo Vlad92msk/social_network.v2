@@ -1,8 +1,8 @@
 // eslint-disable-next-line max-classes-per-file
 import { QueryStorage } from './components/query-storage'
 import { CreateApiClientOptions, ExtractParamsType, ExtractResultType } from './types/api1.interface'
-import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType, RequestResponseModify, RequestState } from './types/endpoint.interface'
-import { QueryOptions } from './types/query.interface'
+import { CreateEndpoint, EndpointConfig, EndpointState, Endpoint as EndpointType, RequestResponseModify, RequestState } from './types/endpoint.interface'
+import { QueryOptions, Unsubscribe } from './types/query.interface'
 import { apiLogger, createUniqueId } from './utils/api-helpers'
 import { createHeaderContext } from './utils/createHeaderContext'
 import { createPrepareHeaders, prepareRequestHeaders } from './utils/endpoint-headers'
@@ -10,6 +10,8 @@ import { fetchBaseQuery } from './utils/fetch-base-query'
 import { getCacheableHeaders } from './utils/getCacheableHeaders'
 
 class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> implements EndpointType<RequestParams, RequestResponse> {
+  private readonly endpointSubscribers = new Set<(state: EndpointState) => void>()
+
   fetchCounts: number = 0
 
   meta: EndpointType['meta'] = {
@@ -50,14 +52,19 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
       ...(cacheableHeaderKeys || []),
       ...(configCurrentEndpoint.includeCacheableHeaderKeys || []),
     ].filter((key) => !configCurrentEndpoint.excludeCacheableHeaderKeys?.includes(key))
+    // 4. Сохраняем информацию в meta
+    this.meta.name = name
+    this.meta.tags = configCurrentEndpoint.tags ?? this.meta.tags
+    this.meta.invalidatesTags = configCurrentEndpoint.invalidatesTags ?? this.meta.invalidatesTags
+    this.meta.cache = this.queryStorage.createCacheConfig(this.configCurrentEndpoint) ?? this.meta.cache
   }
 
   public request(params: RequestParams, options?: QueryOptions): RequestResponseModify<RequestResponse> {
     // 1. Подготовка и инициализация запроса
     this.fetchCounts++
-    const requestId = createUniqueId()
+    const requestId = createUniqueId(this.name)
     const controller = new AbortController()
-    const subscribers = new Set<(state: RequestState<RequestResponse, RequestParams>) => void>()
+    const requestSubscribers = new Set<(state: RequestState<RequestResponse, RequestParams>) => void>()
     const currentState: RequestState<RequestResponse, RequestParams> = {
       status: 'loading',
       requestParams: params,
@@ -72,9 +79,9 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
     )
 
     // 2. Создаем основные функции для управления состоянием и уведомления подписчиков
-    const notifySubscribers = (newState: Partial<RequestState<RequestResponse, RequestParams>>) => {
+    const notifyRequestSubscribers = (newState: Partial<RequestState<RequestResponse, RequestParams>>) => {
       // Обновляем состояние и вызываем всех подписчиков
-      subscribers.forEach((cb) => {
+      requestSubscribers.forEach((cb) => {
         cb({ ...currentState, ...newState })
       })
     }
@@ -102,7 +109,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
         }
 
         if (result) {
-          notifySubscribers({
+          notifyRequestSubscribers({
             fromCache: true,
             status: 'success',
             data: result.data,
@@ -138,7 +145,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
             }
 
             // Уведомляем об успешном результате
-            notifySubscribers({
+            notifyRequestSubscribers({
               status: 'success',
               data: response.data,
               headers: response.headers,
@@ -147,7 +154,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
             })
           } else {
             // Уведомляем об ошибке
-            notifySubscribers({
+            notifyRequestSubscribers({
               status: 'error',
               error: response.error,
               data: undefined,
@@ -156,10 +163,22 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
               fromCache: false,
             })
           }
+
+          // Уведомляем подписчиков эндпоинта
+          this.endpointSubscribers.forEach((cb) => {
+            const endpointState: EndpointState = {
+              status: response.ok ? 'success' : 'error',
+              fetchCounts: this.fetchCounts,
+              meta: this.meta,
+              cacheableHeaders: this.cacheableHeaders,
+              error: !response.ok ? response.error : undefined,
+            }
+            cb(endpointState)
+          })
         }
       } catch (error) {
         // Обрабатываем ошибки и уведомляем подписчиков
-        notifySubscribers({
+        notifyRequestSubscribers({
           status: 'error',
           error: error as Error,
           data: undefined,
@@ -175,15 +194,17 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
 
     // 4. Создаем промис для метода wait()
     const waitPromise = new Promise<RequestResponse>((resolve, reject) => {
-      const unsubscribe = this.subscribe((state) => {
+      const listener = (state: RequestState<RequestResponse>) => {
         if (state.status === 'success' && state.data) {
-          unsubscribe()
+          requestSubscribers.delete(listener)
           resolve(state.data)
         } else if (state.status === 'error' && state.error) {
-          unsubscribe()
+          requestSubscribers.delete(listener)
           reject(state.error)
         }
-      })
+      }
+
+      requestSubscribers.add(listener)
     })
 
     // 5. Возвращаем объект с методами управления запросом
@@ -192,15 +213,19 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
 
       // Подписка на изменения состояния
       subscribe: (listener) => {
-        subscribers.add(listener)
-        listener(currentState) // Вызываем сразу с текущим состоянием
-        return () => subscribers.delete(listener)
+        requestSubscribers.add(listener)
+        listener(currentState)
+        return () => requestSubscribers.delete(listener)
       },
 
       // Ожидание результата запроса
       wait: () => waitPromise,
 
-      abort: () => {},
+      abort: () => {
+        if (controller && !controller.signal.aborted) {
+          controller.abort()
+        }
+      },
 
       // Делегирование методов промиса
       then: (onfulfilled, onrejected) => waitPromise.then(onfulfilled, onrejected),
@@ -209,11 +234,27 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
     }
   }
 
-  public subscribe(cb) {
-    return () => {}
+  public subscribe(cb: (state: EndpointState) => void): Unsubscribe {
+    this.endpointSubscribers.add(cb)
+
+    // Создаем объект с текущей статистикой, соответствующий интерфейсу EndpointState
+    const currentState: EndpointState = {
+      status: 'idle',
+      fetchCounts: this.fetchCounts,
+      meta: this.meta,
+      cacheableHeaders: this.cacheableHeaders,
+      error: undefined,
+    }
+
+    // Вызываем callback с текущим состоянием
+    cb(currentState)
+
+    // Возвращаем функцию отписки
+    return () => this.endpointSubscribers.delete(cb)
   }
 
   public reset() {
+    this.fetchCounts = 0
     return Promise.resolve()
   }
 }

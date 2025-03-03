@@ -91,8 +91,8 @@ export const api = new ApiClient({
         headers.set('X-BaseQuery-Header', 'basequery-value')
         return headers
       },
-      request: (id) => ({
-        path: `/pokemon/${id}`,
+      request: (params) => ({
+        path: `/pokemon/${params.id}`,
         method: 'GET',
         responseFormat: ResponseFormat.Json,
       }),
