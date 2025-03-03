@@ -1,3 +1,4 @@
+import { createHeaderContext } from './createHeaderContext'
 import { ApiContext } from '../types/api1.interface'
 
 /**
@@ -7,6 +8,40 @@ export type PrepareHeadersFunction = (
   headers: Headers,
   context: ApiContext<any>
 ) => Promise<Headers>
+
+/**
+ * Подготавливает заголовки для запроса на основе контекста и пользовательских функций
+ *
+ * @param prepareHeadersFn - функция подготовки заголовков
+ * @param context - контекст запроса
+ * @returns - подготовленные заголовки
+ */
+export async function prepareRequestHeaders<RequestParams extends Record<string, any>>(
+  prepareHeadersFn?: PrepareHeadersFunction,
+  context?: ApiContext<RequestParams>,
+): Promise<Headers> {
+  // Создаем заголовки
+  let headers = new Headers()
+
+  // Создаем контекст, если он не передан
+  const headerContext = context || createHeaderContext(
+    {} as ApiContext<RequestParams>,
+    {},
+  )
+
+  // Применяем функцию подготовки заголовков, если она определена
+  if (prepareHeadersFn) {
+    try {
+      headers = await Promise.resolve(prepareHeadersFn(headers, headerContext))
+    } catch (error) {
+      console.warn('[API] Ошибка при подготовке заголовков', error)
+    }
+  }
+
+  return headers
+}
+
+
 
 /**
  * Создает комбинированную функцию для подготовки заголовков, объединяющую

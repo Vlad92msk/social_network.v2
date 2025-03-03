@@ -50,6 +50,7 @@ export interface RequestState<ResponseData = any, RequestParams extends Record<s
   error?: E
   headers: Headers
   requestParams?: RequestParams
+  fromCache: boolean
 }
 
 /**

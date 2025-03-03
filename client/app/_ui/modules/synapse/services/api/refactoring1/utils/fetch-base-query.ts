@@ -110,19 +110,18 @@ async function getResponseData<T, E extends Error>(
  * @param options Настройки базового клиента
  * @returns Функция для выполнения запросов
  */
-export function fetchBaseQuery(options: FetchBaseQueryArgs) {
+export function fetchBaseQuery(options: Omit<FetchBaseQueryArgs, 'prepareHeaders'>) {
   const {
     baseUrl,
-    prepareHeaders,
     timeout = 30000,
     fetchFn = fetch,
     credentials = 'same-origin',
   } = options
 
-  return async <RequestResult, RequestParams extends Record<string, any>, E extends Error>(
+  return async <RequestResult, RequestParams extends Record<string, any>, E extends Error = Error>(
     args: RequestDefinition<RequestParams>,
     queryOptions: QueryOptions = {},
-    context: ApiContext = {} as ApiContext<RequestParams>,
+    headers: Headers,
   ): Promise<QueryResult<RequestResult, E>> => {
     const {
       path,
@@ -135,41 +134,11 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs) {
     const {
       signal,
       timeout: requestTimeout = timeout,
-      headers: optionHeaders,
-      context: optionContext = {},
       responseFormat: optResponseFormat,
     } = queryOptions
 
     // Определяем формат ответа с приоритетом от options
     const responseFormat = optResponseFormat || reqResponseFormat
-
-    // Создаем расширенный контекст для подготовки заголовков
-    const headerContext: ApiContext<RequestParams> = {
-      ...context,
-      ...optionContext,
-      getFromStorage: context.getFromStorage || ((key: string) => {
-        try {
-          const item = localStorage.getItem(key)
-          return item ? JSON.parse(item) : undefined
-        } catch (error) {
-          console.warn(`[API] Ошибка чтения из localStorage: ${error}`)
-          return undefined
-        }
-      }),
-      getCookie: context.getCookie || ((name: string) => {
-        try {
-          const matches = document.cookie.match(
-            new RegExp(`(?:^|; )${name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`),
-          )
-          return matches ? decodeURIComponent(matches[1]) : undefined
-        } catch (error) {
-          console.warn(`[API] Ошибка чтения cookie: ${error}`)
-          return undefined
-        }
-      }),
-      //@ts-ignore
-      requestParams: { ...args, ...queryOptions },
-    }
 
     // Строим URL с учетом api параметров
     const url = new URL(path.startsWith('http') ? path : `${baseUrl}${path}`)
@@ -185,33 +154,6 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs) {
           }
         }
       })
-    }
-
-    // Формируем заголовки
-    let headers = new Headers()
-
-    // Добавляем заголовки из определения запроса
-    if (args.headers) {
-      Object.entries(args.headers).forEach(([key, value]) => {
-        headers.set(key, value)
-      })
-    }
-
-    // Добавляем заголовки из опций запроса
-    if (optionHeaders) {
-      Object.entries(optionHeaders).forEach(([key, value]) => {
-        headers.set(key, value)
-      })
-    }
-
-    // Применяем глобальную подготовку заголовков
-    if (prepareHeaders) {
-      try {
-        // Ожидаем результат prepareHeaders
-        headers = await Promise.resolve(prepareHeaders(headers, headerContext))
-      } catch (error) {
-        console.warn('[API] Ошибка при подготовке заголовков', error)
-      }
     }
 
     // Если body это объект, конвертируем в JSON и устанавливаем Content-Type
@@ -245,7 +187,7 @@ export function fetchBaseQuery(options: FetchBaseQueryArgs) {
     })
 
     try {
-      // Выполняем запрос с таймаутом
+      // Выполняем запрос
       const fetchPromise = fetchFn(url.toString(), {
         method,
         headers,

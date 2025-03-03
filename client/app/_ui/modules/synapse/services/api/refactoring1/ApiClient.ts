@@ -1,11 +1,13 @@
 // eslint-disable-next-line max-classes-per-file
-import { createPrepareHeaders } from './components/endpoint-headers'
 import { QueryStorage } from './components/query-storage'
 import { CreateApiClientOptions, ExtractParamsType, ExtractResultType } from './types/api1.interface'
-import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType, RequestResponseModify } from './types/endpoint.interface'
+import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType, RequestResponseModify, RequestState } from './types/endpoint.interface'
 import { QueryOptions } from './types/query.interface'
 import { apiLogger, createUniqueId } from './utils/api-helpers'
+import { createHeaderContext } from './utils/createHeaderContext'
+import { createPrepareHeaders, prepareRequestHeaders } from './utils/endpoint-headers'
 import { fetchBaseQuery } from './utils/fetch-base-query'
+import { getCacheableHeaders } from './utils/getCacheableHeaders'
 
 class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> implements EndpointType<RequestParams, RequestResponse> {
   fetchCounts: number = 0
@@ -21,92 +23,149 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
 
   private readonly cacheableHeaders: string[]
 
+  private readonly prepareHeaders: ReturnType<typeof createPrepareHeaders>
+
   constructor(
+    private readonly name: string,
     private readonly queryStorage: QueryStorage,
     private readonly configCurrentEndpoint: EndpointConfig<RequestParams, RequestResponse>,
     private readonly cacheableHeaderKeys: CreateApiClientOptions['cacheableHeaderKeys'],
     private readonly globalCacheConfig: CreateApiClientOptions['cache'],
     private readonly baseQueryConfig: CreateApiClientOptions['baseQuery'],
   ) {
-    // 1. Объединяем настройки headers
-    const prepareHeaders = createPrepareHeaders(
-      this.baseQueryConfig.prepareHeaders,
-      this.configCurrentEndpoint.prepareHeaders,
+    // 1. Создаем функцию подготовки заголовков
+    this.prepareHeaders = createPrepareHeaders(
+      baseQueryConfig.prepareHeaders,
+      configCurrentEndpoint.prepareHeaders,
     )
     // 2. Создаем функцию исполнения запроса
     this.queryFunction = fetchBaseQuery({
-      baseUrl: this.baseQueryConfig.baseUrl,
-      fetchFn: this.baseQueryConfig.fetchFn,
-      timeout: this.baseQueryConfig.timeout,
-      credentials: this.baseQueryConfig.credentials,
-      prepareHeaders,
+      baseUrl: baseQueryConfig.baseUrl,
+      fetchFn: baseQueryConfig.fetchFn,
+      timeout: baseQueryConfig.timeout,
+      credentials: baseQueryConfig.credentials,
     })
     // 3. Создаем массив тех заголовков, которые нужно включить в ключ кэширования
     this.cacheableHeaders = [
-      ...(this.cacheableHeaderKeys || []),
-      ...(this.configCurrentEndpoint.includeCacheableHeaderKeys || []),
-    ].filter((key) => !this.configCurrentEndpoint.excludeCacheableHeaderKeys?.includes(key))
+      ...(cacheableHeaderKeys || []),
+      ...(configCurrentEndpoint.includeCacheableHeaderKeys || []),
+    ].filter((key) => !configCurrentEndpoint.excludeCacheableHeaderKeys?.includes(key))
   }
 
   public request(params: RequestParams, options?: QueryOptions): RequestResponseModify<RequestResponse> {
     // 1. Подготовка и инициализация запроса
-    this.fetchCounts++ // Увеличиваем счетчик запросов
-    const requestId = createUniqueId() // Создаем уникальный ID для запроса
-    const controller = new AbortController() // Контроллер для отмены запроса
-    const subscribers = new Set<(state: RequestState<RequestResponse, RequestParams>) => void>() // Подписчики на изменения состояния
-    let currentState: RequestState<RequestResponse, RequestParams> = {
+    this.fetchCounts++
+    const requestId = createUniqueId()
+    const controller = new AbortController()
+    const subscribers = new Set<(state: RequestState<RequestResponse, RequestParams>) => void>()
+    const currentState: RequestState<RequestResponse, RequestParams> = {
       status: 'loading',
       requestParams: params,
-      headers: new Headers()
+      headers: new Headers(),
+      error: undefined,
+      data: undefined,
+      fromCache: false,
     }
+    const headerContext = createHeaderContext(
+      {},
+      options?.context || {},
+    )
 
     // 2. Создаем основные функции для управления состоянием и уведомления подписчиков
     const notifySubscribers = (newState: Partial<RequestState<RequestResponse, RequestParams>>) => {
       // Обновляем состояние и вызываем всех подписчиков
+      subscribers.forEach((cb) => {
+        cb({ ...currentState, ...newState })
+      })
     }
 
-    // 3. Запускаем выполнение запроса асинхронно (не блокируем основной поток)
+    // 3. Запускаем выполнение запроса
     const executeRequest = async () => {
       try {
+        // Формируем заголовки
+        const headers = await prepareRequestHeaders(this.prepareHeaders, headerContext)
+        // Получаем только заголовки, которые нужны для кэширования
+        const headersForCache = getCacheableHeaders(headers, this.cacheableHeaders)
+        // Нужно ли кэшировать запрос
+        const shouldCache = this.queryStorage.shouldCache(this.configCurrentEndpoint, options)
+        // Создаем ключ кэша
+        const [cacheKey, cacheParams] = this.queryStorage.createCacheKey(
+          this.name,
+          { ...params, ...headersForCache },
+        )
+
+        let result
+
         // 3.1 Проверяем кэш, если кэширование включено
-        if (this.queryStorage.shouldCache(this.configCurrentEndpoint, options)) {
-          // Создаем ключ кэша и пытаемся получить данные из кэша
-          // Если данные найдены, уведомляем подписчиков и возвращаем результат
+        if (shouldCache) {
+          result = await this.queryStorage.getCachedResult<RequestResponse>(cacheKey)
         }
 
-        // 3.2 Если кэш не используется или данных нет в кэше, выполняем запрос
-        const requestDefinition = this.configCurrentEndpoint.request(params)
-        const mergedOptions = { ...options, signal: controller.signal }
-
-        // 3.3 Выполняем запрос через queryFunction
-        const response = await this.queryFunction(requestDefinition, mergedOptions)
-
-        // 3.4 Обрабатываем результат
-        if (response.ok && response.data) {
-          // Если запрос успешен, сохраняем в кэш (если нужно)
-          if (this.queryStorage.shouldCache(this.configCurrentEndpoint, options)) {
-            // Создаем конфигурацию кэша и сохраняем результат
-          }
-
-          // Уведомляем об успешном результате
+        if (result) {
           notifySubscribers({
+            fromCache: true,
             status: 'success',
-            data: response.data,
-            headers: response.headers
+            data: result.data,
+            error: undefined,
+            headers: result.headers,
+            requestParams: params,
           })
         } else {
-          // Уведомляем об ошибке
-          notifySubscribers({
-            status: 'error',
-            error: response.error,
-            headers: response.headers
-          })
+          // 3.2 Если кэш не используется или данных нет в кэше, выполняем запрос
+          const requestDefinition = this.configCurrentEndpoint.request(params)
+          const mergedOptions: QueryOptions = { ...options, signal: controller.signal }
+
+          // 3.3 Выполняем запрос через queryFunction
+          const response = await this.queryFunction<RequestResponse, RequestParams>(
+            requestDefinition,
+            mergedOptions,
+            headers,
+          )
+
+          // 3.4 Обрабатываем результат
+          if (response.ok && response.data) {
+            // Если запрос успешен, сохраняем в кэш (если нужно)
+            if (shouldCache) {
+              const currentCacheConfig = this.queryStorage.createCacheConfig(this.configCurrentEndpoint)
+              await this.queryStorage.setCachedResult(
+                cacheKey,
+                response,
+                currentCacheConfig,
+                cacheParams ?? {},
+                this.configCurrentEndpoint.tags ?? [],
+                this.configCurrentEndpoint.invalidatesTags ?? [],
+              )
+            }
+
+            // Уведомляем об успешном результате
+            notifySubscribers({
+              status: 'success',
+              data: response.data,
+              headers: response.headers,
+              requestParams: params,
+              fromCache: false,
+            })
+          } else {
+            // Уведомляем об ошибке
+            notifySubscribers({
+              status: 'error',
+              error: response.error,
+              data: undefined,
+              headers: response.headers,
+              requestParams: params,
+              fromCache: false,
+            })
+          }
         }
       } catch (error) {
         // Обрабатываем ошибки и уведомляем подписчиков
         notifySubscribers({
           status: 'error',
-          error: error as Error
+          error: error as Error,
+          data: undefined,
+          headers: undefined,
+          requestParams: params,
+          fromCache: false,
         })
       }
     }
@@ -116,7 +175,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
 
     // 4. Создаем промис для метода wait()
     const waitPromise = new Promise<RequestResponse>((resolve, reject) => {
-      const unsubscribe = this.subscribe(requestId, (state) => {
+      const unsubscribe = this.subscribe((state) => {
         if (state.status === 'success' && state.data) {
           unsubscribe()
           resolve(state.data)
@@ -141,10 +200,12 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
       // Ожидание результата запроса
       wait: () => waitPromise,
 
+      abort: () => {},
+
       // Делегирование методов промиса
       then: (onfulfilled, onrejected) => waitPromise.then(onfulfilled, onrejected),
       catch: (onrejected) => waitPromise.catch(onrejected),
-      finally: (onfinally) => waitPromise.finally(onfinally)
+      finally: (onfinally) => waitPromise.finally(onfinally),
     }
   }
 
@@ -210,6 +271,7 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
     // Создаем эндпоинты
     await Promise.all(Object.entries(endpointsConfig).map(([endpointKey, endpointConfig]) => (
       this.endpoints[endpointKey] = new EndpointClass(
+        endpointKey,
         this.queryStorage,
         endpointConfig,
         this.cacheableHeaderKeys,
