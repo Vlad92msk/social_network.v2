@@ -74,7 +74,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
       fromCache: false,
     }
     const headerContext = createHeaderContext(
-      {},
+      { requestParams: params },
       options?.context || {},
     )
 
