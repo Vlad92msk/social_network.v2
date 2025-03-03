@@ -103,6 +103,7 @@ export interface Endpoint<RequestParams extends Record<string, any>= any, Respon
     /** Настройки кэша */
     cache: CacheConfig
   }
+  destroy: VoidFunction
 }
 
 /**

@@ -12,6 +12,7 @@ import { getCacheableHeaders } from './utils/getCacheableHeaders'
 class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> implements EndpointType<RequestParams, RequestResponse> {
   private readonly endpointSubscribers = new Set<(state: EndpointState) => void>()
 
+  /** Сколько раз был вызван метод request */
   fetchCounts: number = 0
 
   meta: EndpointType['meta'] = {
@@ -23,6 +24,7 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
 
   private readonly queryFunction: ReturnType<typeof fetchBaseQuery>
 
+  /** Массив заголовков, которые нужно включить в ключ кэширования */
   private readonly cacheableHeaders: string[]
 
   private readonly prepareHeaders: ReturnType<typeof createPrepareHeaders>
@@ -92,7 +94,10 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
         // Формируем заголовки
         const headers = await prepareRequestHeaders(this.prepareHeaders, headerContext)
         // Получаем только заголовки, которые нужны для кэширования
-        const headersForCache = getCacheableHeaders(headers, this.cacheableHeaders)
+        const headersForCache = getCacheableHeaders(
+          headers,
+          options?.cacheableHeaderKeys ? options.cacheableHeaderKeys : this.cacheableHeaders,
+        )
         // Нужно ли кэшировать запрос
         const shouldCache = this.queryStorage.shouldCache(this.configCurrentEndpoint, options)
         // Создаем ключ кэша
@@ -257,6 +262,10 @@ class EndpointClass<RequestParams extends Record<string, any>, RequestResponse> 
     this.fetchCounts = 0
     return Promise.resolve()
   }
+
+  public destroy() {
+    this.endpointSubscribers.clear()
+  }
 }
 
 export class ApiClient <T extends Record<string, EndpointConfig>> {
@@ -361,6 +370,17 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
   }
 
   public async destroy() {
+    // 1. Сначала уничтожаем каждый эндпоинт
+    await Promise.all(
+      Object.values(this.endpoints).map(async (endpoint) => {
+        endpoint.destroy()
+        return Promise.resolve()
+      }),
+    )
+
+    // 2. Очищаем коллекцию эндпоинтов
+    this.endpoints = {}
+    // 3. Уничтожаем хранилище
     await this.queryStorage.destroy()
   }
 }
