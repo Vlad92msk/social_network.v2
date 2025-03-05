@@ -10,7 +10,9 @@ export function PokemonCard() {
   const [currentPokemon, setCurrentPokemon] = useState<PokemonDetails | undefined>(undefined)
 
   const onPokemon = useCallback(async (id: number) => {
-    const request = pokemonEndpoints.getPokemonById.request({ id }).subscribe((state) => {
+    const request = pokemonEndpoints.getPokemonById.request({ id })
+
+    request.subscribe((state) => {
       console.log('State:', state.data)
       switch (state.status) {
         case 'idle': {

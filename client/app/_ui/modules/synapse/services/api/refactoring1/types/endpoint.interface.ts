@@ -50,11 +50,13 @@ export interface RequestState<ResponseData = any, RequestParams extends Record<s
   fromCache: boolean
 }
 
+export interface SubscribeOptions {
+  /** Автоматически отписаться после завершения запроса */
+  autoUnsubscribe?: boolean;
+}
+
 /**
  * Дополнительные методы для request
- */
-/**
- * Дополнительные методы для request с поддержкой цепочки вызовов
  */
 export interface RequestResponseModify<T, P extends Record<string, any> = any> {
   id: string
@@ -62,7 +64,10 @@ export interface RequestResponseModify<T, P extends Record<string, any> = any> {
   /**
    * Подписка на изменения состояния запроса
    */
-  subscribe: (listener: (state: RequestState<T, P>) => void) => VoidFunction
+  subscribe: (
+    listener: (state: RequestState<T, P>) => void,
+    options?: SubscribeOptions
+) => VoidFunction
 
   /**
    * Ожидание завершения запроса

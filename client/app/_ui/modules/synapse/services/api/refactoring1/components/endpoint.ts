@@ -228,10 +228,23 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
     return {
       id: requestId,
 
-      subscribe: (listener) => {
+      subscribe: (listener, options = {}) => {
+        const { autoUnsubscribe = true } = options
+
         requestSubscribers.add(listener)
         listener(currentState)
-        return () => requestSubscribers.delete(listener)
+
+        const unsubscribe = () => requestSubscribers.delete(listener)
+
+        // Если включена автоматическая отписка, добавляем обработчик для Promise
+        if (autoUnsubscribe) {
+          waitPromise.finally(() => {
+            // Отписываем слушателя после завершения запроса
+            unsubscribe()
+          })
+        }
+
+        return unsubscribe
       },
 
       wait: () => waitPromise,
