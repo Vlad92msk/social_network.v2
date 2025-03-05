@@ -42,10 +42,10 @@ export interface EndpointState {
  * Состояние самого запроса
  */
 export interface RequestState<ResponseData = any, RequestParams extends Record<string, any> = any, E = Error> {
-  status: 'loading' | 'success' | 'error'
+  status: 'loading' | 'success' | 'error' | 'idle'
   data?: ResponseData
   error?: E
-  headers: Headers
+  headers: Record<string, any>
   requestParams?: RequestParams
   fromCache: boolean
 }
@@ -53,15 +53,29 @@ export interface RequestState<ResponseData = any, RequestParams extends Record<s
 /**
  * Дополнительные методы для request
  */
-export interface RequestResponseModify<T> {
+/**
+ * Дополнительные методы для request с поддержкой цепочки вызовов
+ */
+export interface RequestResponseModify<T, P extends Record<string, any> = any> {
   id: string
-  subscribe: (listener: (state: RequestState<T>) => void) => VoidFunction
+
+  /**
+   * Подписка на изменения состояния запроса
+   */
+  subscribe: (listener: (state: RequestState<T, P>) => void) => VoidFunction
+
+  /**
+   * Ожидание завершения запроса
+   * @returns Promise с результатом запроса
+   */
   wait: () => Promise<T>
 
-  /** Отменить запрос */
+  /**
+   * Отменить запрос
+   */
   abort: VoidFunction
 
-  // Делаем объект "thenable" для поддержки await и .then()
+  // Promise API для поддержки await и .then()
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null

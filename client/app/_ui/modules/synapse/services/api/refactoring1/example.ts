@@ -83,8 +83,8 @@ export const api = new ApiClient({
   endpoints: async (create) => ({
     // Запрос деталей покемона по ID (с явно включенным кэшированием)
     getPokemonById: create<{ id: number }, PokemonDetails>({
-      includeCacheableHeaderKeys: ['X-Global-Header'],
-      excludeCacheableHeaderKeys: ['X-Global-Header'],
+      // includeCacheableHeaderKeys: ['X-Global-Header'],
+      // excludeCacheableHeaderKeys: ['X-Global-Header'],
       prepareHeaders: async (headers, context) => {
         // Устанавливаем заголовки для тестирования
         headers.set('X-Global-Header', 'global-value')
@@ -97,7 +97,7 @@ export const api = new ApiClient({
         responseFormat: ResponseFormat.Json,
       }),
       // Включаем кэширование с настройками по умолчанию
-      cache: {},
+      // cache: {},
       tags: ['pokemon-details'],
     }),
     // Запрос списка покемонов (без кэширования)
@@ -124,5 +124,5 @@ console.log('API initialization completed')
 
 console.log('Getting endpoints...')
 export const pokemonEndpoints = pokemonApi.getEndpoints()
-const t = pokemonEndpoints.getPokemonList.request({}, {cacheableHeaderKeys: [''], }).catch().then().finally()
+// const t = pokemonEndpoints.getPokemonList.request({}, {cacheableHeaderKeys: [''], }).catch().then().finally()
 console.log('Endpoints received')

@@ -141,5 +141,5 @@ console.log('API initialization completed')
 console.log('Getting endpoints...')
 export const pokemonEndpoints = pokemonApi.getEndpoints()
 
-const dwed = pokemonEndpoints.getPokemonById.
+const dwed = pokemonEndpoints.getPokemonById
 console.log('Endpoints received')
