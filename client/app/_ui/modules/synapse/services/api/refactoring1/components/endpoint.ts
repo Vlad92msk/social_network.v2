@@ -228,18 +228,15 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
     return {
       id: requestId,
 
-      subscribe: (listener, options = {}) => {
+      subscribe(listener, options = {}) {
         const { autoUnsubscribe = true } = options
-
         requestSubscribers.add(listener)
         listener(currentState)
 
         const unsubscribe = () => requestSubscribers.delete(listener)
 
-        // Если включена автоматическая отписка, добавляем обработчик для Promise
         if (autoUnsubscribe) {
           waitPromise.finally(() => {
-            // Отписываем слушателя после завершения запроса
             unsubscribe()
           })
         }
@@ -248,6 +245,22 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
       },
 
       wait: () => waitPromise,
+
+      waitWithCallbacks(handlers = {}) {
+        const { idle, loading, success, error } = handlers
+
+        // this теперь указывает на текущий объект
+        this.subscribe((state) => {
+          switch (state.status) {
+            case 'idle': idle?.(state); break
+            case 'loading': loading?.(state); break
+            case 'success': success?.(state.data, state); break
+            case 'error': error?.(state.error, state); break
+          }
+        }, { autoUnsubscribe: true })
+
+        return waitPromise
+      },
 
       abort: () => {
         if (controller && !controller.signal.aborted) {

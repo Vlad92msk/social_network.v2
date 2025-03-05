@@ -35,7 +35,12 @@ export function PokemonCard() {
       }
     })
 
-    request.wait().catch(console.error)
+    request.waitWithCallbacks({
+      idle: () => {},
+      loading: () => {},
+      success: () => {},
+      error: () => {},
+    }).catch(console.error).finally()
   }, [])
 
   // console.log('currentPokemon', currentPokemon)

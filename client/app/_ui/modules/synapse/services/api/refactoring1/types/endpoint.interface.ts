@@ -75,6 +75,13 @@ export interface RequestResponseModify<T, P extends Record<string, any> = any> {
    */
   wait: () => Promise<T>
 
+  waitWithCallbacks: (handlers: {
+    idle?: (state: RequestState<T, P>) => void;
+    loading?: (state: RequestState<T, P>) => void;
+    success?: (data: T, state: RequestState<T, P>) => void;
+    error?: (error: Error, state: RequestState<T, P>) => void;
+  }) => Promise<T>;
+
   /**
    * Отменить запрос
    */
