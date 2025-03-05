@@ -118,11 +118,6 @@ export const api = new ApiClient({
 })
 console.log('Starting API initialization...')
 export const pokemonApi = await api.init()
-console.log('API initialization completed')
-
-
-
-console.log('Getting endpoints...')
 export const pokemonEndpoints = pokemonApi.getEndpoints()
-// const t = pokemonEndpoints.getPokemonList.request({}, {cacheableHeaderKeys: [''], }).catch().then().finally()
+const t = pokemonEndpoints.getPokemonList.request({})
 console.log('Endpoints received')

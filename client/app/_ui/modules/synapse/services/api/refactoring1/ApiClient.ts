@@ -2,11 +2,14 @@
 import { EndpointClass } from './components/endpoint'
 import { QueryStorage } from './components/query-storage'
 import { CreateApiClientOptions, ExtractParamsType, ExtractResultType } from './types/api1.interface'
-import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType, RequestResponseModify } from './types/endpoint.interface'
+import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType } from './types/endpoint.interface'
 import { QueryOptions } from './types/query.interface'
 import { apiLogger } from './utils/api-helpers'
 
-export class ApiClient <T extends Record<string, EndpointConfig>> {
+// Тип для извлечения типов из функции endpoints
+type EndpointsResult<F> = F extends (create: any) => Promise<infer R> ? R : never;
+
+export class ApiClient<EndpointsFn extends (create: CreateEndpoint) => Promise<Record<string, EndpointConfig<any, any>>>> {
   /** Хранилище запросов */
   private queryStorage: QueryStorage
 
@@ -20,12 +23,17 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
 
   private readonly storageOptions: CreateApiClientOptions['storageOptions']
 
-  private readonly createEndpoints: CreateApiClientOptions['endpoints']
+  private readonly createEndpoints: EndpointsFn
 
   /** Реестр эндпоинтов */
-  private endpoints: Record<string, EndpointType<any, any>> = {}
+  private endpoints: {
+    [K in keyof EndpointsResult<EndpointsFn>]?: EndpointType<
+  ExtractParamsType<EndpointsResult<EndpointsFn>[K]>,
+  ExtractResultType<EndpointsResult<EndpointsFn>[K]>
+    >
+} = {}
 
-  constructor(options: CreateApiClientOptions) {
+  constructor(options: Omit<CreateApiClientOptions, 'endpoints'> & { endpoints: EndpointsFn }) {
     // Сохраняем переданные параметры
     this.cacheableHeaderKeys = options.cacheableHeaderKeys
     this.globalCacheConfig = options.cache
@@ -54,11 +62,12 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
     // Получаем конфигурацию будущих эндпоинтов
     const create: CreateEndpoint = <TParams extends Record<string, any>, TResult>(config: EndpointConfig<TParams, TResult>) => config
     // Создаем объект с конфигурациями для эндпоинтов
-    const endpointsConfig = await this.createEndpoints?.(create) || {}
+    const endpointsConfig = await this.createEndpoints(create) || {}
 
     // Создаем эндпоинты
-    await Promise.all(Object.entries(endpointsConfig).map(([endpointKey, endpointConfig]) => (
-      this.endpoints[endpointKey] = new EndpointClass(
+    for (const [endpointKey, endpointConfig] of Object.entries(endpointsConfig)) {
+      const key = endpointKey as keyof EndpointsResult<EndpointsFn>
+      this.endpoints[key] = new EndpointClass(
         endpointKey,
         this.queryStorage,
         endpointConfig,
@@ -66,16 +75,19 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
         this.globalCacheConfig,
         this.baseQueryConfig,
       )
-    )))
+    }
   }
 
   /**
    * Получает все эндпоинты с улучшенной типизацией
    * @returns Типизированный объект эндпоинтов
    */
-  public getEndpoints<U extends Record<string, EndpointConfig>>(): {
-    [K in keyof U]: EndpointType<ExtractParamsType<U[K]>, ExtractResultType<U[K]>>
-    } {
+  public getEndpoints(): {
+    [K in keyof EndpointsResult<EndpointsFn>]: EndpointType<
+  ExtractParamsType<EndpointsResult<EndpointsFn>[K]>,
+  ExtractResultType<EndpointsResult<EndpointsFn>[K]>
+>
+} {
     return this.endpoints as any
   }
 
@@ -86,12 +98,12 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
    * @param options Опции запроса
    * @returns Promise с типизированным результатом запроса
    */
-  public async request<K extends keyof T & string>(
+  public async request<K extends keyof EndpointsResult<EndpointsFn> & string>(
     endpointName: K,
-    params: ExtractParamsType<T[K]>,
+    params: ExtractParamsType<EndpointsResult<EndpointsFn>[K]>,
     options?: QueryOptions,
-  ): Promise<ExtractResultType<T[K]>> {
-    const endpoints = this.getEndpoints<T>()
+  ): Promise<ExtractResultType<EndpointsResult<EndpointsFn>[K]>> {
+    const endpoints = this.getEndpoints()
     const endpoint = endpoints[endpointName]
 
     if (!endpoint) {
@@ -99,7 +111,7 @@ export class ApiClient <T extends Record<string, EndpointConfig>> {
     }
 
     try {
-      const stateRequest: RequestResponseModify<ExtractResultType<T[K]>> = endpoint.request(params, options)
+      const stateRequest = endpoint.request(params, options)
       return await stateRequest.wait()
     } catch (error) {
       apiLogger.error(`Ошибка запроса к ${String(endpointName)}`, { error, params })

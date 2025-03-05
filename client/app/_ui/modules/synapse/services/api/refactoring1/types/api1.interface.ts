@@ -92,7 +92,7 @@ export interface FetchBaseQueryArgs {
   credentials?: RequestCredentials
 }
 
-export interface CreateApiClientOptions {
+export interface CreateApiClientOptions<T extends Record<string, EndpointConfig<any, any>> = Record<string, EndpointConfig<any, any>>> {
   /** Тип хранилища */
   storageType: StorageType
   /** Опции хранилища */
@@ -113,7 +113,7 @@ export interface CreateApiClientOptions {
   /** Базовый запрос или его настройки */
   baseQuery: FetchBaseQueryArgs
   /** Функция для создания эндпоинтов */
-  endpoints?: (create: CreateEndpoint) => Promise<Record<string, EndpointConfig>>
+  endpoints?: (create: CreateEndpoint) => Promise<T>;
   /** Глобальные заголовки, влияющие на кэш */
   cacheableHeaderKeys?: string[]
 }
