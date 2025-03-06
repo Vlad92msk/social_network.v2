@@ -120,5 +120,5 @@ export const pokemonApi = await api.init()
 export const pokemonEndpoints = pokemonApi.getEndpoints()
 export const getPokemonById = pokemonEndpoints.getPokemonById.request
 
-const t = pokemonEndpoints.getPokemonById.request({ id: 1 }, { disableCache: true })
+// const t = pokemonEndpoints.getPokemonById.request({ id: 1 }, { disableCache: true })
 console.log('Endpoints received')

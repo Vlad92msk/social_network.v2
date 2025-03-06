@@ -6,7 +6,7 @@ import { QueryOptions, QueryResult, Unsubscribe } from './query.interface'
  */
 export interface EndpointConfig<RequestParams extends Record<string, any>= any, RequestResult = any> {
   /** Функция для создания определения запроса из параметров */
-  request: (params: RequestParams) => RequestDefinition<RequestParams>
+  request: (params: RequestParams, context?: Record<string, any>) => RequestDefinition<RequestParams>
   /** Настройки кэша для эндпоинта */
   cache?: CacheConfig
   /** Теги эндпоинта для группировки в кэше */
@@ -76,10 +76,10 @@ export interface RequestResponseModify<T, P extends Record<string, any> = any> {
   wait: () => Promise<QueryResult<T, Error>>
 
   waitWithCallbacks: (handlers: {
-    idle?: (state: RequestState<T, P>) => void
-    loading?: (state: RequestState<T, P>) => void
-    success?: (data: T | undefined, state: RequestState<T, P>) => void
-    error?: (error: Error | undefined, state: RequestState<T, P>) => void
+    idle?: (request: RequestState<T, P>) => void
+    loading?: (request: RequestState<T, P>) => void
+    success?: (data: T | undefined, request: RequestState<T, P>) => void
+    error?: (error: Error | undefined, request: RequestState<T, P>) => void
   }) => Promise<QueryResult<T, Error>>
 
   /**

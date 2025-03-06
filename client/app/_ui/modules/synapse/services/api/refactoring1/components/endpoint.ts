@@ -134,9 +134,9 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
             fromCache: false,
             status: 'loading',
           })
-
+console.log('options', options?.context)
           // 5. Выполняем запрос
-          const requestDefinition = this.configCurrentEndpoint.request(params)
+          const requestDefinition = this.configCurrentEndpoint.request(params, options?.context)
           const mergedOptions: QueryOptions = { ...options, signal: controller.signal }
 
           const response = await this.queryFunction<RequestResponse, RequestParams>(

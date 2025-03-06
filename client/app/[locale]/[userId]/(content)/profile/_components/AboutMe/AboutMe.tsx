@@ -40,7 +40,7 @@ export function PokemonCard() {
     request.waitWithCallbacks({
       idle: () => {},
       loading: () => {},
-      success: (data, state) => {},
+      success: (data, request) => {},
       error: () => {},
     }).catch(console.error).finally()
 
