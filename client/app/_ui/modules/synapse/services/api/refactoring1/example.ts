@@ -1,5 +1,5 @@
-import { ResponseFormat } from './types/api1.interface'
 import { ApiClient } from './ApiClient'
+import { ResponseFormat } from './types/api1.interface'
 
 // Типы данных для PokeAPI
 export interface PokemonListResponse {
@@ -81,16 +81,15 @@ export const api = new ApiClient({
   },
   // Типизированные endpoints
   endpoints: async (create) => ({
+    updatePokemonById: create<{ id: number }, PokemonDetails>({
+      request: (id) => ({
+        path: `/pokemon/${id}`,
+        method: 'PUT',
+        body: {},
+      }),
+    }),
     // Запрос деталей покемона по ID (с явно включенным кэшированием)
     getPokemonById: create<{ id: number }, PokemonDetails>({
-      // includeCacheableHeaderKeys: ['X-Global-Header'],
-      // excludeCacheableHeaderKeys: ['X-Global-Header'],
-      prepareHeaders: async (headers, context) => {
-        // Устанавливаем заголовки для тестирования
-        headers.set('X-Global-Header', 'global-value')
-        headers.set('X-BaseQuery-Header', 'basequery-value')
-        return headers
-      },
       request: (params) => ({
         path: `/pokemon/${params.id}`,
         method: 'GET',
@@ -119,5 +118,7 @@ export const api = new ApiClient({
 console.log('Starting API initialization...')
 export const pokemonApi = await api.init()
 export const pokemonEndpoints = pokemonApi.getEndpoints()
-const t = pokemonEndpoints.getPokemonList.request({})
+export const getPokemonById = pokemonEndpoints.getPokemonById.request
+
+const t = pokemonEndpoints.getPokemonById.request({ id: 1 }, { disableCache: true })
 console.log('Endpoints received')

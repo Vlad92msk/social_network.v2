@@ -12,8 +12,9 @@ export function PokemonCard() {
   const onPokemon = useCallback(async (id: number) => {
     const request = pokemonEndpoints.getPokemonById.request({ id })
 
+
     request.subscribe((state) => {
-      console.log('State:', state.data)
+      console.log('State:', state)
       switch (state.status) {
         case 'idle': {
           console.log('запрос неактивен')
@@ -33,14 +34,17 @@ export function PokemonCard() {
           break
         }
       }
-    })
-
+    }, {autoUnsubscribe: true})
+    const dfwf = await request.wait()
+    console.log('d', dfwf)
     request.waitWithCallbacks({
       idle: () => {},
       loading: () => {},
-      success: () => {},
+      success: (data, state) => {},
       error: () => {},
     }).catch(console.error).finally()
+
+
   }, [])
 
   // console.log('currentPokemon', currentPokemon)

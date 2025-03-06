@@ -3,7 +3,7 @@ import { EndpointClass } from './components/endpoint'
 import { QueryStorage } from './components/query-storage'
 import { CreateApiClientOptions, ExtractParamsType, ExtractResultType } from './types/api1.interface'
 import { CreateEndpoint, EndpointConfig, Endpoint as EndpointType } from './types/endpoint.interface'
-import { QueryOptions } from './types/query.interface'
+import { QueryOptions, QueryResult } from './types/query.interface'
 import { apiLogger } from './utils/api-helpers'
 
 // Тип для извлечения типов из функции endpoints
@@ -102,7 +102,7 @@ export class ApiClient<EndpointsFn extends (create: CreateEndpoint) => Promise<R
     endpointName: K,
     params: ExtractParamsType<EndpointsResult<EndpointsFn>[K]>,
     options?: QueryOptions,
-  ): Promise<ExtractResultType<EndpointsResult<EndpointsFn>[K]>> {
+  ): Promise<QueryResult<ExtractResultType<EndpointsResult<EndpointsFn>[K]>, Error>> {
     const endpoints = this.getEndpoints()
     const endpoint = endpoints[endpointName]
 

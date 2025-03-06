@@ -1,5 +1,5 @@
 import { ApiContext, CacheConfig, RequestDefinition } from './api1.interface'
-import { QueryOptions, Unsubscribe } from './query.interface'
+import { QueryOptions, QueryResult, Unsubscribe } from './query.interface'
 
 /**
  * Конфигурация эндпоинта
@@ -45,8 +45,8 @@ export interface RequestState<ResponseData = any, RequestParams extends Record<s
   status: 'loading' | 'success' | 'error' | 'idle'
   data?: ResponseData
   error?: E
-  headers: Record<string, any>
-  requestParams?: RequestParams
+  headers: Record<string, any> | Headers
+  requestParams: RequestParams
   fromCache: boolean
 }
 
@@ -73,14 +73,14 @@ export interface RequestResponseModify<T, P extends Record<string, any> = any> {
    * Ожидание завершения запроса
    * @returns Promise с результатом запроса
    */
-  wait: () => Promise<T>
+  wait: () => Promise<QueryResult<T, Error>>
 
   waitWithCallbacks: (handlers: {
-    idle?: (state: RequestState<T, P>) => void;
-    loading?: (state: RequestState<T, P>) => void;
-    success?: (data: T, state: RequestState<T, P>) => void;
-    error?: (error: Error, state: RequestState<T, P>) => void;
-  }) => Promise<T>;
+    idle?: (state: RequestState<T, P>) => void
+    loading?: (state: RequestState<T, P>) => void
+    success?: (data: T | undefined, state: RequestState<T, P>) => void
+    error?: (error: Error | undefined, state: RequestState<T, P>) => void
+  }) => Promise<QueryResult<T, Error>>
 
   /**
    * Отменить запрос
@@ -88,16 +88,16 @@ export interface RequestResponseModify<T, P extends Record<string, any> = any> {
   abort: VoidFunction
 
   // Promise API для поддержки await и .then()
-  then<TResult1 = T, TResult2 = never>(
-    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+  then<TResult1 = QueryResult<T, Error>, TResult2 = never>(
+    onfulfilled?: ((value: QueryResult<T, Error>) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onrejected?: ((reason: Error) => TResult2 | PromiseLike<TResult2>) | undefined | null
   ): Promise<TResult1 | TResult2>
 
   catch<TResult = never>(
-    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
-  ): Promise<T | TResult>
+    onrejected?: ((reason: Error) => TResult | PromiseLike<TResult>) | undefined | null
+  ): Promise<QueryResult<T, Error> | TResult>
 
-  finally(onfinally?: (() => void) | null): Promise<T>
+  finally(onfinally?: VoidFunction | undefined | null): Promise<QueryResult<T, Error>>
 }
 
 /**

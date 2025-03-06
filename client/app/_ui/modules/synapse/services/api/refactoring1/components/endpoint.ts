@@ -7,7 +7,7 @@ import {
   RequestResponseModify,
   RequestState,
 } from '../types/endpoint.interface'
-import { QueryOptions, Unsubscribe } from '../types/query.interface'
+import { QueryOptions, QueryResult, Unsubscribe } from '../types/query.interface'
 import { createUniqueId, headersToObject } from '../utils/api-helpers'
 import { createHeaderContext } from '../utils/createHeaderContext'
 import { createPrepareHeaders, prepareRequestHeaders } from '../utils/endpoint-headers'
@@ -94,7 +94,7 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
     }
 
     // 3. Создаем промис для метода wait()
-    const waitPromise = new Promise<RequestResponse>(async (resolve, reject) => {
+    const waitPromise = new Promise<QueryResult<RequestResponse, Error>>(async (resolve, reject) => {
       try {
         // Формируем заголовки
         const headers = await prepareRequestHeaders(this.prepareHeaders, headerContext)
@@ -112,9 +112,9 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
         )
 
         // 4. Проверяем кэш до установки loading
-        let cachedResult
+        let cachedResult: QueryResult<RequestResponse> | undefined
         if (shouldCache) {
-          cachedResult = await this.queryStorage.getCachedResult<RequestResponse>(cacheKey)
+          cachedResult = await this.queryStorage.getCachedResult<QueryResult<RequestResponse> | undefined>(cacheKey)
         }
 
         if (cachedResult) {
@@ -127,7 +127,7 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
             headers: cachedResult.headers,
             requestParams: params,
           })
-          resolve(cachedResult.data)
+          resolve(cachedResult)
         } else {
           // Нет данных в кэше - устанавливаем loading и делаем запрос
           notifyRequestSubscribers({
@@ -182,8 +182,7 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
               }
               cb(endpointState)
             })
-
-            resolve(response.data)
+            resolve(response)
           } else {
             // Оповещаем об ошибке
             notifyRequestSubscribers({
@@ -250,7 +249,8 @@ export class EndpointClass<RequestParams extends Record<string, any>, RequestRes
         const { idle, loading, success, error } = handlers
 
         // this теперь указывает на текущий объект
-        this.subscribe((state) => {
+        this.subscribe((state: RequestState<RequestResponse, RequestParams>) => {
+          console.log('__state', state)
           switch (state.status) {
             case 'idle': idle?.(state); break
             case 'loading': loading?.(state); break
