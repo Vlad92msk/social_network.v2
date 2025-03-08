@@ -8,7 +8,16 @@ import { SegmentedEventBus } from '../event-bus/event-bus.service'
 import { EventBusLogger } from '../logger/collectors/event-bus-logger.collector'
 import type { ILogger } from '../logger/logger.interface'
 import { Logger } from '../logger/logger.service'
-import { StorageEvents } from '../storage/storage.interface'
+
+
+export enum StorageEvents {
+  STORAGE_UPDATE = 'storage:update',
+  STORAGE_DELETE = 'storage:delete',
+  STORAGE_PATCH = 'storage:patch',
+  STORAGE_SELECT = 'storage:select',
+  STORAGE_CLEAR = 'storage:clear',
+  STORAGE_DESTROY = 'storage:destroy',
+}
 
 @Injectable()
 export abstract class BaseModule implements IModule {

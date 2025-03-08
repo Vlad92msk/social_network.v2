@@ -1,8 +1,7 @@
 'use client'
 
+import { PokemonDetails, pokemonEndpoints } from '@ui/modules/synapse/examples/example1'
 import { useCallback, useState } from 'react'
-import { ApiProvider } from '@ui/modules/synapse/services/api/examples'
-import { PokemonDetails, pokemonEndpoints } from '@ui/modules/synapse/services/api/refactoring1/example'
 // import { PokemonDetails, pokemonApi, pokemonEndpoints } from '@ui/modules/synapse/services/api/examples/pokemon-api'
 import { cn } from './cn'
 
@@ -81,9 +80,7 @@ export function AboutMe(props) {
   return (
     <div className={cn()}>
       {/* <MyTest /> */}
-      <ApiProvider>
         <PokemonCard />
-      </ApiProvider>
     </div>
   )
 }

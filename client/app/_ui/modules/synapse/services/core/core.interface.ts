@@ -1,5 +1,3 @@
-// core.interface.ts
-
 /** Базовый интерфейс для всех модулей системы */
 export interface IModule {
   /** Уникальное имя модуля */

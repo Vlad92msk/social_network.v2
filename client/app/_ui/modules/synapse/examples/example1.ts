@@ -1,64 +1,63 @@
-import { ApiClient } from './ApiClient'
-import { ResponseFormat } from './types/api1.interface'
+import { ApiClient, ResponseFormat } from 'synapse'
 
 // Типы данных для PokeAPI
 export interface PokemonListResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
+  count: number
+  next: string | null
+  previous: string | null
   results: {
-    name: string;
-    url: string;
-  }[];
+    name: string
+    url: string
+  }[]
 }
 
 export interface PokemonDetails {
-  id: number;
-  name: string;
-  height: number;
-  weight: number;
+  id: number
+  name: string
+  height: number
+  weight: number
   sprites: {
-    front_default: string;
-    back_default: string;
+    front_default: string
+    back_default: string
     other?: {
       'official-artwork'?: {
-        front_default: string;
+        front_default: string
       }
-    };
-  };
+    }
+  }
   types: {
-    slot: number;
+    slot: number
     type: {
-      name: string;
-      url: string;
-    };
-  }[];
+      name: string
+      url: string
+    }
+  }[]
   abilities: {
     ability: {
-      name: string;
-      url: string;
-    };
-    is_hidden: boolean;
-    slot: number;
-  }[];
+      name: string
+      url: string
+    }
+    is_hidden: boolean
+    slot: number
+  }[]
   stats: {
-    base_stat: number;
-    effort: number;
+    base_stat: number
+    effort: number
     stat: {
-      name: string;
-      url: string;
-    };
-  }[];
+      name: string
+      url: string
+    }
+  }[]
 }
 
 export interface PokemonSearchParams {
-  limit?: number;
-  offset?: number;
+  limit?: number
+  offset?: number
 }
 
 export const api = new ApiClient({
   cacheableHeaderKeys: ['X-Global-Header'],
-  storageType: 'indexedDB',
+  storageType: 'localStorage',
   storageOptions: {
     name: 'pokemon-api-storage',
     dbName: 'pokemon-api-cache',
@@ -101,10 +100,12 @@ export const api = new ApiClient({
     }),
     // Запрос списка покемонов (без кэширования)
     getPokemonList: create<PokemonSearchParams, PokemonListResponse>({
-      request: (params = {
-        limit: 20,
-        offset: 0,
-      }) => ({
+      request: (
+        params = {
+          limit: 20,
+          offset: 0,
+        },
+      ) => ({
         path: '/pokemon',
         method: 'GET',
         query: params,
