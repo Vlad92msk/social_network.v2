@@ -1,26 +1,34 @@
 import { availableImages, useMaterialsAttach } from '@hooks'
 import { Image } from '@ui/common/Image'
-import { setImmutable } from '@utils/others'
+import { fileObjectToImageUrl } from '@ui/common/Image/utils/fileObjectToImageUrl.util'
+import { useSelector } from 'synapse-storage/react'
 import { useRef } from 'react'
+import { userInfoSynapse } from '../../../../../../../store/synapses/user-info/user-info.synapse'
 import { cn } from '../cn'
-import { useUpdateContextField } from '../hooks'
+
+const { selectors, actions } = userInfoSynapse
 
 interface BannerImageProps {
-  bunner_image?: string
 }
 
 export const BannerImage = (props: BannerImageProps) => {
-  const { bunner_image } = props
-  const [getValue, setValue, isChangeActive, updateCtx] = useUpdateContextField(undefined, 'bannerUploadFile')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const fieldbanner = useSelector(selectors.fieldbanner)
+  const isChangeActive = useSelector(selectors.isChangeActive)
+
+
   const [addedFiles, handleAddFiles] = useMaterialsAttach({
     availableTypes: Object.values(availableImages),
     maxFileSize: '5mb',
-    getFiles: (newText) => {
-      updateCtx((ctx) => setImmutable(ctx, 'changeState.bannerUploadFile', newText[0]))
+    getFiles: (newFile) => {
+      actions.updateField({
+        bannerUploadFile: newFile[0],
+        banner: fileObjectToImageUrl(newFile[0]),
+      })
     },
   })
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageClick = () => {
     if (isChangeActive) {
@@ -35,7 +43,7 @@ export const BannerImage = (props: BannerImageProps) => {
   return (
     <>
       <div className={cn('BannerBck', { active: isChangeActive })} onClick={handleImageClick}>
-        <Image alt="bunner" src={bunner_image} width={400} height={200} />
+        <Image alt="banner" src={fieldbanner} width={400} height={200} />
       </div>
       <input
         type="file"

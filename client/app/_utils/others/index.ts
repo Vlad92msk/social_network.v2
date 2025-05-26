@@ -12,5 +12,6 @@ export * from './isString'
 export * from './throttle'
 export * from './debounce'
 export * from './setImmutable'
+export * from './isFormData'
 
 export * from './invertColor'

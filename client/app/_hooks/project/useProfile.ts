@@ -1,10 +1,12 @@
 import { useSession } from 'next-auth/react'
-import { useSelector } from 'react-redux'
-import { ProfileSelectors } from '../../../store/profile.slice'
+import { useSelector as useSelectorSynapse } from 'synapse-storage/react'
+import { coreSynapseIDB } from '../../store/synapses/core/core.synapse'
+const { selectors } = coreSynapseIDB
 
 export const useProfile = () => {
   const session = useSession()
-  const { profile } = useSelector(ProfileSelectors.selectProfile)
+  const { data, isLoading } = useSelectorSynapse(selectors.currentUserProfile, { withLoading: true })
 
-  return { profile, session, isLoading: session.status === 'loading' }
+  const isLoading1 = session.status === 'loading' && isLoading
+  return { profile: data, session, isLoading: isLoading1 }
 }

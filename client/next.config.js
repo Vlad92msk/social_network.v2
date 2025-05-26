@@ -22,6 +22,11 @@ const baseConfig= {
             }]
         });
 
+        config.experiments = {
+            ...config.experiments,
+            topLevelAwait: true,
+        };
+
         return config;
     },
     env: {
@@ -54,6 +59,9 @@ const baseConfig= {
     },
     output: 'standalone',
     trailingSlash: true,
+    experimental: {
+        esmExternals: true,
+    }
 }
 
 

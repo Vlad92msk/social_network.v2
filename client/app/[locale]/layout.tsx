@@ -1,4 +1,5 @@
 import { Locale } from '@middlewares/variables'
+import { CoreProvider } from '@providers/core/ProjectProvider'
 import { NotificationsProvider } from '@providers/notifications/NotificationsProvider'
 import { ReduxProvider } from '@providers/redux'
 import { SessionProvider } from '@providers/session/SessionProvider'
@@ -43,11 +44,13 @@ export default async function RootLayout(props: RootLayoutProps) {
         <Html locale={locale}>
           <Body>
             <SessionProvider>
-              <ReduxProvider profile={{ profile }}>
-                <NotificationsProvider>
-                  {children}
-                </NotificationsProvider>
-              </ReduxProvider>
+              <CoreProvider contextProps={{ currentUserProfile: profile }}>
+                <ReduxProvider profile={{ profile }}>
+                  <NotificationsProvider>
+                    {children}
+                  </NotificationsProvider>
+                </ReduxProvider>
+              </CoreProvider>
             </SessionProvider>
           </Body>
         </Html>

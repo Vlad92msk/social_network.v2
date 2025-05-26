@@ -106,7 +106,7 @@ Installation Log: /tmp/install-postgresql.log
 //                     ...
 //                 interfaces:
 //                     profileInfo.ts
-//                     index.ts
+//                     indexdb.config.ts
 //                 profile.module.ts
 //                 profile.service.ts
 //

@@ -1,31 +1,34 @@
 import { Icon } from '@ui/common/Icon'
 import { Input } from '@ui/common/Input'
 import { Text } from '@ui/common/Text'
-import { setImmutable } from '@utils/others'
+import { useSelector } from 'synapse-storage/react'
+import { userInfoSynapse } from '../../../../../../../store/synapses/user-info/user-info.synapse'
 import { cn } from '../cn'
-import { useUpdateContextField } from '../hooks'
+
+const { selectors, actions } = userInfoSynapse
 
 interface UniversityProps {
-  university?: string
+  // university?: string
 }
 
 export function Univercity(props: UniversityProps) {
-  const { university } = props
-  const [getValue, setValue, isChangeActive, updateCtx] = useUpdateContextField(university, 'university')
-  // console.log('getValue', getValue)
+  const fieldUniversity = useSelector(selectors.fieldUniversity)
+  const isChangeActive = useSelector(selectors.isChangeActive)
+
   return (
     <div className={cn('Univercity')}>
       {isChangeActive ? (
         <Input
-          value={getValue}
+          value={fieldUniversity}
           onChange={(event) => {
             const newText = event.target.value
-            updateCtx((ctx) => setImmutable(ctx, 'changeState.university', newText))
-            setValue(newText)
+            actions.updateField({
+              university: newText,
+            })
           }}
         />
       ) : (
-        <Text weight="bold">{getValue}</Text>
+        <Text weight="bold">{fieldUniversity}</Text>
       )}
       <Icon name="studying-university" />
     </div>

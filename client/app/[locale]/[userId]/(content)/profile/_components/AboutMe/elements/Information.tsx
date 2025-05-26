@@ -1,30 +1,32 @@
+import { useSelector } from 'synapse-storage/react'
 import { TextArea } from '@ui/common/Input'
 import { Text } from '@ui/common/Text'
-import { setImmutable } from '@utils/others'
+import { userInfoSynapse } from '../../../../../../../store/synapses/user-info/user-info.synapse'
 import { cn } from '../cn'
-import { useUpdateContextField } from '../hooks'
+
+const { selectors, actions } = userInfoSynapse
 
 interface InformationProps {
-  information?: string
 }
 
 export function Information(props: InformationProps) {
-  const { information } = props
-  const [getValue, setValue, isChangeActive, updateCtx] = useUpdateContextField(information, 'information')
+  const fieldInformation = useSelector(selectors.fieldInformation)
+  const isChangeActive = useSelector(selectors.isChangeActive)
 
   return (
     <div className={cn('Information')}>
       {isChangeActive ? (
         <TextArea
-          value={getValue}
+          value={fieldInformation}
           onChange={(event) => {
             const newText = event.target.value
-            updateCtx((ctx) => setImmutable(ctx, 'changeState.information', newText))
-            setValue(newText)
+            actions.updateField({
+              information: newText,
+            })
           }}
         />
       ) : (
-        <Text fs="16" lineHeight={30}>{getValue}</Text>
+        <Text fs="16" lineHeight={30}>{fieldInformation}</Text>
       )}
     </div>
   )

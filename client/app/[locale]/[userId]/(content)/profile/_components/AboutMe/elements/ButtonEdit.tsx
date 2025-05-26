@@ -1,18 +1,27 @@
-import { size } from 'lodash'
+import { isEqual } from 'lodash'
+import { useEffect, useState } from 'react'
+import { distinctUntilChanged, map } from 'rxjs/operators'
+import { useSelector } from 'synapse-storage/react'
 import { Button } from '@ui/common/Button'
 import { Icon } from '@ui/common/Icon'
-import { AboutMeContextChangeState, useAboutMeCtxSelect, useAboutMeCtxUpdate } from '../AboutMe'
+import { userInfoSynapse } from '../../../../../../../store/synapses/user-info/user-info.synapse'
 import { cn } from '../cn'
 
+const { selectors, actions, state$ } = userInfoSynapse
 interface ButtonEditProps {
-  onSubmit: (data?: AboutMeContextChangeState) => void
 }
 
 export function ButtonEdit(props: ButtonEditProps) {
-  const { onSubmit } = props
-  const aboutMeUpdate = useAboutMeCtxUpdate()
-  const disabled = useAboutMeCtxSelect((ctx) => !Boolean(size(ctx.changeState)))
-  const isChangeActive = useAboutMeCtxSelect((ctx) => ctx.isChangeActive)
+  const [disabled, setDisabled] = useState(true)
+
+  const isChangeActive = useSelector(selectors.isChangeActive)
+
+  useEffect(() => {
+    state$.pipe(
+      map(({ fieldsInit, fields }) => isEqual(fields, fieldsInit)),
+      distinctUntilChanged(),
+    ).subscribe(setDisabled)
+  }, [])
 
   return (
     <div className={cn('ButtonEdit')}>
@@ -20,27 +29,27 @@ export function ButtonEdit(props: ButtonEditProps) {
         <Button>
           <Icon
             name="close"
-            onClick={() => aboutMeUpdate(() => ({ isChangeActive: false, status: 'reset', changeState: {} }))}
+            onClick={async () => {
+              await actions.reset()
+            }}
           />
         </Button>
       )}
       {isChangeActive && (
         <Button
           disabled={disabled}
-          onClick={() => aboutMeUpdate(({ changeState }) => {
-            onSubmit?.(changeState)
-            return ({
-              isChangeActive: false,
-              status: 'approve',
-              changeState: {},
-            })
-          })}
+          onClick={async () => {
+            await actions.submit()
+          }}
         >
           <Icon name="approve" />
         </Button>
       )}
 
-      <Button onClick={() => aboutMeUpdate(({ isChangeActive }) => ({ isChangeActive: !isChangeActive }))}>
+      <Button onClick={async () => {
+        await actions.setActiveChange()
+      }}
+      >
         <Icon name="edit" />
       </Button>
     </div>

@@ -1,31 +1,33 @@
+import { useSelector } from 'synapse-storage/react'
 import { Input } from '@ui/common/Input'
 import { Text } from '@ui/common/Text'
-import { setImmutable } from '@utils/others'
+import { userInfoSynapse } from '../../../../../../../store/synapses/user-info/user-info.synapse'
 import { cn } from '../cn'
-import { useUpdateContextField } from '../hooks'
+
+const { selectors, actions } = userInfoSynapse
 
 interface NameProps {
-  name?: string
+  // name?: string
 }
 
 export function Name(props: NameProps) {
-  const { name } = props
-
-  const [getValue, setValue, isChangeActive, updateCtx] = useUpdateContextField(name, 'name')
+  const fieldsName = useSelector(selectors.fieldName)
+  const isChangeActive = useSelector(selectors.isChangeActive)
 
   return (
     <div className={cn('Name')}>
       {isChangeActive ? (
         <Input
-          value={getValue}
+          value={fieldsName}
           onChange={(event) => {
             const newText = event.target.value
-            updateCtx((ctx) => setImmutable(ctx, 'changeState.name', newText))
-            setValue(newText)
+            actions.updateField({
+              name: newText,
+            })
           }}
         />
       ) : (
-        <Text weight="bold">{getValue}</Text>
+        <Text weight="bold">{fieldsName}</Text>
       )}
     </div>
   )

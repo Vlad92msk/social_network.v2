@@ -2,7 +2,6 @@
 
 import { PropsWithChildren, useRef } from 'react'
 import { Provider } from 'react-redux'
-import { PersistGate } from 'redux-persist/integration/react'
 import { RootReducer } from '../../../store/root.reducer'
 import { AppStore, makeStore } from '../../../store/store'
 
@@ -16,9 +15,7 @@ export function ReduxProvider(props: PropsWithChildren<Partial<RootReducer>>) {
 
   return (
     <Provider store={storeRef.current}>
-      {/* <PersistGate loading={null} persistor={persistor}> */}
-        {children}
-      {/* </PersistGate> */}
+      {children}
     </Provider>
   )
 }
