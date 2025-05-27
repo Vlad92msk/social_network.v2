@@ -1,4 +1,5 @@
 import { createSynapse } from 'synapse-storage/utils'
+import { notificationsSynapse } from '../notifications/notifications.synapse'
 import { createUserInfoDispatcher } from './user-info.dispatcher'
 import { userInfoEffects } from './user-info.effects'
 import { createUserInfoSelectors } from './user-info.selectors'
@@ -14,6 +15,7 @@ export const userInfoSynapse = await createSynapse({
     dispatchers: {
       userInfoDispatcher,
       coreIdbDispatcher: coreSynapseIDB.dispatcher,
+      notificationDispatcher: notificationsSynapse.dispatcher,
     },
     externalStates: {
       core$: coreSynapseIDB.state$,

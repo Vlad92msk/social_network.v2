@@ -12,8 +12,7 @@ export interface AboutMeProps {
 }
 
 export const AboutMe = userInfoSynapseCtx.contextSynapse<AboutMeProps, void>((props) => {
-  // @ts-ignore
-  const params = useParams<UserPageProps['params']>()
+  const params = useParams<Awaited<UserPageProps['params']>>()
 
   const { profile, isLoading } = useProfile()
 

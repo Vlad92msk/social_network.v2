@@ -6,7 +6,9 @@ import {
   useTransitionStatus,
   useTransitionStyles,
 } from '@floating-ui/react'
-import { ReactNode, useMemo } from 'react'
+import { ReactNode, useEffect, useMemo, useRef } from 'react'
+import { Button } from '@ui/common/Button'
+import { Icon } from '@ui/common/Icon'
 import styles from './Notification.module.scss'
 
 export interface NotificationProps {
@@ -19,11 +21,28 @@ export interface NotificationProps {
   strategy?: Strategy
   offset?: number
   index?: number
+  autoClose?: boolean
 }
 
-const SCREEN_PADDING = 50
-const NOTIFICATION_GAP = 16
-const NOTIFICATION_HEIGHT = 100
+const SCREEN_PADDING = 20
+const NOTIFICATION_GAP = 10
+const NOTIFICATION_HEIGHT = 62
+
+// Иконки для разных типов уведомлений
+function NotificationIcon({ type }: { type: string }) {
+  const icons = {
+    info: 'ℹ',
+    success: '✓',
+    warning: '⚠',
+    error: '✕',
+  }
+
+  return (
+    <div className={styles.icon}>
+      {icons[type as keyof typeof icons]}
+    </div>
+  )
+}
 
 export function Notification(props: NotificationProps) {
   const {
@@ -31,13 +50,32 @@ export function Notification(props: NotificationProps) {
     onClose,
     message,
     type = 'info',
+    duration = 5000,
     position = 'bottom-end',
     strategy = 'fixed',
     offset: offsetDistance = SCREEN_PADDING,
     index = 0,
+    autoClose = true,
   } = props
 
-  // Настраиваем floating context правильно
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Управляем автозакрытием
+  useEffect(() => {
+    if (isOpen && autoClose && duration > 0) {
+      timeoutRef.current = setTimeout(() => {
+        onClose()
+      }, duration)
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+  }, [isOpen, autoClose, duration, onClose])
+
   const { refs, context } = useFloating({
     open: isOpen,
     onOpenChange: (open) => {
@@ -60,29 +98,67 @@ export function Notification(props: NotificationProps) {
     ...(position.includes('start') && {
       left: offsetDistance,
     }),
+    ...(position.includes('center') && {
+      left: '50%',
+      transform: 'translateX(-50%)',
+    }),
   }), [position, strategy, index, offsetDistance])
 
   // Используем статус для управления монтированием
   const { isMounted } = useTransitionStatus(context, {
-    duration: 200,
+    duration: 400,
   })
 
-  // Настраиваем стили анимации
+  // Улучшенные стили анимации
   const { styles: transitionStyles } = useTransitionStyles(context, {
-    duration: 200,
+    duration: 400,
     initial: {
       opacity: 0,
-      transform: position.includes('end') ? 'translateX(100%)' : 'translateX(-100%)',
+      transform: position.includes('end')
+        ? 'translateX(100%) scale(0.95)'
+        : position.includes('start')
+          ? 'translateX(-100%) scale(0.95)'
+          : 'translateY(100%) scale(0.95)',
     },
     open: {
       opacity: 1,
-      transform: 'translateX(0)',
+      transform: 'translateX(0) translateY(0) scale(1)',
     },
     close: {
       opacity: 0,
-      transform: position.includes('end') ? 'translateX(100%)' : 'translateX(-100%)',
+      transform: position.includes('end')
+        ? 'translateX(100%) scale(0.95)'
+        : position.includes('start')
+          ? 'translateX(-100%) scale(0.95)'
+          : 'translateY(-20%) scale(0.95)',
     },
   })
+
+  // Обработчик клика с очисткой таймера
+  const handleClose = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    onClose()
+  }
+
+  // Обработчик наведения мыши - приостанавливаем таймер
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }
+
+  // Обработчик ухода мыши - возобновляем таймер
+  const handleMouseLeave = () => {
+    if (autoClose && duration > 0) {
+      timeoutRef.current = setTimeout(() => {
+        onClose()
+      }, 1000) // Даем еще секунду после ухода мыши
+    }
+  }
 
   if (!isMounted) return null
 
@@ -95,16 +171,25 @@ export function Notification(props: NotificationProps) {
           ...transitionStyles,
         }}
         className={styles.wrapper}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <div className={`${styles.notification} ${styles[`notification-${type}`]}`}>
-          {message}
-          <button
-            onClick={onClose}
+          <NotificationIcon type={type} />
+
+          <div className={styles.content}>
+            <div className={styles.message}>
+              {message}
+            </div>
+          </div>
+
+          <Button
+            onClick={handleClose}
             className={styles.closeButton}
             aria-label="Close notification"
           >
-            ×
-          </button>
+            <Icon name="close" />
+          </Button>
         </div>
       </div>
     </FloatingPortal>

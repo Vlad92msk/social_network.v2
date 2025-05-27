@@ -1,8 +1,7 @@
+import { broadcastMiddleware, MemoryStorage } from 'synapse-storage/core'
 import { AddedFile } from '@hooks'
-import { ApiStatusState, initialApiState } from '../../../types/apiStatus'
-import { MemoryStorage } from 'synapse-storage/core'
 import { UserInfo } from '../../../../../swagger/userInfo/interfaces-userInfo'
-
+import { ApiStatusState, initialApiState } from '../../../types/apiStatus'
 
 export interface AboutUserUserInfoFields {
   information?: string
@@ -26,10 +25,11 @@ export interface AboutUserUserInfo {
   fields: AboutUserUserInfoFields
 }
 
-
 export async function createUserInfoStorage() {
+  const storageName = 'user-info'
+
   return new MemoryStorage<AboutUserUserInfo>({
-    name: 'user-info',
+    name: storageName,
     initialState: {
       api: {
         updateUserInfo: initialApiState,
@@ -38,6 +38,13 @@ export async function createUserInfoStorage() {
       isChangeActive: false,
       fieldsInit: {},
       fields: {},
+    },
+    middlewares: () => {
+      const broadcast = broadcastMiddleware({
+        storageName,
+        storageType: 'memory',
+      })
+      return [broadcast]
     },
   }).initialize()
 }

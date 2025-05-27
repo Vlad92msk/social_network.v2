@@ -3,12 +3,14 @@
 import { cloneDeep } from 'lodash'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useAddNotification } from '@providers/notifications/NotificationsProvider'
 import { conferenceConfig } from './conference.config'
 import { ConferenceState, initialState } from './initial.state'
 import { ConferenceService } from './services'
 import { ConferenceSliceActions } from './store/conference.slice'
 import { ConferenceSelectors } from './store/selectors'
+import { notificationsSynapse } from '../../../store/synapses/notifications/notifications.synapse'
+
+const { addNotification } = notificationsSynapse.actions
 
 interface ConferenceContextState extends ConferenceState {
   // Управление медиа
@@ -32,8 +34,6 @@ export function ConferenceProvider({ children, currentUserId, dialogId }: Confer
   const conferenceService = useRef(new ConferenceService())
   const [isInitialized, setIsInitialized] = useState(false)
   const [state, setState] = useState<ConferenceState>(initialState)
-
-  const addNotification = useAddNotification()
 
   useEffect(() => {
     const service = conferenceService.current
