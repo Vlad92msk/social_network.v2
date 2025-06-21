@@ -1,3 +1,5 @@
+'use client'
+
 import { IndexedDBStorage } from 'synapse-storage/core'
 import { IDBApi, IDBCore } from './types'
 

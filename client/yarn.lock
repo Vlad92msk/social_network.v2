@@ -5867,12 +5867,10 @@ swagger2openapi@^7.0.4, swagger2openapi@^7.0.8:
     yaml "^1.10.0"
     yargs "^17.0.1"
 
-synapse-storage@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/synapse-storage/-/synapse-storage-2.1.0.tgz#59063bbb9abe5032fdf42568fd5eeade113a3886"
-  integrity sha512-iBf79McVBTTP6OdX/kAeczy+K3UHFENBMao6p9i8KSWABJvCebDrCof0RheRUY6XkqKmTzb1R4gvPjIr48JR2w==
-  dependencies:
-    rxjs "^7.8.2"
+synapse-storage@^3.0.13:
+  version "3.0.13"
+  resolved "https://registry.npmjs.org/synapse-storage/-/synapse-storage-3.0.13.tgz#40f92c68bbdec23acde38e2e5c14fc9bc784fd02"
+  integrity sha512-uOEGpNPY+gKXfKS81jr+5un7llM/QgF8L2Pfs5IoXtKXWWKbJVV+l7ohDIdh6mWkxMk+W3Ff2A3iunLES3COfA==
 
 tabbable@^6.0.0:
   version "6.2.0"

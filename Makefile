@@ -14,4 +14,4 @@ stop: ## Stop the Docker container.
 start-dev:
 	@echo "Starting development servers..."
 	@(source ~/.nvm/nvm.sh && cd server && nvm use 20.9.0 && yarn start:dev) & \
-	(source ~/.nvm/nvm.sh && cd client && nvm use 20.9.0 && yarn dev)
+	(source ~/.nvm/nvm.sh && cd client_react && nvm use 20.9.0 && yarn start)

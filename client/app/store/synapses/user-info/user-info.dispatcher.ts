@@ -6,12 +6,7 @@ import { ReceivedResponse } from '../../../types/apiStatus'
 import { apiRequestStore } from '../../utils/apiRequest.store-util'
 
 export function createUserInfoDispatcher(store: IStorage<AboutUserUserInfo>) {
-  const loggerMiddleware = loggerDispatcherMiddleware({
-    collapsed: true,
-    colors: {
-      title: '#3498db',
-    },
-  })
+
 
   return createDispatcher({ storage: store }, (storage, { createAction }) => ({
     setCurrentUserProfile: createAction<UserInfo, UserInfo>({
@@ -141,7 +136,7 @@ export function createUserInfoDispatcher(store: IStorage<AboutUserUserInfo>) {
         return responseData
       },
     }),
-  })).use(loggerMiddleware)
+  }))
 }
 
 export type UserInfoDispatcher = ReturnType<typeof createUserInfoDispatcher>

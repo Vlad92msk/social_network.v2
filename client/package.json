@@ -21,7 +21,6 @@
     "@monaco-editor/react": "^4.6.0",
     "@next/env": "^14.2.11",
     "@reduxjs/toolkit": "^2.2.7",
-    "synapse-storage": "^2.1.0",
     "babel-plugin-react-compiler": "^0.0.0-experimental-696af53-20240625",
     "cheerio": "^1.0.0",
     "clsx": "2.0.0",
@@ -47,6 +46,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "socket.io-client": "^4.8.0",
+    "synapse-storage": "^3.0.13",
     "zustand": "4.5.4"
   },
   "devDependencies": {

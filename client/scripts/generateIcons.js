@@ -44,4 +44,4 @@ fs.writeFileSync(
   iconsContent
 )
 
-console.log('Icon types and imports generated successfully!')
+console.log('icon types and imports generated successfully!')

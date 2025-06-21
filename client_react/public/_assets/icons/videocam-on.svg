@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" clip-rule="evenodd" viewBox="0 0 32 32" id="camera">
+  <path
+          fill="currentColor"
+          d="M23.447 12a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 12v8A2.5 2.5 0 0 0 6 22.5h14.947a2.5 2.5 0 0 0 2.5-2.5v-8Zm-1 0a1.503 1.503 0 0 0-1.5-1.5H6A1.503 1.503 0 0 0 4.5 12v8A1.503 1.503 0 0 0 6 21.5h14.947a1.5 1.5 0 0 0 1.5-1.5v-8Z"></path>
+  <path
+          fill="currentColor"
+          d="M28.5 12.945a1 1 0 0 0-1.447-.894l-4.329 2.164a.5.5 0 0 0-.277.447v2.527a.5.5 0 0 0 .277.447l4.329 2.164a1 1 0 0 0 1.447-.894v-5.961Zm-1 0-4.053 2.026v1.909l4.053 2.026v-5.961Zm0 0Z"></path>
+</svg>

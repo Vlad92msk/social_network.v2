@@ -30,6 +30,7 @@ export function createCoreDispatcher(store: IStorage<IDBCore>) {
       type: 'watchCurrentUserProfileUserInfo',
       selector: (state) => state.currentUserProfile,
       shouldTrigger: (prev, curr) => prev?.user_info !== curr?.user_info,
+      notifyAfterSubscribe: true,
       meta: { description: 'Следит за изменениями профиля пользователя -> user_info' },
     }),
 

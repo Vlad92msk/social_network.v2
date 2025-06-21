@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 97 96" id="check-square-broken">
+    <path stroke="currentColor" stroke-linecap="round" stroke-width="5" d="M71 10C69.2468 10 25 10 25 10C25 10 25 10 25 10C16.7157 10 10 16.7157 10 25L10 71C10 79.2843 16.7157 86 25 86L71 86C79.2843 86 86 79.2843 86 71V40">
+
+    </path>
+    <path stroke="currentColor" stroke-linecap="round" stroke-width="5" d="M35 46.7852L44.1792 55.9644C46.1318 57.917 49.2976 57.917 51.2502 55.9644L94.5 12.7148">
+
+    </path>
+</svg>

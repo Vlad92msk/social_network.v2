@@ -1,0 +1,19 @@
+{
+  "Metadata": {
+    "title": "fr",
+    "lang": "fr"
+  },
+  "NawBar": {
+    "home":  "Домой",
+    "photo": "Фото",
+    "video":  "Видео",
+    "message-square": "Чаты",
+    "clock-not-filled":  "Календарь",
+    "settings": "Настройки"
+  },
+  "Auth": {
+    "google": "Гугл на французком",
+    "description": "Bienvenue ! | Ce réseau social est mon projet éducatif. | J'y travaille pendant mon temps libre, donc la fonctionnalité se développe lentement.",
+    "enterBy": "Войти с помощью (на франзузком)"
+  }
+}

@@ -8,6 +8,7 @@ import { userInfoEndpoints } from '../../api/user-info.api'
 import { coreSynapseIDB } from '../core/core.synapse'
 
 export const userInfoSynapse = await createSynapse({
+  dependencies: [coreSynapseIDB],
   createStorageFn: createUserInfoStorage,
   createDispatcherFn: createUserInfoDispatcher,
   createSelectorsFn: createUserInfoSelectors,

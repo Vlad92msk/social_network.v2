@@ -33,7 +33,7 @@ export enum FILE_FORMAT_IMAGE {
   RAS = 'image/x-cmu-raster', // .ras - CMU Image
   CMX = 'image/x-cmx', // .cmx - Corel Metafile Exchange (CMX)
   FH = 'image/x-freehand', // .fh - FreeHand MX
-  ICO = 'image/x-icon', // .ico - Icon Image
+  ICO = 'image/x-icon', // .ico - icon Image
   PCX = 'image/x-pcx', // .pcx - PCX Image
   PIC = 'image/x-pict', // .pic - PICT Image
   PNM = 'image/x-portable-anymap', // .pnm - Portable Anymap Image
