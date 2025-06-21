@@ -1,4 +1,7 @@
 // This file is auto-generated. Don't edit it manually
+// Generated from: src/assets/icons/
+// Last updated: 2025-06-21T13:56:02.433Z
+
 export type IconName =
   | 'approve'
   | 'attachment'

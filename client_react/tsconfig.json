@@ -27,6 +27,7 @@
       "@router/*": ["router/*"],
       "@shared/*": ["shared/*"],
       "@models/*": ["types/*"],
+      "@assets/*": ["assets/*"],
       "@utils/*": ["utils/*"]
     },
 
