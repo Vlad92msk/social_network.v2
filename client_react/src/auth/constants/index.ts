@@ -1,18 +1,20 @@
+import { TIMEOUTS } from './timeouts'
+
 export const AUTH_CONSTANTS = {
   // SessionStorage ключи
   CALLBACK_URL_KEY: 'auth_callback_url',
   GUARD_DATA_KEY: 'auth_guard_data',
 
-  // Таймауты
-  REDIRECT_DELAY: 0,
-  DEFAULT_SESSION_TIMEOUT: 30,
-  DEFAULT_GUARD_TIMEOUT: 5000,
+  // Таймауты (используем из отдельного файла)
+  REDIRECT_DELAY: TIMEOUTS.REDIRECT_DELAY_MS,
+  DEFAULT_SESSION_TIMEOUT: TIMEOUTS.DEFAULT_SESSION_TIMEOUT_MINUTES,
+  DEFAULT_GUARD_TIMEOUT: TIMEOUTS.DEFAULT_GUARD_TIMEOUT_MS,
 
   // Размеры UI
   LOADER_SIZE: 'w-12 h-12',
   LOADER_COLORS: 'border-blue-200 border-t-blue-600',
 
-  // Страницы авторизации по умолчанию (убираем readonly)
+  // Страницы авторизации по умолчанию
   DEFAULT_AUTH_PAGES: [
     '/signin',
     '/signup',
@@ -45,4 +47,4 @@ export const AUTH_CONSTANTS = {
     ADMIN: 'admin',
     CONTENT: 'content'
   }
-}
+} as const

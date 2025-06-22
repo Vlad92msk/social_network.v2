@@ -40,8 +40,8 @@ export interface AuthConfig {
   providers: AuthProvider[]
   authPages?: string[]
   sessionTimeout?: number
-  guards?: {
-    enabled: boolean // Убираем undefined - делаем обязательным
+  guards: { // Убираем optional - всегда должен быть
+    enabled: boolean
     globalTimeout?: number
     fallback?: 'redirect' | 'component'
     fallbackComponent?: React.ComponentType<{ reason?: string }>

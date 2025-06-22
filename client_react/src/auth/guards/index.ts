@@ -28,23 +28,44 @@ export const permissionGuard = (requiredPermission: string): Guard =>
     }
   }
 
-// Guard для проверки владельца - ИСПРАВЛЯЕМ РАБОТУ С PARAMS
+/**
+ * Guard для проверки владельца ресурса
+ * @param resourceUserId - ID пользователя-владельца (опционально)
+ */
 export const ownerGuard = (resourceUserId?: string): Guard =>
   ({ user, route }) => {
-    // Исправляем получение параметров с учетом возможного undefined
+    // Безопасное получение ID из параметров
+    const getParamValue = (key: string): string | undefined => {
+      const value = route.params[key]
+      return value !== undefined ? value : undefined
+    }
+
     const targetUserId = resourceUserId ||
-      route.params.userId ||
-      route.params.id ||
-      (route.params['*'] as string) // fallback для динамических роутов
+      getParamValue('userId') ||
+      getParamValue('id') ||
+      getParamValue('user_id')
+
+    // Проверяем что ID найден
+    if (!targetUserId) {
+      return {
+        allowed: false,
+        reason: 'ID пользователя не найден в параметрах маршрута',
+        metadata: {
+          availableParams: Object.keys(route.params),
+          currentUserId: user?.id
+        }
+      }
+    }
 
     const isOwner = user?.id === targetUserId
 
     return {
       allowed: isOwner,
-      reason: isOwner ? undefined : 'Доступ только для владельца',
+      reason: isOwner ? undefined : 'Доступ только для владельца ресурса',
       metadata: { targetUserId, currentUserId: user?.id }
     }
   }
+
 
 // Пример более безопасного guard для работы с параметрами
 export const resourceOwnerGuard = (paramName: string = 'userId'): Guard =>

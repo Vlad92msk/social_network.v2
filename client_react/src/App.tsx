@@ -1,4 +1,5 @@
 import { SignIn } from '@pages/signIn/SignIn.tsx'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { GuardProvider, ProtectedRoute } from './auth'
 import { AuthConfig } from './auth'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
@@ -39,9 +40,67 @@ const ProfilePage = () => {
   )
 }
 
+
+type Pokemon = {
+  id: number
+  name: string
+  height: number
+  weight: number
+  sprites: {
+    front_default: string
+  }
+}
+
+type ApiState<T> = {
+  data: T | null
+  loading: boolean
+  error: string | null
+}
+
+// Простой хук для получения покемона
+const usePokemon = (pokemonName: string) => {
+  const [state, setState] = useState<ApiState<Pokemon>>({
+    data: null,
+    loading: false,
+    error: null
+  })
+
+  useEffect(() => {
+    if (!pokemonName) return
+
+    const fetchPokemon = async () => {
+      setState({ data: null, loading: true, error: null })
+
+      try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`)
+
+        if (!response.ok) {
+          throw new Error(`Pokemon не найден: ${response.status}`)
+        }
+
+        const pokemon: Pokemon = await response.json()
+        setState({ data: pokemon, loading: false, error: null })
+      } catch (error) {
+        setState({
+          data: null,
+          loading: false,
+          error: error instanceof Error ? error.message : 'Неизвестная ошибка'
+        })
+      }
+    }
+
+    fetchPokemon()
+  }, [pokemonName])
+
+  return state
+}
+
 // Публичная главная страница
 const HomePage = () => {
   const { user, signOut } = useAuth()
+  const [pokemonName, setPokemonName] = useState('pikachu')
+  const { data: pokemon, loading, error } = usePokemon(pokemonName)
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,143 +133,18 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+        <input value={pokemonName} onChange={(event) => setPokemonName(event.target.value)} />
       </header>
 
       {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+      <main>
+        <div>
+          <h2>
             Добро пожаловать, {user?.name || user?.email}! 👋
           </h2>
-          <p className="text-gray-600">
-            Вы авторизованы через <span className="font-medium">{user?.provider}</span>
+          <p>
+            Вы авторизованы через <span >{user?.provider}</span>
           </p>
-        </div>
-
-        {/* Navigation cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link
-            to="/profile"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                <span className="text-xl">👤</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Профиль</h3>
-            </div>
-            <p className="text-gray-600">
-              Управление настройками аккаунта и личной информацией
-            </p>
-          </Link>
-
-          <Link
-            to="/dashboard"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                <span className="text-xl">📊</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Панель управления</h3>
-            </div>
-            <p className="text-gray-600">
-              Аналитика, статистика и основные метрики
-            </p>
-          </Link>
-
-          <Link
-            to="/settings"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                <span className="text-xl">⚙️</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Настройки</h3>
-            </div>
-            <p className="text-gray-600">
-              Конфигурация приложения и пользовательские предпочтения
-            </p>
-          </Link>
-
-          <Link
-            to="/projects"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                <span className="text-xl">📁</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Проекты</h3>
-            </div>
-            <p className="text-gray-600">
-              Управление проектами и рабочими пространствами
-            </p>
-          </Link>
-
-          <Link
-            to="/team"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                <span className="text-xl">👥</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Команда</h3>
-            </div>
-            <p className="text-gray-600">
-              Участники команды и управление доступами
-            </p>
-          </Link>
-
-          <Link
-            to="/help"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
-                <span className="text-xl">❓</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Помощь</h3>
-            </div>
-            <p className="text-gray-600">
-              Документация, FAQ и техническая поддержка
-            </p>
-          </Link>
-        </div>
-
-        {/* User info */}
-        <div className="mt-12 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Информация об аккаунте</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm font-medium text-gray-500">Email:</span>
-                <p className="text-gray-900">{user?.email}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-500">Имя:</span>
-                <p className="text-gray-900">{user?.name || 'Не указано'}</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm font-medium text-gray-500">Провайдер:</span>
-                <p className="text-gray-900 capitalize">{user?.provider}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-500">Email подтвержден:</span>
-                <p className="text-gray-900">
-                  {user?.emailVerified ? (
-                    <span className="text-green-600">✅ Да</span>
-                  ) : (
-                    <span className="text-red-600">❌ Нет</span>
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>
@@ -225,7 +159,7 @@ const authConfig: Partial<AuthConfig> = {
     // onAccessDenied: '/access-denied'          // ← Куда перенаправлять при отказе в доступе
   },
   autoRedirect: true,
-  providers: ['google', 'email'],
+  providers: ['google'],
 
   // Указываем страницы авторизации (чтобы не сохранять их в callback)
   authPages: ['/signin', '/signup'],
@@ -238,19 +172,21 @@ const authConfig: Partial<AuthConfig> = {
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <NavigationDebug />
-      <AuthProvider config={authConfig}>
-        <GuardProvider>
-          <Routes>
-            <Route path="/signin" element={<SignIn />} />
-            <Route index element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="*" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-          </Routes>
-        </GuardProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <Translations>
+      <BrowserRouter>
+        <NavigationDebug />
+        <AuthProvider config={authConfig}>
+          <GuardProvider>
+            <Routes>
+              <Route path="/signin" element={<SignIn />} />
+              <Route index element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="*" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+            </Routes>
+          </GuardProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </Translations>
   )
 }
 

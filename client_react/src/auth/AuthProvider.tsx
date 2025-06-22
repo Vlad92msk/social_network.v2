@@ -2,20 +2,33 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useNavigate } from 'react-router-dom'
 import { createAuthMethods } from './providers'
 import { callbackStorage, determineRedirectUrl } from './utils'
+import { useAuthConfig } from './hooks/useAuthConfig'
+import { TIMEOUTS } from './constants/timeouts'
 import { AUTH_CONSTANTS } from './constants'
 import type { AuthState, AuthConfig } from './types'
 
 interface AuthContextValue extends AuthState {
-  // Методы авторизации
+  // Базовые методы (всегда доступны)
   signInWithGoogle: () => Promise<boolean>
   signInWithEmail: (email: string, password: string) => Promise<boolean>
   signUpWithEmail: (email: string, password: string, name: string) => Promise<boolean>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
 
+  // Дополнительные провайдеры (могут отсутствовать)
+  signInWithGitHub?: () => Promise<boolean>
+  signInWithMicrosoft?: () => Promise<boolean>
+  signInWithApple?: () => Promise<boolean>
+  signInWithFacebook?: () => Promise<boolean>
+  signInWithTwitter?: () => Promise<boolean>
+  signInWithYahoo?: () => Promise<boolean>
+
   // Утилиты
   clearError: () => void
   config: AuthConfig
+
+  // Дополнительные утилиты
+  hasProvider: (provider: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -25,51 +38,14 @@ interface AuthProviderProps {
   config?: Partial<AuthConfig>
 }
 
-// Конфигурация по умолчанию - ИСПРАВЛЯЕМ guards
-const defaultConfig: AuthConfig = {
-  redirects: {
-    afterSignIn: '/',
-    afterSignOut: '/signin',
-    whenUnauthenticated: '/signin'
-  },
-  autoRedirect: true,
-  providers: ['google', 'email'],
-  authPages: [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES],
-  sessionTimeout: AUTH_CONSTANTS.DEFAULT_SESSION_TIMEOUT,
-  guards: {
-    enabled: false, // Устанавливаем явное значение
-    globalTimeout: AUTH_CONSTANTS.DEFAULT_GUARD_TIMEOUT,
-    fallback: 'component'
-  }
-}
-
+/**
+ * Провайдер авторизации с поддержкой множественных провайдеров и guards
+ */
 export function AuthProvider({ children, config: userConfig }: AuthProviderProps) {
   const navigate = useNavigate()
 
-  // Мемоизируем конфигурацию - ИСПРАВЛЯЕМ слияние guards
-  const config: AuthConfig = useMemo(() => {
-    const merged: AuthConfig = {
-      ...defaultConfig,
-      ...userConfig,
-      redirects: {
-        ...defaultConfig.redirects,
-        ...userConfig?.redirects
-      },
-      authPages: userConfig?.authPages || [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES]
-    }
-
-    // Исправляем guards - всегда должен быть enabled
-    if (userConfig?.guards) {
-      merged.guards = {
-        enabled: userConfig.guards.enabled ?? defaultConfig.guards!.enabled, // Явно устанавливаем
-        globalTimeout: userConfig.guards.globalTimeout ?? defaultConfig.guards!.globalTimeout,
-        fallback: userConfig.guards.fallback ?? defaultConfig.guards!.fallback,
-        fallbackComponent: userConfig.guards.fallbackComponent
-      }
-    }
-
-    return merged
-  }, [userConfig])
+  // Используем хук для мемоизации конфигурации
+  const config = useAuthConfig(userConfig)
 
   // Мемоизируем методы авторизации
   const authMethods = useMemo(() => createAuthMethods(config.providers), [config.providers])
@@ -109,7 +85,7 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
 
           setTimeout(() => {
             navigate(redirectTo, { replace: true })
-          }, 0)
+          }, TIMEOUTS.REDIRECT_DELAY_MS)
         }
 
         return {
@@ -134,27 +110,36 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
     setState(prev => ({ ...prev, error: null }))
   }, [])
 
-  // Google авторизация
-  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }))
-
-    try {
-      const result = await authMethods.signInWithGoogle()
-
-      if (result.success) {
-        setState(prev => ({ ...prev, isLoading: false }))
-        return true
-      } else {
-        setError(result.error!)
+  // Универсальная функция для создания обработчиков провайдеров
+  const createProviderHandler = useCallback((methodName: string) => {
+    return async (): Promise<boolean> => {
+      // Проверяем что метод доступен
+      if (typeof authMethods[methodName] !== 'function') {
+        setError(`Провайдер ${methodName} не настроен`)
         return false
       }
-    } catch (error: any) {
-      setError(error.message || AUTH_CONSTANTS.MESSAGES.AUTH_ERROR)
-      return false
+
+      setState(prev => ({ ...prev, isLoading: true, error: null }))
+
+      try {
+        const result = await authMethods[methodName]()
+
+        if (result.success) {
+          setState(prev => ({ ...prev, isLoading: false }))
+          return true
+        } else {
+          setError(result.error!)
+          return false
+        }
+      } catch (error: any) {
+        setError(error.message || AUTH_CONSTANTS.MESSAGES.AUTH_ERROR)
+        return false
+      }
     }
   }, [authMethods, setError])
 
-  // Email авторизация
+  // Базовые методы
+  const signInWithGoogle = useCallback(() => createProviderHandler('signInWithGoogle')(), [createProviderHandler])
   const signInWithEmail = useCallback(async (email: string, password: string): Promise<boolean> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }))
 
@@ -174,7 +159,6 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
     }
   }, [authMethods, setError])
 
-  // Регистрация через email
   const signUpWithEmail = useCallback(async (email: string, password: string, name: string): Promise<boolean> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }))
 
@@ -193,6 +177,31 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
       return false
     }
   }, [authMethods, setError])
+
+  // Дополнительные провайдеры (условно создаются)
+  const signInWithGitHub = useMemo(() =>
+      authMethods.signInWithGitHub ? createProviderHandler('signInWithGitHub') : undefined
+    , [authMethods.signInWithGitHub, createProviderHandler])
+
+  const signInWithMicrosoft = useMemo(() =>
+      authMethods.signInWithMicrosoft ? createProviderHandler('signInWithMicrosoft') : undefined
+    , [authMethods.signInWithMicrosoft, createProviderHandler])
+
+  const signInWithApple = useMemo(() =>
+      authMethods.signInWithApple ? createProviderHandler('signInWithApple') : undefined
+    , [authMethods.signInWithApple, createProviderHandler])
+
+  const signInWithFacebook = useMemo(() =>
+      authMethods.signInWithFacebook ? createProviderHandler('signInWithFacebook') : undefined
+    , [authMethods.signInWithFacebook, createProviderHandler])
+
+  const signInWithTwitter = useMemo(() =>
+      authMethods.signInWithTwitter ? createProviderHandler('signInWithTwitter') : undefined
+    , [authMethods.signInWithTwitter, createProviderHandler])
+
+  const signInWithYahoo = useMemo(() =>
+      authMethods.signInWithYahoo ? createProviderHandler('signInWithYahoo') : undefined
+    , [authMethods.signInWithYahoo, createProviderHandler])
 
   // Выход из системы
   const signOut = useCallback(async (): Promise<void> => {
@@ -222,6 +231,11 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
     }
   }, [authMethods, setError])
 
+  // Проверка наличия провайдера
+  const hasProvider = useCallback((provider: string): boolean => {
+    return config.providers.includes(provider as any)
+  }, [config.providers])
+
   // Мемоизируем значение контекста
   const value: AuthContextValue = useMemo(() => ({
     ...state,
@@ -230,9 +244,21 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
     signUpWithEmail,
     signOut,
     resetPassword,
+
+    // Условно добавляем дополнительные провайдеры
+    ...(signInWithGitHub && { signInWithGitHub }),
+    ...(signInWithMicrosoft && { signInWithMicrosoft }),
+    ...(signInWithApple && { signInWithApple }),
+    ...(signInWithFacebook && { signInWithFacebook }),
+    ...(signInWithTwitter && { signInWithTwitter }),
+    ...(signInWithYahoo && { signInWithYahoo }),
+
     clearError,
-    config
-  }), [state, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, resetPassword, clearError, config])
+    config,
+    hasProvider
+  }), [state, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, resetPassword,
+    signInWithGitHub, signInWithMicrosoft, signInWithApple, signInWithFacebook,
+    signInWithTwitter, signInWithYahoo, clearError, config, hasProvider])
 
   return (
     <AuthContext.Provider value={value}>
@@ -241,7 +267,6 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
   )
 }
 
-// Хук для использования контекста авторизации
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext)
 

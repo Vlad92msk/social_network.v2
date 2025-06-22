@@ -5,7 +5,7 @@ export { GuardProvider, useGuardData } from './GuardProvider'
 
 // Хуки
 export { useRole, usePermissions, useSessionTimer, useAutoSignOut } from './hooks/useAuth'
-export { useAuthForm } from './hooks/useAuthForm'
+export { useAuthActions } from './hooks/useAuthActions.ts'
 export { useGuards } from './hooks/useGuards'
 
 // Основные типы

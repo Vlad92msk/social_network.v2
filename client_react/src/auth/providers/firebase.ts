@@ -20,32 +20,6 @@ import type { User, AuthResult, AuthMethods } from '../types'
 
 validateFirebaseConfig()
 
-// Firebase НАТИВНО поддерживает эти провайдеры:
-const FIREBASE_SUPPORTED_PROVIDERS = {
-  // ✅ Есть готовые классы
-  'google': GoogleAuthProvider,
-  'github': GithubAuthProvider,
-  'facebook': FacebookAuthProvider,
-  'twitter': TwitterAuthProvider,
-
-  // ✅ Через OAuthProvider
-  'microsoft': () => new OAuthProvider('microsoft.com'),
-  'apple': () => new OAuthProvider('apple.com'),
-  'yahoo': () => new OAuthProvider('yahoo.com'),
-
-  // ✅ Встроенные методы
-  'email': 'built-in' // signInWithEmailAndPassword
-} as const
-
-// ❌ Firebase НЕ поддерживает напрямую:
-const EXTERNAL_PROVIDERS = [
-  'auth0',     // Отдельный сервис
-  'okta',      // Отдельный сервис
-  'supabase',  // Отдельный сервис
-  'cognito',   // AWS сервис
-  'clerk'      // Отдельный сервис
-] as const
-
 // Полный Firebase провайдер со всеми поддерживаемыми методами
 export const firebaseAuthMethods: AuthMethods & {
   // Дополнительные методы для провайдеров, поддерживаемых Firebase
@@ -57,7 +31,7 @@ export const firebaseAuthMethods: AuthMethods & {
   signInWithYahoo(): Promise<AuthResult>
 } = {
 
-  // 🔥 БАЗОВЫЕ МЕТОДЫ (обязательные)
+  // БАЗОВЫЕ МЕТОДЫ (обязательные)
 
   async signInWithGoogle(): Promise<AuthResult> {
     try {
@@ -124,7 +98,7 @@ export const firebaseAuthMethods: AuthMethods & {
     })
   },
 
-  // 🔥 ДОПОЛНИТЕЛЬНЫЕ ПРОВАЙДЕРЫ (через Firebase)
+  // ДОПОЛНИТЕЛЬНЫЕ ПРОВАЙДЕРЫ (через Firebase)
 
   async signInWithGitHub(): Promise<AuthResult> {
     try {
@@ -249,6 +223,7 @@ function getErrorMessage(error: any): string {
     'auth/popup-closed-by-user': 'Окно авторизации было закрыто',
     'auth/popup-blocked': 'Браузер заблокировал всплывающее окно',
     'auth/cancelled-popup-request': 'Авторизация была отменена',
+    'auth/operation-not-allowed': 'Провайдер не активирован в Firebase Console',
   }
 
   return errorMessages[error.code] || error.message || 'Произошла неизвестная ошибка'

@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState, useMemo, useCallback } from 'react'
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { useGuardData } from './GuardProvider'
+import { useGuardsExecutor } from './hooks/useGuardsExecutor'
 import { callbackStorage, createFullUrl, isAuthPage } from './utils'
 import { AUTH_CONSTANTS } from './constants'
 import type { GuardConfig, GuardsExecutionResult, GuardContext } from './types'
@@ -10,7 +11,7 @@ interface ProtectedRouteProps {
   children: ReactNode
   fallback?: ReactNode
 
-  // Новая guards система
+  // Guards система
   guards?: GuardConfig[]
   globalTimeout?: number
   onGuardsComplete?: (result: GuardsExecutionResult) => void
@@ -20,6 +21,9 @@ interface ProtectedRouteProps {
   onAccessDenied?: (reason: string) => void
 }
 
+/**
+ * Компонент защищенного маршрута с поддержкой guards
+ */
 export function ProtectedRoute({
   children,
   fallback,
@@ -34,15 +38,11 @@ export function ProtectedRoute({
   const location = useLocation()
   const params = useParams()
 
-  const [guardsState, setGuardsState] = useState<{
-    isChecking: boolean
-    result: GuardsExecutionResult | null
-    currentGuard?: string
-    lastExecutionKey?: string // Добавляем ключ для предотвращения повторных запусков
-  }>({
-    isChecking: false,
-    result: null
-  })
+  // Используем хук для выполнения guards
+  const { execute: executeGuards, isExecuting, currentGuard } = useGuardsExecutor(globalTimeout)
+
+  const [guardsResult, setGuardsResult] = useState<GuardsExecutionResult | null>(null)
+  const [lastExecutionKey, setLastExecutionKey] = useState<string>('')
 
   // Стабильные значения для зависимостей
   const pathname = location.pathname
@@ -69,176 +69,48 @@ export function ProtectedRoute({
     data: guardData
   }), [user, isAuthenticated, pathname, params, search, location.state, guardData])
 
-  // Функция выполнения guards - мемоизированная
-  const executeGuards = useCallback(async () => {
-    if (!hasGuards || !guardContext) {
-      setGuardsState(prev => ({
-        ...prev,
-        isChecking: false,
-        result: null,
-        lastExecutionKey: executionKey
-      }))
+  // Функция выполнения guards
+  const runGuards = useCallback(async () => {
+    if (!hasGuards) {
+      setGuardsResult(null)
+      setLastExecutionKey(executionKey)
       return
     }
 
-    const startTime = Date.now()
-    setGuardsState(prev => ({
-      ...prev,
-      isChecking: true,
-      result: null,
-      lastExecutionKey: executionKey
-    }))
-
-    const result: GuardsExecutionResult = {
-      allowed: true,
-      failedGuards: [],
-      executedGuards: [],
-      skippedGuards: [],
-      executionTime: 0
-    }
-
     try {
-      // Сортируем guards по приоритету
-      const sortedGuards = [...guards].sort((a, b) => (a.priority || 0) - (b.priority || 0))
+      const result = await executeGuards(guards, guardContext)
+      setGuardsResult(result)
+      setLastExecutionKey(executionKey)
 
-      // Разделяем на обязательные и опциональные
-      const requiredGuards = sortedGuards.filter(g => g.required !== false)
-      const optionalGuards = sortedGuards.filter(g => g.required === false)
-
-      // Выполняем обязательные guards
-      for (const guardConfig of requiredGuards) {
-        setGuardsState(prev => ({ ...prev, currentGuard: guardConfig.id }))
-
-        if (guardConfig.skipIf && guardConfig.skipIf(guardContext)) {
-          result.skippedGuards.push(guardConfig.id)
-          continue
-        }
-
-        try {
-          const guardResult = await Promise.race([
-            guardConfig.guard(guardContext),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('Guard timeout')),
-                guardConfig.timeout || globalTimeout)
-            )
-          ])
-
-          result.executedGuards.push(guardConfig.id)
-
-          if (!guardResult.allowed) {
-            result.allowed = false
-            result.failedGuards.push({
-              id: guardConfig.id,
-              reason: guardResult.reason || 'Доступ запрещен',
-              config: guardConfig,
-              metadata: guardResult.metadata
-            })
-
-            if (guardConfig.onAccessDenied) {
-              guardConfig.onAccessDenied(guardResult.reason || 'Доступ запрещен', guardResult.metadata)
-            }
-
-            break
-          }
-        } catch (error) {
-          console.error(`Guard "${guardConfig.id}" failed:`, error)
-          result.allowed = false
-          result.failedGuards.push({
-            id: guardConfig.id,
-            reason: error instanceof Error ? error.message : 'Ошибка выполнения guard',
-            config: guardConfig
-          })
-          break
-        }
-      }
-
-      // Если обязательные прошли и есть опциональные - нужен хотя бы один успешный
-      if (result.allowed && optionalGuards.length > 0) {
-        let anyOptionalPassed = false
-
-        for (const guardConfig of optionalGuards) {
-          setGuardsState(prev => ({ ...prev, currentGuard: guardConfig.id }))
-
-          if (guardConfig.skipIf && guardConfig.skipIf(guardContext)) {
-            result.skippedGuards.push(guardConfig.id)
-            continue
-          }
-
-          try {
-            const guardResult = await Promise.race([
-              guardConfig.guard(guardContext),
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error('Guard timeout')),
-                  guardConfig.timeout || globalTimeout)
-              )
-            ])
-
-            result.executedGuards.push(guardConfig.id)
-
-            if (guardResult.allowed) {
-              anyOptionalPassed = true
-              break
-            } else {
-              result.failedGuards.push({
-                id: guardConfig.id,
-                reason: guardResult.reason || 'Доступ запрещен',
-                config: guardConfig,
-                metadata: guardResult.metadata
-              })
-            }
-          } catch (error) {
-            console.error(`Optional guard "${guardConfig.id}" failed:`, error)
-          }
-        }
-
-        if (!anyOptionalPassed && optionalGuards.length > 0) {
-          result.allowed = false
-        }
-      }
-
-      result.executionTime = Date.now() - startTime
-      setGuardsState({
-        isChecking: false,
-        result,
-        currentGuard: undefined,
-        lastExecutionKey: executionKey
-      })
-
-      if (onGuardsComplete) {
-        onGuardsComplete(result)
-      }
+      onGuardsComplete?.(result)
 
       if (!result.allowed && onAccessDenied && result.failedGuards.length > 0) {
         onAccessDenied(result.failedGuards[0].reason)
       }
-
     } catch (error) {
       console.error('Guards execution failed:', error)
-      setGuardsState({
-        isChecking: false,
-        result: {
-          allowed: false,
-          failedGuards: [{
-            id: 'system',
-            reason: 'Системная ошибка проверки доступа',
-            config: {} as GuardConfig
-          }],
-          executedGuards: [],
-          skippedGuards: [],
-          executionTime: Date.now() - startTime
-        },
-        lastExecutionKey: executionKey
+      setGuardsResult({
+        allowed: false,
+        failedGuards: [{
+          id: 'system',
+          reason: 'Системная ошибка проверки доступа',
+          config: {} as GuardConfig
+        }],
+        executedGuards: [],
+        skippedGuards: [],
+        executionTime: 0
       })
+      setLastExecutionKey(executionKey)
     }
-  }, [guardContext, guards, hasGuards, globalTimeout, onGuardsComplete, onAccessDenied, executionKey])
+  }, [hasGuards, executeGuards, guards, guardContext, onGuardsComplete, onAccessDenied, executionKey])
 
-  // Основной useEffect с правильными зависимостями
+  // Основной useEffect
   useEffect(() => {
     // Если загружается - ничего не делаем
     if (isLoading) return
 
     // Если ключ выполнения не изменился - не запускаем повторно
-    if (guardsState.lastExecutionKey === executionKey) return
+    if (lastExecutionKey === executionKey) return
 
     // Обратная совместимость - базовая проверка авторизации
     if (requireAuth && !isAuthenticated) {
@@ -252,24 +124,24 @@ export function ProtectedRoute({
     }
 
     // Запускаем выполнение guards
-    executeGuards()
+    runGuards()
   }, [
     isLoading,
     requireAuth,
     isAuthenticated,
-    executeGuards,
+    runGuards,
     executionKey,
-    guardsState.lastExecutionKey,
+    lastExecutionKey,
     pathname,
     search,
     authPages
   ])
 
   // Показываем лоадер
-  if (isLoading || guardsState.isChecking) {
+  if (isLoading || isExecuting) {
     const message = isLoading
       ? AUTH_CONSTANTS.MESSAGES.CHECKING_AUTH
-      : `${AUTH_CONSTANTS.MESSAGES.CHECKING_ACCESS}${guardsState.currentGuard ? ': ' + guardsState.currentGuard : ''}`
+      : `${AUTH_CONSTANTS.MESSAGES.CHECKING_ACCESS}${currentGuard ? ': ' + currentGuard : ''}`
 
     return (
       fallback || (
@@ -287,8 +159,8 @@ export function ProtectedRoute({
   }
 
   // Обработка отказа в доступе
-  if (guardsState.result && !guardsState.result.allowed) {
-    const firstFailedGuard = guardsState.result.failedGuards[0]
+  if (guardsResult && !guardsResult.allowed) {
+    const firstFailedGuard = guardsResult.failedGuards[0]
 
     if (firstFailedGuard) {
       const guardConfig = firstFailedGuard.config
@@ -321,7 +193,7 @@ export function ProtectedRoute({
           to={config.redirects.onAccessDenied}
           state={{
             reason: firstFailedGuard?.reason || 'Доступ запрещен',
-            failedGuards: guardsState.result.failedGuards
+            failedGuards: guardsResult.failedGuards
           }}
           replace
         />

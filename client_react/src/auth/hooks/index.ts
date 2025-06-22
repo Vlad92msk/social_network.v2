@@ -1,3 +1,3 @@
 export { useRole, usePermissions, useSessionTimer, useAutoSignOut } from './useAuth'
-export { useAuthForm } from './useAuthForm'
+export { useAuthActions } from './useAuthActions.ts'
 export { useGuards } from './useGuards'
