@@ -16,6 +16,10 @@ interface ProtectedRouteProps {
   globalTimeout?: number
   onGuardsComplete?: (result: GuardsExecutionResult) => void
 
+  // Обработка отказа в доступе (переопределяют глобальные настройки)
+  accessDeniedComponent?: ReactNode
+  accessDeniedPage?: string
+
   // Обратная совместимость
   requireAuth?: boolean
   onAccessDenied?: (reason: string) => void
@@ -28,18 +32,23 @@ export function ProtectedRoute({
   children,
   fallback,
   guards = [],
-  globalTimeout = AUTH_CONSTANTS.DEFAULT_GUARD_TIMEOUT,
+  globalTimeout,
   onGuardsComplete,
+  accessDeniedComponent,
+  accessDeniedPage,
   requireAuth = true,
   onAccessDenied
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading, config } = useAuth()
-  const { guardData } = useGuardData()
+  const { guardData, globalConfig } = useGuardData()
   const location = useLocation()
   const params = useParams()
 
+  // Используем глобальный таймаут если не указан локальный
+  const effectiveTimeout = globalTimeout ?? globalConfig.defaultTimeout ?? AUTH_CONSTANTS.DEFAULT_GUARD_TIMEOUT
+
   // Используем хук для выполнения guards
-  const { execute: executeGuards, isExecuting, currentGuard } = useGuardsExecutor(globalTimeout)
+  const { execute: executeGuards, isExecuting, currentGuard } = useGuardsExecutor(effectiveTimeout)
 
   const [guardsResult, setGuardsResult] = useState<GuardsExecutionResult | null>(null)
   const [lastExecutionKey, setLastExecutionKey] = useState<string>('')
@@ -84,8 +93,14 @@ export function ProtectedRoute({
 
       onGuardsComplete?.(result)
 
-      if (!result.allowed && onAccessDenied && result.failedGuards.length > 0) {
-        onAccessDenied(result.failedGuards[0].reason)
+      if (!result.allowed && result.failedGuards.length > 0) {
+        const firstFailedGuard = result.failedGuards[0]
+
+        // Вызываем локальный обработчик
+        onAccessDenied?.(firstFailedGuard.reason)
+
+        // Вызываем глобальный обработчик
+        globalConfig.onAccessDenied?.(firstFailedGuard.reason, firstFailedGuard.metadata)
       }
     } catch (error) {
       console.error('Guards execution failed:', error)
@@ -102,7 +117,7 @@ export function ProtectedRoute({
       })
       setLastExecutionKey(executionKey)
     }
-  }, [hasGuards, executeGuards, guards, guardContext, onGuardsComplete, onAccessDenied, executionKey])
+  }, [hasGuards, executeGuards, guards, guardContext, onGuardsComplete, onAccessDenied, globalConfig, executionKey])
 
   // Основной useEffect
   useEffect(() => {
@@ -165,7 +180,12 @@ export function ProtectedRoute({
     if (firstFailedGuard) {
       const guardConfig = firstFailedGuard.config
 
-      // Редирект на кастомную страницу
+      // 1. Кастомный компонент из guard конфигурации (высший приоритет)
+      if (guardConfig.accessDeniedComponent) {
+        return <>{guardConfig.accessDeniedComponent}</>
+      }
+
+      // 2. Редирект на кастомную страницу из guard конфигурации
       if (guardConfig.accessDeniedPage) {
         return (
           <Navigate
@@ -179,14 +199,47 @@ export function ProtectedRoute({
           />
         )
       }
-
-      // Показ кастомного компонента
-      if (guardConfig.accessDeniedComponent) {
-        return <>{guardConfig.accessDeniedComponent}</>
-      }
     }
 
-    // Глобальный редирект
+    // 3. Кастомный компонент из пропов ProtectedRoute (переопределяет глобальный)
+    if (accessDeniedComponent) {
+      return <>{accessDeniedComponent}</>
+    }
+
+    // 4. Редирект на кастомную страницу из пропов ProtectedRoute
+    if (accessDeniedPage) {
+      return (
+        <Navigate
+          to={accessDeniedPage}
+          state={{
+            reason: firstFailedGuard?.reason || 'Доступ запрещен',
+            failedGuards: guardsResult.failedGuards
+          }}
+          replace
+        />
+      )
+    }
+
+    // 5. Глобальный компонент из GuardProvider
+    if (globalConfig.accessDeniedComponent) {
+      return <>{globalConfig.accessDeniedComponent}</>
+    }
+
+    // 6. Глобальная страница из GuardProvider
+    if (globalConfig.accessDeniedPage) {
+      return (
+        <Navigate
+          to={globalConfig.accessDeniedPage}
+          state={{
+            reason: firstFailedGuard?.reason || 'Доступ запрещен',
+            failedGuards: guardsResult.failedGuards
+          }}
+          replace
+        />
+      )
+    }
+
+    // 7. Глобальный редирект из AuthProvider конфигурации
     if (config.redirects.onAccessDenied) {
       return (
         <Navigate
@@ -200,34 +253,21 @@ export function ProtectedRoute({
       )
     }
 
-    // Дефолтный компонент
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
-        <div className="text-center max-w-md">
-          <div className="text-red-500 text-6xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            {AUTH_CONSTANTS.MESSAGES.ACCESS_DENIED}
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {firstFailedGuard?.reason || 'У вас недостаточно прав для просмотра этой страницы'}
-          </p>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.history.back()}
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-            >
-              Назад
-            </button>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              На главную
-            </button>
-          </div>
-        </div>
-      </div>
-    )
+    // 8. Если ничего не настроено - показываем ошибку в консоли и перенаправляем на главную
+    console.error('ProtectedRoute: Доступ запрещен, но не настроен ни один способ обработки отказа', {
+      reason: firstFailedGuard?.reason,
+      availableOptions: [
+        'guard.accessDeniedComponent',
+        'guard.accessDeniedPage',
+        'ProtectedRoute.accessDeniedComponent prop',
+        'ProtectedRoute.accessDeniedPage prop',
+        'GuardProvider.accessDeniedComponent',
+        'GuardProvider.accessDeniedPage',
+        'AuthProvider.config.redirects.onAccessDenied'
+      ]
+    })
+
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>

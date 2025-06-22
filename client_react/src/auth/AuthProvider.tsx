@@ -24,7 +24,7 @@ interface AuthContextValue extends AuthState {
   signInWithYahoo?: () => Promise<boolean>
 
   // Утилиты
-  clearError: () => void
+  clearError: VoidFunction
   config: AuthConfig
 
   // Дополнительные утилиты
