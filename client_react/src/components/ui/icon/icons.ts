@@ -1,6 +1,6 @@
 // This file is auto-generated. Don't edit it manually
 // Generated from: src/assets/icons/
-// Last updated: 2025-06-21T13:56:02.433Z
+// Last updated: 2025-06-22T07:06:46.684Z
 
 import ApproveIcon from '../../../assets/icons/approve.svg?react'
 import AttachmentIcon from '../../../assets/icons/attachment.svg?react'

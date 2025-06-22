@@ -95,7 +95,7 @@ export default defineConfig({
   // =================== ESBUILD НАСТРОЙКИ (НА ВЕРХНЕМ УРОВНЕ!) ===================
   esbuild: {
     // Удаление кода
-    drop: ['console', 'debugger'],
+    // drop: ['console', 'debugger'],
 
     // JSX
     jsx: 'automatic',

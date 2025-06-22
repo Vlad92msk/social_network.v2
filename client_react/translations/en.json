@@ -15,5 +15,32 @@
     "google": "Google",
     "description": "Welcome! | This social network is my educational project. | I work on it in my free time, so the functionality is developing slowly.",
     "enterBy": "Enter by"
+  },
+  "nav": {
+    "home": "Главная",
+    "about": "О нас",
+    "contact": "Контакты"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "or": "или"
+  },
+  "auth": {
+    "email": "Email адрес",
+    "password": "Пароль",
+    "forgotPassword": "Забыли пароль?",
+    "noAccount": "Нет аккаунта?",
+    "signIn": {
+      "title": "Вход в аккаунт",
+      "subtitle": "Войдите для продолжения работы",
+      "google": "Войти через Google",
+      "submit": "Войти"
+    },
+    "signUp": {
+      "link": "Зарегистрироваться"
+    }
   }
 }
