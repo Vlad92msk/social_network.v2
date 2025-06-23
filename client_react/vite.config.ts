@@ -20,8 +20,14 @@ export default defineConfig({
       exclude: '',
     }),
   ],
+  css: {
+    modules: {
+      generateScopedName: '[name]__[local]__[hash:base64:5]',
+    }
+  },
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, './src'),
       '@data': path.resolve(__dirname, './src/data'),
       '@i18n': path.resolve(__dirname, './src/i18n'),
       '@pages': path.resolve(__dirname, './src/pages'),
@@ -33,11 +39,7 @@ export default defineConfig({
       '@providers': path.resolve(__dirname, './src/providers'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@assets': path.resolve(__dirname, './src/assets'),
-    }
-  },
-  css: {
-    modules: {
-      generateScopedName: '[name]__[local]__[hash:base64:5]'
+      '@styles': path.resolve(__dirname, './src/styles'),
     }
   },
   server: {

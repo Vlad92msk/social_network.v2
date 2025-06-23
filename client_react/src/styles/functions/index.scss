@@ -1,0 +1,29 @@
+@use 'sass:math';
+
+@function rem($size) {
+    @if unitless($size) {
+        $remSize: math.div($size, 16);
+        @return #{$remSize}rem;
+    } @else {
+    @error 'Size must be a unitless number.';
+}
+}
+
+@function px($size) {
+    @if unitless($size) {
+        @return #{$size}px;
+    } @else {
+    @error 'Size must be a unitless number.';
+}
+}
+
+// Функция для получения значения из карты с fallback
+@function get($map, $key, $fallback: null) {
+    @if map-has-key($map, $key) {
+        @return map-get($map, $key);
+    } @else if $fallback != null {
+    @return $fallback;
+} @else {
+    @error "Key '#{$key}' not found in map";
+}
+}

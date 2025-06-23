@@ -1,0 +1,179 @@
+// Анимации (расширенные из NextJS)
+
+@mixin fade-in-animation($duration: 0.3s, $initial-opacity: 0) {
+  animation: #{$duration} fade-in ease-out;
+
+  @keyframes fade-in {
+    0% {
+      opacity: $initial-opacity;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+}
+
+@mixin fade-out-animation($duration: 0.3s, $final-opacity: 0) {
+  animation: #{$duration} fade-out ease-out;
+
+  @keyframes fade-out {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: $final-opacity;
+    }
+  }
+}
+
+@mixin slide-in-from-top($duration: 0.3s, $distance: -20px) {
+  animation: #{$duration} slide-in-top ease-out;
+
+  @keyframes slide-in-top {
+    0% {
+      opacity: 0;
+      transform: translateY($distance);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@mixin slide-in-from-bottom($duration: 0.3s, $distance: 20px) {
+  animation: #{$duration} slide-in-bottom ease-out;
+
+  @keyframes slide-in-bottom {
+    0% {
+      opacity: 0;
+      transform: translateY($distance);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@mixin slide-in-from-left($duration: 0.3s, $distance: -20px) {
+  animation: #{$duration} slide-in-left ease-out;
+
+  @keyframes slide-in-left {
+    0% {
+      opacity: 0;
+      transform: translateX($distance);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+@mixin slide-in-from-right($duration: 0.3s, $distance: 20px) {
+  animation: #{$duration} slide-in-right ease-out;
+
+  @keyframes slide-in-right {
+    0% {
+      opacity: 0;
+      transform: translateX($distance);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+@mixin scale-in($duration: 0.2s, $initial-scale: 0.95) {
+  animation: #{$duration} scale-in ease-out;
+
+  @keyframes scale-in {
+    0% {
+      opacity: 0;
+      transform: scale($initial-scale);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+@mixin bounce-in($duration: 0.5s) {
+  animation: #{$duration} bounce-in ease-out;
+
+  @keyframes bounce-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+// Спиннер/загрузка
+@mixin spin($duration: 1s) {
+  animation: #{$duration} spin linear infinite;
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+// Пульсация
+@mixin pulse($duration: 2s, $min-opacity: 0.5) {
+  animation: #{$duration} pulse ease-in-out infinite;
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: $min-opacity;
+    }
+  }
+}
+
+// Встряска
+@mixin shake($duration: 0.5s, $distance: 5px) {
+  animation: #{$duration} shake ease-in-out;
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-#{$distance});
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX($distance);
+    }
+  }
+}
+
+// Базовые переходы
+@mixin transition($properties: all, $duration: 0.2s, $timing: ease) {
+  transition: $properties $duration $timing;
+}
+
+// Плавные переходы для интерактивных элементов
+@mixin interactive-transition() {
+  @include transition((color, background-color, border-color, opacity, transform, box-shadow), 0.2s, ease);
+}

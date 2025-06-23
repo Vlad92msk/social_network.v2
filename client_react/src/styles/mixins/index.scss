@@ -1,0 +1,94 @@
+// Импорт всех миксинов
+@import 'media';
+@import 'scrollbar';
+@import 'animations';
+
+// Общие полезные миксины
+@mixin not-last() {
+  &:not(:last-child) {
+    @content;
+  }
+}
+
+@mixin not-first() {
+  &:not(:first-child) {
+    @content;
+  }
+}
+
+@mixin hide-scrollbar() {
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+// Миксин для тем
+@mixin color-theme($theme-name) {
+  [data-project-theme='#{$theme-name}'] & {
+    @content;
+  }
+}
+
+// Центрирование элементов
+@mixin center-flex($direction: row) {
+  display: flex;
+  flex-direction: $direction;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin center-absolute() {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// Усечение текста
+@mixin text-truncate() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-truncate-lines($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Visually hidden (для accessibility)
+@mixin visually-hidden() {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// Hover состояния (с поддержкой touch устройств)
+@mixin hover() {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+// Focus visible
+@mixin focus-visible() {
+  &:focus-visible {
+    @content;
+  }
+}

@@ -1,0 +1,18 @@
+@import "../../../styles/for_components";
+
+
+.Body {
+  height: 100dvh;
+
+  &--theme {
+    &_default {
+      color: var(--Color-Text--root--theme-default);
+      background: var(--Color-Bcg--root--theme-default);
+    }
+
+    &_light {
+      color: var(--Color-Text--root--theme-light);
+      background: var(--Color-Bcg--root--theme-light);
+    }
+  }
+}

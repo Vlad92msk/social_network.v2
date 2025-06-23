@@ -1,0 +1,175 @@
+@import "../mixins";
+
+// Общие стили для компонентов
+// Этот файл можно импортировать в SCSS файлы компонентов
+
+// Общие миксины для компонентов
+@mixin component-base() {
+  position: relative;
+  box-sizing: border-box;
+}
+
+@mixin card-base() {
+  @include component-base();
+  background: var(--bg-card, var(--Color-Bcg--variant-3--theme-default));
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color, var(--Color-Border--variant-1--theme-default));
+  @include interactive-transition();
+}
+
+@mixin button-base() {
+  @include component-base();
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-14);
+  line-height: 1;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  @include interactive-transition();
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-blue, var(--Color-Status--variant-2--theme-default));
+    outline-offset: 2px;
+  }
+}
+
+@mixin input-base() {
+  @include component-base();
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-15);
+  line-height: 1.4;
+  color: var(--text-primary, var(--Color-Text--variant-1--theme-default));
+  background: var(--bg-input, var(--Color-Bcg--variant-3--theme-default));
+  border: 1px solid var(--border-color, var(--Color-Border--variant-1--theme-default));
+  border-radius: var(--border-radius-md);
+  @include interactive-transition();
+
+  &::placeholder {
+    color: var(--text-muted, var(--Color-Text--variant-3--theme-default));
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-blue, var(--Color-Status--variant-2--theme-default));
+    box-shadow: 0 0 0 3px hsla(210, 70.9%, 51.6%, 0.1);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// Готовые классы компонентов
+.btn {
+  @include button-base();
+
+  &--primary {
+    background: var(--accent-blue, var(--Color-Status--variant-2--theme-default));
+    color: white;
+
+    @include hover() {
+      background: color-mix(in srgb, var(--accent-blue, var(--Color-Status--variant-2--theme-default)) 90%, black);
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    color: var(--text-primary, var(--Color-Text--variant-1--theme-default));
+    border: 1px solid var(--border-color, var(--Color-Border--variant-1--theme-default));
+
+    @include hover() {
+      background: var(--Color-Bcg--variant-4--theme-default);
+    }
+  }
+
+  &--danger {
+    background: var(--Color-Status--variant-1--theme-default);
+    color: white;
+
+    @include hover() {
+      background: color-mix(in srgb, var(--Color-Status--variant-1--theme-default) 90%, black);
+    }
+  }
+
+  &--small {
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-12);
+  }
+
+  &--large {
+    padding: 0.75rem 1.5rem;
+    font-size: var(--text-16);
+  }
+}
+
+.card {
+  @include card-base();
+  padding: 1.5rem;
+
+  &--compact {
+    padding: 1rem;
+  }
+
+  &--spacious {
+    padding: 2rem;
+  }
+
+  @include hover() {
+    box-shadow: 0 4px 12px hsla(0, 0%, 0%, 0.1);
+  }
+}
+
+.input {
+  @include input-base();
+
+  &--error {
+    border-color: var(--Color-Status--variant-1--theme-default);
+
+    &:focus {
+      border-color: var(--Color-Status--variant-1--theme-default);
+      box-shadow: 0 0 0 3px hsla(0, 70%, 50%, 0.1);
+    }
+  }
+
+  &--success {
+    border-color: var(--Color-Status--variant-2--theme-default);
+
+    &:focus {
+      border-color: var(--Color-Status--variant-2--theme-default);
+      box-shadow: 0 0 0 3px hsla(120, 70%, 50%, 0.1);
+    }
+  }
+}
+
+// Утилитарные классы для компонентов
+.loading {
+  @include spin();
+}
+
+.fade-in {
+  @include fade-in-animation();
+}
+
+.slide-in-up {
+  @include slide-in-from-bottom();
+}
+
+.scale-in {
+  @include scale-in();
+}

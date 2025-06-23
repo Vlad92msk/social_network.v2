@@ -1,0 +1,103 @@
+@use 'sass:map';
+
+// Брейкпоинты (из вашей системы NextJS)
+$media-breakpoints: (
+        'xl': 1600,
+        'lg': 1440,
+        'lm': 1200,
+        'md': 992,
+        'sm': 768,
+        'xs': 576,
+        'es': 320,
+);
+
+// CSS Custom Properties для использования в JS
+:root {
+  --breakpoint-es: 320px;
+  --breakpoint-xs: 576px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 992px;
+  --breakpoint-lm: 1200px;
+  --breakpoint-lg: 1440px;
+  --breakpoint-xl: 1600px;
+}
+
+// Основной миксин для медиа-запросов
+@mixin media($bp) {
+  @if map.has-key($media-breakpoints, $bp) {
+    // для всех экранов < $bp
+    @media (max-width: #{map.get($media-breakpoints, $bp)}px) {
+      @content;
+    }
+  } @else {
+    @warn "No breakpoint defined for #{$bp}. Available breakpoints: #{map.keys($media-breakpoints)}";
+  }
+}
+
+// Миксин для min-width медиа-запросов
+@mixin media-min($bp) {
+  @if map.has-key($media-breakpoints, $bp) {
+    @media (min-width: #{map.get($media-breakpoints, $bp) + 1}px) {
+      @content;
+    }
+  } @else {
+    @warn "No breakpoint defined for #{$bp}. Available breakpoints: #{map.keys($media-breakpoints)}";
+  }
+}
+
+// Миксин для создания адаптивных классов
+@mixin media-content($prop-name) {
+  // Базовый случай без медиа-запроса
+  &--#{$prop-name}--default {
+    @content('default', null);
+  }
+
+  // Медиа-запросы для каждого брейкпоинта
+  @each $bp-name, $bp-size in $media-breakpoints {
+    &--#{$prop-name}--#{$bp-name} {
+      @include media($bp-name) {
+        @content($bp-name, $bp-size);
+      }
+    }
+  }
+}
+
+// Миксин для создания utility-классов с брейкпоинтами
+@mixin responsive-utility($property, $values, $prefix: null) {
+  $class-prefix: if($prefix, $prefix, $property);
+
+  @each $bp-name, $bp-size in $media-breakpoints {
+    @include media($bp-name) {
+      @each $value-name, $value in $values {
+        .#{$class-prefix}-#{$value-name}\:#{$bp-name} {
+          #{$property}: #{$value};
+        }
+      }
+    }
+  }
+}
+
+// Дополнительные полезные миксины
+@mixin mobile-only {
+  @include media('sm') {
+    @content;
+  }
+}
+
+@mixin tablet-only {
+  @media (min-width: #{map.get($media-breakpoints, 'sm') + 1}px) and (max-width: #{map.get($media-breakpoints, 'md')}px) {
+    @content;
+  }
+}
+
+@mixin desktop-only {
+  @include media-min('md') {
+    @content;
+  }
+}
+
+@mixin large-desktop-only {
+  @include media-min('lg') {
+    @content;
+  }
+}

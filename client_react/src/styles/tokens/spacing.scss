@@ -1,0 +1,70 @@
+:root {
+  // Система отступов
+  --spacing-super-small: 0.3125rem;  /* 5px */
+  --spacing-small: 0.625rem;         /* 10px */
+  --spacing-medium: 1.25rem;         /* 20px */
+  --spacing-large: 1.875rem;         /* 30px */
+  --spacing-extra-large: 3.125rem;   /* 50px */
+
+  // Дополнительные размеры для большей гибкости
+  --spacing-xs: 0.25rem;     /* 4px */
+  --spacing-sm: 0.5rem;      /* 8px */
+  --spacing-md: 0.75rem;     /* 12px */
+  --spacing-lg: 1rem;        /* 16px */
+  --spacing-xl: 1.5rem;      /* 24px */
+  --spacing-2xl: 2rem;       /* 32px */
+  --spacing-3xl: 2.5rem;     /* 40px */
+  --spacing-4xl: 4rem;       /* 64px */
+  --spacing-5xl: 5rem;       /* 80px */
+  --spacing-6xl: 6rem;       /* 96px */
+
+  // Радиусы скругления
+  --border-radius-super-small: 0.3125rem;  /* 5px */
+  --border-radius-small: 0.625rem;         /* 10px */
+  --border-radius-medium: 1.25rem;         /* 20px */
+  --border-radius-large: 1.875rem;         /* 30px */
+  --border-radius-extra-large: 3.125rem;   /* 50px */
+
+  // Дополнительные радиусы
+  --border-radius-xs: 0.125rem;   /* 2px */
+  --border-radius-sm: 0.25rem;    /* 4px */
+  --border-radius-md: 0.375rem;   /* 6px */
+  --border-radius-lg: 0.5rem;     /* 8px */
+  --border-radius-xl: 0.75rem;    /* 12px */
+  --border-radius-2xl: 1rem;      /* 16px */
+  --border-radius-3xl: 1.5rem;    /* 24px */
+  --border-radius-full: 9999px;   /* Полное скругление */
+
+  // Размеры границ
+  --border-width-thin: 0.0625rem;    /* 1px */
+  --border-width-medium: 0.125rem;   /* 2px */
+  --border-width-thick: 0.25rem;     /* 4px */
+
+  // Размеры для специфичных элементов (из NextJS)
+  --menu-height: 2.1875rem;          /* 35px */
+  --menu-max-width: 10.625rem;       /* 170px */
+  --scrollbar-width: 0.75rem;        /* 12px */
+}
+
+// SCSS переменные для обратной совместимости
+$paddings: (
+        super-small: var(--spacing-super-small),
+        small: var(--spacing-small),
+        medium: var(--spacing-medium),
+        large: var(--spacing-large),
+        extra-large: var(--spacing-extra-large),
+);
+
+$border-radius: (
+        super-small: var(--border-radius-super-small),
+        small: var(--border-radius-small),
+        medium: var(--border-radius-medium),
+        large: var(--border-radius-large),
+        extra-large: var(--border-radius-extra-large),
+);
+
+$border-widths: (
+        thin: var(--border-width-thin),
+        medium: var(--border-width-medium),
+        thick: var(--border-width-thick),
+);

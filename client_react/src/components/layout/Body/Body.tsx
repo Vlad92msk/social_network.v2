@@ -1,6 +1,6 @@
+import { makeCn } from '@utils/makeCn.ts'
 import { PropsWithChildren } from 'react'
 import { useThemeServiceSelect } from '@providers/theme'
-import { makeCn } from '@utils/others'
 import style from './Body.module.scss'
 
 const cn = makeCn('Body', style)

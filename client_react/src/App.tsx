@@ -1,4 +1,5 @@
 import { SignIn } from '@pages/signIn/SignIn.tsx'
+import { ThemeProvider } from '@providers/theme'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { GuardProvider, ProtectedRoute } from './auth'
 import { AuthConfig } from './auth'
@@ -8,7 +9,6 @@ import { LanguageSwitcher, LogoutButton } from '@components/ui'
 import { Translations } from '@providers/translations'
 import { AuthProvider, useAuth } from './auth'
 import './i18n/config'
-import { Link } from 'react-router-dom'
 import style from './App.module.css'
 import { NavigationDebug } from './auth/NavigationDebug.tsx'
 
@@ -173,6 +173,7 @@ const authConfig: Partial<AuthConfig> = {
 const App = () => {
   return (
     <Translations>
+      <ThemeProvider contextProps={{ theme: 'default' }}>
       <BrowserRouter>
         <NavigationDebug />
         <AuthProvider config={authConfig}>
@@ -186,6 +187,7 @@ const App = () => {
           </GuardProvider>
         </AuthProvider>
       </BrowserRouter>
+      </ThemeProvider>
     </Translations>
   )
 }

@@ -1,0 +1,95 @@
+// Стили скроллбаров (адаптированные из NextJS)
+
+@mixin scrollbar($width: var(--scrollbar-width)) {
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+    background: var(--Color-Neutrals-70, transparent);
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--Color-Gray-20, var(--scrollbar-color, rgba(255, 255, 255, 0.2)));
+    border-radius: calc(#{$width} * 0.5);
+    border: calc(#{$width} * 0.25) solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  // Поддержка Firefox
+  scrollbar-width: thin;
+  scrollbar-color: var(--Color-Gray-20, var(--scrollbar-color, rgba(255, 255, 255, 0.2))) transparent;
+}
+
+@mixin scrollbar-mini($offset: 4) {
+  $total-width: #{$offset * 2 + 2}px;
+  $thumb-size: 2px;
+  $border-width: #{$offset}px;
+
+  &::-webkit-scrollbar {
+    width: $total-width;
+    height: $total-width;
+    border-radius: 10px;
+    background: transparent;
+    border: $border-width solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    width: $thumb-size;
+    height: $thumb-size;
+    background: var(--Color-ScrollBar--variant-4--theme-default, var(--accent-blue, #3b82f6));
+    border-radius: 10px;
+    border: $border-width solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  // Поддержка Firefox
+  scrollbar-width: thin;
+  scrollbar-color: var(--Color-ScrollBar--variant-4--theme-default, var(--accent-blue, #3b82f6)) transparent;
+}
+
+// Современный стиль скроллбара (из React+Vite)
+@mixin scrollbar-modern() {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-color, hsla(51, 16.5%, 84.5%, 0.35)) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-color, hsla(51, 16.5%, 84.5%, 0.35));
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-color-hover, hsla(51, 16.5%, 84.5%, 0.5));
+  }
+}
+
+// Скрытие скроллбара
+@mixin scrollbar-hidden() {
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
