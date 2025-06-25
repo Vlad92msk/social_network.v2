@@ -1,0 +1,16 @@
+@import "../../../../styles/index";
+
+.ButtonAddEmoji {
+  width: clamp(#{rem(200)}, 80vw, #{rem(400)});
+  height: clamp(#{rem(300)}, 80vh, #{rem(500)});
+  overflow: hidden;
+  border-radius: $border-radius--super-small;
+
+  &-ButtonAddSmiles {
+    width: rem(30);
+    height: rem(30);
+    max-height: rem(30);
+    max-width: rem(30);
+    color: var(--Color-Text--root--theme-default);
+  }
+}

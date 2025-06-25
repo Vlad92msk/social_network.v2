@@ -1,6 +1,7 @@
 // src/shared/hooks/useLocale.ts
 import { useTranslation } from 'react-i18next'
-import { type Locale, LOCALES, DEFAULT_LOCALE, changeLanguage } from '@i18n/config'
+import { changeLanguage, DEFAULT_LOCALE, LOCALES } from '../i18n/config.ts'
+import { Locale } from '../i18n/types.ts'
 
 export const useLocale = () => {
   const { i18n, t } = useTranslation()

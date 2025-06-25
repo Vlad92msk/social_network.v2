@@ -1,0 +1,51 @@
+@use 'sass:list';
+@import "../../../../styles";
+
+.Text {
+
+  &--textElipsis {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // Временно
+  @include color-theme('default') {
+    color: var(--Color-Text--root--theme-default);
+  }
+  @include color-theme('light') {
+    color: var(--Color-Text--root--theme-light);
+  }
+
+  // Размеры шрифтов для разных брейкпоинтов
+  @include media-content('font-size') using ($bp-name, $bp-size) {
+    @each $name, $sizes in $text-sizes {
+      $size: list.nth($sizes, 1);
+      $lh: list.nth($sizes, 2);
+
+      &--#{$bp-name}-#{$name} {
+        font-size: rem($size);
+        line-height: rem($lh);
+      }
+    }
+  }
+
+  // Базовые размеры (без брейкпоинтов)
+  @each $name, $sizes in $text-sizes {
+    $size: list.nth($sizes, 1);
+    $lh: list.nth($sizes, 2);
+
+    &--#{$name} {
+      font-size: rem($size);
+      line-height: rem($lh);
+    }
+  }
+
+  // Веса шрифтов
+  @each $name, $weight in $text-weights {
+    &--#{$name} {
+      font-weight: $weight;
+    }
+  }
+}

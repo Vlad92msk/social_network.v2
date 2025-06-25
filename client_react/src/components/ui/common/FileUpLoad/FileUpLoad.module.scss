@@ -1,0 +1,88 @@
+@import "../../../../styles";
+
+.FileUpLoad {
+  $this: &;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  padding: rem(10);
+
+  &-AddFile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    &--disabled {
+      pointer-events: none;
+    }
+  }
+
+  &-FileInput {
+    display: none;
+  }
+
+  &-Modal {
+    max-width: 60vw;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &-ApplyAttachments {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(rem(100), 1fr));
+    grid-auto-rows: minmax(rem(100), auto);
+    gap: clamp(#{rem(5)}, 5vh, rem(10));
+    overflow-y: auto;
+    padding: rem(10);
+    justify-content: center;
+
+    // Ограничение максимального количества столбцов
+    max-width: calc(4 * (#{rem(100)} + clamp(#{rem(5)}, 5vh, #{rem(10)})));
+    margin: 0 auto;
+  }
+
+  &-ApplyFile {
+    display: flex;
+    padding: rem(10);
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: var(--Color-Bcg--variant-3--theme-default);
+
+    &:hover #{$this}-ButtonClose {
+      opacity: 1;
+      transition: opacity .5s;
+    }
+  }
+
+  &-ImgWrapper {
+    position: relative;
+  }
+
+  &-Img {
+    object-fit: contain;
+  }
+
+  &-Content {
+    display: flex;
+    flex-direction: column;
+    background: var(--Color-Bcg--variant-4--theme-default);
+    padding: $paddings--medium;
+  }
+  &-ButtonClose {
+    opacity: 0;
+    position: absolute;
+    right: rem(10);
+    top: rem(10);
+    transition: opacity .5s;
+  }
+  &-ButtonSubmit {
+    place-self: center;
+  }
+}

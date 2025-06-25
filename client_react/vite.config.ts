@@ -42,6 +42,14 @@ export default defineConfig({
       '@styles': path.resolve(__dirname, './src/styles'),
     }
   },
+  // Добавляем обработку различных типов файлов как assets
+  assetsInclude: ['**/*.webp', '**/*.avif', '**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.svg'],
+
+  // Оптимизация для больших библиотек
+  optimizeDeps: {
+    include: ['prismjs'],
+    exclude: ['prismjs/components/prism-*']
+  },
   server: {
     port: 3000,
     open: true
@@ -74,7 +82,7 @@ export default defineConfig({
         chunkFileNames: 'js/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
           const extType = assetInfo.name?.split('.').pop() || ''
-          if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(extType)) {
+          if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif'].includes(extType)) {
             return 'images/[name]-[hash][extname]'
           }
           if (extType === 'css') {
@@ -88,6 +96,10 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           i18n: ['i18next', 'react-i18next'],
+          // Выносим emoji-picker в отдельный чанк из-за размера
+          emoji: ['emoji-picker-react'],
+          // Выносим PrismJS в отдельный чанк
+          prism: ['prismjs'],
           // utils: ['gray-matter', 'remark', 'remark-gfm']
         }
       }

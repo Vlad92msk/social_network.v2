@@ -1,0 +1,9 @@
+@import "../../../../styles";
+
+.Button {
+  font-weight: var(--font-weight-light);
+
+  &:hover {
+    background: #484e70;
+  }
+}

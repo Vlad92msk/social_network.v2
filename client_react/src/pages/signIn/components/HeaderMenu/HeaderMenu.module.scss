@@ -1,0 +1,17 @@
+@import "../../../../styles";
+
+.HeaderMenu {
+  display: flex;
+  gap: rem(10);
+  align-items: center;
+  justify-content: flex-end;
+  padding: rem(5);
+
+  &-SelectTheme {
+    width: fit-content;
+  }
+  &-SelectLocation {
+    width: fit-content;
+  }
+
+}

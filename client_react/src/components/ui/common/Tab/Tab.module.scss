@@ -1,0 +1,15 @@
+@import "../../../../styles";
+
+
+.Tab {
+  display: flex;
+
+
+  &-TabOption {
+    display: flex;
+
+    &--active {
+      background: red;
+    }
+  }
+}

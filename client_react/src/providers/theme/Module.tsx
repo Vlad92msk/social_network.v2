@@ -1,5 +1,4 @@
-import { createStoreContext } from '@utils/createStoreContext.tsx'
-import { makeCn } from '@utils/makeCn.ts'
+import { createStoreContext } from '@utils'
 import { PropsWithChildren, useEffect } from 'react'
 import { initialState, ThemeServiceContext } from './context/initialState'
 

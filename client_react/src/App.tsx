@@ -1,16 +1,18 @@
-import { SignIn } from '@pages/signIn/SignIn.tsx'
-import { ThemeProvider } from '@providers/theme'
+
+import { Translations } from '@providers'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { GuardProvider, ProtectedRoute } from './auth'
 import { AuthConfig } from './auth'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LanguageSwitcher, LogoutButton } from '@components/ui'
-import { Translations } from '@providers/translations'
+
 import { AuthProvider, useAuth } from './auth'
 import './i18n/config'
 import style from './App.module.css'
 import { NavigationDebug } from './auth/NavigationDebug.tsx'
+import { LanguageSwitcher, LogoutButton } from './components/ui'
+import { SignIn } from './pages/signIn/SignIn.tsx'
+import { ThemeProvider } from './providers/theme'
 
 // Временный компонент профиля
 const ProfilePage = () => {

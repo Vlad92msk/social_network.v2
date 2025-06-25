@@ -1,0 +1,14 @@
+@import "../../../../styles";
+
+.Select {
+  padding: map-get($border-radius, super-small);
+  background: transparent;
+
+  @include color-theme('default') {
+    color: var(--Color-Text--variant-1--theme-default);
+  }
+
+  @include color-theme('red') {
+    //background: pink;
+  }
+}

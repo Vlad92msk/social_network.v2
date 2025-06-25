@@ -1,0 +1,195 @@
+@use 'sass:map';
+@import "../../styles";
+
+.Signin {
+  display: flex;
+  flex-direction: column;
+  gap: rem(20);
+  position: absolute;
+  max-width: 50%;
+  top: 20%;
+  left: 7%;
+
+  &__BckImage {
+    position: absolute;
+    z-index: -1;
+  }
+
+  &__MyName {
+    color: var(--Color-Text--variant-7--theme-default) !important;
+    //color: var(--Color-Text--variant-6--theme-default) !important;
+  }
+
+  &__MyPosition {
+    //color: var(--Color-Text--variant-7--theme-default) !important;
+    color: var(--Color-Text--variant-6--theme-default) !important;
+  }
+
+  &__Salutation {
+    width: 100%;
+    display: block;
+    position: relative;
+    padding: map.get($paddings, small);
+    border-radius: map.get($border-radius, medium);
+    overflow-y: hidden;
+    box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+
+    &::before {
+      content: '';
+      left: 0;
+      top: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: var(--Palette--DarkSlate--90--opacity-1);
+      opacity: 0.5;
+    }
+
+    & > span {
+      z-index: 2;
+      position: relative;
+      letter-spacing: 0.03em;
+    }
+  }
+
+  &__Enter {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  &__EnterText {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  &__EnterButtonsList {
+    display: flex;
+    padding: rem(10);
+  }
+
+  &__EnterButton {
+    border-radius: map.get($border-radius, medium);
+    height: rem(50);
+    width: rem(50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @include color-theme('default') {
+      color: var(--Color-ScrollBar--variant-4--theme-default);
+      background: rgba(128, 128, 128, 0.13);
+      border: rem(1) solid var(--Color-Border--variant-3--theme-default);
+      box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+
+      &:hover {
+        background: var(--Palette--DarkSlate--90--opacity-1);
+      }
+    }
+  }
+
+  // Новые классы для компонентов авторизации
+  &__Error {
+    display: flex;
+    align-items: center;
+    gap: rem(8);
+    padding: rem(12);
+    background: var(--Color-Status--variant-1--theme-default);
+    color: white;
+    border-radius: map.get($border-radius, small);
+    margin-bottom: rem(16);
+  }
+
+  &__EmailForm {
+    display: flex;
+    flex-direction: column;
+    gap: rem(12);
+    margin-top: rem(16);
+  }
+
+  &__EmailInput,
+  &__PasswordInput {
+    padding: rem(12);
+    border: rem(1) solid var(--Color-Border--variant-1--theme-default);
+    border-radius: map.get($border-radius, small);
+    background: var(--Color-Bcg--variant-3--theme-default);
+    color: var(--Color-Text--variant-1--theme-default);
+
+    &:focus {
+      outline: none;
+      border-color: var(--Color-Status--variant-2--theme-default);
+    }
+  }
+
+  &__SubmitButton {
+    margin-top: rem(8);
+  }
+
+  &__Divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: rem(16) 0;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: rem(1);
+      background: var(--Color-Border--variant-1--theme-default);
+    }
+
+    &::before {
+      margin-right: rem(16);
+    }
+
+    &::after {
+      margin-left: rem(16);
+    }
+  }
+
+  &__AuthLinks {
+    display: flex;
+    flex-direction: column;
+    gap: rem(8);
+    margin-top: rem(16);
+    text-align: center;
+  }
+
+  &__ForgotPassword {
+    color: var(--Color-Status--variant-2--theme-default);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  &__SignUpLink {
+    display: flex;
+    justify-content: center;
+    gap: rem(4);
+  }
+
+  &__SignUpButton {
+    color: var(--Color-Status--variant-2--theme-default);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  &__NoProviders {
+    text-align: center;
+    padding: rem(20);
+    color: var(--Color-Text--variant-3--theme-default);
+  }
+}

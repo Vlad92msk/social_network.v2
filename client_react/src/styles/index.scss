@@ -19,4 +19,24 @@
 @import 'globals/base';
 
 // Общие стили компонентов (опционально)
- @import 'components/shared';
+@import 'components/shared';
+
+// Настройка переменных самого проекта
+
+$root-menu-settings-height: rem(35);
+$main-menu--max-width: rem(170);
+
+$paddings--super-small: rem(5);
+$paddings--small: rem(10);
+$paddings--medium: rem(20);
+$paddings--large: rem(30);
+$paddings--extra-large: rem(50);
+
+
+$border-radius--super-small: rem(5);
+$border-radius--small: rem(10);
+$border-radius--medium: rem(20);
+$border-radius--large: rem(30);
+$border-radius--extra-large: rem(50);
+
+$border-size--super-small: rem(1);

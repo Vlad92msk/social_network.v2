@@ -18,17 +18,17 @@
     // =================== ПУТИ ===================
     "baseUrl": "src",
     "paths": {
-      "@components/*": ["components/*"],
-      "@data/*": ["data/*"],
-      "@hooks/*": ["hooks/*"],
-      "@i18n/*": ["i18n/*"],
-      "@pages/*": ["pages/*"],
-      "@providers/*": ["providers/*"],
-      "@router/*": ["router/*"],
-      "@shared/*": ["shared/*"],
-      "@models/*": ["types/*"],
-      "@assets/*": ["assets/*"],
-      "@utils/*": ["utils/*"],
+      "@components": ["components/index.ts"],
+      "@data": ["data/index.ts"],
+      "@hooks": ["hooks/index.ts"],
+      "@i18n": ["i18n/index.ts"],
+      "@pages": ["pages/index.ts"],
+      "@providers": ["providers/index.ts"],
+      "@router": ["router/index.ts"],
+      "@shared": ["shared/index.ts"],
+      "@models": ["types/index.ts"],
+      "@assets": ["assets/index.ts"],
+      "@utils": ["utils/index.ts"],
       "@styles/*": ["styles/*"]
     },
 

@@ -122,7 +122,7 @@ function App() {
 ### 4. Создание компонента авторизации
 
 ```tsx
-// SignIn.tsx
+// SignIn1.tsx
 import { useAuthActions } from './auth'
 
 function SignInPage() {
@@ -993,7 +993,7 @@ const authConfig = {
 
 // 2. В AuthProvider.tsx методы автоматически станут доступны
 // 3. В useAuthActions они появятся автоматически
-// 4. В SignIn.tsx добавь кнопку:
+// 4. В SignIn1.tsx добавь кнопку:
 
 const {
   handleGitHubSignIn, // ← Автоматически доступен

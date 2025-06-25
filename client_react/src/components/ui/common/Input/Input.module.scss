@@ -1,0 +1,150 @@
+@use 'sass:list' as list;
+@import "../../../../styles";
+
+
+.Input {
+
+  &-RichTextEditor {
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    height: 100%;
+    overflow-y: auto;
+    align-items: flex-end;
+    gap: rem(5);
+
+    :global {
+      // Здесь используем :global для стилизации внутренних классов Draft.js
+      .DraftEditor-root {
+        width: 100%;
+        padding: rem(15);
+        background: var(--Color-Bcg--variant-4--theme-default);
+      }
+
+      .DraftEditor-editorContainer {
+        position: relative;
+        z-index: 1;
+      }
+
+      .public-DraftEditor-content {
+        min-height: auto;
+      }
+
+      .public-DraftEditorPlaceholder-root {
+        position: absolute;
+        pointer-events: none;
+      }
+    }
+  }
+
+  &-PrismCode {
+    margin: 0;
+    padding: 8px;
+    background: transparent;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+
+    code {
+      background: transparent;
+      padding: 0;
+    }
+  }
+
+  &-CodeEditor {
+    width: 100%;
+    height: inherit;
+    &Content {
+      flex: 1;
+      // Важно для Monaco
+      :global {
+        .monaco-editor {
+          width: 100%;
+          height: 100%;
+          //min-height: 150px !important;
+          // Позволяем редактору растягиваться
+          .monaco-editor-background,
+          .monaco-editor .inputarea,
+          .monaco-editor .margin,
+          .monaco-editor .lines-content {
+            // Позволяем редактору подстраиваться под контент
+            height: 100% !important;
+          }
+        }
+      }
+    }
+  }
+
+  &-Text {
+    border: $border-size--super-small solid var(--Color-Border--variant-3--theme-default);
+    border-radius: $border-radius--super-small;
+    background: transparent;
+    outline: none;
+    max-width: 100%;
+    padding: rem(3) rem(5);
+    transition: font-size .5s;
+
+    &::placeholder {
+      padding: rem(3) rem(5);
+    }
+
+
+    &:disabled {
+      //background: green;
+    }
+
+    &:focus {
+      outline: none;
+      //font-size: rem(list.nth($text--12, 1));
+      //width: 100%;
+      transition: font-size .5s;
+      //background: yellow;
+    }
+  }
+
+  &-TextArea {
+    @include hideScrollbar();
+    resize: none;
+    width: 100%;
+    max-width: 100%;
+    //height: 100%;
+    max-height: 100%;
+    background: transparent;
+    border: none;
+
+    &::placeholder {
+      padding: rem(3) rem(5);
+    }
+  }
+
+  &-Group {
+    display: grid;
+    align-items: center;
+    max-width: 100%;
+    width: 100%;
+    grid-template:
+        'left center right' auto / auto 1fr auto;
+
+    &LeftElement {
+      grid-area: left;
+    }
+    &RightElement {
+      grid-area: right;
+    }
+    &Center {
+      grid-area: center;
+    }
+  }
+
+  &-TextAreaEmoji {
+    &Wrapper {
+      width: 100%;
+      display: flex;
+      height: 100%;
+      overflow-y: auto;
+      align-items: flex-end;
+      gap: rem(5);
+    }
+    &InputMessage {}
+  }
+}
