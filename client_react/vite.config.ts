@@ -40,6 +40,7 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@assets': path.resolve(__dirname, './src/assets'),
       '@styles': path.resolve(__dirname, './src/styles'),
+      '@store': path.resolve(__dirname, './src/store'),
     }
   },
   // Добавляем обработку различных типов файлов как assets

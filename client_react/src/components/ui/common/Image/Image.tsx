@@ -26,9 +26,6 @@ export interface ImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 's
 
   // Настройки форматов (по умолчанию - автоопределение по браузеру)
   formatOptions?: ImageFormatOptions
-
-  // Отладка
-  debug?: boolean
 }
 
 function createSizeString(bp: typeof mediaBreakpoints, sizes: SizesConfig) {
@@ -57,11 +54,10 @@ export function Image(props: ImageProps) {
     blur = 4,
     showPlaceholder = true,
     formatOptions,
-    debug = false,
     style,
     ...rest
   } = props
-console.log('cc', rest)
+
   const [imageSrc, setImageSrc] = useState<string>(placeholderSrc || fallbackSrc)
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
@@ -85,17 +81,6 @@ console.log('cc', rest)
     try {
       const url = resolveImageUrl(src, fallbackSrc, optimalOptions)
 
-      // Отладочная информация
-      if (debug && typeof src === 'string' && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('blob:')) {
-        const formats = getImageFormats(src)
-        console.log(`🎨 Available formats for ${src}:`, formats)
-        console.log(`⚙️ Using format options:`, optimalOptions)
-      }
-
-      if (debug) {
-        console.log(`🖼️ Image resolved:`, url)
-      }
-
       // Показываем placeholder сначала
       if (showPlaceholder && placeholderSrc) {
         setImageSrc(placeholderSrc)
@@ -106,17 +91,11 @@ console.log('cc', rest)
       img.onload = () => {
         setImageSrc(url)
         setIsLoading(false)
-        if (debug) {
-          console.log(`✅ Image loaded successfully: ${url}`)
-        }
       }
       img.onerror = () => {
         setImageSrc(fallbackSrc)
         setIsLoading(false)
         setIsError(true)
-        if (debug) {
-          console.error(`❌ Failed to load image: ${url}`)
-        }
       }
       img.src = url
 
@@ -124,14 +103,11 @@ console.log('cc', rest)
         setBlobUrls(prev => [...prev, url])
       }
     } catch (error) {
-      if (debug) {
-        console.error('❌ Failed to resolve image:', src, error)
-      }
       setImageSrc(fallbackSrc)
       setIsLoading(false)
       setIsError(true)
     }
-  }, [src, fallbackSrc, placeholderSrc, showPlaceholder, optimalOptions, debug])
+  }, [src, fallbackSrc, placeholderSrc, showPlaceholder, optimalOptions])
 
   // Обработка srcSet
   useEffect(() => {
@@ -145,10 +121,6 @@ console.log('cc', rest)
         const url = resolveImageUrl(value, fallbackSrc, optimalOptions)
         newSourceSrcSet[key] = url
 
-        if (debug) {
-          console.log(`📱 SrcSet resolved [${key}]:`, url)
-        }
-
         if (url.startsWith('blob:')) {
           newBlobUrls.push(url)
         }
@@ -157,21 +129,15 @@ console.log('cc', rest)
       setSourceSrcSet(newSourceSrcSet)
       setBlobUrls(prev => [...prev, ...newBlobUrls])
     } catch (error) {
-      if (debug) {
-        console.error('❌ Failed to resolve srcSet:', error)
-      }
     }
-  }, [srcSet, fallbackSrc, optimalOptions, debug])
+  }, [srcSet, fallbackSrc, optimalOptions])
 
   // Очистка blob URLs при размонтировании
   useEffect(() => () => {
     blobUrls.forEach(url => {
       revokeImageUrl(url)
-      if (debug) {
-        console.log('🧹 Cleaned up blob URL:', url)
-      }
     })
-  }, [blobUrls, debug])
+  }, [blobUrls])
 
   // Создаем источники для разных форматов (автоматически для assets изображений)
   const renderSources = () => {
@@ -234,17 +200,11 @@ console.log('cc', rest)
         onError={(e) => {
           setIsError(true)
           setIsLoading(false)
-          if (debug) {
-            console.error('❌ Image failed to load in browser:', imageSrc)
-          }
           if (rest.onError) rest.onError(e)
         }}
         onLoad={(e) => {
           if (!isError) {
             setIsLoading(false)
-          }
-          if (debug) {
-            console.log('✅ Image loaded successfully in browser:', imageSrc)
           }
           if (rest.onLoad) rest.onLoad(e)
         }}

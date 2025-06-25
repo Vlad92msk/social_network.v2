@@ -12,6 +12,7 @@ import style from './App.module.css'
 import { NavigationDebug } from './auth/NavigationDebug.tsx'
 import { LanguageSwitcher, LogoutButton } from './components/ui'
 import { SignIn } from './pages/signIn/SignIn.tsx'
+import { Core } from './providers/core/Core.tsx'
 import { ThemeProvider } from './providers/theme'
 
 // Временный компонент профиля
@@ -176,19 +177,21 @@ const App = () => {
   return (
     <Translations>
       <ThemeProvider contextProps={{ theme: 'default' }}>
-      <BrowserRouter>
-        <NavigationDebug />
-        <AuthProvider config={authConfig}>
-          <GuardProvider>
-            <Routes>
-              <Route path="/signin" element={<SignIn />} />
-              <Route index element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-              <Route path="*" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-            </Routes>
-          </GuardProvider>
-        </AuthProvider>
-      </BrowserRouter>
+        <BrowserRouter>
+          <NavigationDebug />
+          <AuthProvider config={authConfig}>
+            <Core>
+              <GuardProvider>
+                <Routes>
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route index element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                  <Route path="*" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+                </Routes>
+              </GuardProvider>
+            </Core>
+          </AuthProvider>
+        </BrowserRouter>
       </ThemeProvider>
     </Translations>
   )

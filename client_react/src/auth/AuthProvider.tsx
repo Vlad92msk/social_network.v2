@@ -83,9 +83,7 @@ export function AuthProvider({ children, config: userConfig }: AuthProviderProps
             console.log('🚀 AuthProvider: выполняем редирект на:', redirectTo)
           }
 
-          setTimeout(() => {
-            navigate(redirectTo, { replace: true })
-          }, TIMEOUTS.REDIRECT_DELAY_MS)
+          navigate(redirectTo, { replace: true })
         }
 
         return {

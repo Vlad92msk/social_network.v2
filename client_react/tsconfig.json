@@ -29,7 +29,8 @@
       "@models": ["types/index.ts"],
       "@assets": ["assets/index.ts"],
       "@utils": ["utils/index.ts"],
-      "@styles/*": ["styles/*"]
+      "@styles/*": ["styles/*"],
+      "@store/*": ["store/*"]
     },
 
     // =================== СТРОГОСТЬ ===================
