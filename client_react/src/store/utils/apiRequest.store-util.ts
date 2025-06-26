@@ -9,7 +9,7 @@ export const apiRequestStore = async <
   Err extends DefaultError | Error = Error
 > (
   storage: IStorage<Storage>,
-  responseData: ReceivedResponse<Segment, RequestParams, Err>,
+  responseData: ReceivedResponse<RequestParams, Segment, Err>,
   key: keyof Storage['api'],
   requestType: 'request' | 'success' | 'failure',
 ) => {

@@ -100,56 +100,56 @@ const usePokemon = (pokemonName: string) => {
 
 // Публичная главная страница
 const HomePage = () => {
-  const { user, signOut } = useAuth()
+  // const { user, signOut } = useAuth()
   const [pokemonName, setPokemonName] = useState('pikachu')
-  const { data: pokemon, loading, error } = usePokemon(pokemonName)
+  // const { data: pokemon, loading, error } = usePokemon(pokemonName)
 
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Главная</h1>
+      {/* <header className="bg-white shadow"> */}
+      {/*   <div className="max-w-6xl mx-auto px-4 py-4"> */}
+      {/*     <div className="flex justify-between items-center"> */}
+      {/*       <h1 className="text-2xl font-bold text-gray-900">Главная</h1> */}
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                {user?.avatar && (
-                  <img
-                    src={user.avatar}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full"
-                  />
-                )}
-                <span className="text-sm text-gray-700">
-                  {user?.name || user?.email}
-                </span>
-              </div>
+      {/*       <div className="flex items-center space-x-4"> */}
+      {/*         <div className="flex items-center space-x-3"> */}
+      {/*           {user?.avatar && ( */}
+      {/*             <img */}
+      {/*               src={user.avatar} */}
+      {/*               alt="Avatar" */}
+      {/*               className="w-8 h-8 rounded-full" */}
+      {/*             /> */}
+      {/*           )} */}
+      {/*           <span className="text-sm text-gray-700"> */}
+      {/*             {user?.name || user?.email} */}
+      {/*           </span> */}
+      {/*         </div> */}
 
-              <button
-                onClick={signOut}
-                className="text-sm bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors"
-              >
-                Выйти
-              </button>
-            </div>
-          </div>
-        </div>
-        <input value={pokemonName} onChange={(event) => setPokemonName(event.target.value)} />
-      </header>
+      {/*         <button */}
+      {/*           onClick={signOut} */}
+      {/*           className="text-sm bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors" */}
+      {/*         > */}
+      {/*           Выйти */}
+      {/*         </button> */}
+      {/*       </div> */}
+      {/*     </div> */}
+      {/*   </div> */}
+      {/*   <input value={pokemonName} onChange={(event) => setPokemonName(event.target.value)} /> */}
+      {/* </header> */}
 
-      {/* Main content */}
-      <main>
-        <div>
-          <h2>
-            Добро пожаловать, {user?.name || user?.email}! 👋
-          </h2>
-          <p>
-            Вы авторизованы через <span >{user?.provider}</span>
-          </p>
-        </div>
-      </main>
+      {/* /!* Main content *!/ */}
+      {/* <main> */}
+      {/*   <div> */}
+      {/*     <h2> */}
+      {/*       Добро пожаловать, {user?.name || user?.email}! 👋 */}
+      {/*     </h2> */}
+      {/*     <p> */}
+      {/*       Вы авторизованы через <span >{user?.provider}</span> */}
+      {/*     </p> */}
+      {/*   </div> */}
+      {/* </main> */}
     </div>
   )
 }

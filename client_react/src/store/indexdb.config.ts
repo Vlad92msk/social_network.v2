@@ -1,4 +1,5 @@
 import { IndexedDBStorage } from 'synapse-storage/core'
+import { initialApiState } from '../types/apiStatus.ts'
 import { IDBApi, IDBCore } from './types'
 
 export const {
@@ -27,7 +28,9 @@ export const {
     CORE: {
       name: 'core',
       initialState: {
-        currentUserProfile: undefined,
+        api: {
+          profileInfo: initialApiState
+        }
       },
     },
   },

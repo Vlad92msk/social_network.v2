@@ -1,6 +1,6 @@
 // This file is auto-generated. Don't edit it manually
 // Generated from: src/assets/icons/
-// Last updated: 2025-06-25T10:20:32.620Z
+// Last updated: 2025-06-26T05:34:00.628Z
 
 export type IconName =
   | 'approve'
