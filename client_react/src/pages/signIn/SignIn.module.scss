@@ -10,7 +10,7 @@
   top: 20%;
   left: 7%;
 
-  &__LoadingScreen {
+  &-LoadingScreen {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -19,7 +19,7 @@
     gap: 16px;
   }
 
-  &__LoadingSpinner {
+  &-LoadingSpinner {
     width: 32px;
     height: 32px;
     border: 3px solid #f3f3f3;
@@ -28,22 +28,22 @@
     animation: spin 1s linear infinite;
   }
 
-  &__BckImage {
+  &-BckImage {
     position: absolute;
     z-index: -1;
   }
 
-  &__MyName {
+  &-MyName {
     color: var(--Color-Text--variant-7--theme-default) !important;
     //color: var(--Color-Text--variant-6--theme-default) !important;
   }
 
-  &__MyPosition {
+  &-MyPosition {
     //color: var(--Color-Text--variant-7--theme-default) !important;
     color: var(--Color-Text--variant-6--theme-default) !important;
   }
 
-  &__Salutation {
+  &-Salutation {
     width: 100%;
     display: block;
     position: relative;
@@ -70,24 +70,24 @@
     }
   }
 
-  &__Enter {
+  &-Enter {
     width: 100%;
     display: flex;
     justify-content: center;
     flex-direction: column;
   }
 
-  &__EnterText {
+  &-EnterText {
     display: flex;
     flex-shrink: 0;
   }
 
-  &__EnterButtonsList {
+  &-EnterButtonsList {
     display: flex;
     padding: rem(10);
   }
 
-  &__EnterButton {
+  &-EnterButton {
     border-radius: map.get($border-radius, medium);
     height: rem(50);
     width: rem(50);
@@ -108,7 +108,7 @@
   }
 
   // Новые классы для компонентов авторизации
-  &__Error {
+  &-Error {
     display: flex;
     align-items: center;
     gap: rem(8);
@@ -119,15 +119,15 @@
     margin-bottom: rem(16);
   }
 
-  &__EmailForm {
+  &-EmailForm {
     display: flex;
     flex-direction: column;
     gap: rem(12);
     margin-top: rem(16);
   }
 
-  &__EmailInput,
-  &__PasswordInput {
+  &-EmailInput,
+  &-PasswordInput {
     padding: rem(12);
     border: rem(1) solid var(--Color-Border--variant-1--theme-default);
     border-radius: map.get($border-radius, small);
@@ -140,11 +140,11 @@
     }
   }
 
-  &__SubmitButton {
+  &-SubmitButton {
     margin-top: rem(8);
   }
 
-  &__Divider {
+  &-Divider {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -167,7 +167,7 @@
     }
   }
 
-  &__AuthLinks {
+  &-AuthLinks {
     display: flex;
     flex-direction: column;
     gap: rem(8);
@@ -175,7 +175,7 @@
     text-align: center;
   }
 
-  &__ForgotPassword {
+  &-ForgotPassword {
     color: var(--Color-Status--variant-2--theme-default);
     background: none;
     border: none;
@@ -187,13 +187,13 @@
     }
   }
 
-  &__SignUpLink {
+  &-SignUpLink {
     display: flex;
     justify-content: center;
     gap: rem(4);
   }
 
-  &__SignUpButton {
+  &-SignUpButton {
     color: var(--Color-Status--variant-2--theme-default);
     background: none;
     border: none;
@@ -205,7 +205,7 @@
     }
   }
 
-  &__NoProviders {
+  &-NoProviders {
     text-align: center;
     padding: rem(20);
     color: var(--Color-Text--variant-3--theme-default);

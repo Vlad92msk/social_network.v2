@@ -157,6 +157,12 @@
   }
 }
 
+@mixin text-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 // Утилитарные классы для компонентов
 .loading {
   @include spin();

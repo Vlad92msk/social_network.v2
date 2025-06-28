@@ -1,9 +1,9 @@
+import { loggerMiddleware } from '@store/synapses/settings.ts'
 import { apiRequestStore } from '@store/utils'
 import { IStorage } from 'synapse-storage/core'
-import { createDispatcher, loggerDispatcherMiddleware } from 'synapse-storage/reactive'
+import { createDispatcher } from 'synapse-storage/reactive'
 import { GetProfileInfoParams } from '../../../../../swagger/profile/api-client-profile.ts'
 import { UserProfileInfo } from '../../../../../swagger/profile/interfaces-profile'
-import { UserInfo } from '../../../../../swagger/userInfo/interfaces-userInfo.ts'
 import { ReceivedResponse } from '../../../types/apiStatus'
 import { GetProfileInfoProps } from '../../api/profile.api'
 import { IDBCore } from '../../types'
@@ -14,7 +14,6 @@ type UserProfileR = U<ReceivedResponse<GetProfileInfoParams, UserProfileInfo>, R
 type UserProfileS = U<ReceivedResponse<UserProfileInfo, UserProfileInfo>, ReceivedResponse<UserProfileInfo, UserProfileInfo>>
 
 export function createCoreDispatcher(store: IStorage<IDBCore>) {
-  const loggerMiddleware = loggerDispatcherMiddleware()
 
   const dispatcher = createDispatcher({ storage: store, middlewares: [loggerMiddleware] }, (storage, { createAction, createWatcher }) => ({
     moduleEnter: createAction<{ email: string }, { email: string }>({

@@ -7,7 +7,7 @@ export declare interface IStyles {
 
 declare type ElemMixType = ClassNameList;
 
-const makeClassNameMaker = withNaming({ e: '__', m: '--', v: '_' })
+const makeClassNameMaker = withNaming({ e: '-', m: '--', v: '_' })
 
 export function classNames(...inputs: ClassValue[]) {
   return clsx(inputs)
