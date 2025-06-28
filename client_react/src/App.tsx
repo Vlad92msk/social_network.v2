@@ -1,23 +1,19 @@
-
-import { Translations } from '@providers'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { GuardProvider, ProtectedRoute } from './auth'
-import { AuthConfig } from './auth'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { LanguageSwitcher, LogoutButton } from '@components/app-components'
+import { ContentArea, MainMenu, ProfileLayout, SecondMenu } from '@components/app-layout'
+import { Translations } from '@providers'
 
-import { AuthProvider, useAuth } from './auth'
 import './i18n/config'
-import style from './App.module.css'
+
+import { AuthConfig, AuthProvider, GuardProvider, ProtectedRoute, useAuth } from './auth'
 import { NavigationDebug } from './auth/NavigationDebug.tsx'
-import { ContentArea } from './components/layout/CantentArea'
-import { Layout } from './components/layout/Layout'
-import { MainMenu } from './components/layout/MainMenu'
-import { SecondMenu } from './components/layout/SecondMenu'
-import { LanguageSwitcher, LogoutButton } from './components/ui'
 import { SignIn } from './pages/signIn/SignIn.tsx'
 import { Core } from './providers/core/Core.tsx'
 import { ThemeProvider } from './providers/theme'
+
+import style from './App.module.css'
 
 // Временный компонент профиля
 const ProfilePage = () => {
@@ -25,13 +21,15 @@ const ProfilePage = () => {
 
   return (
     <div className={style.app}>
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '20px',
-        borderBottom: '1px solid #eee'
-      }}>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '20px',
+          borderBottom: '1px solid #eee',
+        }}
+      >
         <h1>Профиль</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <LanguageSwitcher />
@@ -47,41 +45,39 @@ const ProfilePage = () => {
   )
 }
 
-
 // Публичная главная страница
 const HomePage = () => {
   const userSettings = {
     layoutVariant: '2',
   }
 
-
   return (
-      <Layout
-        layoutVariant={userSettings.layoutVariant}
-        areas={{
-          mainMenu: <MainMenu />,
-          secondMenu: <SecondMenu layoutVariant={userSettings.layoutVariant} />,
-          content: (
-            <ContentArea>
-              {/* {children} */}
-              <Suspense fallback={<div>.........Loading..........</div>}>
-                {/* <Messenger */}
-                {/*   params={params} // Теперь передаем уже разрешенные params */}
-                {/*   searchParams={(await props.searchParams)} */}
-                {/*   profile={profile} */}
-                {/* /> */}
-              </Suspense>
-            </ContentArea>
-          ),
-        }}
-      />
+    <ProfileLayout
+      layoutVariant={userSettings.layoutVariant}
+      areas={{
+        mainMenu: <MainMenu />,
+        secondMenu: <SecondMenu layoutVariant={userSettings.layoutVariant} />,
+        content: (
+          <ContentArea>
+            {/* {children} */}
+            <Suspense fallback={<div>.........Loading..........</div>}>
+              {/* <Messenger */}
+              {/*   params={params} // Теперь передаем уже разрешенные params */}
+              {/*   searchParams={(await props.searchParams)} */}
+              {/*   profile={profile} */}
+              {/* /> */}
+            </Suspense>
+          </ContentArea>
+        ),
+      }}
+    />
   )
 }
 
 const authConfig: Partial<AuthConfig> = {
   redirects: {
-    afterSignIn: '/',              // После входа - на главную ПО УМОЛЧАНИЮ
-    afterSignOut: '/signin',       // После выхода - на страницу входа
+    afterSignIn: '/', // После входа - на главную ПО УМОЛЧАНИЮ
+    afterSignOut: '/signin', // После выхода - на страницу входа
     whenUnauthenticated: '/signin', // Неавторизованных - на страницу входа
     // onAccessDenied: '/access-denied'          // ← Куда перенаправлять при отказе в доступе
   },
@@ -108,9 +104,30 @@ const App = () => {
               <GuardProvider>
                 <Routes>
                   <Route path="/signin" element={<SignIn />} />
-                  <Route index element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                  <Route path="*" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+                  <Route
+                    index
+                    element={
+                      <ProtectedRoute>
+                        <HomePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="*"
+                    element={
+                      <ProtectedRoute>
+                        <HomePage />
+                      </ProtectedRoute>
+                    }
+                  />
                 </Routes>
               </GuardProvider>
             </Core>

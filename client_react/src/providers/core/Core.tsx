@@ -1,6 +1,7 @@
-import { coreSynapseCtx } from '@store/synapses/core/core.context.tsx'
-import { coreSynapseIDB } from '@store/synapses/core/core.synapse.ts'
 import { PropsWithChildren, useEffect } from 'react'
+import { coreSynapseCtx } from '@store/synapses/core/core.context'
+import { coreSynapseIDB } from '@store/synapses/core/core.synapse'
+
 import { useAuth } from '../../auth'
 
 const { actions } = coreSynapseIDB
@@ -14,12 +15,10 @@ export const Core = coreSynapseCtx.contextSynapse<PropsWithChildren<CoreProps>, 
   useEffect(() => {
     if (isAuthenticated) {
       actions.moduleEnter({
-        email: user!.email
+        email: user!.email,
       })
     }
   }, [isAuthenticated])
 
-  return (
-    <>{children}</>
-  )
+  return <>{children}</>
 })

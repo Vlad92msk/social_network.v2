@@ -1,6 +1,7 @@
 // plugins/customStylePlugin.ts
-import { EditorState, KeyBindingUtil, Modifier, RichUtils } from 'draft-js'
 import { KeyboardEvent } from 'react'
+import { EditorState, KeyBindingUtil, Modifier, RichUtils } from 'draft-js'
+
 import { EditorPlugin } from './hooks'
 
 const toggleCustomStyle = (editorState: EditorState): EditorState => {
@@ -10,11 +11,7 @@ const toggleCustomStyle = (editorState: EditorState): EditorState => {
 
   return currentStyle.has('CUSTOM_STYLE')
     ? RichUtils.toggleInlineStyle(editorState, 'CUSTOM_STYLE')
-    : EditorState.push(
-      editorState,
-      Modifier.applyInlineStyle(currentContent, selection, 'CUSTOM_STYLE'),
-      'change-inline-style',
-    )
+    : EditorState.push(editorState, Modifier.applyInlineStyle(currentContent, selection, 'CUSTOM_STYLE'), 'change-inline-style')
 }
 
 export const customStylePlugin: EditorPlugin = {

@@ -1,14 +1,8 @@
-import {
-  FloatingPortal,
-  type Placement,
-  type Strategy,
-  useFloating,
-  useTransitionStatus,
-  useTransitionStyles,
-} from '@floating-ui/react'
 import { ReactNode, useEffect, useMemo, useRef } from 'react'
-import { Icon } from '../../icon'
+import { FloatingPortal, type Placement, type Strategy, useFloating, useTransitionStatus, useTransitionStyles } from '@floating-ui/react'
+
 import { Button } from '../Button'
+import { Icon } from '../icon'
 import styles from './Notification.module.scss'
 
 export interface NotificationProps {
@@ -37,11 +31,7 @@ function NotificationIcon({ type }: { type: string }) {
     error: '✕',
   }
 
-  return (
-    <div className={styles.icon}>
-      {icons[type as keyof typeof icons]}
-    </div>
-  )
+  return <div className={styles.icon}>{icons[type as keyof typeof icons]}</div>
 }
 
 export function Notification(props: NotificationProps) {
@@ -83,26 +73,29 @@ export function Notification(props: NotificationProps) {
     },
   })
 
-  const baseStyles = useMemo<React.CSSProperties>(() => ({
-    position: strategy,
-    zIndex: 1000 + index,
-    ...(position.includes('bottom') && {
-      bottom: offsetDistance + (index * (NOTIFICATION_HEIGHT + NOTIFICATION_GAP)),
+  const baseStyles = useMemo<React.CSSProperties>(
+    () => ({
+      position: strategy,
+      zIndex: 1000 + index,
+      ...(position.includes('bottom') && {
+        bottom: offsetDistance + index * (NOTIFICATION_HEIGHT + NOTIFICATION_GAP),
+      }),
+      ...(position.includes('top') && {
+        top: offsetDistance + index * (NOTIFICATION_HEIGHT + NOTIFICATION_GAP),
+      }),
+      ...(position.includes('end') && {
+        right: offsetDistance,
+      }),
+      ...(position.includes('start') && {
+        left: offsetDistance,
+      }),
+      ...(position.includes('center') && {
+        left: '50%',
+        transform: 'translateX(-50%)',
+      }),
     }),
-    ...(position.includes('top') && {
-      top: offsetDistance + (index * (NOTIFICATION_HEIGHT + NOTIFICATION_GAP)),
-    }),
-    ...(position.includes('end') && {
-      right: offsetDistance,
-    }),
-    ...(position.includes('start') && {
-      left: offsetDistance,
-    }),
-    ...(position.includes('center') && {
-      left: '50%',
-      transform: 'translateX(-50%)',
-    }),
-  }), [position, strategy, index, offsetDistance])
+    [position, strategy, index, offsetDistance],
+  )
 
   // Используем статус для управления монтированием
   const { isMounted } = useTransitionStatus(context, {
@@ -114,11 +107,7 @@ export function Notification(props: NotificationProps) {
     duration: 400,
     initial: {
       opacity: 0,
-      transform: position.includes('end')
-        ? 'translateX(100%) scale(0.95)'
-        : position.includes('start')
-          ? 'translateX(-100%) scale(0.95)'
-          : 'translateY(100%) scale(0.95)',
+      transform: position.includes('end') ? 'translateX(100%) scale(0.95)' : position.includes('start') ? 'translateX(-100%) scale(0.95)' : 'translateY(100%) scale(0.95)',
     },
     open: {
       opacity: 1,
@@ -126,11 +115,7 @@ export function Notification(props: NotificationProps) {
     },
     close: {
       opacity: 0,
-      transform: position.includes('end')
-        ? 'translateX(100%) scale(0.95)'
-        : position.includes('start')
-          ? 'translateX(-100%) scale(0.95)'
-          : 'translateY(-20%) scale(0.95)',
+      transform: position.includes('end') ? 'translateX(100%) scale(0.95)' : position.includes('start') ? 'translateX(-100%) scale(0.95)' : 'translateY(-20%) scale(0.95)',
     },
   })
 
@@ -178,16 +163,10 @@ export function Notification(props: NotificationProps) {
           <NotificationIcon type={type} />
 
           <div className={styles.content}>
-            <div className={styles.message}>
-              {message}
-            </div>
+            <div className={styles.message}>{message}</div>
           </div>
 
-          <Button
-            onClick={handleClose}
-            className={styles.closeButton}
-            aria-label="Close notification"
-          >
+          <Button onClick={handleClose} className={styles.closeButton} aria-label="Close notification">
             <Icon name="close" />
           </Button>
         </div>

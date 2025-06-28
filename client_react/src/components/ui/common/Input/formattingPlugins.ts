@@ -1,5 +1,6 @@
-import { EditorState, KeyBindingUtil, Modifier, RichUtils, SelectionState } from 'draft-js'
 import { KeyboardEvent } from 'react'
+import { EditorState, KeyBindingUtil, Modifier, RichUtils, SelectionState } from 'draft-js'
+
 import { EditorPlugin } from './hooks'
 
 // Плагин для создания ссылок
@@ -12,26 +13,14 @@ export const linkPlugin: EditorPlugin = {
         if (url) {
           // Создаем новый contentState с entity для ссылки
           const contentState = editorState.getCurrentContent()
-          const contentStateWithEntity = contentState.createEntity(
-            'LINK',
-            'MUTABLE',
-            { url },
-          )
+          const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', { url })
           const entityKey = contentStateWithEntity.getLastCreatedEntityKey()
 
           // Применяем entity к выделенному тексту
-          const newContentState = Modifier.applyEntity(
-            contentStateWithEntity,
-            selection,
-            entityKey,
-          )
+          const newContentState = Modifier.applyEntity(contentStateWithEntity, selection, entityKey)
 
           // Создаем новое состояние редактора
-          const newEditorState = EditorState.push(
-            editorState,
-            newContentState,
-            'apply-entity',
-          )
+          const newEditorState = EditorState.push(editorState, newContentState, 'apply-entity')
 
           // Важно: возвращаем новое состояние
           return newEditorState
@@ -65,10 +54,14 @@ export const colorPlugin: EditorPlugin = {
   keyBindingFn: (e: KeyboardEvent<Element>) => {
     if (KeyBindingUtil.hasCommandModifier(e)) {
       switch (e.code) {
-        case 'KeyR': return 'text-red'
-        case 'KeyG': return 'text-green'
-        case 'KeyB': return 'text-blue'
-        default: return null
+        case 'KeyR':
+          return 'text-red'
+        case 'KeyG':
+          return 'text-green'
+        case 'KeyB':
+          return 'text-blue'
+        default:
+          return null
       }
     }
     return null
@@ -113,11 +106,7 @@ export const markdownBoldPlugin: EditorPlugin = {
         `**${text}*`,
       )
 
-      const newState = EditorState.push(
-        editorState,
-        newContent,
-        'change-inline-style',
-      )
+      const newState = EditorState.push(editorState, newContent, 'change-inline-style')
 
       // Устанавливаем курсор в конец текста
       return EditorState.forceSelection(
@@ -130,7 +119,7 @@ export const markdownBoldPlugin: EditorPlugin = {
     }
 
     // Если вводятся первые звездочки - ничего не делаем
-    if (text === '**' || text.endsWith('**') && !text.slice(0, -2).includes('**')) {
+    if (text === '**' || (text.endsWith('**') && !text.slice(0, -2).includes('**'))) {
       return editorState
     }
 
@@ -146,11 +135,7 @@ export const markdownBoldPlugin: EditorPlugin = {
           focusOffset: position,
         })
 
-        let newContent = Modifier.replaceText(
-          content,
-          fullSelection,
-          textBetweenStars,
-        )
+        let newContent = Modifier.replaceText(content, fullSelection, textBetweenStars)
 
         newContent = Modifier.applyInlineStyle(
           newContent,

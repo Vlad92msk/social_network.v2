@@ -1,10 +1,10 @@
+import React, { useCallback, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { classNames } from '@utils'
-import React, { useCallback, useEffect, useRef } from 'react'
+
 import { cn } from './cn'
 
 export type CodeLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'cpp' | 'csharp'
-
 
 interface CodeEditorProps {
   value: string
@@ -24,16 +24,20 @@ export function CodeEditor(props: CodeEditorProps) {
     if (!editorRef.current) return
 
     const editor = editorRef.current
-    const contentHeight = Math.min(100, Math.max(100,
-      // Количество строк * высота строки + отступы
-      editor.getModel().getLineCount() * 20 + 40
-    ))
+    const contentHeight = Math.min(
+      100,
+      Math.max(
+        100,
+        // Количество строк * высота строки + отступы
+        editor.getModel().getLineCount() * 20 + 40,
+      ),
+    )
 
     // Обновляем контейнер
     const container = editor.getContainerDomNode()
     container.style.height = `${contentHeight}px`
 
-    // Пересчитываем layout
+    // Пересчитываем app-layout
     editor.layout()
   }, [])
 

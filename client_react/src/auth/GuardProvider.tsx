@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useCallback, useContext, useState } from 'react'
+
 import { guardDataStorage } from './utils'
 
 interface GuardGlobalConfig {
@@ -37,33 +38,37 @@ interface GuardProviderProps {
 }
 
 export function GuardProvider({ children, config = {} }: GuardProviderProps) {
-  const [guardData, setGuardDataState] = useState<Record<string, any>>(() =>
-    guardDataStorage.getAll()
-  )
+  const [guardData, setGuardDataState] = useState<Record<string, any>>(() => guardDataStorage.getAll())
 
   const [globalConfig, setGlobalConfig] = useState<GuardGlobalConfig>(config)
 
-  const setGuardData = useCallback((key: string, value: any) => {
-    if (globalConfig.enableLogging) {
-      console.log(`${globalConfig.logPrefix || '[GuardData]'} Set: ${key}`, value)
-    }
+  const setGuardData = useCallback(
+    (key: string, value: any) => {
+      if (globalConfig.enableLogging) {
+        console.log(`${globalConfig.logPrefix || '[GuardData]'} Set: ${key}`, value)
+      }
 
-    setGuardDataState(prev => {
-      const newData = { ...prev, [key]: value }
-      guardDataStorage.set(key, value)
-      return newData
-    })
-  }, [globalConfig.enableLogging, globalConfig.logPrefix])
+      setGuardDataState((prev) => {
+        const newData = { ...prev, [key]: value }
+        guardDataStorage.set(key, value)
+        return newData
+      })
+    },
+    [globalConfig.enableLogging, globalConfig.logPrefix],
+  )
 
-  const getGuardData = useCallback((key: string) => {
-    const value = guardData[key] || guardDataStorage.get(key)
+  const getGuardData = useCallback(
+    (key: string) => {
+      const value = guardData[key] || guardDataStorage.get(key)
 
-    if (globalConfig.enableLogging) {
-      console.log(`${globalConfig.logPrefix || '[GuardData]'} Get: ${key}`, value)
-    }
+      if (globalConfig.enableLogging) {
+        console.log(`${globalConfig.logPrefix || '[GuardData]'} Get: ${key}`, value)
+      }
 
-    return value
-  }, [guardData, globalConfig.enableLogging, globalConfig.logPrefix])
+      return value
+    },
+    [guardData, globalConfig.enableLogging, globalConfig.logPrefix],
+  )
 
   const clearGuardData = useCallback(() => {
     if (globalConfig.enableLogging) {
@@ -75,7 +80,7 @@ export function GuardProvider({ children, config = {} }: GuardProviderProps) {
   }, [globalConfig.enableLogging, globalConfig.logPrefix])
 
   const updateGlobalConfig = useCallback((newConfig: Partial<GuardGlobalConfig>) => {
-    setGlobalConfig(prev => ({ ...prev, ...newConfig }))
+    setGlobalConfig((prev) => ({ ...prev, ...newConfig }))
   }, [])
 
   const contextValue: GuardContextValue = {
@@ -84,14 +89,10 @@ export function GuardProvider({ children, config = {} }: GuardProviderProps) {
     getGuardData,
     clearGuardData,
     globalConfig,
-    updateGlobalConfig
+    updateGlobalConfig,
   }
 
-  return (
-    <GuardContext.Provider value={contextValue}>
-      {children}
-    </GuardContext.Provider>
-  )
+  return <GuardContext.Provider value={contextValue}>{children}</GuardContext.Provider>
 }
 
 export function useGuardData(): GuardContextValue {

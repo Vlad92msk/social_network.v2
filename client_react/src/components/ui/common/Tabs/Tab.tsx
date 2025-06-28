@@ -1,8 +1,9 @@
+import React, { useCallback, useMemo } from 'react'
 import { classNames } from '@utils'
 import { isString } from 'lodash'
-import React, { useCallback, useMemo } from 'react'
-import { Icon, IconName } from '../../icon'
+
 import { Button } from '../Button'
+import { Icon, IconName } from '../icon'
 import { Text, TextSizes } from '../Text'
 import { cn } from './cn'
 import { TabSizes, useTabsSelect, useTabsUpdate } from './Tabs'
@@ -14,12 +15,12 @@ const sizes: Record<TabSizes, Partial<TextSizes>> = {
 }
 
 export interface LmTabProps {
-  className?: string;
-  value: string | number;
-  onClick?: VoidFunction;
-  title: string | number | React.ReactNode;
-  icon?: IconName;
-  ref?: React.Ref<HTMLDivElement>;
+  className?: string
+  value: string | number
+  onClick?: VoidFunction
+  title: string | number | React.ReactNode
+  icon?: IconName
+  ref?: React.Ref<HTMLDivElement>
 }
 
 export function TabOption(props: LmTabProps) {
@@ -38,10 +39,7 @@ export function TabOption(props: LmTabProps) {
       return (
         <>
           {icon && <Icon name={icon} />}
-          <Text
-            fs={type === 'Button' ? sizes[size] : '14'}
-            className={cn('Tab', { active: tabIsActive })}
-          >
+          <Text fs={type === 'Button' ? sizes[size] : '14'} className={cn('Tab', { active: tabIsActive })}>
             {title}
           </Text>
         </>

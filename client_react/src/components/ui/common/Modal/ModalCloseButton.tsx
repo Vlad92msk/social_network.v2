@@ -1,4 +1,5 @@
 import { classNames } from '@utils'
+
 import { cn } from './cn'
 
 interface ModalCloseButtonProps {
@@ -6,12 +7,8 @@ interface ModalCloseButtonProps {
   className?: string
 }
 
-export function ModalCloseButton(props : ModalCloseButtonProps) {
+export function ModalCloseButton(props: ModalCloseButtonProps) {
   const { onClick, className } = props
 
-  return (
-    <button className={classNames(cn('ButtonClose'), className)}>
-      &times;
-    </button>
-  )
+  return <button className={classNames(cn('ButtonClose'), className)}>&times;</button>
 }

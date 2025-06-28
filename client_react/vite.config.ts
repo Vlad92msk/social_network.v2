@@ -32,8 +32,7 @@ export default defineConfig({
       '@i18n': path.resolve(__dirname, './src/i18n'),
       '@pages': path.resolve(__dirname, './src/pages'),
       '@router': path.resolve(__dirname, './src/router'),
-      '@shared': path.resolve(__dirname, './src/shared'),
-      '@models': path.resolve(__dirname, './src/types'),
+      '@models': path.resolve(__dirname, './src/models'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
       '@providers': path.resolve(__dirname, './src/providers'),
@@ -49,7 +48,7 @@ export default defineConfig({
   // Оптимизация для больших библиотек
   optimizeDeps: {
     include: ['prismjs'],
-    exclude: ['prismjs/components/prism-*']
+    exclude: ['prismjs/app-components/prism-*']
   },
   server: {
     port: 3000,

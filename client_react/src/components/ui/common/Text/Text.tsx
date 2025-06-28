@@ -1,12 +1,12 @@
-import { rem, classNames, makeCn, AdaptiveVariables, createBreakPoint } from '@utils'
-import { flow } from 'lodash'
 import { CSSProperties, PropsWithChildren } from 'react'
+import { AdaptiveVariables, classNames, createBreakPoint, makeCn, rem } from '@utils'
+import { flow } from 'lodash'
 
 import styles from './Text.module.scss'
 
 export type TextPlugin = {
-  name: string;
-  process: (content: React.ReactNode) => React.ReactNode;
+  name: string
+  process: (content: React.ReactNode) => React.ReactNode
 }
 export const urlPlugin: TextPlugin = {
   name: 'url',
@@ -19,13 +19,7 @@ export const urlPlugin: TextPlugin = {
     return parts.map((part, index) => {
       if (urlRegex.test(part)) {
         return (
-          <a
-            key={index}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: 'rgb(13, 205, 252)', textDecoration: 'none' }}
-          >
+          <a key={index} href={part} target="_blank" rel="noopener noreferrer" style={{ color: 'rgb(13, 205, 252)', textDecoration: 'none' }}>
             {part}
           </a>
         )
@@ -34,29 +28,13 @@ export const urlPlugin: TextPlugin = {
     })
   },
 }
-export type TextSizes =
-  | '80'
-  | '54'
-  | '44'
-  | '38'
-  | '34'
-  | '30'
-  | '28'
-  | '25'
-  | '22'
-  | '20'
-  | '18'
-  | '16'
-  | '14'
-  | '12'
-  | '10'
-  | '8'
+export type TextSizes = '80' | '54' | '44' | '38' | '34' | '30' | '28' | '25' | '22' | '20' | '18' | '16' | '14' | '12' | '10' | '8'
 
 export type TextPropsFontSize = AdaptiveVariables<TextSizes>
 export type TextPropsFontWeight = AdaptiveVariables<'bold' | 'medium' | 'light'>
 
 export interface TextCommonProps {
-  as?: React.ElementType;
+  as?: React.ElementType
   className?: string
   style?: CSSProperties
   fs?: TextPropsFontSize
@@ -67,7 +45,7 @@ export interface TextCommonProps {
   nowrap?: boolean
   textElipsis?: boolean
   textAlign?: CSSProperties['textAlign']
-  plugins?: TextPlugin[]; // New prop for plugins
+  plugins?: TextPlugin[] // New prop for plugins
 }
 
 const cn = makeCn('Text', styles)

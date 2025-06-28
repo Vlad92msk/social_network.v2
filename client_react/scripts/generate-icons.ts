@@ -3,7 +3,7 @@ import * as path from 'path'
 
 // Пути для новой структуры
 const ICONS_DIR = path.join(process.cwd(), 'src/assets/icons')
-const OUTPUT_DIR = path.join(process.cwd(), 'src/components/ui/Icon')
+const OUTPUT_DIR = path.join(process.cwd(), 'src/components/ui/common/icon')
 
 // Утилита для преобразования имени файла в PascalCase
 function toPascalCase(str: string): string {
@@ -55,8 +55,8 @@ function generateIcons() {
   const imports = svgFiles.map((file) => {
     const name = path.basename(file, '.svg')
     const pascalName = toPascalCase(name) + 'Icon'
-    // Относительный путь от src/components/ui/Icon/ к src/assets/icons/
-    const relativePath = `../../../assets/icons/${file}`
+    // Относительный путь от src/app-components/ui/Icon/ к src/assets/icons/
+    const relativePath = `../../../../assets/icons/${file}`
     return `import ${pascalName} from '${relativePath}?react'`
   }).join('\n')
 
@@ -113,7 +113,7 @@ ${iconNames}
     console.log(`   • <Icon name="${name}" />`)
   })
   console.log('')
-  console.log('🔥 Ready to use in your components!')
+  console.log('🔥 Ready to use in your app-components!')
 }
 
 // Запускаем генерацию

@@ -1,1 +1,1 @@
-export * from './HeaderMenu.tsx'
+export * from './HeaderMenu'

@@ -1,3 +1,3 @@
-export * from './SelectLocale.tsx'
-export * from './SelectTheme.tsx'
-export * from './ButtonExit.tsx'
+export * from './ButtonExit'
+export * from './SelectLocale'
+export * from './SelectTheme'

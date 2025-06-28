@@ -1,14 +1,9 @@
-import { MediaBreakKeys, mediaBreakpoints } from '@utils'
-import { useEffect, useState, ImgHTMLAttributes } from 'react'
-import {
-  resolveImageUrl,
-  ImageSource,
-  revokeImageUrl,
-  ImageFormatOptions,
-  getOptimalFormatOptions
-} from './utils/imageResolver'
-import { getImageFormats } from './utils/imageRegistry'
+import { ImgHTMLAttributes, useEffect, useState } from 'react'
 import blurImage from '@assets/images/base/blur_img.webp'
+import { MediaBreakKeys, mediaBreakpoints } from '@utils'
+
+import { getImageFormats } from './utils/imageRegistry'
+import { getOptimalFormatOptions, ImageFormatOptions, ImageSource, resolveImageUrl, revokeImageUrl } from './utils/imageResolver'
 
 export type SizesConfig = Partial<Record<MediaBreakKeys, string>> | string | undefined
 
@@ -44,19 +39,7 @@ function createSizeString(bp: typeof mediaBreakpoints, sizes: SizesConfig) {
 }
 
 export function Image(props: ImageProps) {
-  const {
-    src,
-    pictureClassName,
-    sizes,
-    srcSet,
-    fallbackSrc = blurImage,
-    placeholderSrc,
-    blur = 4,
-    showPlaceholder = true,
-    formatOptions,
-    style,
-    ...rest
-  } = props
+  const { src, pictureClassName, sizes, srcSet, fallbackSrc = blurImage, placeholderSrc, blur = 4, showPlaceholder = true, formatOptions, style, ...rest } = props
 
   const [imageSrc, setImageSrc] = useState<string>(placeholderSrc || fallbackSrc)
   const [isLoading, setIsLoading] = useState(true)
@@ -100,7 +83,7 @@ export function Image(props: ImageProps) {
       img.src = url
 
       if (url.startsWith('blob:')) {
-        setBlobUrls(prev => [...prev, url])
+        setBlobUrls((prev) => [...prev, url])
       }
     } catch (error) {
       setImageSrc(fallbackSrc)
@@ -127,17 +110,19 @@ export function Image(props: ImageProps) {
       }
 
       setSourceSrcSet(newSourceSrcSet)
-      setBlobUrls(prev => [...prev, ...newBlobUrls])
-    } catch (error) {
-    }
+      setBlobUrls((prev) => [...prev, ...newBlobUrls])
+    } catch (error) {}
   }, [srcSet, fallbackSrc, optimalOptions])
 
   // Очистка blob URLs при размонтировании
-  useEffect(() => () => {
-    blobUrls.forEach(url => {
-      revokeImageUrl(url)
-    })
-  }, [blobUrls])
+  useEffect(
+    () => () => {
+      blobUrls.forEach((url) => {
+        revokeImageUrl(url)
+      })
+    },
+    [blobUrls],
+  )
 
   // Создаем источники для разных форматов (автоматически для assets изображений)
   const renderSources = () => {
@@ -150,24 +135,12 @@ export function Image(props: ImageProps) {
 
     // AVIF источник
     if (optimalOptions.enableAvif && formats.avif) {
-      sources.push(
-        <source
-          key="avif"
-          srcSet={formats.avif}
-          type="image/avif"
-        />
-      )
+      sources.push(<source key="avif" srcSet={formats.avif} type="image/avif" />)
     }
 
     // WebP источник
     if (optimalOptions.enableWebp && formats.webp) {
-      sources.push(
-        <source
-          key="webp"
-          srcSet={formats.webp}
-          type="image/webp"
-        />
-      )
+      sources.push(<source key="webp" srcSet={formats.webp} type="image/webp" />)
     }
 
     return sources
@@ -183,13 +156,7 @@ export function Image(props: ImageProps) {
     <picture className={pictureClassName}>
       {renderSources()}
 
-      {srcSet && Object.entries(sourceSrcSet).map(([key, value]) => (
-        <source
-          key={key}
-          srcSet={value}
-          media={`(min-width: ${mediaBreakpoints[key as MediaBreakKeys]}px)`}
-        />
-      ))}
+      {srcSet && Object.entries(sourceSrcSet).map(([key, value]) => <source key={key} srcSet={value} media={`(min-width: ${mediaBreakpoints[key as MediaBreakKeys]}px)`} />)}
 
       <img
         src={imageSrc}

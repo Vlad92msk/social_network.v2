@@ -1,8 +1,9 @@
+import { RefObject, TextareaHTMLAttributes, useEffect, useRef } from 'react'
 import { useCombinedRefs } from '@hooks'
 import { classNames, rem } from '@utils'
-import { RefObject, TextareaHTMLAttributes, useEffect, useRef } from 'react'
-import { cn } from './cn'
+
 import { Text, TextCommonProps } from '../Text'
+import { cn } from './cn'
 
 function useAutoResize(ref: RefObject<HTMLTextAreaElement | null>) {
   useEffect(() => {

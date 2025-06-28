@@ -1,4 +1,5 @@
-import { useMemo, useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+
 import { GuardsExecutor } from '../guards/GuardsExecutor.ts'
 import { GuardConfig, GuardContext, GuardsExecutionResult } from '../types'
 
@@ -17,23 +18,23 @@ export function useGuardsExecutor(globalTimeout?: number): UseGuardsExecutorRetu
 
   const executor = useMemo(() => new GuardsExecutor(globalTimeout), [globalTimeout])
 
-  const execute = useCallback(async (
-    guards: GuardConfig[],
-    context: GuardContext
-  ): Promise<GuardsExecutionResult> => {
-    setIsExecuting(true)
-    setCurrentGuard(undefined)
-
-    try {
-      const result = await executor.execute(guards, context, (guardId) => {
-        setCurrentGuard(guardId)
-      })
-      return result
-    } finally {
-      setIsExecuting(false)
+  const execute = useCallback(
+    async (guards: GuardConfig[], context: GuardContext): Promise<GuardsExecutionResult> => {
+      setIsExecuting(true)
       setCurrentGuard(undefined)
-    }
-  }, [executor])
+
+      try {
+        const result = await executor.execute(guards, context, (guardId) => {
+          setCurrentGuard(guardId)
+        })
+        return result
+      } finally {
+        setIsExecuting(false)
+        setCurrentGuard(undefined)
+      }
+    },
+    [executor],
+  )
 
   return { execute, isExecuting, currentGuard }
 }

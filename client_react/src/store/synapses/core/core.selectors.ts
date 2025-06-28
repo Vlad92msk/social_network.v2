@@ -1,4 +1,5 @@
 import { ISelectorModule } from 'synapse-storage/core'
+
 import { IDBCore } from '../../types'
 
 export const createUserInfoSelectors = (selectorModule: ISelectorModule<IDBCore>) => {
@@ -6,12 +7,9 @@ export const createUserInfoSelectors = (selectorModule: ISelectorModule<IDBCore>
     name: 'currentUserProfile',
   })
 
-  const currentUserProfile = selectorModule.createSelector(
-    [currentUserProfileApi],
-    (s) => s.apiData
-  )
+  const currentUserProfile = selectorModule.createSelector([currentUserProfileApi], (s) => s.apiData)
 
-  return ({
+  return {
     currentUserProfile,
-  })
+  }
 }

@@ -1,7 +1,8 @@
 // src/i18n/config.ts
-import { Locale } from './types.ts'
 import { initReactI18next } from 'react-i18next'
 import i18n from 'i18next'
+
+import { Locale } from './types.ts'
 
 // Типы для локалей
 export const LOCALES: Locale[] = ['en', 'ru', 'fr']
@@ -75,7 +76,7 @@ const initI18n = async () => {
     LOCALES.map(async (locale) => {
       const translations = await loadTranslations(locale)
       resources[locale] = { translation: translations }
-    })
+    }),
   )
 
   await i18n.use(initReactI18next).init({

@@ -1,6 +1,6 @@
 // decorators/linkDecorator.tsx
-import { ContentState, DraftDecorator } from 'draft-js'
 import { PropsWithChildren } from 'react'
+import { ContentState, DraftDecorator } from 'draft-js'
 
 const isValidUrl = (url: string): boolean => {
   try {
@@ -22,9 +22,7 @@ interface LinkProps {
 function Link(props: PropsWithChildren<LinkProps>) {
   const { decoratedText, contentState, children, entityKey } = props
   // Получаем URL либо из entity, либо используем сам текст как URL
-  const url = entityKey
-    ? contentState!.getEntity(entityKey).getData().url
-    : decoratedText
+  const url = entityKey ? contentState!.getEntity(entityKey).getData().url : decoratedText
 
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -70,10 +68,7 @@ export const linkDecorator: DraftDecorator = {
         // Проверяем:
         // 1. Есть ли entity у символа (entityKey !== null)
         // 2. Является ли entity ссылкой (тип === 'LINK')
-        return (
-          entityKey !== null
-          && contentState.getEntity(entityKey).getType() === 'LINK'
-        )
+        return entityKey !== null && contentState.getEntity(entityKey).getType() === 'LINK'
       },
       // callback вызывается для каждого найденного диапазона
       // и получает начальную и конечную позиции
@@ -86,10 +81,7 @@ export const linkDecorator: DraftDecorator = {
 const URL_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g
 
 export const urlDecorator: DraftDecorator = {
-  strategy: (
-    contentBlock,
-    callback: (start: number, end: number) => void,
-  ) => {
+  strategy: (contentBlock, callback: (start: number, end: number) => void) => {
     // Получаем текст блока
     const text = contentBlock.getText()
     // Ищем все совпадения с регулярным выражением

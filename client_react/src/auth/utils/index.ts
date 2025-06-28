@@ -29,7 +29,7 @@ export const callbackStorage = {
       console.log('🧹 Очищаем callbackUrl при выходе')
     }
     sessionStorage.removeItem(AUTH_CONSTANTS.CALLBACK_URL_KEY)
-  }
+  },
 }
 
 // Управление guard data
@@ -87,18 +87,15 @@ export const guardDataStorage = {
     if (import.meta.env.DEV) {
       console.log('🧹 Очищаем все guard data')
     }
-  }
+  },
 }
 
 export const createFullUrl = (pathname: string, search: string = ''): string => {
   return pathname + search
 }
 
-export const isAuthPage = (
-  url: string,
-  authPages: string[] = [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES]
-): boolean => {
-  const isAuth = authPages.some(page => url.startsWith(page))
+export const isAuthPage = (url: string, authPages: string[] = [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES]): boolean => {
+  const isAuth = authPages.some((page) => url.startsWith(page))
 
   if (import.meta.env.DEV) {
     console.log(`🔍 Проверяем isAuthPage для "${url}":`, isAuth)
@@ -107,11 +104,7 @@ export const isAuthPage = (
   return isAuth
 }
 
-export const determineRedirectUrl = (
-  defaultUrl: string,
-  callbackUrl?: string | null,
-  authPages: string[] = [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES]
-): string => {
+export const determineRedirectUrl = (defaultUrl: string, callbackUrl?: string | null, authPages: string[] = [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES]): string => {
   if (callbackUrl && !isAuthPage(callbackUrl, authPages)) {
     if (import.meta.env.DEV) {
       console.log('↩️ Используем callbackUrl:', callbackUrl)

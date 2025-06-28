@@ -1,7 +1,7 @@
-import { classNames } from '@utils'
 import { InputHTMLAttributes } from 'react'
-import { Text, TextCommonProps } from '../Text'
+import { classNames } from '@utils'
 
+import { Text, TextCommonProps } from '../Text'
 import { cn } from './cn'
 
 interface InputCommonProps extends TextCommonProps, InputHTMLAttributes<HTMLInputElement> {

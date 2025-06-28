@@ -1,7 +1,8 @@
-import { useLocale } from '@hooks'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { ChangeEventHandler } from 'react'
-import { Select } from '../../../../../components/ui/common/Select'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Select } from '@components/ui'
+import { useLocale } from '@hooks'
+
 // import { useTranslateUpdate } from '@providers/translation'
 import { LOCALES } from '../../../../../i18n/config.ts'
 import { cn } from '../cn.ts'
@@ -25,16 +26,11 @@ export function SelectLocale() {
   }
 
   return (
-    <Select
-      className={cn('SelectLocation')}
-      width="auto"
-      size="xs"
-      placeholder="Выбрать язык"
-      defaultValue={currentLocale}
-      onChange={handleChangeLocation}
-    >
+    <Select className={cn('SelectLocation')} width="auto" size="xs" placeholder="Выбрать язык" defaultValue={currentLocale} onChange={handleChangeLocation}>
       {LOCALES.map((locale) => (
-        <option key={locale} value={locale}>{locale}</option>
+        <option key={locale} value={locale}>
+          {locale}
+        </option>
       ))}
     </Select>
   )

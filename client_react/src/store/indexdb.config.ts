@@ -1,12 +1,9 @@
 import { IndexedDBStorage } from 'synapse-storage/core'
-import { initialApiState } from '../types/apiStatus.ts'
+
+import { initialApiState } from '../models/apiStatus.ts'
 import { IDBApi, IDBCore } from './types'
 
-export const {
-  CORE,
-  API__USER_INFO,
-  API__USER_PROFILE,
-} = await IndexedDBStorage.createStorages<{
+export const { CORE, API__USER_INFO, API__USER_PROFILE } = await IndexedDBStorage.createStorages<{
   CORE: IDBCore
   API__USER_INFO: IDBApi
   API__USER_PROFILE: IDBApi
@@ -29,8 +26,8 @@ export const {
       name: 'core',
       initialState: {
         api: {
-          profileInfo: initialApiState
-        }
+          profileInfo: initialApiState,
+        },
       },
     },
   },

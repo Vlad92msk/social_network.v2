@@ -1,13 +1,14 @@
-import { IStorage } from 'synapse-storage/core'
 import { isFormData } from '@utils'
-import { DefaultError, ReceivedResponse } from '../../types/apiStatus'
+import { IStorage } from 'synapse-storage/core'
+
+import { DefaultError, ReceivedResponse } from '../../models/apiStatus'
 
 export const apiRequestStore = async <
   Storage extends Record<string, any>,
   Segment extends Record<string, any>,
   RequestParams extends Record<string, any>,
-  Err extends DefaultError | Error = Error
-> (
+  Err extends DefaultError | Error = Error,
+>(
   storage: IStorage<Storage>,
   responseData: ReceivedResponse<RequestParams, Segment, Err>,
   key: keyof Storage['api'],
@@ -20,14 +21,17 @@ export const apiRequestStore = async <
         state.api[key].isLoading = true
 
         // Т.к FormData нельзя копировать - очищаем requestParams от данных этого типа
-        const requestParamsCleanWithoutFormData = Object.entries(responseData.requestParams).reduce((acc, [key, value]) => {
-          if (isFormData(value)) {
-            acc[key] = '[FormData]'
-          } else {
-            acc[key] = value
-          }
-          return acc
-        }, {} as Record<string, any>)
+        const requestParamsCleanWithoutFormData = Object.entries(responseData.requestParams).reduce(
+          (acc, [key, value]) => {
+            if (isFormData(value)) {
+              acc[key] = '[FormData]'
+            } else {
+              acc[key] = value
+            }
+            return acc
+          },
+          {} as Record<string, any>,
+        )
 
         state.api[key].requestParams = requestParamsCleanWithoutFormData
         break

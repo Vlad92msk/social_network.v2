@@ -1,8 +1,9 @@
+import { Emoji, EmojiStyle, Theme } from '@components/ui'
 import { makeCn } from '@utils'
 import { EmojiClickData } from 'emoji-picker-react'
-import { Emoji, EmojiStyle, Theme } from '../../base/Emoji'
-import { Icon } from '../../icon'
+
 import { Button } from '../Button'
+import { Icon } from '../icon'
 import { Popover } from '../Popover'
 import style from './ButtonAddEmoji.module.scss'
 
@@ -20,7 +21,7 @@ export function ButtonAddEmoji(props: ButtonAddEmojiProps) {
   return (
     <Popover
       strategy="fixed"
-      content={(
+      content={
         <div className={cn()}>
           <Emoji
             lazyLoadEmojis
@@ -38,7 +39,7 @@ export function ButtonAddEmoji(props: ButtonAddEmojiProps) {
             onReactionClick={onReactionClick}
           />
         </div>
-      )}
+      }
     >
       <Button className={cn('ButtonAddSmiles')}>
         <Icon name="face-smiling" />

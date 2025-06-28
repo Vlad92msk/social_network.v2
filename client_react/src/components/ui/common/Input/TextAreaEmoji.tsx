@@ -1,8 +1,9 @@
-import { EmojiClickData } from 'emoji-picker-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { EmojiClickData } from 'emoji-picker-react'
+
+import { ButtonAddEmoji } from '../ButtonAddEmoji'
 import { cn } from './cn'
 import { InputCommonProps, TextArea } from './TextArea'
-import { ButtonAddEmoji } from '../ButtonAddEmoji'
 
 interface TextAreaEmojiProps extends InputCommonProps {
   onValueChange?: (value: string) => void
@@ -41,48 +42,44 @@ export function TextAreaEmoji(props: TextAreaEmojiProps) {
     }, 1500) // Ожидание 2 секунды после последнего ввода
   }, [isTyping, onStartTyping, onStopTyping])
 
-  const handleChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = event.target.value
-    setText(newValue)
-    onChange?.(event)
-    onValueChange?.(newValue)
-    notifyTypingStart() // Запускаем логику отслеживания печати
-  }, [onChange, onValueChange, notifyTypingStart])
+  const handleChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = event.target.value
+      setText(newValue)
+      onChange?.(event)
+      onValueChange?.(newValue)
+      notifyTypingStart() // Запускаем логику отслеживания печати
+    },
+    [onChange, onValueChange, notifyTypingStart],
+  )
 
   const handleSelect = useCallback((event: React.SyntheticEvent<HTMLTextAreaElement>) => {
     setCursorPosition(event.currentTarget.selectionStart)
   }, [])
 
-  const handleEmojiClick = useCallback((emojiData: EmojiClickData) => {
-    const { emoji } = emojiData
-    const newText = text.slice(0, cursorPosition) + emoji + text.slice(cursorPosition)
-    const newCursorPosition = cursorPosition + emoji.length
+  const handleEmojiClick = useCallback(
+    (emojiData: EmojiClickData) => {
+      const { emoji } = emojiData
+      const newText = text.slice(0, cursorPosition) + emoji + text.slice(cursorPosition)
+      const newCursorPosition = cursorPosition + emoji.length
 
-    setText(newText)
-    onValueChange?.(newText)
+      setText(newText)
+      onValueChange?.(newText)
 
-    if (textAreaRef.current) {
-      textAreaRef.current.focus()
-      textAreaRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
-    }
+      if (textAreaRef.current) {
+        textAreaRef.current.focus()
+        textAreaRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
+      }
 
-    setCursorPosition(newCursorPosition)
-  }, [cursorPosition, text, onValueChange])
+      setCursorPosition(newCursorPosition)
+    },
+    [cursorPosition, text, onValueChange],
+  )
 
   return (
     <div className={cn('TextAreaEmojiWrapper')}>
-      <TextArea
-        ref={textAreaRef}
-        className={cn('TextAreaEmojiInputMessage')}
-        placeholder="Сообщение"
-        value={text}
-        onChange={handleChange}
-        onSelect={handleSelect}
-        {...rest}
-      />
-      <ButtonAddEmoji
-        onEmojiClick={handleEmojiClick}
-      />
+      <TextArea ref={textAreaRef} className={cn('TextAreaEmojiInputMessage')} placeholder="Сообщение" value={text} onChange={handleChange} onSelect={handleSelect} {...rest} />
+      <ButtonAddEmoji onEmojiClick={handleEmojiClick} />
     </div>
   )
 }

@@ -40,7 +40,7 @@ export function MediaItemElement(props: MediaItemElementProps) {
 
   switch (type) {
     case 'video' || 'shorts':
-      // eslint-disable-next-line react/no-unstable-nested-components
+      // eslint-disable-next-line react/no-unstable-nested-app-components
       return (
         <>
           {buttonRemove}
@@ -52,7 +52,7 @@ export function MediaItemElement(props: MediaItemElementProps) {
       )
 
     case 'image':
-      // eslint-disable-next-line react/no-unstable-nested-components
+      // eslint-disable-next-line react/no-unstable-nested-app-components
       return (
         <>
           {buttonRemove}

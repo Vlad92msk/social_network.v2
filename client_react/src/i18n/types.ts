@@ -1,8 +1,7 @@
 export type Locale = 'en' | 'ru' | 'fr'
 
 // Тип для ключей переводов (можно расширить по мере добавления переводов)
-export type TranslationKey =
-  | 'nav.home'
+export type TranslationKey = 'nav.home'
 
 // Интерфейс для структуры переводов
 export interface TranslationResource {

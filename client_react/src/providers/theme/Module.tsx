@@ -1,5 +1,6 @@
-import { createStoreContext } from '@utils'
 import { PropsWithChildren, useEffect } from 'react'
+import { createStoreContext } from '@utils'
+
 import { initialState, ThemeServiceContext } from './context/initialState'
 
 export const {
@@ -10,9 +11,9 @@ export const {
   initialState,
 })
 
-// import style from './Body.module.scss'
+// import style from './body.module.scss'
 //
-// const cn = makeCn('Body', style)
+// const cn = makeCn('body', style)
 
 const ThemeProviderInner = ({ children }: PropsWithChildren) => {
   const theme = useThemeServiceSelect((contextStore) => contextStore.theme)

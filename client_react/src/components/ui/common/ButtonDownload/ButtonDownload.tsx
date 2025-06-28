@@ -1,4 +1,5 @@
 import { useHandleDownloadFile } from '@hooks'
+
 import { Button } from '../Button'
 
 interface ButtonDownloadProps {
@@ -11,11 +12,7 @@ export function ButtonDownload(props: ButtonDownloadProps) {
   const [handleDownload, downloading] = useHandleDownloadFile()
 
   return (
-    <Button
-      onClick={() => handleDownload(file.meta.src, file.meta.name)}
-      disabled={downloading}
-      isLoading={downloading}
-    >
+    <Button onClick={() => handleDownload(file.meta.src, file.meta.name)} disabled={downloading} isLoading={downloading}>
       {file.meta.name}
     </Button>
   )

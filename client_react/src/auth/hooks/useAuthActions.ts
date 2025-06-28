@@ -1,5 +1,6 @@
 // src/auth/hooks/useAuthActions
-import { useState, useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+
 import { useAuth } from '../AuthProvider'
 
 interface UseAuthActionsOptions {
@@ -7,9 +8,7 @@ interface UseAuthActionsOptions {
 }
 
 export function useAuthActions(options: UseAuthActionsOptions = {}) {
-  const {
-    clearErrorOnInput = true
-  } = options
+  const { clearErrorOnInput = true } = options
 
   const auth = useAuth()
 
@@ -27,51 +26,63 @@ export function useAuthActions(options: UseAuthActionsOptions = {}) {
     error,
     clearError,
     isAuthenticated,
-    hasProvider
+    hasProvider,
   } = auth
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: ''
+    name: '',
   })
 
   // Мемоизируем объект availableProviders
-  const availableProviders = useMemo(() => ({
-    email: hasProvider('email'),
-    google: hasProvider('google'),
-    github: hasProvider('github'),
-    microsoft: hasProvider('microsoft'),
-    apple: hasProvider('apple'),
-    facebook: hasProvider('facebook'),
-    twitter: hasProvider('twitter'),
-    yahoo: hasProvider('yahoo'),
-  }), [hasProvider])
+  const availableProviders = useMemo(
+    () => ({
+      email: hasProvider('email'),
+      google: hasProvider('google'),
+      github: hasProvider('github'),
+      microsoft: hasProvider('microsoft'),
+      apple: hasProvider('apple'),
+      facebook: hasProvider('facebook'),
+      twitter: hasProvider('twitter'),
+      yahoo: hasProvider('yahoo'),
+    }),
+    [hasProvider],
+  )
 
   // Обработчик изменений в форме
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target
+      setFormData((prev) => ({ ...prev, [name]: value }))
 
-    // Очищаем ошибку при вводе
-    if (clearErrorOnInput && error) {
-      clearError()
-    }
-  }, [clearErrorOnInput, error, clearError])
+      // Очищаем ошибку при вводе
+      if (clearErrorOnInput && error) {
+        clearError()
+      }
+    },
+    [clearErrorOnInput, error, clearError],
+  )
 
-  const handleEmailSignIn = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.email && formData.password) {
-      await signInWithEmail(formData.email, formData.password)
-    }
-  }, [formData.email, formData.password, signInWithEmail])
+  const handleEmailSignIn = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (formData.email && formData.password) {
+        await signInWithEmail(formData.email, formData.password)
+      }
+    },
+    [formData.email, formData.password, signInWithEmail],
+  )
 
-  const handleEmailSignUp = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.email && formData.password && formData.name) {
-      await signUpWithEmail(formData.email, formData.password, formData.name)
-    }
-  }, [formData.email, formData.password, formData.name, signUpWithEmail])
+  const handleEmailSignUp = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (formData.email && formData.password && formData.name) {
+        await signUpWithEmail(formData.email, formData.password, formData.name)
+      }
+    },
+    [formData.email, formData.password, formData.name, signUpWithEmail],
+  )
 
   // Мемоизируем обработчики провайдеров
   const handleGoogleSignIn = useMemo(() => {
@@ -124,67 +135,64 @@ export function useAuthActions(options: UseAuthActionsOptions = {}) {
   }, [hasProvider, signInWithYahoo])
 
   // Валидация форм
-  const isSignInValid = useMemo(() =>
-      !!(formData.email && formData.password),
-    [formData.email, formData.password]
-  )
+  const isSignInValid = useMemo(() => !!(formData.email && formData.password), [formData.email, formData.password])
 
-  const isSignUpValid = useMemo(() =>
-      !!(formData.email && formData.password && formData.name),
-    [formData.email, formData.password, formData.name]
-  )
+  const isSignUpValid = useMemo(() => !!(formData.email && formData.password && formData.name), [formData.email, formData.password, formData.name])
 
   // Мемоизируем весь возвращаемый объект
-  return useMemo(() => ({
-    // Состояние формы
-    formData,
-    handleInputChange,
+  return useMemo(
+    () => ({
+      // Состояние формы
+      formData,
+      handleInputChange,
 
-    // Обработчики провайдеров (только доступные)
-    handleGoogleSignIn,
-    handleGitHubSignIn,
-    handleMicrosoftSignIn,
-    handleAppleSignIn,
-    handleFacebookSignIn,
-    handleTwitterSignIn,
-    handleYahooSignIn,
+      // Обработчики провайдеров (только доступные)
+      handleGoogleSignIn,
+      handleGitHubSignIn,
+      handleMicrosoftSignIn,
+      handleAppleSignIn,
+      handleFacebookSignIn,
+      handleTwitterSignIn,
+      handleYahooSignIn,
 
-    // Email обработчики
-    handleEmailSignIn,
-    handleEmailSignUp,
+      // Email обработчики
+      handleEmailSignIn,
+      handleEmailSignUp,
 
-    // Валидация
-    isSignInValid,
-    isSignUpValid,
+      // Валидация
+      isSignInValid,
+      isSignUpValid,
 
-    // Состояние авторизации
-    isLoading,
-    error,
-    clearError,
-    isAuthenticated,
+      // Состояние авторизации
+      isLoading,
+      error,
+      clearError,
+      isAuthenticated,
 
-    // Утилиты
-    hasProvider,
-    availableProviders
-  }), [
-    formData,
-    handleInputChange,
-    handleGoogleSignIn,
-    handleGitHubSignIn,
-    handleMicrosoftSignIn,
-    handleAppleSignIn,
-    handleFacebookSignIn,
-    handleTwitterSignIn,
-    handleYahooSignIn,
-    handleEmailSignIn,
-    handleEmailSignUp,
-    isSignInValid,
-    isSignUpValid,
-    isLoading,
-    error,
-    clearError,
-    isAuthenticated,
-    hasProvider,
-    availableProviders
-  ])
+      // Утилиты
+      hasProvider,
+      availableProviders,
+    }),
+    [
+      formData,
+      handleInputChange,
+      handleGoogleSignIn,
+      handleGitHubSignIn,
+      handleMicrosoftSignIn,
+      handleAppleSignIn,
+      handleFacebookSignIn,
+      handleTwitterSignIn,
+      handleYahooSignIn,
+      handleEmailSignIn,
+      handleEmailSignUp,
+      isSignInValid,
+      isSignUpValid,
+      isLoading,
+      error,
+      clearError,
+      isAuthenticated,
+      hasProvider,
+      availableProviders,
+    ],
+  )
 }

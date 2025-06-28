@@ -18,17 +18,16 @@
     // =================== ПУТИ ===================
     "baseUrl": "src",
     "paths": {
-      "@components": ["components/index.ts"],
       "@data": ["data/index.ts"],
       "@hooks": ["hooks/index.ts"],
       "@i18n": ["i18n/index.ts"],
       "@pages": ["pages/index.ts"],
       "@providers": ["providers/index.ts"],
       "@router": ["router/index.ts"],
-      "@shared": ["shared/index.ts"],
       "@models": ["types/index.ts"],
       "@assets": ["assets/index.ts"],
       "@utils": ["utils/index.ts"],
+      "@components/*": ["components/*"],
       "@styles/*": ["styles/*"],
       "@store/*": ["store/*"]
     },
@@ -46,7 +45,11 @@
   },
 
   // =================== ВКЛЮЧЕНИЯ / ИСКЛЮЧЕНИЯ ===================
-  "include": ["src", "scripts", "src/types/svg.d.ts"],
+  "include": [
+    "src",
+    "scripts",
+    "src/models/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",

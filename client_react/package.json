@@ -71,7 +71,6 @@
     "@typescript-eslint/parser": "^8.26.0",
     "@vitejs/plugin-react": "^4.5.2",
     "chokidar-cli": "^3.0.0",
-    "clsx": "2.0.0",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-import-resolver-typescript": "^4.4.3",

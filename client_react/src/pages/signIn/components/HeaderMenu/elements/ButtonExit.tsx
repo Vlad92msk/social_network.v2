@@ -1,5 +1,6 @@
+import { Button } from '@components/ui'
+
 import { useAuth } from '../../../../../auth'
-import { Button } from '../../../../../components/ui/common/Button'
 
 export function ButtonExit() {
   const { isAuthenticated, signOut } = useAuth()

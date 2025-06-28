@@ -5,7 +5,7 @@ export const DEFAULT_THEME: Theme = 'default'
 export const THEMES: Theme[] = ['light', 'default']
 
 export interface ThemeServiceContext {
-  theme: Theme;
+  theme: Theme
 }
 
 export const initialState: ThemeServiceContext = {

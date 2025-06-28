@@ -7,15 +7,14 @@ export enum EmojiStyle {
   APPLE = 'apple',
   TWITTER = 'twitter',
   GOOGLE = 'google',
-  FACEBOOK = 'facebook'
+  FACEBOOK = 'facebook',
 }
 
 export enum Theme {
   DARK = 'dark',
   LIGHT = 'light',
-  AUTO = 'auto'
+  AUTO = 'auto',
 }
-
 
 // import { Suspense } from 'react'
 // import { Emoji, EmojiStyle, Theme } from './Emoji'

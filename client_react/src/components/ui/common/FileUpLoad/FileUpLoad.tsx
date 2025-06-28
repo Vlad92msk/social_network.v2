@@ -1,8 +1,9 @@
-import { useBooleanState, AddedFile, availableFormats, GroupedFiles, groupFiles, MaterialAttachProps, useMaterialsAttach } from '@hooks'
-import { classNames, makeCn } from '@utils'
 import React, { useCallback, useEffect, useId } from 'react'
-import { Icon, IconName } from '../../icon'
+import { AddedFile, availableFormats, GroupedFiles, groupFiles, MaterialAttachProps, useBooleanState, useMaterialsAttach } from '@hooks'
+import { classNames, makeCn } from '@utils'
+
 import { Button } from '../Button'
+import { Icon, IconName } from '../icon'
 import { Modal } from '../Modal'
 import styles from './FileUpLoad.module.scss'
 
@@ -38,17 +39,24 @@ export function FileUpLoad(props: FileUpLoadProps) {
 
   const inputId = useId()
   const [addedFiles, handleAddFiles, setAddedFiles] = useMaterialsAttach({
-    availableTypes, maxFileSize,
+    availableTypes,
+    maxFileSize,
   })
 
-  const handleAttach = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    handleAddFiles(event)
-    event.target.value = '' // Очищаем значение input
-  }, [handleAddFiles])
+  const handleAttach = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleAddFiles(event)
+      event.target.value = '' // Очищаем значение input
+    },
+    [handleAddFiles],
+  )
 
-  const removeAttach = useCallback((attachName: string) => {
-    setAddedFiles((prev) => prev.filter(({ name }) => name !== attachName))
-  }, [setAddedFiles])
+  const removeAttach = useCallback(
+    (attachName: string) => {
+      setAddedFiles((prev) => prev.filter(({ name }) => name !== attachName))
+    },
+    [setAddedFiles],
+  )
 
   /**
    * Модалка предпросмотра материалов
@@ -84,29 +92,14 @@ export function FileUpLoad(props: FileUpLoadProps) {
       <div className={classNames(cn(), className)}>
         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
         <label className={cn('AddFile', { disabled })} htmlFor={inputId}>
-          {icon && (
-            <Icon name={icon} fill="grey" />
-          )}
+          {icon && <Icon name={icon} fill="grey" />}
           {buttonElement}
-          <input
-            className={cn('FileInput')}
-            id={inputId}
-            onInput={handleAttach}
-            multiple={!isSingleChoice}
-            accept={availableTypes.join(',')}
-            type="file"
-          />
+          <input className={cn('FileInput')} id={inputId} onInput={handleAttach} multiple={!isSingleChoice} accept={availableTypes.join(',')} type="file" />
         </label>
       </div>
-      <Modal
-        isOpen={Boolean(isOpenPevFiles && isConfirm)}
-        contentClassName={cn('Content')}
-      >
+      <Modal isOpen={Boolean(isOpenPevFiles && isConfirm)} contentClassName={cn('Content')}>
         <div className={cn('ApplyAttachments')}>
-          {addedFiles.map(({
-            name,
-            src,
-          }) => (
+          {addedFiles.map(({ name, src }) => (
             <div key={name} className={cn('ApplyFile')}>
               <div className={cn('ImgWrapper')}>
                 <img className={cn('Img')} src={src} alt={name} />

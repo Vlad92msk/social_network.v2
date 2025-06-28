@@ -1,6 +1,7 @@
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { classNames } from '@utils'
 import Prism from 'prismjs'
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+
 import { cn } from './cn'
 import { CodeLanguage } from './CodeEditor'
 
@@ -37,18 +38,12 @@ export function PrismCode({ code, language, className }: PrismCodeProps) {
     }
   }, [])
 
-
-
   // Подсвечиваем код только если Prism инициализирован
   const html = useMemo(() => {
     if (!isInitialized.current) return code
 
     try {
-      return Prism.highlight(
-        code,
-        Prism.languages[language] || Prism.languages.typescript,
-        language
-      )
+      return Prism.highlight(code, Prism.languages[language] || Prism.languages.typescript, language)
     } catch (e) {
       console.error('Prism highlight error:', e)
       return code
@@ -57,10 +52,7 @@ export function PrismCode({ code, language, className }: PrismCodeProps) {
 
   return (
     <pre className={classNames(cn('PrismCode'), className)}>
-      <code
-        className={`language-${language}`}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: html }} />
     </pre>
   )
 }

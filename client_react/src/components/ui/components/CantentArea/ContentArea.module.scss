@@ -1,8 +1,0 @@
-@import "../../../../styles";
-
-.ContentArea {
-  flex: 1 1 100%;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  column-gap: rem(10);
-}

@@ -1,6 +1,19 @@
 // src/auth/hooks/useAuth.ts
 import { useEffect, useState } from 'react'
+
 import { useAuth as useAuthContext } from '../AuthProvider'
+
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+
+  if (hours > 0) {
+    return `${hours}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
+  }
+
+  return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`
+}
 
 export function useRole(requiredRole?: string) {
   const { user } = useAuthContext()
@@ -12,7 +25,7 @@ export function useRole(requiredRole?: string) {
   return {
     hasRole,
     hasRequiredRole: requiredRole ? hasRole(requiredRole) : true,
-    userRoles: user?.roles || []
+    userRoles: user?.roles || [],
   }
 }
 
@@ -30,7 +43,7 @@ export function usePermissions(requiredPermissions: string[] = []) {
     hasPermission,
     hasAllPermissions,
     hasSomePermissions,
-    userPermissions: user?.permissions || []
+    userPermissions: user?.permissions || [],
   }
 }
 
@@ -61,7 +74,7 @@ export function useSessionTimer() {
   return {
     sessionStart,
     sessionDuration,
-    sessionDurationFormatted: formatDuration(sessionDuration)
+    sessionDurationFormatted: formatDuration(sessionDuration),
   }
 }
 
@@ -76,7 +89,7 @@ export function useAutoSignOut(timeoutMinutes: number = 30) {
     }
 
     const interval = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           signOut()
           return 0
@@ -95,18 +108,6 @@ export function useAutoSignOut(timeoutMinutes: number = 30) {
   return {
     timeLeft,
     timeLeftFormatted: formatDuration(timeLeft * 1000),
-    resetTimer
+    resetTimer,
   }
-}
-
-function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-
-  if (hours > 0) {
-    return `${hours}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
-  }
-
-  return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`
 }

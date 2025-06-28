@@ -13,11 +13,7 @@ export class GuardsExecutor {
   /**
    * Выполняет набор guards и возвращает результат
    */
-  async execute(
-    guards: GuardConfig[],
-    context: GuardContext,
-    onProgress?: (guardId: string) => void
-  ): Promise<GuardsExecutionResult> {
+  async execute(guards: GuardConfig[], context: GuardContext, onProgress?: (guardId: string) => void): Promise<GuardsExecutionResult> {
     const startTime = Date.now()
 
     const result: GuardsExecutionResult = {
@@ -25,7 +21,7 @@ export class GuardsExecutor {
       failedGuards: [],
       executedGuards: [],
       skippedGuards: [],
-      executionTime: 0
+      executionTime: 0,
     }
 
     if (guards.length === 0) {
@@ -38,36 +34,23 @@ export class GuardsExecutor {
       const sortedGuards = [...guards].sort((a, b) => (a.priority || 0) - (b.priority || 0))
 
       // Разделяем на обязательные и опциональные
-      const requiredGuards = sortedGuards.filter(g => g.required !== false)
-      const optionalGuards = sortedGuards.filter(g => g.required === false)
+      const requiredGuards = sortedGuards.filter((g) => g.required !== false)
+      const optionalGuards = sortedGuards.filter((g) => g.required === false)
 
       // Выполняем обязательные guards
-      const requiredPassed = await this.executeGuardGroup(
-        requiredGuards,
-        context,
-        result,
-        onProgress,
-        'all-must-pass'
-      )
+      const requiredPassed = await this.executeGuardGroup(requiredGuards, context, result, onProgress, 'all-must-pass')
 
       // Если обязательные прошли и есть опциональные
       if (requiredPassed && optionalGuards.length > 0) {
-        await this.executeGuardGroup(
-          optionalGuards,
-          context,
-          result,
-          onProgress,
-          'at-least-one'
-        )
+        await this.executeGuardGroup(optionalGuards, context, result, onProgress, 'at-least-one')
       }
-
     } catch (error) {
       console.error('Guards execution failed:', error)
       result.allowed = false
       result.failedGuards.push({
         id: 'system',
         reason: 'Системная ошибка проверки доступа',
-        config: {} as GuardConfig
+        config: {} as GuardConfig,
       })
     }
 
@@ -80,7 +63,7 @@ export class GuardsExecutor {
     context: GuardContext,
     result: GuardsExecutionResult,
     onProgress?: (guardId: string) => void,
-    mode: 'all-must-pass' | 'at-least-one' = 'all-must-pass'
+    mode: 'all-must-pass' | 'at-least-one' = 'all-must-pass',
   ): Promise<boolean> {
     let anyPassed = false
 
@@ -96,10 +79,7 @@ export class GuardsExecutor {
       try {
         const guardResult = await Promise.race([
           guardConfig.guard(context),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Guard timeout')),
-              guardConfig.timeout || this.globalTimeout)
-          )
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Guard timeout')), guardConfig.timeout || this.globalTimeout)),
         ])
 
         result.executedGuards.push(guardConfig.id)
@@ -114,13 +94,10 @@ export class GuardsExecutor {
             id: guardConfig.id,
             reason: guardResult.reason || 'Доступ запрещен',
             config: guardConfig,
-            metadata: guardResult.metadata
+            metadata: guardResult.metadata,
           })
 
-          guardConfig.onAccessDenied?.(
-            guardResult.reason || 'Доступ запрещен',
-            guardResult.metadata
-          )
+          guardConfig.onAccessDenied?.(guardResult.reason || 'Доступ запрещен', guardResult.metadata)
 
           if (mode === 'all-must-pass') {
             result.allowed = false
@@ -132,7 +109,7 @@ export class GuardsExecutor {
         result.failedGuards.push({
           id: guardConfig.id,
           reason: error instanceof Error ? error.message : 'Ошибка выполнения guard',
-          config: guardConfig
+          config: guardConfig,
         })
 
         if (mode === 'all-must-pass') {

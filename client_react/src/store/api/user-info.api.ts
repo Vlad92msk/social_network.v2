@@ -1,7 +1,8 @@
 import { ApiClient, ResponseFormat } from 'synapse-storage/api'
+
 import { UserInfo, UserInfoDto } from '../../../../swagger/userInfo/interfaces-userInfo'
 import { userInfoApiInstance } from '../../../generate/instance'
-import { CookieType } from '../../types/cookie'
+import { CookieType } from '../../models/cookie'
 import { API__USER_INFO } from '../indexdb.config'
 
 const api = new ApiClient({
@@ -31,11 +32,11 @@ const api = new ApiClient({
     getUserById: create<Parameters<typeof userInfoApiInstance.getUserById>[0], UserInfoDto>({
       request: (params) => {
         const { url } = userInfoApiInstance.getUserByIdInit(params)
-        return ({
+        return {
           path: url,
           method: 'GET',
           responseFormat: ResponseFormat.Json,
-        })
+        }
       },
       tags: ['current-user'],
     }),
@@ -43,11 +44,11 @@ const api = new ApiClient({
       cache: false,
       request: (params) => {
         const { url } = userInfoApiInstance.updateUserInit(params)
-        return ({
+        return {
           path: url,
           body: params.body,
           method: 'PUT',
-        })
+        }
       },
       invalidatesTags: ['current-user'],
     }),

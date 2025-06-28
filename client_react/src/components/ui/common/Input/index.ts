@@ -1,5 +1,5 @@
 export * from './Input'
 export * from './InputGroup'
+export * from './RichTextEditor'
 export * from './TextArea'
 export * from './TextAreaEmoji'
-export * from './RichTextEditor'

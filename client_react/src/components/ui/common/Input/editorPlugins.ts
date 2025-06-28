@@ -1,11 +1,9 @@
-// types/editor.ts
+// models/editor.ts
 import { DraftHandleValue, EditorState, getDefaultKeyBinding, KeyBindingUtil, RichUtils } from 'draft-js'
+
 import { EditorPlugin } from './hooks'
 
-export const combinePlugins = (
-  plugins: EditorPlugin[],
-  setEditorState: (state: EditorState) => void,
-) => ({
+export const combinePlugins = (plugins: EditorPlugin[], setEditorState: (state: EditorState) => void) => ({
   keyBindingFn: (e: any) => {
     // Добавим preventDefault для наших команд
     if (KeyBindingUtil.hasCommandModifier(e)) {

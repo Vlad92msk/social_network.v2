@@ -1,7 +1,8 @@
 import { ApiClient } from 'synapse-storage/api'
+
 import { UserProfileInfo } from '../../../../swagger/profile/interfaces-profile'
 import { profileApiInstance } from '../../../generate/instance'
-import { CookieType } from '../../types/cookie'
+import { CookieType } from '../../models/cookie'
 import { API__USER_PROFILE } from '../indexdb.config'
 
 export type GetProfileInfoProps = Parameters<typeof profileApiInstance.getProfileInfo>[0]
@@ -35,11 +36,11 @@ const api = new ApiClient({
       // @ts-ignore
       request: (params) => {
         const { url, init } = profileApiInstance.getProfileInfoInit(params)
-        return ({
+        return {
           body: params.body,
           path: url,
           method: 'POST',
-        })
+        }
       },
       tags: ['profile-info'],
     }),

@@ -1,3 +1,2 @@
-export * from './language-switcher'
-export * from './icon'
-export * from './logout-button'
+export * from './base'
+export * from './common'

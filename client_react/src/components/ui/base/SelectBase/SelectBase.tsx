@@ -1,5 +1,5 @@
-import { classNames, makeCn } from '@utils/makeCn.ts'
 import React from 'react'
+import { classNames, makeCn } from '@utils'
 
 import style from './SelectBase.module.scss'
 
@@ -18,21 +18,7 @@ export interface SelectBaseProps extends Omit<React.SelectHTMLAttributes<HTMLSel
 }
 
 export function SelectBase(props: SelectBaseProps) {
-  const {
-    className,
-    children,
-    placeholder,
-    defaultValue,
-    onChange,
-    icon,
-    isDisabled,
-    isRequired,
-    isReadOnly,
-    width,
-    size,
-    ref,
-    ...rest
-  } = props
+  const { className, children, placeholder, defaultValue, onChange, icon, isDisabled, isRequired, isReadOnly, width, size, ref, ...rest } = props
   return (
     <select
       ref={ref}
@@ -40,16 +26,16 @@ export function SelectBase(props: SelectBaseProps) {
       style={{ width }}
       disabled={isDisabled}
       required={isRequired}
-        // @ts-ignore
+      // @ts-ignore
       readOnly={isReadOnly}
       onChange={onChange}
       defaultValue={defaultValue}
       {...rest}
     >
       {placeholder && (
-      <option value="" disabled hidden>
-        {placeholder}
-      </option>
+        <option value="" disabled hidden>
+          {placeholder}
+        </option>
       )}
       {children}
     </select>

@@ -1,7 +1,8 @@
-import { broadcastMiddleware, MemoryStorage } from 'synapse-storage/core'
 import { AddedFile } from '@hooks'
+import { broadcastMiddleware, MemoryStorage } from 'synapse-storage/core'
+
 import { UserInfo } from '../../../../../swagger/userInfo/interfaces-userInfo'
-import { ApiStatusState, initialApiState } from '../../../types/apiStatus'
+import { ApiStatusState, initialApiState } from '../../../models/apiStatus'
 
 export interface AboutUserUserInfoFields {
   information?: string

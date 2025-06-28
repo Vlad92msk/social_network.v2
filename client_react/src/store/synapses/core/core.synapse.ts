@@ -1,9 +1,10 @@
 import { createSynapse } from 'synapse-storage/utils'
+
+import { userProfileEndpoints } from '../../api/profile.api'
+import { CORE } from '../../indexdb.config'
 import { createCoreDispatcher } from './core.dispatcher'
 import { userProfileEffects } from './core.effects'
 import { createUserInfoSelectors } from './core.selectors'
-import { userProfileEndpoints } from '../../api/profile.api'
-import { CORE } from '../../indexdb.config'
 
 export const coreSynapseIDB = await createSynapse({
   storage: CORE,

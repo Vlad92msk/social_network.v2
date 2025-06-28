@@ -1,5 +1,5 @@
+import { classNames, makeCn } from '@utils'
 
-import { classNames, makeCn } from '@utils/makeCn.ts'
 import style from './Spinner.module.scss'
 
 export interface SpinnerBaseProps {

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+
 import { AuthConfig } from '../types'
 import { mergeAuthConfig } from '../utils/configMerger'
 

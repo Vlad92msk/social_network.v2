@@ -1,6 +1,7 @@
 // src/providers/translations/Translations.tsx
 import { PropsWithChildren, useEffect, useState } from 'react'
-import { i18nInitPromise } from '@i18n/config'
+
+import { i18nInitPromise } from '../../i18n/config'
 
 export const Translations = (props: PropsWithChildren) => {
   const { children } = props
@@ -21,13 +22,15 @@ export const Translations = (props: PropsWithChildren) => {
 
   if (!isI18nReady) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '18px',
+        }}
+      >
         Загрузка переводов...
       </div>
     )

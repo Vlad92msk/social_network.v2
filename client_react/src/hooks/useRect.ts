@@ -1,14 +1,13 @@
-import { debounce } from '@utils/debounce.ts'
-import { throttle } from '@utils/throttle.ts'
 import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { debounce, throttle } from '@utils'
 
 export interface UseRectProps {
-  ref: MutableRefObject<HTMLElement | null | undefined>,
-  watchProps: Array<keyof DOMRect>,
+  ref: MutableRefObject<HTMLElement | null | undefined>
+  watchProps: Array<keyof DOMRect>
   options?: {
-    stopFunc: 'throttle' | 'debounce',
+    stopFunc: 'throttle' | 'debounce'
     ms: number
-  },
+  }
 }
 
 export const useRect = (props: UseRectProps) => {
@@ -17,23 +16,26 @@ export const useRect = (props: UseRectProps) => {
   const observer = useRef<ResizeObserver>(null)
   const prevRectRef = useRef<Partial<DOMRect>>({})
 
-  const updateRect = useCallback((entries: ResizeObserverEntry[]) => {
-    const newRect = entries[0].contentRect
-    const pickRect = watchProps.reduce((result, prop) => {
+  const updateRect = useCallback(
+    (entries: ResizeObserverEntry[]) => {
+      const newRect = entries[0].contentRect
+      const pickRect = watchProps.reduce((result, prop) => {
+        // @ts-ignore
+        result[prop] = newRect[prop]
+
+        return result
+      }, {})
+
       // @ts-ignore
-      result[prop] = newRect[prop]
+      const isEqual = watchProps.every((prop) => prevRectRef.current[prop] === pickRect[prop])
 
-      return result
-    }, {})
-
-    // @ts-ignore
-    const isEqual = watchProps.every((prop) => prevRectRef.current[prop] === pickRect[prop])
-
-    if (!isEqual) {
-      prevRectRef.current = pickRect
-      setRect(pickRect)
-    }
-  }, [watchProps])
+      if (!isEqual) {
+        prevRectRef.current = pickRect
+        setRect(pickRect)
+      }
+    },
+    [watchProps],
+  )
 
   // Обертка updateRect с использованием throttle или debounce, если указаны в options
   const delayedUpdate = useCallback(() => {

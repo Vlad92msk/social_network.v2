@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/ban-models
 export const debounce = <F extends Function>(func: F, delay: number) => {
   let inDebounce // Идентификатор таймера для отслеживания задержки
 

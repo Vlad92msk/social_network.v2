@@ -1,11 +1,11 @@
-import { AuthConfig } from '../types'
 import { AUTH_CONSTANTS } from '../constants'
+import { AuthConfig } from '../types'
 
 const defaultConfig: AuthConfig = {
   redirects: {
     afterSignIn: '/',
     afterSignOut: '/signin',
-    whenUnauthenticated: '/signin'
+    whenUnauthenticated: '/signin',
   },
   autoRedirect: true,
   providers: ['google', 'email'],
@@ -14,8 +14,8 @@ const defaultConfig: AuthConfig = {
   guards: {
     enabled: false,
     globalTimeout: AUTH_CONSTANTS.DEFAULT_GUARD_TIMEOUT,
-    fallback: 'component'
-  }
+    fallback: 'component',
+  },
 }
 
 /**
@@ -29,9 +29,9 @@ export function mergeAuthConfig(userConfig?: Partial<AuthConfig>): AuthConfig {
     ...userConfig,
     redirects: {
       ...defaultConfig.redirects,
-      ...userConfig.redirects
+      ...userConfig.redirects,
     },
-    authPages: userConfig.authPages || [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES]
+    authPages: userConfig.authPages || [...AUTH_CONSTANTS.DEFAULT_AUTH_PAGES],
   }
 
   // Безопасное слияние guards конфигурации
@@ -40,7 +40,7 @@ export function mergeAuthConfig(userConfig?: Partial<AuthConfig>): AuthConfig {
       enabled: userConfig.guards.enabled ?? defaultConfig.guards.enabled,
       globalTimeout: userConfig.guards.globalTimeout ?? defaultConfig.guards.globalTimeout,
       fallback: userConfig.guards.fallback ?? defaultConfig.guards.fallback,
-      fallbackComponent: userConfig.guards.fallbackComponent
+      fallbackComponent: userConfig.guards.fallbackComponent,
     }
   }
 

@@ -1,22 +1,22 @@
 // src/auth/providers/firebase.ts
 import {
-  signInWithPopup,
-  GoogleAuthProvider,
-  GithubAuthProvider,
-  FacebookAuthProvider,
-  TwitterAuthProvider,
-  OAuthProvider,
-  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
+  FacebookAuthProvider,
+  GithubAuthProvider,
+  GoogleAuthProvider,
+  OAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  TwitterAuthProvider,
   updateProfile,
-  User as FirebaseUser
+  User as FirebaseUser,
 } from 'firebase/auth'
 
 import { firebaseAuth, validateFirebaseConfig } from '../config'
-import type { User, AuthResult, AuthMethods } from '../types'
+import type { AuthMethods, AuthResult, User } from '../types'
 
 validateFirebaseConfig()
 
@@ -30,9 +30,7 @@ export const firebaseAuthMethods: AuthMethods & {
   signInWithTwitter(): Promise<AuthResult>
   signInWithYahoo(): Promise<AuthResult>
 } = {
-
   // БАЗОВЫЕ МЕТОДЫ (обязательные)
-
   async signInWithGoogle(): Promise<AuthResult> {
     try {
       const provider = new GoogleAuthProvider()
@@ -183,7 +181,7 @@ export const firebaseAuthMethods: AuthMethods & {
     } catch (error: any) {
       return { error: getErrorMessage(error), success: false }
     }
-  }
+  },
 }
 
 // Утилиты
@@ -205,7 +203,7 @@ const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
     name: firebaseUser.displayName,
     avatar: firebaseUser.photoURL,
     emailVerified: firebaseUser.emailVerified,
-    provider: provider as any
+    provider: provider as any,
   }
 }
 

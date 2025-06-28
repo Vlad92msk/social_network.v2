@@ -10,7 +10,7 @@ export function NavigationDebug() {
       pathname: location.pathname,
       search: location.search,
       state: location.state,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
   }, [location])
 

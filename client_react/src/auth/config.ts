@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 // Логирование для диагностики (только в dev)
@@ -30,18 +30,14 @@ export const firebaseAuth = getAuth(firebaseApp)
 
 // Проверка конфигурации
 export function validateFirebaseConfig(): void {
-  const requiredVars = [
-    'VITE_FIREBASE_API_KEY',
-    'VITE_FIREBASE_AUTH_DOMAIN',
-    'VITE_FIREBASE_PROJECT_ID'
-  ]
+  const requiredVars = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID']
 
-  const missing = requiredVars.filter(varName => !import.meta.env[varName])
+  // @ts-ignore
+  const missing = requiredVars.filter((varName) => !import.meta.env[varName])
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required Firebase environment variables: ${missing.join(', ')}\n` +
-      'Please check your .env file and ensure all Firebase configuration variables are set.'
+      `Missing required Firebase environment variables: ${missing.join(', ')}\n` + 'Please check your .env file and ensure all Firebase configuration variables are set.',
     )
   }
 }

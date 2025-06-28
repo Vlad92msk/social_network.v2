@@ -48,7 +48,7 @@ export function MediaContent(props: MediaImagesProps) {
   const element = useMemo(() => {
     switch (type) {
       case 'video':
-        // eslint-disable-next-line react/no-unstable-nested-components
+        // eslint-disable-next-line react/no-unstable-nested-app-components
         return function ({ meta }: MediaEntity) {
           return (
             <video controls>
@@ -58,7 +58,7 @@ export function MediaContent(props: MediaImagesProps) {
           )
         }
       case 'image':
-        // eslint-disable-next-line react/no-unstable-nested-components
+        // eslint-disable-next-line react/no-unstable-nested-app-components
         return function ({ meta }: MediaEntity) {
           return <img src={meta.src} alt={meta.name} style={{ maxHeight: 'inherit' }} />
         }

@@ -1,13 +1,12 @@
 import { apiRequestStore } from '@store/utils'
 import { IStorage } from 'synapse-storage/core'
 import { createDispatcher, loggerDispatcherMiddleware } from 'synapse-storage/reactive'
-import { AboutUserUserInfo } from './user-info.store'
+
 import { UserInfo } from '../../../../../swagger/userInfo/interfaces-userInfo'
-import { ReceivedResponse } from '../../../types/apiStatus'
+import { ReceivedResponse } from '../../../models/apiStatus'
+import { AboutUserUserInfo } from './user-info.store'
 
 export function createUserInfoDispatcher(store: IStorage<AboutUserUserInfo>) {
-
-
   return createDispatcher({ storage: store }, (storage, { createAction }) => ({
     setCurrentUserProfile: createAction<UserInfo, UserInfo>({
       type: 'setCurrentUserProfile',
@@ -86,7 +85,7 @@ export function createUserInfoDispatcher(store: IStorage<AboutUserUserInfo>) {
       type: 'submit',
       meta: { description: 'Подготовка формы с результатом' },
       action: async () => {
-        const result = await storage.get('fields') as AboutUserUserInfo['fields']
+        const result = (await storage.get('fields')) as AboutUserUserInfo['fields']
 
         const formData = new FormData()
         if (result.name) formData.append('name', result.name)

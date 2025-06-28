@@ -1,15 +1,14 @@
-import {
-  ComponentType, createContext, PropsWithChildren, use, useEffect, useRef, useSyncExternalStore,
-} from 'react'
-import { DeepPartial } from '../tsUtils'
+import { ComponentType, createContext, PropsWithChildren, use, useEffect, useRef, useSyncExternalStore } from 'react'
+
+import { DeepPartial } from '../models/DeepPartial'
 
 export interface Options<Store> {
-  initialState: Store;
+  initialState: Store
 }
 
 export function createStoreContext<Store>({ initialState: initial }: Options<Store>) {
   const StoreContext = createContext<{
-    get:() => Store
+    get: () => Store
     set: (v: (s: Store) => DeepPartial<Store>) => void
     subscribe: (callback: VoidFunction) => VoidFunction
   } | null>(null)
@@ -66,12 +65,11 @@ export function createStoreContext<Store>({ initialState: initial }: Options<Sto
     return store.set
   }
 
-  const contextWrapper = <SelfComponentProps, PublicContextProps extends Partial<Store>>(
-    Module: ComponentType<SelfComponentProps & { contextProps?: PublicContextProps }>,
-  ) => function ({ contextProps, ...props }: SelfComponentProps & { contextProps?: PublicContextProps }) {
+  const contextWrapper = <SelfComponentProps, PublicContextProps extends Partial<Store>>(Module: ComponentType<SelfComponentProps & { contextProps?: PublicContextProps }>) =>
+    function ({ contextProps, ...props }: SelfComponentProps & { contextProps?: PublicContextProps }) {
       return (
         <ContextProvider initialState={contextProps}>
-          <Module {...props as PropsWithChildren<SelfComponentProps>} />
+          <Module {...(props as PropsWithChildren<SelfComponentProps>)} />
         </ContextProvider>
       )
     }

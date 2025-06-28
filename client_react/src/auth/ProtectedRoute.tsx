@@ -1,11 +1,12 @@
-import { ReactNode, useEffect, useState, useMemo, useCallback } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation, useParams } from 'react-router-dom'
+
 import { useAuth } from './AuthProvider'
+import { AUTH_CONSTANTS } from './constants'
 import { useGuardData } from './GuardProvider'
 import { useGuardsExecutor } from './hooks/useGuardsExecutor'
+import type { GuardConfig, GuardContext, GuardsExecutionResult } from './types'
 import { callbackStorage, createFullUrl, isAuthPage } from './utils'
-import { AUTH_CONSTANTS } from './constants'
-import type { GuardConfig, GuardsExecutionResult, GuardContext } from './types'
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -37,7 +38,7 @@ export function ProtectedRoute({
   accessDeniedComponent,
   accessDeniedPage,
   requireAuth = true,
-  onAccessDenied
+  onAccessDenied,
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading, config } = useAuth()
   const { guardData, globalConfig } = useGuardData()
@@ -62,21 +63,24 @@ export function ProtectedRoute({
   // Создаем стабильный ключ для выполнения guards
   const executionKey = useMemo(() => {
     if (!hasGuards) return 'no-guards'
-    return `${pathname}-${search}-${isAuthenticated}-${JSON.stringify(guards.map(g => g.id))}`
+    return `${pathname}-${search}-${isAuthenticated}-${JSON.stringify(guards.map((g) => g.id))}`
   }, [pathname, search, isAuthenticated, hasGuards, guards])
 
   // Создаем контекст для guards
-  const guardContext = useMemo((): GuardContext => ({
-    user,
-    isAuthenticated,
-    route: {
-      pathname,
-      params,
-      search,
-      state: location.state
-    },
-    data: guardData
-  }), [user, isAuthenticated, pathname, params, search, location.state, guardData])
+  const guardContext = useMemo(
+    (): GuardContext => ({
+      user,
+      isAuthenticated,
+      route: {
+        pathname,
+        params,
+        search,
+        state: location.state,
+      },
+      data: guardData,
+    }),
+    [user, isAuthenticated, pathname, params, search, location.state, guardData],
+  )
 
   // Функция выполнения guards
   const runGuards = useCallback(async () => {
@@ -106,14 +110,16 @@ export function ProtectedRoute({
       console.error('Guards execution failed:', error)
       setGuardsResult({
         allowed: false,
-        failedGuards: [{
-          id: 'system',
-          reason: 'Системная ошибка проверки доступа',
-          config: {} as GuardConfig
-        }],
+        failedGuards: [
+          {
+            id: 'system',
+            reason: 'Системная ошибка проверки доступа',
+            config: {} as GuardConfig,
+          },
+        ],
         executedGuards: [],
         skippedGuards: [],
-        executionTime: 0
+        executionTime: 0,
       })
       setLastExecutionKey(executionKey)
     }
@@ -140,23 +146,11 @@ export function ProtectedRoute({
 
     // Запускаем выполнение guards
     runGuards()
-  }, [
-    isLoading,
-    requireAuth,
-    isAuthenticated,
-    runGuards,
-    executionKey,
-    lastExecutionKey,
-    pathname,
-    search,
-    authPages
-  ])
+  }, [isLoading, requireAuth, isAuthenticated, runGuards, executionKey, lastExecutionKey, pathname, search, authPages])
 
   // Показываем лоадер
   if (isLoading || isExecuting) {
-    const message = isLoading
-      ? AUTH_CONSTANTS.MESSAGES.CHECKING_AUTH
-      : `${AUTH_CONSTANTS.MESSAGES.CHECKING_ACCESS}${currentGuard ? ': ' + currentGuard : ''}`
+    const message = isLoading ? AUTH_CONSTANTS.MESSAGES.CHECKING_AUTH : `${AUTH_CONSTANTS.MESSAGES.CHECKING_ACCESS}${currentGuard ? ': ' + currentGuard : ''}`
 
     return (
       fallback || (
@@ -193,7 +187,7 @@ export function ProtectedRoute({
             state={{
               reason: firstFailedGuard.reason,
               guardId: firstFailedGuard.id,
-              metadata: firstFailedGuard.metadata
+              metadata: firstFailedGuard.metadata,
             }}
             replace
           />
@@ -213,7 +207,7 @@ export function ProtectedRoute({
           to={accessDeniedPage}
           state={{
             reason: firstFailedGuard?.reason || 'Доступ запрещен',
-            failedGuards: guardsResult.failedGuards
+            failedGuards: guardsResult.failedGuards,
           }}
           replace
         />
@@ -232,7 +226,7 @@ export function ProtectedRoute({
           to={globalConfig.accessDeniedPage}
           state={{
             reason: firstFailedGuard?.reason || 'Доступ запрещен',
-            failedGuards: guardsResult.failedGuards
+            failedGuards: guardsResult.failedGuards,
           }}
           replace
         />
@@ -246,7 +240,7 @@ export function ProtectedRoute({
           to={config.redirects.onAccessDenied}
           state={{
             reason: firstFailedGuard?.reason || 'Доступ запрещен',
-            failedGuards: guardsResult.failedGuards
+            failedGuards: guardsResult.failedGuards,
           }}
           replace
         />
@@ -263,8 +257,8 @@ export function ProtectedRoute({
         'ProtectedRoute.accessDeniedPage prop',
         'GuardProvider.accessDeniedComponent',
         'GuardProvider.accessDeniedPage',
-        'AuthProvider.config.redirects.onAccessDenied'
-      ]
+        'AuthProvider.config.redirects.onAccessDenied',
+      ],
     })
 
     return <Navigate to="/" replace />

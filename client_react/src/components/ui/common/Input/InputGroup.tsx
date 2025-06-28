@@ -1,6 +1,7 @@
+import { useRef } from 'react'
 import { useRect } from '@hooks'
 import { classNames, rem } from '@utils'
-import { useRef } from 'react'
+
 import { cn } from './cn'
 
 interface InputGroupCommonProps {
@@ -36,9 +37,19 @@ export function InputGroup(props: InputGroupCommonProps) {
 
   return (
     <div ref={containerRef} className={classNames(cn('Group'), className)} {...rest}>
-      {leftElement && <div ref={leftRef} className={cn('GroupLeftElement')}>{leftElement}</div>}
-      <div className={cn('GroupCenter')} style={{ maxWidth: rem(containerWidth - leftWidth - rightWidth) }}>{children}</div>
-      {rightElement && (<div ref={rightRef} className={cn('GroupRightElement')}>{rightElement}</div>)}
+      {leftElement && (
+        <div ref={leftRef} className={cn('GroupLeftElement')}>
+          {leftElement}
+        </div>
+      )}
+      <div className={cn('GroupCenter')} style={{ maxWidth: rem(containerWidth - leftWidth - rightWidth) }}>
+        {children}
+      </div>
+      {rightElement && (
+        <div ref={rightRef} className={cn('GroupRightElement')}>
+          {rightElement}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useRef } from 'react'
 import { classNames } from '@utils'
 import { Editor as DraftEditor, Editor as DraftEditorType, EditorState, Modifier, SelectionState } from 'draft-js'
 import { EmojiClickData } from 'emoji-picker-react'
-import React, { useCallback, useEffect, useRef } from 'react'
+
 import { ButtonAddEmoji } from '../ButtonAddEmoji'
 import { Text } from '../Text'
 import { cn } from './cn'
@@ -25,16 +26,7 @@ interface RichTextEditorProps {
 const plugins = [linkPlugin]
 const decorators = [linkDecorator, urlDecorator]
 export function RichTextEditor(props: RichTextEditorProps) {
-  const {
-    onValueChange,
-    onStartTyping,
-    onStopTyping,
-    className,
-    placeholder,
-    initialValue,
-    readOnly,
-    onInit,
-  } = props
+  const { onValueChange, onStartTyping, onStopTyping, className, placeholder, initialValue, readOnly, onInit } = props
 
   const editorRef = useRef<DraftEditorType>(null)
   const lastSelectionRef = useRef<SelectionState>(null)
@@ -60,35 +52,26 @@ export function RichTextEditor(props: RichTextEditorProps) {
     })
   }, [onInit, setText, initialValue])
 
-  const handleEmojiClick = useCallback((emojiData: EmojiClickData) => {
-    const selection = editorState.getSelection().getHasFocus()
-      ? editorState.getSelection()
-      : lastSelectionRef.current || editorState.getSelection()
+  const handleEmojiClick = useCallback(
+    (emojiData: EmojiClickData) => {
+      const selection = editorState.getSelection().getHasFocus() ? editorState.getSelection() : lastSelectionRef.current || editorState.getSelection()
 
-    const newEditorState = EditorState.push(
-      editorState,
-      Modifier.insertText(
-        editorState.getCurrentContent(),
-        selection,
-        emojiData.emoji,
-      ),
-      'insert-characters',
-    )
+      const newEditorState = EditorState.push(editorState, Modifier.insertText(editorState.getCurrentContent(), selection, emojiData.emoji), 'insert-characters')
 
-    const newSelection = selection.merge({
-      anchorOffset: selection.getAnchorOffset() + emojiData.emoji.length,
-      focusOffset: selection.getFocusOffset() + emojiData.emoji.length,
-    })
+      const newSelection = selection.merge({
+        anchorOffset: selection.getAnchorOffset() + emojiData.emoji.length,
+        focusOffset: selection.getFocusOffset() + emojiData.emoji.length,
+      })
 
-    setEditorState(EditorState.forceSelection(newEditorState, newSelection))
-    requestAnimationFrame(() => editorRef.current?.focus())
-  }, [editorState, setEditorState])
+      setEditorState(EditorState.forceSelection(newEditorState, newSelection))
+      requestAnimationFrame(() => editorRef.current?.focus())
+    },
+    [editorState, setEditorState],
+  )
 
   const handleFocus = useCallback(() => {
     if (lastSelectionRef.current) {
-      setEditorState(
-        EditorState.forceSelection(editorState, lastSelectionRef.current),
-      )
+      setEditorState(EditorState.forceSelection(editorState, lastSelectionRef.current))
     }
   }, [editorState, setEditorState])
 
@@ -105,9 +88,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
         blockRendererFn={blockRendererFn}
         {...combinePlugins(plugins, setEditorState)}
       />
-      {!readOnly && (
-        <ButtonAddEmoji onEmojiClick={handleEmojiClick} />
-      )}
+      {!readOnly && <ButtonAddEmoji onEmojiClick={handleEmojiClick} />}
     </Text>
   )
 }

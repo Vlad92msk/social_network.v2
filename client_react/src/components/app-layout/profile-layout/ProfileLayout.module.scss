@@ -1,0 +1,37 @@
+@import "../../../styles";
+
+.ProfileLayout {
+  position: relative;
+  height: 100dvh;
+  max-height: 100dvh;
+  display: grid;
+
+  &--variant {
+    &_1 {
+      grid-template:
+        "main-menu second-menu" fit-content(rem(64))
+        "main-menu content-area" 1fr / fit-content($main-menu--max-width) 1fr;
+    }
+
+    &_2 {
+      grid-template:
+        "main-menu content-area" 1fr
+        "main-menu second-menu" fit-content(rem(64)) / fit-content($main-menu--max-width) 1fr;
+    }
+  }
+
+  &-MainMenu {
+    grid-area: main-menu;
+    display: flex;
+  }
+  &-SecondMenu {
+    grid-area: second-menu;
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  &-ContentArea {
+    grid-area: content-area;
+    display: flex;
+    overflow: hidden;
+  }
+}
