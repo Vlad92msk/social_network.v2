@@ -6,6 +6,7 @@ import { Icon } from '../icon'
 import styles from './Notification.module.scss'
 
 export interface NotificationProps {
+  containerId?: string
   isOpen: boolean
   onClose: VoidFunction
   message: ReactNode
@@ -36,6 +37,7 @@ function NotificationIcon({ type }: { type: string }) {
 
 export function Notification(props: NotificationProps) {
   const {
+    containerId = 'notifications',
     isOpen,
     onClose,
     message,
@@ -148,7 +150,7 @@ export function Notification(props: NotificationProps) {
   if (!isMounted) return null
 
   return (
-    <FloatingPortal id="notifications">
+    <FloatingPortal id={containerId}>
       <div
         ref={refs.setFloating}
         style={{

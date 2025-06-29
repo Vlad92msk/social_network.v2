@@ -1,6 +1,7 @@
 import { uniqueId } from 'lodash'
 import { IStorage } from 'synapse-storage/core'
 import { createDispatcher } from 'synapse-storage/reactive'
+
 import { NotificationItem, NotificationsStore } from './notifications.store'
 
 export function createNotificationsDispatcher(store: IStorage<NotificationsStore>) {

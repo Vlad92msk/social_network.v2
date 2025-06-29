@@ -3,7 +3,7 @@ import { makeCn } from '@utils'
 import { AboutMe, MediaContent, ProfileTab, ProfileTabItem } from './_components'
 import style from './Profile.module.scss'
 
-const cn = makeCn('Page', style)
+const cn = makeCn('Profile', style)
 
 export interface UserPageProps {}
 

@@ -18,7 +18,7 @@ export const AboutMe = userInfoSynapseCtx.contextSynapse<AboutMeProps, void>((pr
   }
 
   const currentUserProfile = useSelector(selectors.currentUserProfile)
-  console.log('currentUserProfile', currentUserProfile)
+
   return (
     <div className={cn()}>
       {isLoading ? (

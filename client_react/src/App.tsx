@@ -10,6 +10,7 @@ import { NavigationDebug } from './auth/NavigationDebug.tsx'
 import { Home } from './pages/home'
 import { SignIn } from './pages/signIn/SignIn.tsx'
 import { Core } from './providers/core/Core.tsx'
+import { NotificationsProvider } from './providers/notifications/NotificationsProvider.tsx'
 import { ThemeProvider } from './providers/theme'
 
 import style from './App.module.css'
@@ -67,42 +68,44 @@ const App = () => {
   return (
     <Translations>
       <ThemeProvider contextProps={{ theme: 'default' }}>
-        <BrowserRouter>
-          <NavigationDebug />
-          <AuthProvider config={authConfig}>
-            <Core>
-              <GuardProvider>
-                <Routes>
-                  <Route path="/signin" element={<SignIn />} />
-                  <Route
-                    index
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <ProfilePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="*"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </GuardProvider>
-            </Core>
-          </AuthProvider>
-        </BrowserRouter>
+        <NotificationsProvider>
+          <BrowserRouter>
+            <NavigationDebug />
+            <AuthProvider config={authConfig}>
+              <Core>
+                <GuardProvider>
+                  <Routes>
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route
+                      index
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <ProfilePage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="*"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </GuardProvider>
+              </Core>
+            </AuthProvider>
+          </BrowserRouter>
+        </NotificationsProvider>
       </ThemeProvider>
     </Translations>
   )

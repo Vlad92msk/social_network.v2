@@ -1,8 +1,8 @@
+import { notificationsSynapse } from '@store/synapses/notifications'
 import { createSynapse } from 'synapse-storage/utils'
 
 import { userInfoEndpoints } from '../../api/user-info.api'
 import { coreSynapseIDB } from '../core/core.synapse'
-import { notificationsSynapse } from '../notifications/notifications.synapse'
 import { createUserInfoDispatcher } from './user-info.dispatcher'
 import { userInfoEffects } from './user-info.effects'
 import { createUserInfoSelectors } from './user-info.selectors'
