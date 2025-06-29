@@ -1,11 +1,12 @@
-import { classNames } from '@utils'
 import { PropsWithChildren } from 'react'
+import { classNames } from '@utils'
+
 import { cn } from './cn'
 import { useTabsSelect } from './Tabs'
 
 export interface LmTabPanelProps extends PropsWithChildren {
-  className?: string;
-  value: string | number;
+  className?: string
+  value: string | number
 }
 
 export function TabPanel(props: LmTabPanelProps) {

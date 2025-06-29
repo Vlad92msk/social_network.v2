@@ -1,10 +1,9 @@
 import { ISelectorModule } from 'synapse-storage/core'
+
 import { AboutUserUserInfo } from './user-info.store'
 
 export const createUserInfoSelectors = (selectorModule: ISelectorModule<AboutUserUserInfo>) => {
-  const currentUserProfile = selectorModule.createSelector((s) => s.userInfoInit, {
-    name: 'currentUserProfile',
-  })
+  const currentUserProfile = selectorModule.createSelector((s) => s.userInfoInit)
   const fieldsInit = selectorModule.createSelector((s) => s.fieldsInit)
 
   const isChangeActive = selectorModule.createSelector((s) => s.isChangeActive)
@@ -19,7 +18,7 @@ export const createUserInfoSelectors = (selectorModule: ISelectorModule<AboutUse
   const fieldImageUploadFile = selectorModule.createSelector((s) => s.fields.imageUploadFile)
   const fieldName = selectorModule.createSelector((s) => s.fields.name)
 
-  return ({
+  return {
     currentUserProfile,
     isChangeActive,
     fields,
@@ -33,5 +32,5 @@ export const createUserInfoSelectors = (selectorModule: ISelectorModule<AboutUse
     fieldImageUploadFile,
     fieldImage,
     fieldName,
-  })
+  }
 }

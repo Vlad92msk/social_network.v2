@@ -45,9 +45,14 @@ export default defineConfig({
   // Добавляем обработку различных типов файлов как assets
   assetsInclude: ['**/*.webp', '**/*.avif', '**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.svg'],
 
+  // Добавляем полифилы для Node.js переменных
+  define: {
+    global: 'globalThis',
+  },
+
   // Оптимизация для больших библиотек
   optimizeDeps: {
-    include: ['prismjs'],
+    include: ['prismjs', 'draft-js'],
     exclude: ['prismjs/app-components/prism-*']
   },
   server: {
@@ -98,6 +103,8 @@ export default defineConfig({
           i18n: ['i18next', 'react-i18next'],
           // Выносим emoji-picker в отдельный чанк из-за размера
           emoji: ['emoji-picker-react'],
+          // Выносим draft-js в отдельный чанк
+          editor: ['draft-js'],
           // Выносим PrismJS в отдельный чанк
           prism: ['prismjs'],
           // utils: ['gray-matter', 'remark', 'remark-gfm']

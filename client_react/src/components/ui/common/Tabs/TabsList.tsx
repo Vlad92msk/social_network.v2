@@ -1,11 +1,12 @@
-import { classNames } from '@utils'
 import React, { PropsWithChildren } from 'react'
+import { classNames } from '@utils'
+
 import { cn } from './cn'
 
 export interface LmTabsListProps extends PropsWithChildren {
-  className?: string;
-  orientation?: 'vertical' | 'horizontal';
-  ref?: React.Ref<any>;
+  className?: string
+  orientation?: 'vertical' | 'horizontal'
+  ref?: React.Ref<any>
 }
 
 export function TabsList(props: LmTabsListProps) {

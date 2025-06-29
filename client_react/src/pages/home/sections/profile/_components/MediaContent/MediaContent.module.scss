@@ -1,0 +1,179 @@
+@import "../../../../../../styles";
+
+.MediaContent {
+  display: flex;
+  gap: rem(20);
+  width: 100%;
+  position: relative;
+  flex-wrap: wrap;
+
+  &-AlbumContainer {
+    padding: 10px;
+    border-radius: 5px;
+    position: relative;
+    width: rem(200);
+    height: rem(200);
+    display: flex;
+    flex-direction: column;
+    gap: rem(5);
+
+    &--active {
+      background-color: rgba(0, 0, 255, 0.1);
+      border: 2px solid blue;
+    }
+
+    &--dragging {
+      opacity: 0.5;
+    }
+  }
+
+  &-PhotosContainer {
+    @include scrollbar-mini();
+    display: flex;
+    overflow-y: auto;
+    gap: rem(10);
+    flex-wrap: wrap;
+    flex-grow: 1;
+    align-content: flex-start;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    &--isAlbum {
+      //position: absolute;
+      width: 100%;
+      height: 90%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: flex-start;
+      left: 0;
+      top: 0;
+      overflow: hidden;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+
+      & > *:is(div) {
+        max-width: calc(50% - #{rem(5)});
+        max-height: calc(50% - #{rem(5)});
+        height: 100% !important;
+        width: 100% !important;
+        display: flex;
+        flex-grow: 1;
+      }
+    }
+  }
+
+  &-AlbumTitleContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    gap: rem(5);
+  }
+
+  &-AlbumTitle {
+    text-align: center;
+  }
+  &-OtherElementsCount {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50%;
+    height: 50%;
+    align-items: center;
+    justify-content: center;
+    place-self: center;
+    display: flex;
+    background-color: var(--Color-Bcg--variant-4--theme-default);
+    border: rem(1) solid var(--Color-Border--variant-3--theme-default);
+    border-radius: $border-radius--medium;
+    overflow: hidden;
+  }
+
+  &-ButtonUpload {
+    width: rem(200);
+    height: rem(200);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: rem(2) dotted var(--Palette--BrightGreen--120--opacity-1);
+  }
+  &-PhotoItem {
+    width: rem(200);
+    height: rem(200);
+    flex-shrink: 0;
+    flex-grow: 0;
+    order: 0;
+    position: relative;
+
+    &:hover button {
+      opacity: 1;
+    }
+
+    button {
+      position: absolute;
+      right: 0;
+      opacity: 0;
+    }
+
+    &--highlighted {
+      background-color: rgba(0, 255, 0, 0.2);
+      border: 2px solid green;
+    }
+
+    &--placeholder {
+      background-color: #f0f0f0;
+      border: 2px dashed #ccc;
+    }
+
+    &--dragging {
+      cursor: grabbing;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+      background-color: #fff;
+    }
+
+    &--active {
+      width: 100%;
+      height: inherit;
+      order: -1;
+      transform: translate(0, 0);
+      background: red;
+      transition: transform .5s;
+    }
+    transition: transform .5s;
+  }
+
+  &-ModalAlbum {
+    padding: $paddings--medium;
+    border-radius: $border-radius--medium;
+    max-width: 90vw;
+    height: auto;
+    background: var(--Color-Bcg--variant-4--theme-default);
+    display: flex;
+    gap: rem(10);
+    overflow: hidden;
+    transition: width, height .5s;
+    width: 90vw;
+
+
+    &ListItems {
+      @include scrollbar-mini();
+      overflow-y: auto;
+      height: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: rem(10);
+      flex-grow: 1;
+      position: relative;
+    }
+  }
+}

@@ -1,0 +1,25 @@
+@import "../../../../../../styles";
+
+.ProfilePageTab {
+  display: flex;
+  flex-direction: column;
+  gap: rem(20);
+  padding-bottom: rem(50);
+  width: clamp(#{rem(300)}, 100%, #{rem(800)});
+  align-self: center;
+
+  &-ButtonsList {
+    width: 100%;
+    gap: rem(20);
+    background: var(--Color-Bcg--root--theme-default);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-top: $paddings--small;
+    padding-bottom: $paddings--small;
+  }
+
+  &-Panel {
+    //display: flex;
+  }
+}

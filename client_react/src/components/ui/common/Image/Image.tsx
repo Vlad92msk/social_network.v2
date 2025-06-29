@@ -1,4 +1,4 @@
-import { ImgHTMLAttributes, useEffect, useState } from 'react'
+import { ImgHTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react'
 import blurImage from '@assets/images/base/blur_img.webp'
 import { MediaBreakKeys, mediaBreakpoints } from '@utils'
 
@@ -39,7 +39,7 @@ function createSizeString(bp: typeof mediaBreakpoints, sizes: SizesConfig) {
 }
 
 export function Image(props: ImageProps) {
-  const { src, pictureClassName, sizes, srcSet, fallbackSrc = blurImage, placeholderSrc, blur = 4, showPlaceholder = true, formatOptions, style, ...rest } = props
+  const { src, pictureClassName, sizes, srcSet, fallbackSrc = blurImage, placeholderSrc, blur = 4, showPlaceholder = true, formatOptions, style, onError, onLoad, ...rest } = props
 
   const [imageSrc, setImageSrc] = useState<string>(placeholderSrc || fallbackSrc)
   const [isLoading, setIsLoading] = useState(true)
@@ -47,8 +47,35 @@ export function Image(props: ImageProps) {
   const [sourceSrcSet, setSourceSrcSet] = useState<Record<string, string>>({})
   const [blobUrls, setBlobUrls] = useState<string[]>([])
 
-  // Автоматическое определение оптимальных настроек форматов
-  const optimalOptions = formatOptions || getOptimalFormatOptions()
+  const optimalOptions = useMemo(() => formatOptions || getOptimalFormatOptions(), [formatOptions])
+  const sizesString = useMemo(() => createSizeString(mediaBreakpoints, sizes), [sizes])
+  const imageStyle = useMemo(
+    () => ({
+      filter: isLoading && blur ? `blur(${blur}px)` : undefined,
+      transition: 'filter 0.3s ease-out',
+      ...style,
+    }),
+    [isLoading, blur, style],
+  )
+
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      setIsError(true)
+      setIsLoading(false)
+      onError?.(e)
+    },
+    [onError],
+  )
+
+  const handleLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      if (!isError) {
+        setIsLoading(false)
+      }
+      onLoad?.(e)
+    },
+    [isError, onLoad],
+  )
 
   // Обработка основного изображения
   useEffect(() => {
@@ -96,22 +123,20 @@ export function Image(props: ImageProps) {
   useEffect(() => {
     if (!srcSet) return
 
-    try {
-      const newSourceSrcSet: Record<string, string> = {}
-      const newBlobUrls: string[] = []
+    const newSourceSrcSet: Record<string, string> = {}
+    const newBlobUrls: string[] = []
 
-      for (const [key, value] of Object.entries(srcSet)) {
-        const url = resolveImageUrl(value, fallbackSrc, optimalOptions)
-        newSourceSrcSet[key] = url
+    for (const [key, value] of Object.entries(srcSet)) {
+      const url = resolveImageUrl(value, fallbackSrc, optimalOptions)
+      newSourceSrcSet[key] = url
 
-        if (url.startsWith('blob:')) {
-          newBlobUrls.push(url)
-        }
+      if (url.startsWith('blob:')) {
+        newBlobUrls.push(url)
       }
+    }
 
-      setSourceSrcSet(newSourceSrcSet)
-      setBlobUrls((prev) => [...prev, ...newBlobUrls])
-    } catch (error) {}
+    setSourceSrcSet(newSourceSrcSet)
+    setBlobUrls((prev) => [...prev, ...newBlobUrls])
   }, [srcSet, fallbackSrc, optimalOptions])
 
   // Очистка blob URLs при размонтировании
@@ -124,58 +149,40 @@ export function Image(props: ImageProps) {
     [blobUrls],
   )
 
-  // Создаем источники для разных форматов (автоматически для assets изображений)
-  const renderSources = () => {
+  const sources = useMemo(() => {
     if (!src || typeof src !== 'string' || src.startsWith('http') || src.startsWith('/') || src.startsWith('blob:')) {
       return null
     }
 
     const formats = getImageFormats(src)
-    const sources = []
+    const sourceElements = []
 
     // AVIF источник
     if (optimalOptions.enableAvif && formats.avif) {
-      sources.push(<source key="avif" srcSet={formats.avif} type="image/avif" />)
+      sourceElements.push(<source key="avif" srcSet={formats.avif} type="image/avif" />)
     }
 
     // WebP источник
     if (optimalOptions.enableWebp && formats.webp) {
-      sources.push(<source key="webp" srcSet={formats.webp} type="image/webp" />)
+      sourceElements.push(<source key="webp" srcSet={formats.webp} type="image/webp" />)
     }
 
-    return sources
-  }
+    return sourceElements
+  }, [src, optimalOptions])
 
-  const imageStyle = {
-    filter: isLoading && blur ? `blur(${blur}px)` : undefined,
-    transition: 'filter 0.3s ease-out',
-    ...style,
-  }
+  // srcSet источники
+  const srcSetSources = useMemo(() => {
+    if (!srcSet || !Object.keys(sourceSrcSet).length) return null
+
+    return Object.entries(sourceSrcSet).map(([key, value]) => <source key={key} srcSet={value} media={`(min-width: ${mediaBreakpoints[key as MediaBreakKeys]}px)`} />)
+  }, [srcSet, sourceSrcSet])
 
   return (
     <picture className={pictureClassName}>
-      {renderSources()}
+      {sources}
+      {srcSetSources}
 
-      {srcSet && Object.entries(sourceSrcSet).map(([key, value]) => <source key={key} srcSet={value} media={`(min-width: ${mediaBreakpoints[key as MediaBreakKeys]}px)`} />)}
-
-      <img
-        src={imageSrc}
-        sizes={createSizeString(mediaBreakpoints, sizes)}
-        loading="lazy"
-        style={imageStyle}
-        {...rest}
-        onError={(e) => {
-          setIsError(true)
-          setIsLoading(false)
-          if (rest.onError) rest.onError(e)
-        }}
-        onLoad={(e) => {
-          if (!isError) {
-            setIsLoading(false)
-          }
-          if (rest.onLoad) rest.onLoad(e)
-        }}
-      />
+      <img src={imageSrc} sizes={sizesString} loading="lazy" style={imageStyle} onError={handleError} onLoad={handleLoad} {...rest} />
     </picture>
   )
 }

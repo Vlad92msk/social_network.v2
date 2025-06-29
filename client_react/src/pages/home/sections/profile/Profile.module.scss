@@ -1,0 +1,14 @@
+@import "../../../../styles";
+
+$paddingLR: 5%;
+
+
+.Profile {
+  display: flex;
+  flex-direction: column;
+  gap: rem(50);
+  padding-left: $paddingLR;
+  padding-right: $paddingLR;
+  overflow-y: auto;
+  @include scrollbar-mini();
+}

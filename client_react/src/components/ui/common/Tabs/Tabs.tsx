@@ -1,5 +1,5 @@
-import { classNames, createStoreContext } from '@utils'
 import React, { CSSProperties, PropsWithChildren, useEffect } from 'react'
+import { classNames, createStoreContext } from '@utils'
 
 import { cn } from './cn'
 
@@ -32,18 +32,13 @@ export const {
 })
 
 export interface LmTabsProps extends PropsWithChildren {
-  className?: string;
-  style?: CSSProperties;
-  ref?: React.Ref<HTMLDivElement>;
+  className?: string
+  style?: CSSProperties
+  ref?: React.Ref<HTMLDivElement>
 }
 
 export const Tabs = contextWrapper<LmTabsProps, LmTabsContextType>((props) => {
-  const {
-    className,
-    style,
-    children,
-    ref,
-  } = props
+  const { className, style, children, ref } = props
   const updateContext = useTabsUpdate()
 
   /**

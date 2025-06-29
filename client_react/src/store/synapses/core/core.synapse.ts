@@ -1,5 +1,6 @@
 import { createSynapse } from 'synapse-storage/utils'
 
+import { browserStorage } from '../../../utils/browser-storage.ts'
 import { userProfileEndpoints } from '../../api/profile.api'
 import { CORE } from '../../indexdb.config'
 import { createCoreDispatcher } from './core.dispatcher'
@@ -16,6 +17,9 @@ export const coreSynapseIDB = await createSynapse({
     },
     api: {
       userProfileAPi: userProfileEndpoints,
+    },
+    config: {
+      browserStorage,
     },
   }),
   effects: [userProfileEffects],

@@ -1,0 +1,184 @@
+@import "../../../../../../styles";
+
+
+.AboutMe {
+  $this: &;
+  isolation: isolate;
+  width: 100%;
+  display: grid;
+  position: relative;
+  overflow: hidden;
+  grid-template:
+        "banner       banner       " rem(250)
+        "name         univercity   " auto
+        "position     company      " auto
+        "information  information  " fit-content(rem(64))
+       / 1fr          1fr;
+
+  &-ButtonEdit {
+    position: absolute;
+    right: 0;
+    transform: translateY(-100%);
+    top: 0;
+    z-index: 1;
+    display: flex;
+    gap: rem(10);
+    transition: transform .5s;
+
+    :is(#{$this}:hover) & {
+      transform: translateY(0);
+      transition: transform .5s;
+    }
+
+  }
+  &-Banner {
+    grid-area: banner;
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+  &-Name {
+    grid-area: name;
+    padding: $paddings--small;
+  }
+  &-Univercity {
+    grid-area: univercity;
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+    justify-content: flex-end;
+    padding: $paddings--small;
+  }
+  &-Position {
+    grid-area: position;
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+    padding: $paddings--small;
+  }
+  &-Company {
+    grid-area: company;
+    display: flex;
+    gap: rem(5);
+    align-items: center;
+    justify-content: flex-end;
+    padding: $paddings--small;
+  }
+  &-Information {
+    grid-area: information;
+    background: var(--Color-Bcg--variant-4--theme-default);
+    border-radius: $border-radius--small;
+    padding: $paddings--small;
+    white-space: pre-wrap;
+    word-wrap: break-word; /* Добавляем для переноса длинных слов */
+  }
+
+  &-BannerBck {
+    height: 70%;
+    position: relative;
+    width: 100%;
+    border-radius: $paddings--super-small;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity .5s;
+
+    &--active {
+      &:hover {
+        opacity: 0.5;
+        transition: opacity .5s;
+        cursor: pointer;
+      }
+    }
+  }
+  &-MyPhoto {
+    position: absolute;
+    left: 0;
+    bottom: 10%;
+    width: rem(150);
+    height: rem(150);
+    border-radius: 50%;
+    overflow: hidden;
+    border: rem(3) solid var(--Color-Border--variant-2--theme-default);
+
+    &--active {
+      &:hover {
+        opacity: 0.5;
+        transition: opacity .5s;
+        cursor: pointer;
+      }
+    }
+  }
+
+  &-ContactsList {
+    $ContactsList: &;
+    right: 0;
+    position: absolute;
+    bottom: 10%;
+    width: rem(150);
+    height: rem(40);
+    display: flex;
+    overflow: hidden;
+    justify-content: flex-end;
+
+  }
+
+  &-UsersPlus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: rem(35);
+    height: rem(35);
+    border: rem(3) solid gray;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--Color-Bcg--variant-4--theme-default);
+    color: var(--Color-Text--variant-1--theme-default)!important;
+    z-index: 3;
+    transform: translateX(rem(30));
+  }
+
+  &-ContactItemBox {
+    display: flex;
+    width: rem(35);
+    height: rem(35);
+    border-radius: 50%;
+    border: rem(1) solid var(--Color-Border--variant-2--theme-default);
+    overflow: hidden;
+    flex-shrink: 0;
+    padding: 0!important;
+    transition: .5s;
+
+    &:hover {
+      border: rem(3) solid var(--Palette--BrightGreen--120--opacity-1);
+      transition: .5s;
+    }
+  }
+
+  &-ContactsListOther {
+    border-radius: $border-radius--super-small;
+    padding: $paddings--small;
+    display: flex;
+    flex-direction: column;
+    gap: rem(10);
+    background: var(--Color-Bcg--root--theme-default);
+    height: fit-content;
+    //border: rem(1) solid var(--Palette--BrightGreen--120--opacity-1);
+
+    &Button {
+      height: rem(40);
+      display: flex;
+      gap: rem(5);
+      overflow: hidden;
+      border-radius: $border-radius--super-small;
+      border: rem(1) solid var(--Palette--BrightGreen--120--opacity-1);
+      box-shadow: rem(1) rem(1) rem(1) var(--Color-Bcg--variant-9--theme-default);
+    }
+    &ImgBox {
+      position: relative;
+      height: 100%;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: $border-radius--super-small
+    }
+  }
+}

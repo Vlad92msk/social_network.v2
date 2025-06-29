@@ -1,13 +1,14 @@
+import { loggerMiddleware } from '@store/synapses/settings.ts'
 import { apiRequestStore } from '@store/utils'
 import { IStorage } from 'synapse-storage/core'
-import { createDispatcher, loggerDispatcherMiddleware } from 'synapse-storage/reactive'
+import { createDispatcher } from 'synapse-storage/reactive'
 
 import { UserInfo } from '../../../../../swagger/userInfo/interfaces-userInfo'
 import { ReceivedResponse } from '../../../models/apiStatus'
 import { AboutUserUserInfo } from './user-info.store'
 
 export function createUserInfoDispatcher(store: IStorage<AboutUserUserInfo>) {
-  return createDispatcher({ storage: store }, (storage, { createAction }) => ({
+  return createDispatcher({ storage: store, middlewares: [loggerMiddleware] }, (storage, { createAction }) => ({
     setCurrentUserProfile: createAction<UserInfo, UserInfo>({
       type: 'setCurrentUserProfile',
       meta: { description: 'Установка полученного профиля (из indexDB)' },

@@ -1,14 +1,13 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { LanguageSwitcher, LogoutButton } from '@components/app-components'
-import { ContentArea, MainMenu, ProfileLayout, SecondMenu } from '@components/app-layout'
 import { Translations } from '@providers'
 
 import './i18n/config'
 
 import { AuthConfig, AuthProvider, GuardProvider, ProtectedRoute, useAuth } from './auth'
 import { NavigationDebug } from './auth/NavigationDebug.tsx'
+import { Home } from './pages/home'
 import { SignIn } from './pages/signIn/SignIn.tsx'
 import { Core } from './providers/core/Core.tsx'
 import { ThemeProvider } from './providers/theme'
@@ -42,35 +41,6 @@ const ProfilePage = () => {
         <p>Это защищенная страница - вы видите её только после авторизации.</p>
       </main>
     </div>
-  )
-}
-
-// Публичная главная страница
-const HomePage = () => {
-  const userSettings = {
-    layoutVariant: '2',
-  }
-
-  return (
-    <ProfileLayout
-      layoutVariant={userSettings.layoutVariant}
-      areas={{
-        mainMenu: <MainMenu />,
-        secondMenu: <SecondMenu layoutVariant={userSettings.layoutVariant} />,
-        content: (
-          <ContentArea>
-            {/* {children} */}
-            <Suspense fallback={<div>.........Loading..........</div>}>
-              {/* <Messenger */}
-              {/*   params={params} // Теперь передаем уже разрешенные params */}
-              {/*   searchParams={(await props.searchParams)} */}
-              {/*   profile={profile} */}
-              {/* /> */}
-            </Suspense>
-          </ContentArea>
-        ),
-      }}
-    />
   )
 }
 
@@ -108,7 +78,7 @@ const App = () => {
                     index
                     element={
                       <ProtectedRoute>
-                        <HomePage />
+                        <Home />
                       </ProtectedRoute>
                     }
                   />
@@ -124,7 +94,7 @@ const App = () => {
                     path="*"
                     element={
                       <ProtectedRoute>
-                        <HomePage />
+                        <Home />
                       </ProtectedRoute>
                     }
                   />
