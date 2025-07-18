@@ -1,8 +1,8 @@
 import { ISelectorModule } from 'synapse-storage/core'
 
-import { AboutUserUserInfo } from './user-info.store'
+import { AboutUserStorage } from './user-about.store.ts'
 
-export const createUserInfoSelectors = (selectorModule: ISelectorModule<AboutUserUserInfo>) => {
+export const createUserInfoSelectors = (selectorModule: ISelectorModule<AboutUserStorage>) => {
   const currentUserProfile = selectorModule.createSelector((s) => s.userInfoInit)
   const fieldsInit = selectorModule.createSelector((s) => s.fieldsInit)
 

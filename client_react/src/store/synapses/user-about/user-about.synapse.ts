@@ -3,14 +3,14 @@ import { createSynapse } from 'synapse-storage/utils'
 
 import { userInfoEndpoints } from '../../api/user-info.api'
 import { coreSynapseIDB } from '../core/core.synapse'
-import { createUserInfoDispatcher } from './user-info.dispatcher'
-import { userInfoEffects } from './user-info.effects'
-import { createUserInfoSelectors } from './user-info.selectors'
-import { createUserInfoStorage } from './user-info.store'
+import { createUserInfoDispatcher } from './user-about.dispatcher.ts'
+import { userAboutEffects } from './user-about.effects.ts'
+import { createUserInfoSelectors } from './user-about.selectors.ts'
+import { createUserAboutStorage } from './user-about.store.ts'
 
-export const userInfoSynapse = await createSynapse({
+export const userAboutSynapse = await createSynapse({
   dependencies: [coreSynapseIDB, notificationsSynapse],
-  createStorageFn: createUserInfoStorage,
+  createStorageFn: createUserAboutStorage,
   createDispatcherFn: createUserInfoDispatcher,
   createSelectorsFn: createUserInfoSelectors,
   createEffectConfig: (userInfoDispatcher) => ({
@@ -26,5 +26,5 @@ export const userInfoSynapse = await createSynapse({
       userInfoAPi: userInfoEndpoints,
     },
   }),
-  effects: [userInfoEffects],
+  effects: [userAboutEffects],
 })

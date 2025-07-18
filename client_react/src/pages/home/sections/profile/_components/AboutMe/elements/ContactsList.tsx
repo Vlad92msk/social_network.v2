@@ -1,9 +1,9 @@
 import { Button, Image, Popover, Text } from '@components/ui'
-import { AboutUserUserInfo } from '@store/synapses/user-info'
+import { AboutUserStorage } from 'store/synapses/user-about'
 
 import { cn } from '../cn'
 
-type Contact = AboutUserUserInfo['userInfoInit']
+type Contact = AboutUserStorage['userInfoInit']
 
 interface ContactsListProps {
   contacts?: Contact[]

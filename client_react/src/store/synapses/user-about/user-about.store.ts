@@ -16,9 +16,9 @@ export interface AboutUserUserInfoFields {
   imageUploadFile?: AddedFile
 }
 
-export interface AboutUserUserInfo {
+export interface AboutUserStorage {
   api: {
-    updateUserInfo: ApiStatusState<UserInfo, FormData>
+    updateUserInfo: ApiStatusState<FormData, UserInfo>
   }
   userInfoInit: UserInfo
   isChangeActive: boolean
@@ -26,10 +26,10 @@ export interface AboutUserUserInfo {
   fields: AboutUserUserInfoFields
 }
 
-export async function createUserInfoStorage() {
-  const storageName = 'user-info'
+export async function createUserAboutStorage() {
+  const storageName = 'user-about'
 
-  return new MemoryStorage<AboutUserUserInfo>({
+  return new MemoryStorage<AboutUserStorage>({
     name: storageName,
     initialState: {
       api: {
@@ -49,5 +49,3 @@ export async function createUserInfoStorage() {
     },
   }).initialize()
 }
-
-export type UserPageStorage = Awaited<ReturnType<typeof createUserInfoStorage>>

@@ -38,10 +38,11 @@ export interface RequestPagination {
 }
 
 /**
- * @param T - Тип apiData
+ * @param RequestParams - Тип параметров заапроса
+ * @param ResponseData - Тип apiData
  * @param E - Тип ошибки
  */
-export interface ApiStatusState<ResponseData, RequestParams extends Record<string, any> = Record<string, any>, E = DefaultError | Error> {
+export interface ApiStatusState<RequestParams extends Record<string, any> = Record<string, any>, ResponseData = unknown, E = DefaultError | Error> {
   apiData?: ResponseData
   apiStatus: ApiStatus
   apiError?: E

@@ -1,10 +1,10 @@
 import { Icon, Input, Text } from '@components/ui'
-import { userInfoSynapse } from '@store/synapses/user-info'
+import { userAboutSynapse } from '@store/synapses/user-about'
 import { useSelector } from 'synapse-storage/react'
 
 import { cn } from '../cn'
 
-const { selectors, actions } = userInfoSynapse
+const { selectors, actions } = userAboutSynapse
 
 interface CompanyProps {
   // company?: string

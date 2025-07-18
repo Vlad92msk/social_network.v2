@@ -1,12 +1,12 @@
 import React, { useRef } from 'react'
 import { Image, resolveImageUrl } from '@components/ui'
 import { availableImages, useMaterialsAttach } from '@hooks'
-import { userInfoSynapse } from '@store/synapses/user-info'
+import { userAboutSynapse } from '@store/synapses/user-about'
 import { useSelector } from 'synapse-storage/react'
 
 import { cn } from '../cn'
 
-const { selectors, actions } = userInfoSynapse
+const { selectors, actions } = userAboutSynapse
 
 interface BannerImageProps {}
 

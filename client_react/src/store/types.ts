@@ -5,7 +5,7 @@ import { ApiStatusState } from '../models/apiStatus'
 // Основные данные проекта в indexDB
 export interface IDBCore {
   api: {
-    profileInfo: ApiStatusState<UserProfileInfo, GetProfileInfoParams>
+    profileInfo: ApiStatusState<GetProfileInfoParams, UserProfileInfo>
   }
 }
 

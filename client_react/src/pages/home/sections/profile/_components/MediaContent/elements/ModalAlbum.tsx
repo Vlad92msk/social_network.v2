@@ -1,4 +1,5 @@
-import { Modal } from '@ui/common/Modal'
+import { Modal } from '@components/ui'
+
 import { MediaResponseDto } from '../../../../../../../../../swagger/media/interfaces-media'
 import { cn } from '../cn'
 import { ItemElement } from './ItemElement'

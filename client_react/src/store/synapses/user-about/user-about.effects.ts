@@ -7,11 +7,11 @@ import { UserInfoApi } from '../../api/user-info.api'
 import { CoreDispatcher } from '../core/core.dispatcher'
 import { coreSynapseIDB } from '../core/core.synapse'
 import { NotificationsDispatcher } from '../notifications/notifications.dispatcher'
-import { UserInfoDispatcher } from './user-info.dispatcher'
-import { AboutUserUserInfo } from './user-info.store'
+import { UserAboutDispatcher } from './user-about.dispatcher.ts'
+import { AboutUserStorage } from './user-about.store.ts'
 
 type DispatcherType = {
-  userInfoDispatcher: UserInfoDispatcher
+  userInfoDispatcher: UserAboutDispatcher
   coreIdbDispatcher: CoreDispatcher
   notificationDispatcher: NotificationsDispatcher
 }
@@ -23,7 +23,7 @@ type ExternalStorages = {
   core$: typeof coreSynapseIDB.state$
 }
 
-type Effect = ReturnType<typeof createEffect<AboutUserUserInfo, DispatcherType, ApiType, Record<string, void>, ExternalStorages>>
+type Effect = ReturnType<typeof createEffect<AboutUserStorage, DispatcherType, ApiType, Record<string, void>, ExternalStorages>>
 
 // Если изменился профиль прользователя в core - устанавливаем его в текущий synapse
 const loadUserInfoById: Effect = createEffect((action$, state$, externalStates, { userInfoDispatcher, coreIdbDispatcher }) =>
@@ -45,7 +45,6 @@ const updateUserProfile: Effect = createEffect((action$, state$, externalStates,
         from(
           userInfoAPi.updateUser.request({ body: action.payload as UpdateUserDto }).waitWithCallbacks({
             loading: async (request) => {
-              // @ts-ignore
               await userInfoDispatcher.dispatch.updateUserInfoRequest(request)
             },
             success: async (data, request) => {
@@ -83,4 +82,4 @@ const updateUserProfileWatcher: Effect = createEffect((action$, state$, external
   ),
 )
 
-export const userInfoEffects = combineEffects(loadUserInfoById, updateUserProfile, updateUserProfileWatcher)
+export const userAboutEffects = combineEffects(loadUserInfoById, updateUserProfile, updateUserProfileWatcher)

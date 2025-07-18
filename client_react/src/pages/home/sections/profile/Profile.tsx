@@ -13,9 +13,9 @@ export const ProfileContent = (props: UserPageProps) => {
       <ProfileTab activeTab="Обо мне">
         <ProfileTabItem name="Обо мне" content={<AboutMe />} />
         {/* <ProfileTabItem name="Публикации" content={<ModulePost />} /> */}
-        {/* <ProfileTabItem name="Фото" content={<MediaContent type="image" />} /> */}
-        {/* <ProfileTabItem name="Музыка" content={<MediaContent type="audio" />} /> */}
-        {/* <ProfileTabItem name="Видео" content={<MediaContent type="video" />} /> */}
+        <ProfileTabItem name="Фото" content={<MediaContent type={'image'} />} />
+        <ProfileTabItem name="Музыка" content={<MediaContent type="audio" />} />
+        <ProfileTabItem name="Видео" content={<MediaContent type="video" />} />
       </ProfileTab>
     </div>
   )

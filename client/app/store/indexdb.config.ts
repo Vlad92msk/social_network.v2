@@ -18,7 +18,7 @@ export const {
     //---------------
     // Хранение запросов для кэширования
     API__USER_INFO: {
-      name: 'api-user-info',
+      name: 'api-user-about',
     },
     API__USER_PROFILE: {
       name: 'api-user-profile',

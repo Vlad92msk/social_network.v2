@@ -1,18 +1,18 @@
 import { API__USER_MEDIA } from '@store/indexdb.config.ts'
-import { ApiClient } from 'synapse-storage/api'
+import { ApiClient, ResponseFormat } from 'synapse-storage/api'
 
 import { MediaEntity, Tag } from '../../../../swagger/media/interfaces-media.ts'
 import { mediaApiInstance } from '../../../generate/instance'
 import { CookieType } from '../../models/cookie.ts'
 
-type UploadFilesPayload = Parameters<typeof mediaApiInstance.uploadFiles>[0]
-type DownLoadFilePayload = Parameters<typeof mediaApiInstance.downLoadFile>[0]
-type DeleteFilePayload = Parameters<typeof mediaApiInstance.deleteFile>[0]
-type GetFilesPayload = Parameters<typeof mediaApiInstance.getFiles>[0]
-type UpdateMediaPayload = Parameters<typeof mediaApiInstance.updateMedia>[0]
-type AddTagsToMediaPayload = Parameters<typeof mediaApiInstance.addTagsToMedia>[0]
-type RemoveTagsFromMediaPayload = Parameters<typeof mediaApiInstance.removeTagsFromMedia>[0]
-type GetMediaTagsPayload = Parameters<typeof mediaApiInstance.getMediaTags>[0]
+export type UploadFilesPayload = Parameters<typeof mediaApiInstance.uploadFiles>[0]
+export type DownLoadFilePayload = Parameters<typeof mediaApiInstance.downLoadFile>[0]
+export type DeleteFilePayload = Parameters<typeof mediaApiInstance.deleteFile>[0]
+export type GetFilesPayload = Parameters<typeof mediaApiInstance.getFiles>[0]
+export type UpdateMediaPayload = Parameters<typeof mediaApiInstance.updateMedia>[0]
+export type AddTagsToMediaPayload = Parameters<typeof mediaApiInstance.addTagsToMedia>[0]
+export type RemoveTagsFromMediaPayload = Parameters<typeof mediaApiInstance.removeTagsFromMedia>[0]
+export type GetMediaTagsPayload = Parameters<typeof mediaApiInstance.getMediaTags>[0]
 
 const api = new ApiClient({
   storage: API__USER_MEDIA,
@@ -70,20 +70,36 @@ const api = new ApiClient({
     }),
 
     getFiles: create<GetFilesPayload, MediaEntity[]>({
-      providesTags: ['MediaFiles'],
+      tags: ['MediaFiles'],
       //@ts-ignore
       request: (params) => {
         const { url, init } = mediaApiInstance.getFilesInit(params)
-        return { path: url, ...init }
+        return {
+          path: url,
+          method: 'GET',
+          ...init,
+        }
       },
     }),
 
     updateMedia: create<UpdateMediaPayload, any>({
       invalidatesTags: ['MediaFiles'],
-      //@ts-ignore
+      cache: false,
+
+      prepareHeaders: async (headers, { getCookie }) => {
+        // Возможно нужно добавить:
+        headers.set('Content-Type', 'application/json')
+
+        return headers
+      },
       request: (params) => {
-        const { url, init } = mediaApiInstance.updateMediaInit(params)
-        return { path: url, ...init }
+        const { url } = mediaApiInstance.updateMediaInit(params)
+        return {
+          path: url,
+          method: 'PATCH',
+          responseFormat: ResponseFormat.Text,
+          body: params.body,
+        }
       },
     }),
 
@@ -113,8 +129,8 @@ const api = new ApiClient({
   }),
 })
 // Инициализация
-const userProfileApi = await api.init()
+const userMediaApi = await api.init()
 
 // Получение эндпоинтов
-export const userProfileEndpoints = userProfileApi.getEndpoints()
-export type UserProfileApi = typeof userProfileEndpoints
+export const userMediaEndpoints = userMediaApi.getEndpoints()
+export type UserMediaApi = typeof userMediaEndpoints

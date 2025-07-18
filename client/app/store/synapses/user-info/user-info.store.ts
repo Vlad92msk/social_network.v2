@@ -26,7 +26,7 @@ export interface AboutUserUserInfo {
 }
 
 export async function createUserInfoStorage() {
-  const storageName = 'user-info'
+  const storageName = 'user-about'
 
   return new MemoryStorage<AboutUserUserInfo>({
     name: storageName,

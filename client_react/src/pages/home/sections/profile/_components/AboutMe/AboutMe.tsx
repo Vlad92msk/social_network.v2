@@ -1,16 +1,16 @@
 import { Spinner } from '@components/ui'
-import { userInfoSynapse, userInfoSynapseCtx } from '@store/synapses/user-info'
+import { userAboutSynapse, userAboutSynapseCtx } from '@store/synapses/user-about'
 import { useSelector } from 'synapse-storage'
 
 import { useAuth } from '../../../../../../auth'
 import { cn } from './cn'
 import { Banner, ButtonEdit, Company, Information, Name, Position, Univercity } from './elements'
 
-const { selectors } = userInfoSynapse
+const { selectors } = userAboutSynapse
 
 export interface AboutMeProps {}
 
-export const AboutMe = userInfoSynapseCtx.contextSynapse<AboutMeProps, void>((props) => {
+export const AboutMe = userAboutSynapseCtx.contextSynapse<AboutMeProps, void>((props) => {
   const { isLoading } = useAuth()
 
   const handleClickFriend = (id: string) => {

@@ -1,5 +1,7 @@
 export * from './body'
 export * from './content-area'
+export * from './item-with-comments'
 export * from './main-menu'
+export * from './media-item-element'
 export * from './profile-layout'
 export * from './second-menu'
